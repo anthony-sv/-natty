@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.local
+*.local
+.DS_Store
+Thumbs.db
+apps/*/src/routeTree.gen.ts
+
+# Private source reference material — attributed to a third party, not shipped in the app
+gym-docs/
