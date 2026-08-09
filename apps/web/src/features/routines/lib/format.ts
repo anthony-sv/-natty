@@ -1,10 +1,10 @@
 import type { Prescription, Routine } from "@/data/routines";
 
-function formatRange(value: number | [number, number]): string {
+export function formatRange(value: number | [number, number]): string {
   return Array.isArray(value) ? `${value[0]}-${value[1]}` : `${value}`;
 }
 
-function formatDuration(value: number | [number, number]): string {
+export function formatDuration(value: number | [number, number]): string {
   if (Array.isArray(value)) return `${value[0]}-${value[1]}s`;
   return value % 60 === 0 ? `${value / 60} min` : `${value}s`;
 }
@@ -30,6 +30,14 @@ export function formatPrescription(p: Prescription): string {
 
 export function formatWeekLabel(weekNumber: number): string {
   return `Week ${weekNumber}`;
+}
+
+/** Countdown clock, e.g. 90000 → "1:30". Rounds up so it hits 0:00 only at zero. */
+export function formatClock(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
 /** Program-level default shown in the routine header, e.g. "8-12 reps, 3 sets, 90s rest". */
