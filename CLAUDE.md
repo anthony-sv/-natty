@@ -14,6 +14,7 @@ started — don't scaffold them speculatively, ask before adding an app.
 - `pnpm dev` — start the web app dev server
 - `pnpm build` — build all apps
 - `pnpm lint` — lint all apps
+- `pnpm test` — run all apps' tests
 - `pnpm typecheck` — typecheck all apps
 
 Or scope to one app: `pnpm --filter web <script>`.
@@ -42,6 +43,141 @@ Or scope to one app: `pnpm --filter web <script>`.
     subpath export (`@tanstack/markdown/react`, `@tanstack/highlight/react`).
   - When building any chart, load the `dataviz` skill first — it has house
     color/form rules for the placeholder palette.
+- Tests: Vitest, configured in the `test` block of `vite.config.ts` (which
+  imports `defineConfig` from `vitest/config`, not `vite`, so that block
+  typechecks). `environment: "node"` and `include: ["src/**/*.test.ts"]` —
+  data-layer tests only so far. Add jsdom + `.test.tsx` when the first
+  component test lands.
+
+## Exercise library
+
+`src/data/exercises/` is the canonical list of lifts. Two levels:
+
+- **Movement** (`movements.ts`) — the identity of a lift (`lat-pulldown`).
+  This is the aggregation key for history, PRs and per-muscle volume. Adding
+  one splits a user's history, so it's a bigger decision than adding a variant.
+- **Exercise** (`exercises.ts`) — a variant people actually perform
+  (`lat-pulldown-wide`), pointing at a movement, with a curated `name`,
+  `aliases`, and `facets`.
+
+Rules that keep this from exploding:
+
+- **Facets are query metadata, not a name generator.** Generated names read
+  like robot output, so `name` is curated by hand. Facets exist for filtering,
+  grouping and substitution-by-facet-distance.
+- **Intensity techniques are not exercise identity.** Forced reps, negatives,
+  partials, static holds and ladders live in `prescriptions[].modifiers`, not
+  here — see below.
+- **Aliases carry every real-world spelling** so the routine data resolves
+  without being rewritten. Matching is case- and punctuation-insensitive
+  (`normalizeExerciseName`), so only add an alias that differs by more than
+  that — `exercises.test.ts` fails on a redundant one.
+- **Spellings whose wording encodes a technique are deliberately not aliases.**
+  `"Barbell curls (Negative/Forced reps/Partials)"`, `"Smith machine/Hack
+  squat"` and 11 others resolve to *nothing*, so writing one throws. That's the
+  nudge to use the plain name plus explicit modifiers, and it's the only thing
+  stopping a routine from restating a technique in prose without modelling it.
+  The original wording lives in each exercise's `notes` and in `gym-docs/`.
+- `needsReview: true` flags a mapping that was a judgment call on an ambiguous
+  source name. **Currently empty** — all ten originals were settled, four
+  against the source docs in `gym-docs/` and six by the author.
+  The test pins it at empty so a new one has to be acknowledged.
+
+### How routines link to it
+
+`ExerciseEntry.exerciseId` is required and is the source of truth. Program files
+pass source-doc spellings (`ex("Lat pulldown wide", …)`); the helpers in
+`data/routines/authoring.ts` resolve them and **throw** on an unknown name, so a
+typo fails at import rather than rendering blank. The spelling isn't stored.
+
+Render an entry with `exerciseDisplayName()` from
+`features/routines/lib/format.ts` — never a raw field.
+
+### Modifiers and alternatives
+
+`prescriptions[].modifiers` (`setModifiersSchema`) carries the intensity
+techniques: `forcedReps`, `negatives`, `partials`, `staticHolds`, and `ladder`
+(a `string[]` of positions, because one "rep" is several — see the vocabulary
+below). Only techniques the routines actually prescribe are modelled; adding
+to-failure, drop sets, rest-pause or tempo is a field each, when a routine needs
+one.
+
+Because a phase covers a run of sets, **"drop set on the last set only" needs no
+new structure** — split the exercise into two phases:
+
+```ts
+prescriptions: [
+  { sets: 3, reps: [8, 12], restSeconds: 90 },
+  { sets: 1, reps: [8, 12], restSeconds: 90, modifiers: { partials: true } },
+]
+```
+
+`ExerciseEntry.orAlternatives` holds equally acceptable substitutes — the docs'
+`/` names. `exerciseId` is the one written **first** in the source.
+
+### Poses
+
+`src/data/poses.ts` is the closed set of eight classic mandatory poses that
+finisher sets end on. One flat file, not a directory like `data/exercises/`,
+because there are only eight and no more to discover — but the same alias
+mechanic, sharing `normalizeName` from `src/data/normalize.ts`.
+
+`Prescription.pose` is `{ poseId, holdSeconds? }`, not a free string. Two
+duplicate spellings collapse, both confirmed against the docs rather than
+guessed — the same finisher is written each way in different weeks:
+
+- `"quad"` = `"Quad flex"`
+- bare `"double biceps"` = `"Back double biceps"` (**not** the front pose)
+
+`finisher()` resolves the pose name, throws on an unknown one, and applies
+`FINISHER_HOLD_SECONDS = 10` — overridable via its 4th argument. The Bulking and
+Cutting docs state the 10s hold on all 86 of their finisher lines; the four
+per-muscle program docs omit it exactly the way they omit the 7-set count, so
+the convention fills in both. Render with `formatPose()`.
+
+**Never commit the method name or the coach's name** that `gym-docs/` is
+sourced from — not in code, comments, tests, or UI. `gym-docs/` itself is
+gitignored; describe conventions generically ("finisher sets", "the source
+docs").
+
+### Session steps
+
+`buildSteps()` flattens a day into three step types — `work`, `pose`, `rest` —
+so the player only tracks "which index am I on". A finisher set runs
+`work → pose → rest`, repeating for all 7 sets; the hold is its own step so it
+gets a real countdown rather than being a line of text on a set you've already
+finished. A pose without `holdSeconds` produces no step and stays a cue on the
+work step.
+
+`autoStartSecondsFor()` decides what begins counting on arrival: rest and pose
+holds auto-start when you tap done, cardio waits for an explicit Start. Trailing
+`rest` steps are trimmed (nothing to rest *for*), but a trailing `pose` is not —
+the last finisher set still ends on a hold.
+
+Author with the two wrappers in `authoring.ts`, which apply after the
+per-program shorthands (`acc`, `heavyRamp`, `rampDefault`) since those take no
+options:
+
+```ts
+withModifiers(acc("Leg extension"), { partials: true })
+orElse(ex("Db shoulder press", …), "Machine shoulder press (Neutral grip)")
+```
+
+Author's vocabulary, decoded from the source docs — worth knowing because it
+reads like exercise naming but isn't:
+
+- **"variations"** (`"Db seated lateral variations"`, `"Db incline intense
+  variations"`) means *intensity techniques* — any or all of forced reps,
+  negatives, partials. Not a different lift. Both fold into the plain exercise
+  with all three modifiers set; the source doesn't say which, and "all three
+  apply, athlete picks" is the closest honest encoding.
+- **"ladder"** (`"Cable fly ladders"`, `"Db incline front raise ladder"`) is a
+  within-set protocol where one rep is three partial-to-full reps: for front
+  raises, a low partial then mid then full; for cable flyes, a fly at abs
+  height then mid then straight to the front. Hence `modifiers.ladder` being a
+  list of position names rather than a boolean.
+- **`/`** always means "or" (`"Smith machine/Hack squat"`), never a compound —
+  and the exercise named first is the primary.
 
 ## Devtools
 

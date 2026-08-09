@@ -89,9 +89,11 @@ function DayDetail() {
           index: currentStep.exerciseIndex,
           label: `set ${currentStep.setNumber} of ${currentStep.setsInExercise}`,
         }
-      : currentStep?.type === "rest"
-        ? { index: currentStep.exerciseIndex, label: "resting" }
-        : undefined;
+      : currentStep?.type === "pose"
+        ? { index: currentStep.exerciseIndex, label: "holding" }
+        : currentStep?.type === "rest"
+          ? { index: currentStep.exerciseIndex, label: "resting" }
+          : undefined;
 
   function handleStart() {
     // A session elsewhere would be silently discarded — confirm first.

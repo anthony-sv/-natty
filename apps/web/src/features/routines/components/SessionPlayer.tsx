@@ -10,8 +10,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { formatClock } from "../lib/format";
-import { describeStep, type SessionStep } from "../lib/session";
+import { getPose } from "@/data/poses";
+import { formatClock, formatModifiers, formatPose } from "../lib/format";
+import {
+  autoStartSecondsFor,
+  describeStep,
+  type SessionStep,
+} from "../lib/session";
 import { useCountdown } from "../lib/use-countdown";
 import {
   endSession,
@@ -54,6 +59,8 @@ export function SessionPlayer({
 
         {step.type === "work" ? (
           <WorkStepBody step={step} session={session} steps={steps} />
+        ) : step.type === "pose" ? (
+          <PoseStepBody step={step} session={session} steps={steps} />
         ) : (
           <RestStepBody step={step} session={session} steps={steps} />
         )}
@@ -95,12 +102,8 @@ function WorkStepBody({
   const timerRunning = session.timerEndsAt !== null;
 
   const next = steps[session.stepIndex + 1];
-  // Rest auto-starts the instant you tap done; a cardio block waits for Start.
   const advance = () =>
-    goToStep(
-      session.stepIndex + 1,
-      next?.type === "rest" ? next.seconds : undefined,
-    );
+    goToStep(session.stepIndex + 1, autoStartSecondsFor(next));
 
   return (
     <div className="flex flex-col gap-3">
@@ -110,6 +113,20 @@ function WorkStepBody({
         {step.kind === "cardio" ? <Badge variant="outline">Cardio</Badge> : null}
       </div>
 
+      {step.alternatives ? (
+        <p className="text-sm text-muted-foreground">{step.alternatives}</p>
+      ) : null}
+
+      {step.modifiers ? (
+        <div className="flex flex-wrap items-center gap-1.5">
+          {formatModifiers(step.modifiers).map((label) => (
+            <Badge key={label} variant="destructive">
+              {label}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
         <span className="font-medium text-foreground">
           Set {step.setNumber} of {step.setsInExercise}
@@ -118,10 +135,10 @@ function WorkStepBody({
         <span>{describeStep(step)}</span>
       </div>
 
-      {step.cue ? (
+      {step.pose ? (
         <p className="text-sm">
           <span className="text-muted-foreground">Pose: </span>
-          {step.cue}
+          {formatPose(step.pose)}
         </p>
       ) : null}
       {step.notes ? (
@@ -154,9 +171,69 @@ function WorkStepBody({
             ? "Finish workout"
             : next.type === "rest"
               ? `Done — rest ${formatClock(next.seconds * 1000)}`
-              : "Done"}
+              : next.type === "pose"
+                ? `Done — hold ${next.seconds}s`
+                : "Done"}
         </Button>
       )}
+    </div>
+  );
+}
+
+function PoseStepBody({
+  step,
+  session,
+  steps,
+}: {
+  step: Extract<SessionStep, { type: "pose" }>;
+  session: SessionState;
+  steps: SessionStep[];
+}) {
+  const { remainingMs, isComplete } = useCountdown(session.timerEndsAt);
+  const totalMs = step.seconds * 1000;
+  const elapsedPercent = ((totalMs - remainingMs) / totalMs) * 100;
+
+  const next = steps[session.stepIndex + 1];
+
+  return (
+    <div className="flex flex-col gap-3">
+      <span className="text-sm font-medium text-muted-foreground">Hold</span>
+
+      <h2 className="text-xl font-semibold">
+        {getPose(step.pose.poseId)?.name ?? step.pose.poseId}
+      </h2>
+
+      <div
+        className={
+          isComplete
+            ? "text-6xl font-semibold tabular-nums text-primary"
+            : "text-6xl font-semibold tabular-nums"
+        }
+      >
+        {formatClock(remainingMs)}
+      </div>
+
+      <Progress value={elapsedPercent} />
+
+      {isComplete ? (
+        <p className="text-sm font-medium text-primary">Hold complete.</p>
+      ) : null}
+
+      {/* Tappable throughout, like rest — tapping early is how you cut it short. */}
+      <Button
+        size="lg"
+        className="w-full"
+        onClick={() =>
+          goToStep(session.stepIndex + 1, autoStartSecondsFor(next))
+        }
+      >
+        <CheckIcon />
+        {next === undefined
+          ? "Finish workout"
+          : next.type === "rest"
+            ? `Done — rest ${formatClock(next.seconds * 1000)}`
+            : "Done"}
+      </Button>
     </div>
   );
 }

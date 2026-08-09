@@ -3,6 +3,7 @@ import { useStore } from "@tanstack/react-store";
 import type { Routine, TrainingDay } from "@/data/routines";
 import { routinesQueryOptions } from "../queries";
 import { sessionStore, type SessionState } from "../session-store";
+import { exerciseDisplayName } from "./format";
 import { buildSteps, type SessionStep } from "./session";
 
 export interface ResolvedSession {
@@ -36,10 +37,12 @@ export function useActiveSession(): ResolvedSession | null {
 
   const steps = buildSteps(day);
   const currentStep = steps[state.stepIndex];
-  const currentExerciseName =
+  const activeEntry =
     currentStep === undefined
       ? undefined
-      : day.exercises[currentStep.exerciseIndex]?.name;
+      : day.exercises[currentStep.exerciseIndex];
+  const currentExerciseName =
+    activeEntry === undefined ? undefined : exerciseDisplayName(activeEntry);
 
   return { state, routine, day, steps, currentStep, currentExerciseName };
 }

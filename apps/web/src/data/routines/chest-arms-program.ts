@@ -1,5 +1,5 @@
 import { routineSchema, type Routine } from "./schema";
-import { cardio, day, ex, finisher, ramp, restDay } from "./authoring";
+import { cardio, day, ex, finisher, ramp, restDay, withModifiers } from "./authoring";
 import type { ExerciseEntry } from "./schema";
 
 // Title default: (8-12, 3, 90s). Each day's first ("Chest/Arms" combo, leg,
@@ -164,7 +164,7 @@ const raw: Routine = {
           finisher("Hack squat", "quad"),
         ]),
         day(3, "Shoulder/Calves", [
-          heavyRamp("Db seated lateral variations"),
+          withModifiers(heavyRamp("Seated dumbbell lateral raise"), { forcedReps: true, negatives: true, partials: true }),
           acc("Spider bench front raises (Overhand)"),
           acc("Bent over db lateral raise (Overhand)"),
           finisher("Single arm cable lateral raise", "most muscular"),
@@ -204,9 +204,9 @@ const raw: Routine = {
           heavyRamp("Incline db neutral grip press"),
           acc("Flat db press"),
           acc("Chest dips"),
-          acc("Db incline intense variations"),
+          withModifiers(acc("Incline bench db flyes"), { forcedReps: true, negatives: true, partials: true }),
           finisher("Cable crossover (Middle)", "most muscular"),
-          acc("Machine preacher curls (Negatives)"),
+          withModifiers(acc("Machine preacher curls"), { negatives: true }),
           acc("Low cable curls (Straight bar)"),
           acc("Ez bar skull crushers"),
           acc("Machine dips (Triceps)"),
@@ -221,7 +221,7 @@ const raw: Routine = {
         ]),
         day(3, "Shoulder/Calves", [
           heavyRamp("Seated barbell shoulder press"),
-          acc("Db incline front raise ladder"),
+          withModifiers(acc("Incline dumbbell front raise"), { ladder: ["low", "mid", "full"] }),
           acc("Seated bent over lateral raises (Overhand)"),
           finisher("Machine shoulder press (Neutral grip)", "most muscular"),
           acc("Standing calf raise"),

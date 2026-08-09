@@ -19,6 +19,14 @@ export function getRoutineBySlug(slug: string): Routine | undefined {
   return routines.find((routine) => routine.slug === slug);
 }
 
-export type { Routine, TrainingWeek, TrainingDay, ExerciseEntry, Prescription } from "./schema";
+export type {
+  Routine,
+  TrainingWeek,
+  TrainingDay,
+  ExerciseEntry,
+  Prescription,
+  PoseCue,
+  SetModifiers,
+} from "./schema";
 export { warmupSections, getWarmupSection } from "./warmups";
 export type { WarmupSection, WarmupMove } from "./schema";
