@@ -1,2 +1,7 @@
 packages:
   - "apps/*"
+minimumReleaseAgeExclude:
+  - '@tanstack/react-table@9.1.2'
+  - '@tanstack/table-core@9.1.2'
+  - '@tanstack/react-table-devtools@9.1.2'
+  - '@tanstack/table-devtools@9.1.2'

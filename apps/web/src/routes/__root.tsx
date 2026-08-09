@@ -7,6 +7,17 @@ export interface RouterContext {
   queryClient: QueryClient;
 }
 
+/**
+ * The palette binds Mod+K, which is Cmd on Apple hardware and Ctrl everywhere
+ * else — so the cue has to match, rather than always showing the Mac glyph.
+ * Read once at module scope: touching `navigator` during render would trip the
+ * `react-hooks/purity` rule.
+ */
+const MOD_KEY =
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.userAgent)
+    ? "⌘"
+    : "Ctrl";
+
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
 });
@@ -25,8 +36,14 @@ function RootComponent() {
           >
             Routines
           </Link>
+          <Link
+            to="/progress"
+            className="[&.active]:text-foreground text-foreground/70 hover:text-foreground"
+          >
+            Progress
+          </Link>
         </nav>
-        <Kbd>⌘K</Kbd>
+        <Kbd>{MOD_KEY}K</Kbd>
       </header>
       <Outlet />
       <CommandPalette />

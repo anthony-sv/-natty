@@ -43,6 +43,20 @@ Or scope to one app: `pnpm --filter web <script>`.
     subpath export (`@tanstack/markdown/react`, `@tanstack/highlight/react`).
   - When building any chart, load the `dataviz` skill first — it has house
     color/form rules for the placeholder palette.
+- Tables: **TanStack Table v9** (`useTable`, not v8's `useReactTable`). Shared
+  setup lives in `src/lib/table.ts` — import `features` from there so column
+  helpers are typed against the same feature set the table runs with. The
+  generic `src/components/data-table.tsx` renders through `ui/table.tsx`; it
+  sits outside `ui/` because that directory is vendored, and shadcn publishes
+  no `data-table` component, only a docs recipe. v9 traps: no
+  `getCoreRowModel()` (automatic), `row.getAllCells()` rather than
+  `getVisibleCells()` unless `columnVisibilityFeature` is registered, and
+  row/cell methods live on prototypes so don't destructure them.
+- Toasts: Base UI's, via the `toast` singleton exported from `ui/toast.tsx`, so
+  anything can raise one without a hook. `<Toaster>` is mounted once in
+  `main.tsx` wrapping `RouterProvider`. `collection.insert()` returns a
+  transaction, so `toast.promise(tx.isPersisted.promise, …)` tracks the real
+  write rather than faking one.
 - Tests: Vitest, configured in the `test` block of `vite.config.ts` (which
   imports `defineConfig` from `vitest/config`, not `vite`, so that block
   typechecks). `environment: "node"` and `include: ["src/**/*.test.ts"]` —
@@ -54,8 +68,9 @@ Or scope to one app: `pnpm --filter web <script>`.
 `src/data/exercises/` is the canonical list of lifts. Two levels:
 
 - **Movement** (`movements.ts`) — the identity of a lift (`lat-pulldown`).
-  This is the aggregation key for history, PRs and per-muscle volume. Adding
-  one splits a user's history, so it's a bigger decision than adding a variant.
+  The aggregation key for per-muscle volume, and the rollup shown alongside an
+  exercise. Adding one splits a user's history, so it's a bigger decision than
+  adding a variant. **Not** the key for PRs — see below.
 - **Exercise** (`exercises.ts`) — a variant people actually perform
   (`lat-pulldown-wide`), pointing at a movement, with a curated `name`,
   `aliases`, and `facets`.
@@ -154,6 +169,108 @@ holds auto-start when you tap done, cardio waits for an explicit Start. Trailing
 `rest` steps are trimmed (nothing to rest *for*), but a trailing `pose` is not —
 the last finisher set still ends on a hold.
 
+`DayExerciseList` splits the day into phases with `Marker variant="separator"`
+— "Main work" / "Mobility" / "Stretch" / "Cardio", grouped by `kind`. Dividers
+only appear when a day has more than one phase, and `groupIntoPhases()` carries
+each entry's **original index**: `activeExerciseIndex` refers to a position in
+`day.exercises`, so renumbering would move the active-set highlight to the wrong
+row. Warmups stay in their own collapsible and are not player steps.
+
+## Set logging (`src/features/log/`)
+
+Every set you perform, persisted to localStorage via a **TanStack DB
+collection** (`collection.ts`, key `natty.log.v1`) — not another hand-rolled
+`Store` + `localStorage` pair like `session-store.ts`, because this data is
+queried per exercise rather than read whole. `session-store` is scratch state
+that `endSession()` discards; this is the permanent record.
+
+**PRs are per exercise, not per movement.** Comparing a wide-grip pulldown's
+load to a close-grip one is meaningless.
+
+**A PR is the Pareto frontier of (reps, weight)** — `prFrontier()` in `pr.ts`.
+A set is a record when nothing else beat it on *both* axes, so `120×1, 110×3,
+95×5, 100×6, 90×8` yields `120×1, 110×3, 100×6, 90×8`: 95×5 drops because
+100×6 is heavier *and* longer. That is what "best weight at each rep count"
+means with no empty rows and no redundant ones. Returned heaviest-first, which
+on a frontier is also fewest-reps-first.
+
+`prForRepRange()` picks the row the player shows: the heaviest record reaching
+the set's prescribed *lower* rep bound — a 1RM above a set of 8-12 is noise.
+Falls back to the heaviest record when you've never gone that long.
+
+Weight is optional, and `effectiveWeight()` is the one place that decides how
+two sets compare by load: an absent weight sorts as 0 (so `+20kg × 8` beats
+bodyweight `× 8`, and on a lift you've only done unweighted the frontier
+collapses to "most reps"), and pounds are normalised to kilos. Cardio isn't
+logged; it already carries a duration.
+
+**Units are stored as entered, never converted.** A pec deck marked in pounds
+reads back as `100lb × 8`, not `45.4kg × 8` — `unit` rides on each logged set
+and `formatSet()` always shows it. Only comparison normalises. The player
+defaults the unit to whatever that exercise was last logged in, so a
+pounds-marked machine stays in pounds without a per-exercise setting.
+
+`pr.ts` is deliberately free of React and of the collection, so the frontier is
+directly unit-tested (`pr.test.ts`).
+
+**Event handlers must not read the `useLiveQuery` snapshot from
+`useExerciseLog`** — that snapshot is whatever the last render saw, and after
+the player advances to a new set it can be empty (query still warming) or still
+hold the previous exercise's rows. Use `setsFor(exerciseId)` in
+`collection.ts`, which reads the collection synchronously. This caused two real
+bugs: a repeated set announcing a false PR, and a first-ever set on a new
+exercise missing its PR. `useExerciseLog` is for *display* only.
+
+Relatedly, `logSet()` decides `isRecord` itself rather than letting callers do
+it, because the ordering is subtle: the write is optimistic, so judging after
+the insert compares the set against itself and never reports a record.
+`collection.test.ts` pins that ordering — reversing it fails three tests.
+
+In the player the inputs live in a **popover** behind a trigger
+(`SetLogControl`), not inline — mid-workout the card should stay short, and what
+you want at a glance is the PR and your last set, not two input boxes.
+
+**Logging is explicit**: it happens only when the popover's own form is
+submitted, never as a side effect of "Done". An earlier version prefilled both
+fields from your last set and logged on advance, so simply moving through a
+workout recorded sets you never entered, each with a toast. Advancing now logs
+nothing.
+
+The fields still prefill from your last set — that's the time-saver — but
+nothing is written until you submit. The trigger reflects state: "Log set",
+then the logged value, then "N logged".
+
+**A step can hold more than one entry.** Re-opening the popover offers "Log
+another" rather than blocking, so a drop set or extra work past the
+prescription can be recorded. What's already on the step is listed in the
+popover so an accidental duplicate is visible. Entries are matched to a step by
+**provenance** (`routineSlug`/`weekNumber`/`dayNumber`/`setNumber`) via
+`loggedSetsForStep()`, not component state, so they survive stepping Back and
+forward. Editing or deleting a logged set isn't built yet — a mistyped set can
+currently only be followed by a correct one.
+
+Both log forms — the popover and the `/progress` backfill — use TanStack Form.
+The popover's is a separate component so `defaultValues` can be seeded from the
+last set on mount, and the player holds it back until the log query has loaded.
+
+### Forms
+
+shadcn's `form.tsx` is **not** installed and shouldn't be — it's
+react-hook-form-specific. Use **TanStack Form** with `field.tsx`, which is the
+form-library-agnostic primitive set. Zod schemas pass straight into
+`validators: { onChange: schema }` — Zod 4 satisfies Standard Schema, so no
+adapter package is needed. The date picker is `calendar.tsx` inside
+`popover.tsx` (shadcn ships it as a recipe, not a component).
+
+**Picking a control: Combobox when the list needs searching, Select when it
+doesn't, `native-select.tsx` never.** The 113-entry exercise picker is a
+Combobox; the kg/lb picker is a Select.
+
+Two gotchas, both already hit: `Date.now()` during render trips
+`react-hooks/purity` — seed it with `useState(() => Date.now())`. And after a
+successful submit use `form.resetField(name)`, not `setFieldValue(name, "")`,
+or the emptied field stays "touched" and immediately shows its own error.
+
 Author with the two wrappers in `authoring.ts`, which apply after the
 per-program shorthands (`acc`, `heavyRamp`, `rampDefault`) since those take no
 options:
@@ -187,9 +304,10 @@ plugins: Query, Router, Form, Hotkeys, Pacer. Not every library has a devtools
 package — DB, Store, Virtual, Charts, Markdown, and Highlight don't ship one
 (confirmed against npm, not just docs).
 
-Table's devtools panel needs a live table instance (`table` and `setIsOpen`
-props) and isn't wired yet since no component uses TanStack Table. When the
-first table is built, add it to the plugins array:
+Table's devtools panel needs a *single* live table instance (`table` and
+`setIsOpen` props), and `/progress` renders one `DataTable` per exercise — so
+there's no one instance to hand it and the panel stays unwired. It becomes
+wireable if a single-table view ever lands:
 
 ```tsx
 { name: "TanStack Table", render: (_el, props) => <ReactTableDevtoolsPanel {...props} table={table} /> }

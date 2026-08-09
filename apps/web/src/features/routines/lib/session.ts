@@ -22,6 +22,8 @@ export interface WorkStep {
   type: "work";
   id: string;
   exerciseIndex: number;
+  /** Library key, for looking up this exercise's logged sets and records. */
+  exerciseId: string;
   exerciseName: string;
   kind: ExerciseEntry["kind"];
   isFinisher: boolean;
@@ -98,6 +100,7 @@ export function buildSteps(day: TrainingDay): SessionStep[] {
           type: "work",
           id: `${exerciseIndex}-${setNumber}-work`,
           exerciseIndex,
+          exerciseId: exercise.exerciseId,
           exerciseName: exerciseDisplayName(exercise),
           kind: exercise.kind,
           isFinisher: exercise.isFinisher,
