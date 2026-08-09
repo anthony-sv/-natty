@@ -16,6 +16,10 @@ export default defineConfig({
     tailwindcss(),
   ],
   resolve: {
+    // pnpm's nested node_modules can otherwise resolve a second React copy for
+    // a transitive dep, which surfaces as "Invalid hook call" / a null
+    // dispatcher. Cheap insurance now that more workspace apps are planned.
+    dedupe: ["react", "react-dom"],
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),
     },

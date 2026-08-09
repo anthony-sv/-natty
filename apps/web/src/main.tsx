@@ -38,7 +38,9 @@ if (!rootElement.innerHTML) {
               { name: "TanStack Query", render: <ReactQueryDevtoolsPanel /> },
               {
                 name: "TanStack Router",
-                render: <TanStackRouterDevtoolsPanel />,
+                // Rendered outside RouterProvider, so pass the router
+                // explicitly — context lookup returns null here.
+                render: <TanStackRouterDevtoolsPanel router={router} />,
               },
               { name: "TanStack Form", render: <FormDevtoolsPanel /> },
               {
