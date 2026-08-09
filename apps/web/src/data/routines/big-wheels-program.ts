@@ -1,5 +1,5 @@
 import { routineSchema, type Routine } from "./schema";
-import { cardio, day, ex, finisher, ramp, restDay } from "./authoring";
+import { cardio, day, ex, finisher, ramp, restDay, withModifiers } from "./authoring";
 import type { ExerciseEntry } from "./schema";
 
 // Title default: (3, 120s) — 3 sets, 120s rest for regular accessory work.
@@ -74,7 +74,9 @@ const raw: Routine = {
           CARDIO_20MIN(),
         ]),
         day(5, "Shoulders/Traps/Quads", [
-          heavyRamp("Smith machine shoulder press (Forced reps)"),
+          withModifiers(heavyRamp("Smith machine shoulder press"), {
+            forcedReps: true,
+          }),
           acc("Front raises (Plate)"),
           ex("Single arm cable lateral raise", [8, 12], ACC_SETS, ACC_REST, {
             perSide: true,
@@ -206,9 +208,11 @@ const raw: Routine = {
           CARDIO_20MIN(),
         ]),
         day(5, "Shoulders/Traps/Quads", [
-          heavyRamp("Db seated lateral variations"),
+          withModifiers(heavyRamp("Seated dumbbell lateral raise"), { forcedReps: true, negatives: true, partials: true }),
           acc("Spider bench front raises (Overhand)"),
-          acc("Smith machine shoulder press (Forced reps)"),
+          withModifiers(acc("Smith machine shoulder press"), {
+            forcedReps: true,
+          }),
           acc("Reverse fly machine"),
           acc("Standing barbell upright rows"),
           ex("Walking lunges", [10, 12], 2, 90),
@@ -235,8 +239,11 @@ const raw: Routine = {
           heavyRamp("Incline db neutral grip press"),
           acc("Flat db press"),
           acc("Chest dips"),
-          acc("Db incline intense variations"),
-          finisher("Cable fly ladders", "most muscular", [8, 12]),
+          withModifiers(acc("Incline bench db flyes"), { forcedReps: true, negatives: true, partials: true }),
+          withModifiers(
+            finisher("Cable fly", "most muscular", [8, 12]),
+            { ladder: ["abs height", "mid", "front"] },
+          ),
           CARDIO_20MIN(),
         ]),
         day(2, "Legs", [
@@ -273,14 +280,14 @@ const raw: Routine = {
         ]),
         day(5, "Shoulders/Traps/Quads", [
           heavyRamp("Seated barbell shoulder press"),
-          acc("Db incline front raise ladder"),
+          withModifiers(acc("Incline dumbbell front raise"), { ladder: ["low", "mid", "full"] }),
           finisher("Machine shoulder press (Neutral grip)", "most muscular", [8, 12]),
           acc("Seated bent over lateral raises (Overhand)"),
           acc("Db shrugs"),
           ex("Walking lunges", [10, 12], 2, 90),
           acc("Barbell squat"),
           acc("Hack squat sumo"),
-          acc("Leg extension (Partials)"),
+          withModifiers(acc("Leg extension"), { partials: true }),
         ]),
         day(6, "Hamstrings/Calves", [
           ex("Walking lunges", [10, 12], 2, 90),

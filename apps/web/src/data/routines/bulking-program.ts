@@ -1,5 +1,5 @@
 import { routineSchema, type ExerciseEntry, type Routine } from "./schema";
-import { cardio, day, ex, finisher, ramp, restDay } from "./authoring";
+import { cardio, day, ex, finisher, orElse, ramp, restDay, withModifiers } from "./authoring";
 
 // Weeks 1-4 use the source's flat-bullet format with no per-exercise
 // numbers; its header note ("1 set is always 2 sets of 10-12, then 2 sets of
@@ -136,7 +136,10 @@ const raw: Routine = {
           rampDefault("Hyperextension"),
         ]),
         day(3, "Shoulder/Traps", [
-          rampDefault("Db seated lateral raise (Forced reps/negatives/partials)"),
+          withModifiers(
+            rampDefault("Seated dumbbell lateral raise"),
+            { forcedReps: true, negatives: true, partials: true },
+          ),
           rampDefault("Spider bench front raises (Overhand)"),
           rampDefault("Bent over db lateral raise (Overhand)"),
           finisher("Single arm cable lateral raise", "most muscular"),
@@ -171,7 +174,7 @@ const raw: Routine = {
           rampDefault("Incline db neutral grip press"),
           rampDefault("Flat db press"),
           rampDefault("Chest dips"),
-          rampDefault("Db incline intense variations"),
+          withModifiers(rampDefault("Incline bench db flyes"), { forcedReps: true, negatives: true, partials: true }),
           finisher("Cable crossover (Middle)", "most muscular"),
         ]),
         day(2, "Back", [
@@ -183,7 +186,10 @@ const raw: Routine = {
         ]),
         day(3, "Shoulder/Traps", [
           rampDefault("Seated barbell shoulder press"),
-          rampDefault("Db incline front raise ladder"),
+          withModifiers(
+            rampDefault("Incline dumbbell front raise"),
+            { ladder: ["low", "mid", "full"] },
+          ),
           rampDefault("Seated bent over lateral raises (Overhand)"),
           finisher("Machine shoulder press (Neutral grip)", "most muscular"),
           rampDefault("Db shrugs"),
@@ -268,7 +274,7 @@ const raw: Routine = {
         day(1, "Chest", [
           ex("Incline smith machine bench press", [12, 15], 4, 90),
           ex("Standing cable chest press", [9, 12], 3, 90),
-          ex("Cable fly ladders", [12, 15], 3, 90),
+          withModifiers(ex("Cable fly", [12, 15], 3, 90), { ladder: ["abs height", "mid", "front"] }),
           ex("Chest dips", [12, 15], 3, 90),
           finisher("Flat machine chest press", "side chest"),
           CARDIO_30MIN(),
@@ -350,10 +356,16 @@ const raw: Routine = {
           CARDIO_30MIN(),
         ]),
         day(6, "Arms/Calves", [
-          ex("Cable cambered bar pushdowns/straight bar", [12, 15], 4, 90),
+          orElse(
+            ex("Cable cambered bar pushdowns", [12, 15], 4, 90),
+            "Straight-bar triceps pushdown",
+          ),
           ex("Cable single arm reverse pushdown", [12, 15], 3, 90, { perSide: true }),
           finisher("Cable reverse pushdown", "side tricep"),
-          ex("Barbell curls (Negative/Forced reps/Partials)", [12, 15], 3, 90),
+          withModifiers(
+            ex("Standing barbell curls", [12, 15], 3, 90),
+            { forcedReps: true, negatives: true, partials: true },
+          ),
           ex("Low cable curl (Straight bar)", [12, 15], 3, 90),
           finisher("Front double bicep cable curl", "back double biceps"),
           ex("Calf extension machine (Toes in)", [12, 15], 3, 90),

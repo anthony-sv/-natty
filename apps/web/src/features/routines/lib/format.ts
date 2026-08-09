@@ -1,4 +1,54 @@
-import type { Prescription, Routine } from "@/data/routines";
+import { getExercise } from "@/data/exercises";
+import { getPose } from "@/data/poses";
+import type {
+  ExerciseEntry,
+  PoseCue,
+  Prescription,
+  Routine,
+  SetModifiers,
+} from "@/data/routines";
+
+/**
+ * What to call an exercise entry on screen — the library's curated name.
+ *
+ * The id fallback only fires if an entry points at an exercise that no longer
+ * exists — `authoring.ts` throws on an unknown name, so it shouldn't happen,
+ * but a dangling id should read as a visible id rather than an empty heading.
+ */
+export function exerciseDisplayName(entry: ExerciseEntry): string {
+  return getExercise(entry.exerciseId)?.name ?? entry.exerciseId;
+}
+
+/** "or Machine shoulder press (neutral grip)" — the source's "/" alternatives. */
+export function formatAlternatives(entry: ExerciseEntry): string | undefined {
+  if (entry.orAlternatives.length === 0) return undefined;
+  const names = entry.orAlternatives.map((id) => getExercise(id)?.name ?? id);
+  return `or ${names.join(", or ")}`;
+}
+
+/** "Most muscular, 10s hold" — the pose closing a finisher set. */
+export function formatPose(pose: PoseCue): string {
+  const name = getPose(pose.poseId)?.name ?? pose.poseId;
+  return pose.holdSeconds === undefined
+    ? name
+    : `${name}, ${pose.holdSeconds}s hold`;
+}
+
+/**
+ * Short labels for the intensity techniques on a set, in a fixed order so the
+ * same prescription always reads the same way.
+ */
+export function formatModifiers(modifiers: SetModifiers): string[] {
+  const labels: string[] = [];
+  if (modifiers.forcedReps) labels.push("Forced reps");
+  if (modifiers.negatives) labels.push("Negatives");
+  if (modifiers.partials) labels.push("Partials");
+  if (modifiers.staticHolds) labels.push("Static holds");
+  if (modifiers.ladder) {
+    labels.push(`Ladder: ${modifiers.ladder.join(" → ")}`);
+  }
+  return labels;
+}
 
 export function formatRange(value: number | [number, number]): string {
   return Array.isArray(value) ? `${value[0]}-${value[1]}` : `${value}`;
@@ -22,7 +72,7 @@ export function formatPrescription(p: Prescription): string {
     parts.push(`${p.sets} sets`);
   }
 
-  if (p.cue) parts.push(p.cue);
+  if (p.pose) parts.push(formatPose(p.pose));
   if (p.restSeconds !== undefined) parts.push(`${p.restSeconds}s rest`);
 
   return parts.join(" · ");

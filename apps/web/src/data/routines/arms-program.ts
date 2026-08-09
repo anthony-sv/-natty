@@ -1,5 +1,5 @@
 import { routineSchema, type Routine } from "./schema";
-import { day, ex, finisher, restDay } from "./authoring";
+import { day, ex, finisher, orElse, restDay } from "./authoring";
 
 // Title default: (2 sets, 150s rest) — used for every regular exercise
 // unless a bullet gives its own set count or rest override.
@@ -32,7 +32,7 @@ const raw: Routine = {
         ]),
         day(3, "Legs", [
           ex("Leg extension", [10, 15], SETS, REST),
-          ex("Smith machine/Hack squat", [8, 12], SETS, 180),
+          orElse(ex("Smith machine squat", [8, 12], SETS, 180), "Hack squat"),
           ex("45° Leg press", [10, 15], SETS, 180),
           ex("Db straight leg deadlift", [8, 12], SETS, REST),
           ex("Lying leg curls", [8, 12], 3, REST),
@@ -41,7 +41,10 @@ const raw: Routine = {
         restDay(4),
         day(5, "Shoulders/Arms", [
           ex("Seated db lateral raises overhand", [8, 12], 3, REST),
-          ex("Db shoulder press/machine", [8, 12], SETS, REST),
+          orElse(
+            ex("Db shoulder press", [8, 12], SETS, REST),
+            "Machine shoulder press (Neutral grip)",
+          ),
           ex("Close grip barbell bench press", [8, 12], 3, REST),
           ex("Machine preacher curls", [8, 12], 3, REST),
           finisher("Overhead tricep extensions rope", "side tricep", [10, 12]),

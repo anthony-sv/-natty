@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { cn } from "@/lib/utils";
 import type { ExerciseEntry } from "@/data/routines";
+import { exerciseDisplayName, formatAlternatives } from "../lib/format";
 import { PrescriptionBadges } from "./PrescriptionBadges";
 
 export function DayExerciseList({
@@ -44,7 +45,7 @@ export function DayExerciseList({
           >
             <ItemContent>
               <ItemTitle>
-                {exercise.name}
+                {exerciseDisplayName(exercise)}
                 {exercise.isFinisher ? <Badge variant="default">Finisher</Badge> : null}
                 {exercise.kind === "cardio" ? (
                   <Badge variant="outline">Cardio</Badge>
@@ -53,6 +54,11 @@ export function DayExerciseList({
                   <Badge variant="default">{activeSetLabel}</Badge>
                 ) : null}
               </ItemTitle>
+              {formatAlternatives(exercise) ? (
+                <ItemDescription>
+                  {formatAlternatives(exercise)}
+                </ItemDescription>
+              ) : null}
               {exercise.notes ? (
                 <ItemDescription>{exercise.notes}</ItemDescription>
               ) : null}

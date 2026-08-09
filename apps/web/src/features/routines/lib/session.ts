@@ -1,12 +1,22 @@
-import type { ExerciseEntry, TrainingDay } from "@/data/routines";
-import { formatDuration, formatRange } from "./format";
+import type {
+  ExerciseEntry,
+  PoseCue,
+  SetModifiers,
+  TrainingDay,
+} from "@/data/routines";
+import {
+  exerciseDisplayName,
+  formatAlternatives,
+  formatDuration,
+  formatRange,
+} from "./format";
 
 /**
  * One step of a guided workout. A day is flattened into an alternating run of
  * `work` and `rest` steps, so the player only ever has to know "which index am
  * I on" — all the structure lives here.
  */
-export type SessionStep = WorkStep | RestStep;
+export type SessionStep = WorkStep | PoseStep | RestStep;
 
 export interface WorkStep {
   type: "work";
@@ -22,8 +32,26 @@ export interface WorkStep {
   /** Present for cardio/holds — the step runs its own countdown. */
   durationSeconds?: number;
   perSide?: boolean;
-  cue?: string;
+  /** Posing hold closing this set, on finishers. */
+  pose?: PoseCue;
   notes?: string;
+  /** Intensity techniques for this set, from its own prescription phase. */
+  modifiers?: SetModifiers;
+  /** "or Hack squat" — equally acceptable substitutes, if any. */
+  alternatives?: string;
+}
+
+/**
+ * The posing hold closing a finisher set — its own step so it gets a real
+ * countdown, the same way rest does, rather than being a line of text on the
+ * set you've already finished.
+ */
+export interface PoseStep {
+  type: "pose";
+  id: string;
+  exerciseIndex: number;
+  seconds: number;
+  pose: PoseCue;
 }
 
 export interface RestStep {
@@ -70,7 +98,7 @@ export function buildSteps(day: TrainingDay): SessionStep[] {
           type: "work",
           id: `${exerciseIndex}-${setNumber}-work`,
           exerciseIndex,
-          exerciseName: exercise.name,
+          exerciseName: exerciseDisplayName(exercise),
           kind: exercise.kind,
           isFinisher: exercise.isFinisher,
           setNumber,
@@ -81,9 +109,24 @@ export function buildSteps(day: TrainingDay): SessionStep[] {
               ? undefined
               : countdownSeconds(p.durationSeconds),
           perSide: p.perSide,
-          cue: p.cue,
+          pose: p.pose,
           notes: exercise.notes,
+          modifiers: p.modifiers,
+          alternatives: formatAlternatives(exercise),
         });
+
+        // The hold belongs between the set and its rest: you finish the reps,
+        // hold the pose, then rest. A pose with no `holdSeconds` is a cue to
+        // strike rather than something to time, so it stays on the work step.
+        if (p.pose?.holdSeconds !== undefined) {
+          steps.push({
+            type: "pose",
+            id: `${exerciseIndex}-${setNumber}-pose`,
+            exerciseIndex,
+            seconds: p.pose.holdSeconds,
+            pose: p.pose,
+          });
+        }
 
         if (p.restSeconds !== undefined && p.restSeconds > 0) {
           steps.push({
@@ -129,6 +172,15 @@ export function describeStep(step: WorkStep): string {
     return formatDuration(step.durationSeconds);
   }
   return "1 set";
+}
+
+/**
+ * Seconds to auto-start when arriving at `step`, or undefined to wait for an
+ * explicit Start. Rest and pose holds begin the moment you tap done — a cardio
+ * block doesn't, since you have to get on the machine first.
+ */
+export function autoStartSecondsFor(step: SessionStep | undefined): number | undefined {
+  return step?.type === "rest" || step?.type === "pose" ? step.seconds : undefined;
 }
 
 /** Total work sets in the day, for a "12 sets" style summary. */

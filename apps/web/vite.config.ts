@@ -1,5 +1,6 @@
 import path from "path";
-import { defineConfig } from "vite";
+// vitest/config re-exports Vite's defineConfig with the `test` block typed.
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
@@ -23,5 +24,10 @@ export default defineConfig({
     alias: {
       "@": path.resolve(import.meta.dirname, "./src"),
     },
+  },
+  test: {
+    // Data-layer tests only so far — plain Node, no DOM environment needed.
+    environment: "node",
+    include: ["src/**/*.test.ts"],
   },
 });

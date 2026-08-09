@@ -8,6 +8,60 @@ const numberOrRange = z.union([
 const repRange = numberOrRange;
 
 /**
+ * Intensity techniques applied to the sets of one prescription phase.
+ *
+ * These sit here rather than on the exercise because they're how a set is run,
+ * not what the lift is: the same barbell curl is a different prescription with
+ * negatives than without, and history for both should still roll up to one
+ * exercise.
+ *
+ * Because a phase covers a run of sets, "drop set on the last set only" needs
+ * no extra structure — split the exercise into two phases and put the modifier
+ * on the second:
+ *
+ *   prescriptions: [
+ *     { sets: 3, reps: [8, 12], restSeconds: 90 },
+ *     { sets: 1, reps: [8, 12], restSeconds: 90, modifiers: { partials: true } },
+ *   ]
+ *
+ * Only the techniques the routines actually prescribe are modelled. Adding
+ * to-failure, drop sets, rest-pause or tempo is a field each — do it when a
+ * routine needs one, not before.
+ */
+export const setModifiersSchema = z.object({
+  /** Assisted reps past failure. */
+  forcedReps: z.boolean().optional(),
+  /** Emphasised or assisted eccentrics. */
+  negatives: z.boolean().optional(),
+  /** Partial-range reps, typically once full reps fail. */
+  partials: z.boolean().optional(),
+  /** Isometric holds during the set. */
+  staticHolds: z.boolean().optional(),
+  /**
+   * One rep is several reps at different positions, named here in order — the
+   * source docs' "ladder". A front raise ladder is ["low", "mid", "full"];
+   * a cable fly ladder is ["abs height", "mid", "front"].
+   */
+  ladder: z.array(z.string()).min(2).optional(),
+});
+export type SetModifiers = z.infer<typeof setModifiersSchema>;
+
+/**
+ * The posing hold that closes a finisher set — "most muscular, 10 seconds".
+ *
+ * A reference into `data/poses`, not a free string, because the docs spell the
+ * same pose several ways ("quad" / "Quad flex"). `holdSeconds` is separate from
+ * the pose so it can vary: finisher sets are 10s throughout, but nothing about the
+ * model assumes that.
+ */
+export const poseCueSchema = z.object({
+  poseId: z.string(),
+  /** Seconds to hold. Omitted means "strike the pose", no timed hold. */
+  holdSeconds: z.number().int().positive().optional(),
+});
+export type PoseCue = z.infer<typeof poseCueSchema>;
+
+/**
  * One prescription for an exercise. Most exercises have exactly one; a
  * ramp/pyramid structure (e.g. 2 sets @ 10-12 reps/90s rest, then 2 more sets
  * @ 8-12 reps/120s rest) is represented as multiple prescriptions in order.
@@ -19,15 +73,32 @@ export const prescriptionSchema = z.object({
   /** Stretch hold, cardio duration, dead hang — a duration instead of reps. */
   durationSeconds: numberOrRange.optional(),
   restSeconds: z.number().int().nonnegative().optional(),
-  /** Posing/flex cue shown instead of (or alongside) rest on a finisher set: "most muscular", "quad flex". */
-  cue: z.string().optional(),
+  /** Posing/flex hold closing a finisher set. */
+  pose: poseCueSchema.optional(),
   /** Reps/duration figure is per side (e.g. single-arm rows). */
   perSide: z.boolean().optional(),
+  /** Intensity techniques for these sets. Absent means straight sets. */
+  modifiers: setModifiersSchema.optional(),
 });
 export type Prescription = z.infer<typeof prescriptionSchema>;
 
 export const exerciseEntrySchema = z.object({
-  name: z.string(),
+  /**
+   * Link into the exercise library (`data/exercises`) — the source of truth for
+   * what this lift is. Resolved from the source-doc spelling at authoring time
+   * by the helpers in `authoring.ts`, which throw on an unknown name.
+   *
+   * The spelling itself is not stored: it stays visible in the program files as
+   * the argument to `ex(...)`, which is where the transcription audit trail
+   * belongs. Use `exerciseDisplayName()` to render an entry.
+   */
+  exerciseId: z.string(),
+  /**
+   * Equally acceptable substitutes, in the source's own order — how the docs'
+   * "Db shoulder press/machine" and "Smith machine/Hack squat" are modelled.
+   * `exerciseId` is the one written first; these are the rest.
+   */
+  orAlternatives: z.array(z.string()).default([]),
   kind: z.enum(["resistance", "cardio", "mobility", "stretch"]),
   /** Finisher set: high reps, short rest, a posing cue. */
   isFinisher: z.boolean().default(false),
