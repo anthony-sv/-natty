@@ -10,7 +10,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "@/components/ui/toast";
 import { getPose } from "@/data/poses";
+import { useExerciseLog } from "@/features/log/queries";
+import { SetLogControl } from "@/features/log/components/SetLogControl";
 import { formatClock, formatModifiers, formatPose } from "../lib/format";
 import {
   autoStartSecondsFor,
@@ -58,9 +61,23 @@ export function SessionPlayer({
         <Progress value={(session.stepIndex / steps.length) * 100} />
 
         {step.type === "work" ? (
-          <WorkStepBody step={step} session={session} steps={steps} />
+          // Keyed so moving to the next set remounts the log form, which reads
+          // its prefill into `defaultValues` on mount -- without it React
+          // reuses the instance and the previous set's values stick.
+          <WorkStepBody
+            key={step.id}
+            step={step}
+            session={session}
+            steps={steps}
+            dayLabel={dayLabel}
+          />
         ) : step.type === "pose" ? (
-          <PoseStepBody step={step} session={session} steps={steps} />
+          <PoseStepBody
+            step={step}
+            session={session}
+            steps={steps}
+            dayLabel={dayLabel}
+          />
         ) : (
           <RestStepBody step={step} session={session} steps={steps} />
         )}
@@ -88,22 +105,69 @@ export function SessionPlayer({
   );
 }
 
+/**
+ * Announce the end of the day when there's no step after this one. Called from
+ * every step body that can be last — a work set, or the pose closing a finisher
+ * (trailing rests are trimmed, so a rest never is).
+ */
+function announceIfFinished(next: SessionStep | undefined, dayLabel: string) {
+  if (next !== undefined) return;
+  toast.add({
+    title: "Workout complete",
+    description: dayLabel,
+    type: "success",
+  });
+}
+
 function WorkStepBody({
   step,
   session,
   steps,
+  dayLabel,
 }: {
   step: Extract<SessionStep, { type: "work" }>;
   session: SessionState;
   steps: SessionStep[];
+  dayLabel: string;
 }) {
   const { remainingMs, isComplete } = useCountdown(session.timerEndsAt);
   const isTimed = step.durationSeconds !== undefined;
   const timerRunning = session.timerEndsAt !== null;
 
+  // Cardio already carries its own duration; there is no weight or rep count
+  // worth recording for it.
+  const isLoggable = step.kind !== "cardio";
+  const { sets, frontier, last, isLoading } = useExerciseLog(
+    isLoggable ? step.exerciseId : undefined,
+  );
+
+  const stepRef = {
+    exerciseId: step.exerciseId,
+    routineSlug: session.routineSlug,
+    weekNumber: session.weekNumber,
+    dayNumber: session.dayNumber,
+    setNumber: step.setNumber,
+  };
+  // Derived from the live query rather than component state so it survives
+  // stepping Back and forward again. A step can hold more than one entry --
+  // a drop set, or extra work past the prescription.
+  const loggedHere = sets.filter(
+    (logged) =>
+      logged.setNumber === step.setNumber &&
+      logged.dayNumber === session.dayNumber &&
+      logged.weekNumber === session.weekNumber &&
+      logged.routineSlug === session.routineSlug,
+  );
+
   const next = steps[session.stepIndex + 1];
-  const advance = () =>
+
+  // Advancing never logs. Logging is an explicit submit in the popover --
+  // otherwise, with the fields prefilled from your last set, simply moving
+  // through a workout would record sets you never entered.
+  function advance() {
+    announceIfFinished(next, dayLabel);
     goToStep(session.stepIndex + 1, autoStartSecondsFor(next));
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -145,6 +209,19 @@ function WorkStepBody({
         <p className="text-sm text-muted-foreground">{step.notes}</p>
       ) : null}
 
+      {/* Held back until the log has loaded: the form seeds its defaults from
+          `last` on mount, so mounting early would prefill from nothing. */}
+      {isLoggable && !isLoading ? (
+        <SetLogControl
+          frontier={frontier}
+          last={last}
+          targetReps={step.reps}
+          stepRef={stepRef}
+          exerciseName={step.exerciseName}
+          loggedHere={loggedHere}
+        />
+      ) : null}
+
       {isTimed && timerRunning ? (
         <div className="flex flex-col gap-2">
           <div className="text-5xl font-semibold tabular-nums">
@@ -184,10 +261,12 @@ function PoseStepBody({
   step,
   session,
   steps,
+  dayLabel,
 }: {
   step: Extract<SessionStep, { type: "pose" }>;
   session: SessionState;
   steps: SessionStep[];
+  dayLabel: string;
 }) {
   const { remainingMs, isComplete } = useCountdown(session.timerEndsAt);
   const totalMs = step.seconds * 1000;
@@ -223,9 +302,10 @@ function PoseStepBody({
       <Button
         size="lg"
         className="w-full"
-        onClick={() =>
-          goToStep(session.stepIndex + 1, autoStartSecondsFor(next))
-        }
+        onClick={() => {
+          announceIfFinished(next, dayLabel);
+          goToStep(session.stepIndex + 1, autoStartSecondsFor(next));
+        }}
       >
         <CheckIcon />
         {next === undefined

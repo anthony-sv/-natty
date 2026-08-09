@@ -8,6 +8,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { FormDevtoolsPanel } from "@tanstack/react-form-devtools";
 import { HotkeysDevtoolsPanel } from "@tanstack/react-hotkeys-devtools";
 import { PacerDevtoolsPanel } from "@tanstack/react-pacer-devtools";
+import { Toaster } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { routeTree } from "./routeTree.gen";
 import "./styles.css";
@@ -30,7 +31,12 @@ if (!rootElement.innerHTML) {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <RouterProvider router={router} />
+          {/* Supplies the toast provider, portal and viewport in one. The
+              `toast` manager it drives is a module singleton, so anything can
+              raise a toast without a hook. */}
+          <Toaster>
+            <RouterProvider router={router} />
+          </Toaster>
         </TooltipProvider>
         {import.meta.env.DEV ? (
           <TanStackDevtools
