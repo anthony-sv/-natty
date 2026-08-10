@@ -8,6 +8,7 @@ import {
   createSortedRowModel,
   filterFn_includesString,
   globalFilteringFeature,
+  metaHelper,
   rowExpandingFeature,
   rowSortingFeature,
   sortFn_alphanumeric,
@@ -57,7 +58,26 @@ export const features = tableFeatures({
   groupedRowModel: createGroupedRowModel(),
   rowExpandingFeature,
   expandedRowModel: createExpandedRowModel(),
+  /**
+   * Per-column display hints, scoped to this table factory.
+   *
+   * `columnMeta` is a type-only slot — `metaHelper` returns a phantom the
+   * table strips at runtime and only the type survives. It's the v9 answer to
+   * what would otherwise be a `declare module` augmentation, which would leak
+   * these keys onto every table in the app rather than ours.
+   */
+  columnMeta: metaHelper<ColumnDisplayMeta>(),
 });
+
+export interface ColumnDisplayMeta {
+  /**
+   * Pushes a column's header *and* cells to the end of their slot.
+   *
+   * Alignment belongs on the column definition, next to the header and cell
+   * that render it — not restated as a list of ids at the call site.
+   */
+  align?: "end";
+}
 
 /**
  * Exactly what `createColumnHelper(...).columns([...])` hands back.

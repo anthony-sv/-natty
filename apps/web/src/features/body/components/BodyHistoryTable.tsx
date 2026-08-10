@@ -63,9 +63,12 @@ function buildColumns(heightCm: number | undefined) {
     }),
     column.display({
       id: "normalized",
-      header: () => <span className="block text-right">Normalized</span>,
+      header: "Normalized",
+      // Alignment on the column def rather than hand-rolled into both the
+      // header and the cell, which is what `columnMeta` is for.
+      meta: { align: "end" },
       cell: (info) => (
-        <span className="block text-right tabular-nums">
+        <span className="tabular-nums">
           {formatIndex(normalizedFfmi(info.row.original, heightCm))}
         </span>
       ),
@@ -89,6 +92,7 @@ export function BodyHistoryTable({
       columns={columns}
       data={entries}
       isLoading={isLoading}
+      getRowId={(entry) => entry.id}
       devtoolsKey="body-history"
       empty="No weigh-ins logged yet."
     />

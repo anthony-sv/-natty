@@ -77,11 +77,15 @@ Or scope to one app: `pnpm --filter web <script>`.
   - `getGroupingValue` on a column def splits the grouped-by value from the
     accessor value. The records table needs that: its accessor returns name +
     movement so the filter can see both, while headings show only the name.
-  - `alignEnd` takes column ids and pushes their header *and* cells to the
-    right of the slot. On a wide card, left-packing three short values leaves
-    two thirds of every row empty; the trailing date belongs at the far edge.
-    It lives on the component because the header sits inside a flex cell the
-    component owns, so a cell renderer alone can't move it.
+  - Per-column display hints go in **`columnMeta`**, a type-only `tableFeatures`
+    slot declared with `metaHelper<ColumnDisplayMeta>()`. `meta: { align: "end" }`
+    on a column def moves its header *and* its cells; `DataTable` reads it off
+    `columnDef.meta`. It's typed, so a mistyped value fails the build — and it's
+    the v9 alternative to a `declare module` augmentation, which would leak the
+    keys onto every table in the app rather than ours.
+  - Pass **`getRowId`** wherever the data has a real id. Without it rows are
+    keyed by position, so filtering or re-sorting hands the same key to a
+    different record — which the virtualizer then reuses a measurement for.
   - Virtualization is a `virtual` prop, not a feature: TanStack Virtual
     controls rendering geometry only. It needs `gridTemplate` because the rows
     are absolutely positioned and the table layout algorithm can't size the
@@ -674,6 +678,24 @@ tree-shaken. `vite.config.ts` aliases `@tanstack/react-table-devtools` to
 `src/lib/table-devtools-stub.ts` in production builds so ~200KB of a
 devDependency doesn't ship. The alias is bundler-only: TypeScript still resolves
 the real package, so the call sites stay honestly typed.
+
+The package's own `useTanStackTableDevtoolsNoOp` and `tableDevtoolsNoOpPlugin`
+would be the sanctioned way to do this, but neither is in the typed public
+surface — only the real ones are exported from `index.d.ts` — so the alias
+stands.
+
+`@tanstack/devtools-vite` is **not** installed. It AST-strips imports of the
+devtools *shell* packages on build, which would make `main.tsx`'s
+`import.meta.env.DEV` guard redundant; it would not touch the registration hook
+above. The guard is verified working — no panel UI reaches the bundle — so this
+is a simplification available, not a gap.
+
+**A devtools event client does ship to production, and it isn't ours.**
+`@tanstack/form-core` lists `@tanstack/devtools-event-client` as a regular
+dependency and ships `EventClient.js` in its production build, so ~3KB of it
+rides along with `react-form` wherever a form renders. Nothing on our side
+pulls it in and nothing we can configure removes it. Don't go hunting for it as
+a leak in our devtools setup.
 
 `HotkeysDevtoolsPanel` requires `theme`/`devtoolsOpen` props that the shell
 only injects via the function form of `render` — use
