@@ -1,11 +1,5 @@
-import type { LoggedSet, WeightUnit } from "./schema";
-
-const KG_PER_LB = 0.45359237;
-
-/** Kilograms, whatever the set was entered in. */
-export function toKilograms(weight: number, unit: WeightUnit): number {
-  return unit === "lb" ? weight * KG_PER_LB : weight;
-}
+import { toKilograms } from "@/lib/units";
+import type { LoggedSet } from "./schema";
 
 /**
  * The single place that decides how two sets compare by load.

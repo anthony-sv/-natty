@@ -54,6 +54,25 @@ body {
     sans-serif;
 }
 
+/*
+ * The FFMI chart's conventional spectrum. Stops are placed at the band
+ * boundaries so each label sits over its own hue; the same ramp serves both
+ * modes because the track is opaque and the labels carry their own shadow.
+ */
+:root {
+  --ffmi-spectrum: linear-gradient(
+    to right,
+    #e0393a 0%,
+    #ef6b2c 14%,
+    #e8c320 29%,
+    #96c22e 43%,
+    #17a34a 50%,
+    #10a5a0 71%,
+    #3b6fd4 86%,
+    #7c3ad1 100%
+  );
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;

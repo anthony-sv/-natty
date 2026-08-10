@@ -8,5 +8,11 @@ dist/
 Thumbs.db
 apps/*/src/routeTree.gen.ts
 
+# Agent skills are vendored in .agents/skills/; .claude/skills/ is only a
+# mirror of it (a symlink on POSIX, a copy on Windows), so committing both
+# would duplicate every file. settings.local.json is per-machine.
+.claude/skills/
+.claude/settings.local.json
+
 # Private source reference material — attributed to a third party, not shipped in the app
 gym-docs/

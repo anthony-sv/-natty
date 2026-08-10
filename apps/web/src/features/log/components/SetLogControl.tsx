@@ -3,7 +3,12 @@ import { useForm } from "@tanstack/react-form";
 import { CheckIcon, PencilLineIcon } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -22,7 +27,8 @@ import {
 import { toast } from "@/components/ui/toast";
 import { logSet, type StepRef } from "../collection";
 import { formatSet, prForRepRange } from "../pr";
-import { UNITS, weightUnitSchema, type LoggedSet, type WeightUnit } from "../schema";
+import { UNITS, weightUnitSchema, type WeightUnit } from "@/lib/units";
+import type { LoggedSet } from "../schema";
 
 /** Strings in, numbers out — same shape as the backfill form on /progress. */
 const formSchema = z.object({
@@ -205,7 +211,7 @@ function SetLogForm({
           : "Nothing is recorded until you log it."}
       </PopoverDescription>
 
-      <div className="mt-3 flex flex-col gap-3">
+      <FieldGroup className="mt-3">
         <form.Field name="weight">
           {(field) => (
             <Field>
@@ -217,7 +223,7 @@ function SetLogForm({
                   inputMode="decimal"
                   step="0.5"
                   min="0"
-                  placeholder="Bodyweight"
+                  placeholder="Optional"
                   className="min-w-0 flex-1"
                   value={field.state.value}
                   onBlur={field.handleBlur}
@@ -283,11 +289,11 @@ function SetLogForm({
               className="w-full"
               disabled={!canSubmit || isSubmitting}
             >
-              <CheckIcon /> Log set
+              <CheckIcon data-icon="inline-start" /> Log set
             </Button>
           )}
         </form.Subscribe>
-      </div>
+      </FieldGroup>
     </form>
   );
 }

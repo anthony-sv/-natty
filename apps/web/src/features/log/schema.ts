@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { weightUnitSchema } from "@/lib/units";
 
 /**
  * One set you actually performed.
@@ -11,15 +12,6 @@ import { z } from "zod";
  * "dips with 0kg added" stay the same thing. `effectiveWeight()` in `pr.ts` is
  * the single place that decides how an absent weight compares.
  */
-export const weightUnitSchema = z.enum(["kg", "lb"]);
-export type WeightUnit = z.infer<typeof weightUnitSchema>;
-
-/** Options for the unit picker, in the order they should appear. */
-export const UNITS: Array<{ value: WeightUnit; label: string }> = [
-  { value: "kg", label: "kg" },
-  { value: "lb", label: "lb" },
-];
-
 export const loggedSetSchema = z.object({
   id: z.string(),
   /** Epoch ms. Editable, so a backfilled set can be dated to when it happened. */
