@@ -55,6 +55,24 @@ body {
 }
 
 /*
+ * Series colours for the body-composition charts.
+ *
+ * Slots 1 and 2 of the house data-viz palette, with their own dark steps —
+ * the preset's `--chart-1..5` are greys, which is fine for a monochrome
+ * dashboard and useless for a line you have to follow. Validated against both
+ * card surfaces (contrast, chroma, lightness band, CVD separation).
+ */
+:root {
+  --chart-weight: #2a78d6;
+  --chart-body-fat: #eb6834;
+}
+
+.dark {
+  --chart-weight: #3987e5;
+  --chart-body-fat: #d95926;
+}
+
+/*
  * The FFMI chart's conventional spectrum. Stops are placed at the band
  * boundaries so each label sits over its own hue; the same ramp serves both
  * modes because the track is opaque and the labels carry their own shadow.

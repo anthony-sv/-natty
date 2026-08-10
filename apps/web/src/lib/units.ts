@@ -29,3 +29,19 @@ const KG_PER_LB = 0.45359237;
 export function toKilograms(weight: number, unit: WeightUnit): number {
   return unit === "lb" ? weight * KG_PER_LB : weight;
 }
+
+/**
+ * The same load expressed in another unit.
+ *
+ * Needed where a run of entries has to share one axis: a chart mixing 82kg and
+ * 181lb points would draw a cliff that isn't there. Display still shows what
+ * was entered — this is for plotting and arithmetic only.
+ */
+export function convertWeight(
+  weight: number,
+  from: WeightUnit,
+  to: WeightUnit,
+): number {
+  if (from === to) return weight;
+  return to === "kg" ? weight * KG_PER_LB : weight / KG_PER_LB;
+}
