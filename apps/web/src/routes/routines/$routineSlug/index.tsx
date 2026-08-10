@@ -1,12 +1,33 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Page } from "@/components/page";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { ChevronRightIcon } from "lucide-react";
+import { Page } from "@/components/page";
 import { Badge } from "@/components/ui/badge";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
-import { Item, ItemActions, ItemContent, ItemTitle } from "@/components/ui/item";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { routineQueryOptions } from "@/features/routines/queries";
-import { formatDefaultPrescription, formatWeekLabel } from "@/features/routines/lib/format";
+import {
+  exerciseDisplayName,
+  formatDefaultPrescription,
+  formatWeekLabel,
+} from "@/features/routines/lib/format";
+import { summariseRoutine } from "@/features/routines/lib/summary";
 import type { TrainingWeek } from "@/data/routines";
 
 export const Route = createFileRoute("/routines/$routineSlug/")({
@@ -28,12 +49,36 @@ export const Route = createFileRoute("/routines/$routineSlug/")({
 function RoutineDetail() {
   const { routineSlug } = Route.useParams();
   const { data: routine } = useSuspenseQuery(routineQueryOptions(routineSlug));
+  const summary = summariseRoutine(routine);
 
   return (
     <Page>
-      <div>
-        <h1 className="text-2xl font-semibold">{routine.name}</h1>
-        <div className="mt-2 flex flex-wrap gap-1.5">
+      {/* The only way back up until now was the browser button — this page had
+          no link to the list it came from. */}
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink render={<Link to="/routines" />}>
+              Routines
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{routine.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h1 className="text-2xl font-semibold">{routine.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            {summary.length} · {summary.trainingDays} training day
+            {summary.trainingDays === 1 ? "" : "s"}
+            {summary.restDays > 0 ? ` · ${summary.restDays} rest` : ""}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
           {routine.source ? <Badge variant="outline">{routine.source}</Badge> : null}
           {routine.style ? <Badge variant="secondary">{routine.style}</Badge> : null}
           {routine.goal ? <Badge>{routine.goal}</Badge> : null}
@@ -75,33 +120,53 @@ function WeekDayList({
   week: TrainingWeek;
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <ItemGroup className="gap-2">
       {week.days.map((day) => (
-        <Link
+        <Item
           key={day.dayNumber}
-          to="/routines/$routineSlug/week/$weekNumber/day/$dayNumber"
-          params={{
-            routineSlug,
-            weekNumber: week.weekNumber,
-            dayNumber: day.dayNumber,
-          }}
+          variant="outline"
+          className="items-start gap-x-4 gap-y-1"
+          render={
+            <Link
+              to="/routines/$routineSlug/week/$weekNumber/day/$dayNumber"
+              params={{
+                routineSlug,
+                weekNumber: week.weekNumber,
+                dayNumber: day.dayNumber,
+              }}
+            />
+          }
         >
-          <Item variant="outline">
-            <ItemContent>
-              <ItemTitle>
+          <ItemContent className="gap-1">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+              <ItemTitle className={day.isRest ? "text-muted-foreground" : ""}>
                 Day {day.dayNumber} — {day.label}
               </ItemTitle>
-            </ItemContent>
-            <ItemActions>
               {day.isRest ? (
                 <Badge variant="outline">Rest</Badge>
               ) : (
-                <Badge variant="secondary">{day.exercises.length} exercises</Badge>
+                <Badge variant="secondary">
+                  {day.exercises.length} exercise
+                  {day.exercises.length === 1 ? "" : "s"}
+                </Badge>
               )}
-            </ItemActions>
-          </Item>
-        </Link>
+            </div>
+
+            {/* What the day actually is. A row saying only "Day 3 —
+                Shoulder/Traps" made every program look the same from here, and
+                left two thirds of itself empty saying it. */}
+            {day.exercises.length > 0 ? (
+              <ItemDescription className="line-clamp-2">
+                {day.exercises.map(exerciseDisplayName).join(" · ")}
+              </ItemDescription>
+            ) : null}
+          </ItemContent>
+
+          <ItemActions>
+            <ChevronRightIcon className="size-4 text-muted-foreground" />
+          </ItemActions>
+        </Item>
       ))}
-    </div>
+    </ItemGroup>
   );
 }

@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import { eq, useLiveQuery } from "@tanstack/react-db";
+import { getExercise, getMovement } from "@/data/exercises";
 import { loggedSets } from "./collection";
 import { lastSetFor, prFrontier } from "./pr";
-import type { LoggedSet } from "./schema";
+import { toRecordRows, type RecordRow } from "./records";
 
 /**
  * Everything logged for one exercise, with its records and most recent set.
@@ -35,37 +36,31 @@ export function useExerciseLog(exerciseId: string | undefined) {
   );
 }
 
-/** Every logged set, grouped by exercise — the /progress overview. */
-export interface ExerciseLogGroup {
-  exerciseId: string;
-  sets: LoggedSet[];
-  frontier: LoggedSet[];
-  lastPerformedAt: number;
-}
-
-export function useLogByExercise(): {
-  groups: ExerciseLogGroup[];
+/**
+ * Every record across every exercise, one row each — what /progress shows.
+ *
+ * The naming is resolved here rather than in the column definitions so the
+ * exercise name is part of the row, and therefore part of what the table's
+ * global filter searches.
+ */
+export function useAllRecords(): {
+  rows: RecordRow[];
   isLoading: boolean;
+  loggedSetCount: number;
 } {
   const { data, isLoading } = useLiveQuery((q) => q.from({ set: loggedSets }));
 
-  const groups = useMemo(() => {
-    const byExercise = new Map<string, LoggedSet[]>();
-    for (const set of data ?? []) {
-      const existing = byExercise.get(set.exerciseId);
-      if (existing) existing.push(set);
-      else byExercise.set(set.exerciseId, [set]);
-    }
-    return [...byExercise.entries()]
-      .map(([exerciseId, sets]) => ({
-        exerciseId,
-        sets,
-        frontier: prFrontier(sets),
-        lastPerformedAt: Math.max(...sets.map((s) => s.performedAt)),
-      }))
-      // Most recently trained first — what you did today is what you want to see.
-      .sort((a, b) => b.lastPerformedAt - a.lastPerformedAt);
-  }, [data]);
+  const rows = useMemo(
+    () =>
+      toRecordRows(data ?? [], {
+        exerciseName: (id) => getExercise(id)?.name ?? id,
+        movementName: (id) => {
+          const exercise = getExercise(id);
+          return exercise ? getMovement(exercise.movementId)?.name : undefined;
+        },
+      }),
+    [data],
+  );
 
-  return { groups, isLoading };
+  return { rows, isLoading, loggedSetCount: data?.length ?? 0 };
 }

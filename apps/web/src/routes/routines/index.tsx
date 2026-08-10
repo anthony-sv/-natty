@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Page } from "@/components/page";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { RoutineCard } from "@/features/routines/components/RoutineCard";
+import { ItemGroup } from "@/components/ui/item";
+import { RoutineRow } from "@/features/routines/components/RoutineRow";
 import { routinesQueryOptions } from "@/features/routines/queries";
 
 export const Route = createFileRoute("/routines/")({
@@ -15,12 +16,19 @@ function RoutinesIndex() {
 
   return (
     <Page>
-      <h1 className="text-2xl font-semibold">Routines</h1>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {routines.map((routine) => (
-          <RoutineCard key={routine.slug} routine={routine} />
-        ))}
+      <div>
+        <h1 className="text-2xl font-semibold">Routines</h1>
+        <p className="text-sm text-muted-foreground">
+          {routines.length} programs. Each one lists the split it runs.
+        </p>
       </div>
+      {/* A single column: the rows carry a week's worth of day labels, and
+          side-by-side they'd wrap into the same tall boxes this replaced. */}
+      <ItemGroup className="gap-2">
+        {routines.map((routine) => (
+          <RoutineRow key={routine.slug} routine={routine} />
+        ))}
+      </ItemGroup>
     </Page>
   );
 }

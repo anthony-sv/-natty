@@ -10,6 +10,7 @@ import {
 import { profileStore } from "@/features/profile/profile-store";
 import { useBodyEntries } from "../collection";
 import { describeFfmi, ffmi, formatIndex, leanMassKg, normalizedFfmi } from "../ffmi";
+import { BodyCharts } from "./BodyCharts";
 import { BodyEntryForm } from "./BodyEntryForm";
 import { FfmiMeter } from "./FfmiMeter";
 import { BodyHistoryTable } from "./BodyHistoryTable";
@@ -93,21 +94,37 @@ export function BodyPanel() {
         </CardContent>
       </Card>
 
-      {isLoading ? null : (
-        <Card>
-          <CardHeader>
-            <CardTitle>History</CardTitle>
-            <CardDescription>
-              {profile.sex === undefined && normalized !== undefined
-                ? "Set your sex above to see where a normalized figure sits against population norms."
-                : "Most recent first."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <BodyHistoryTable entries={entries} heightCm={profile.heightCm} />
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Trend</CardTitle>
+          <CardDescription>
+            Weight and body fat on their own scales — one chart each, since a
+            shared axis would only invite reading a crossing point as
+            meaningful.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <BodyCharts entries={entries} isLoading={isLoading} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>History</CardTitle>
+          <CardDescription>
+            {profile.sex === undefined && normalized !== undefined
+              ? "Set your sex above to see where a normalized figure sits against population norms."
+              : "Most recent first."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <BodyHistoryTable
+            entries={entries}
+            heightCm={profile.heightCm}
+            isLoading={isLoading}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

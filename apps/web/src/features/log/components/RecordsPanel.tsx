@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { SearchIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -6,14 +8,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
-import { getExercise, getMovement } from "@/data/exercises";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { LogEntryForm } from "./LogEntryForm";
-import { PrTable } from "./PrTable";
-import { useLogByExercise } from "../queries";
+import { RecordsTable } from "./RecordsTable";
+import { useAllRecords } from "../queries";
 
-/** The records half of /progress: per-exercise PRs, plus backfill logging. */
+/** The records half of /progress: every PR, plus backfill logging. */
 export function RecordsPanel() {
-  const { groups, isLoading } = useLogByExercise();
+  const { rows, isLoading, loggedSetCount } = useAllRecords();
+  // No debounce: the filter runs over rows already in memory, so a keystroke
+  // costs less than the lag a debounce would add.
+  const [search, setSearch] = useState("");
+
+  const hasNothingLogged = !isLoading && loggedSetCount === 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -30,7 +41,7 @@ export function RecordsPanel() {
         </CardContent>
       </Card>
 
-      {isLoading ? null : groups.length === 0 ? (
+      {hasNothingLogged ? (
         <Empty>
           <EmptyTitle>Nothing logged yet</EmptyTitle>
           <EmptyDescription>
@@ -38,27 +49,29 @@ export function RecordsPanel() {
           </EmptyDescription>
         </Empty>
       ) : (
-        groups.map((group) => {
-          const exercise = getExercise(group.exerciseId);
-          const movement = exercise
-            ? getMovement(exercise.movementId)
-            : undefined;
-          return (
-            <Card key={group.exerciseId}>
-              <CardHeader>
-                <CardTitle>{exercise?.name ?? group.exerciseId}</CardTitle>
-                <CardDescription>
-                  {movement ? `${movement.name} · ` : ""}
-                  {group.sets.length} set
-                  {group.sets.length === 1 ? "" : "s"} logged
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <PrTable frontier={group.frontier} />
-              </CardContent>
-            </Card>
-          );
-        })
+        <Card>
+          <CardHeader>
+            <CardTitle>Records</CardTitle>
+            <CardDescription>
+              The best weight at each rep count, per exercise — a set only shows
+              here when nothing beat it on both weight and reps.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <InputGroup>
+              <InputGroupAddon>
+                <SearchIcon />
+              </InputGroupAddon>
+              <InputGroupInput
+                aria-label="Search records by exercise"
+                placeholder="Search exercises..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </InputGroup>
+            <RecordsTable rows={rows} isLoading={isLoading} search={search} />
+          </CardContent>
+        </Card>
       )}
     </div>
   );

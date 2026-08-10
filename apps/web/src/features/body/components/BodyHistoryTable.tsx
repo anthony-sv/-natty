@@ -21,6 +21,7 @@ function buildColumns(heightCm: number | undefined) {
   return column.columns([
     column.accessor("measuredAt", {
       header: "Date",
+      sortFn: "datetime",
       cell: (info) => (
         <span className="text-muted-foreground">
           {dateFormat.format(new Date(info.getValue()))}
@@ -29,6 +30,7 @@ function buildColumns(heightCm: number | undefined) {
     }),
     column.accessor("weight", {
       header: "Weight",
+      sortFn: "basic",
       cell: (info) => (
         <span className="font-medium tabular-nums">
           {info.getValue()} {info.row.original.unit}
@@ -37,6 +39,8 @@ function buildColumns(heightCm: number | undefined) {
     }),
     column.accessor("bodyFatPercent", {
       header: "Body fat",
+      sortFn: "basic",
+      sortUndefined: "last",
       cell: (info) => {
         const value = info.getValue();
         return (
@@ -46,6 +50,8 @@ function buildColumns(heightCm: number | undefined) {
         );
       },
     }),
+    // Display columns have no value to compare, so neither is sortable — FFMI
+    // tracks weight and body fat anyway, both of which are.
     column.display({
       id: "ffmi",
       header: "FFMI",
@@ -70,15 +76,20 @@ function buildColumns(heightCm: number | undefined) {
 export function BodyHistoryTable({
   entries,
   heightCm,
+  isLoading,
 }: {
   entries: BodyEntry[];
   heightCm: number | undefined;
+  /** Optional, like `DataTable`'s own — an omitted one just isn't loading. */
+  isLoading?: boolean;
 }) {
   const columns = useMemo(() => buildColumns(heightCm), [heightCm]);
   return (
     <DataTable
       columns={columns}
       data={entries}
+      isLoading={isLoading}
+      devtoolsKey="body-history"
       empty="No weigh-ins logged yet."
     />
   );

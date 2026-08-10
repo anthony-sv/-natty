@@ -8,6 +8,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { FormDevtoolsPanel } from "@tanstack/react-form-devtools";
 import { HotkeysDevtoolsPanel } from "@tanstack/react-hotkeys-devtools";
 import { PacerDevtoolsPanel } from "@tanstack/react-pacer-devtools";
+import { TableDevtoolsPanel } from "@tanstack/react-table-devtools";
 import { Toaster } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { routeTree } from "./routeTree.gen";
@@ -49,6 +50,12 @@ if (!rootElement.innerHTML) {
                 render: <TanStackRouterDevtoolsPanel router={router} />,
               },
               { name: "TanStack Form", render: <FormDevtoolsPanel /> },
+              {
+                // Every mounted DataTable registers itself, so the panel lists
+                // them by key — no single instance to hand it.
+                name: "TanStack Table",
+                render: <TableDevtoolsPanel />,
+              },
               {
                 name: "TanStack Hotkeys",
                 render: (_el, props) => <HotkeysDevtoolsPanel {...props} />,

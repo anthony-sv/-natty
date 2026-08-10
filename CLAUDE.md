@@ -52,6 +52,52 @@ Or scope to one app: `pnpm --filter web <script>`.
   `getCoreRowModel()` (automatic), `row.getAllCells()` rather than
   `getVisibleCells()` unless `columnVisibilityFeature` is registered, and
   row/cell methods live on prototypes so don't destructure them.
+  - Registered: row sorting and column + global filtering, each with its
+    processing slot (`createSortedRowModel()`, `createFilteredRowModel()`) —
+    v9 checks slot prerequisites, and global filtering additionally requires
+    `columnFilteringFeature`. `sortFns` names only the three comparators the
+    app's columns reference, since the wholesale registry bundles every
+    built-in. Sorting is table-owned (a header button per accessor column);
+    the global filter is caller-owned, so `DataTable` takes the value with no
+    change handler. Pass `globalFilterColumns` — the default eligibility
+    accepts *number* columns too, so a search for "8" would match rep counts.
+  - Grouping (`grouping` prop → `initialState`) needs `rowExpandingFeature`
+    registered too, or a grouped table renders headings with nothing under
+    them. Group rows start expanded so the grouping reads as headings over the
+    same list, not as hiding everything behind a click. No aggregation feature:
+    group rows carry a heading and a count we render, not a rolled-up value.
+    Count leaves by walking `subRows` — the render model interleaves group rows
+    with expanded leaves, so filtering *it* counts the wrong things.
+  - **Don't set `groupedColumnMode: "remove"`.** It looks right (the grouped
+    column's value is already the heading, so its cells are blank) but it
+    silently kills the global filter for that column — dropped from the
+    rendered columns, dropped from filtering, and every search matches
+    everything. Keep the column and narrow its grid slot to an indent instead;
+    `DataTable` blanks the grouped header and renders placeholder cells empty.
+  - `getGroupingValue` on a column def splits the grouped-by value from the
+    accessor value. The records table needs that: its accessor returns name +
+    movement so the filter can see both, while headings show only the name.
+  - `alignEnd` takes column ids and pushes their header *and* cells to the
+    right of the slot. On a wide card, left-packing three short values leaves
+    two thirds of every row empty; the trailing date belongs at the far edge.
+    It lives on the component because the header sits inside a flex cell the
+    component owns, so a cell renderer alone can't move it.
+  - Virtualization is a `virtual` prop, not a feature: TanStack Virtual
+    controls rendering geometry only. It needs `gridTemplate` because the rows
+    are absolutely positioned and the table layout algorithm can't size the
+    columns. The height goes on `ui/table.tsx`'s own `overflow-x-auto`
+    container (reached by `[data-slot=table-container]` from outside), because
+    a second nested scroll container would become the scrollport and break the
+    sticky header. The scroll element is held in **state**, not a ref: the
+    virtualizer attaches its scroll listener when that value changes from
+    null, and a ref gives it no render in which to notice.
+  - Loading and empty are the same prop pair everywhere: `isLoading` renders
+    skeleton rows, `empty` renders a message row. Neither actually fires for a
+    localStorage collection, which resolves before the first paint — they are
+    for the server adapter that replaces it.
+  - **A hidden tab never fires scroll events**, so a virtualized list looks
+    frozen when you drive it from an automated browser session. Check
+    `document.visibilityState` before concluding the virtualizer is broken.
 - Toasts: Base UI's, via the `toast` singleton exported from `ui/toast.tsx`, so
   anything can raise one without a hook. `<Toaster>` is mounted once in
   `main.tsx` wrapping `RouterProvider`. `collection.insert()` returns a
@@ -169,12 +215,58 @@ holds auto-start when you tap done, cardio waits for an explicit Start. Trailing
 `rest` steps are trimmed (nothing to rest *for*), but a trailing `pose` is not —
 the last finisher set still ends on a hold.
 
+The day page leads with `DaySummaryStrip` — exercises, working sets, a rough
+time, and finishers when there are any — because the page listed the work
+without ever saying how much of it there was. `summariseDay` derives all of it
+from `buildSteps`, the same list the player runs on, rather than counting the
+prescriptions separately: two counts of one thing drift. `WORK_SET_SECONDS` is
+the estimate's only guess; rest, pose holds and cardio all carry real
+durations. The strip hides itself mid-session, where the player already says
+where you are.
+
+Each row carries `SetDots`, one mark per set. The chips say "2×10-12 · 90s
+rest" precisely, but reading a day's volume off them means adding up numbers
+across rows — marks are countable at a glance, so a seven-set finisher visibly
+outweighs a three-set accessory. Phases alternate mark *weight* rather than
+hue: a ramp's heavier last phase is a difference of emphasis, not of category.
+
 `DayExerciseList` splits the day into phases with `Marker variant="separator"`
 — "Main work" / "Mobility" / "Stretch" / "Cardio", grouped by `kind`. Dividers
 only appear when a day has more than one phase, and `groupIntoPhases()` carries
 each entry's **original index**: `activeExerciseIndex` refers to a position in
 `day.exercises`, so renumbering would move the active-set highlight to the wrong
 row. Warmups stay in their own collapsible and are not player steps.
+
+### Browsing programs
+
+`/routines` is a list of rows (`RoutineRow` on shadcn's `Item`), not a card
+grid. The grid version was three lines of text in boxes tall enough for six,
+and every program read as "8 weeks" — the one thing that distinguishes them,
+the split, wasn't on screen at all. Each row now carries the training-day
+labels from week one, which is both the missing information and what fills the
+space. `summariseRoutine` derives it and is unit-tested.
+
+`Item` composes through `useRender`, so it takes `render={<Link/>}` and the row
+*is* the anchor — no wrapper `<a>` around a card, which is what made the old
+one's focus ring sit around the wrong box.
+
+The program page applies the same fix a level down: each day row lists its
+exercise names rather than only "Day 3 — Shoulder/Traps", so the six programs
+stop looking alike from inside one. Rest days carry no list and collapse to a
+slim row.
+
+`Breadcrumb` runs the trail on both the program and day pages — Routines ›
+Program › Day. The program page had **no** way back to the list at all, and the
+day page's bare "← name" said where you'd come from but not where you were.
+`BreadcrumbLink` composes with `render={<Link/>}` the same way `Item` does.
+
+### The index
+
+`/` is a launchpad, not a landing page: the resume card (or a start prompt),
+a stat strip, then a card per destination. The strip renders only once the log
+or the weigh-ins have something in them — a row of zeroes on a first run is
+noise on the one screen with nothing to say. Add a destination card whenever a
+route lands; the sidebar alone stops being a good map of the app fast.
 
 ## Set logging (`src/features/log/`)
 
@@ -197,6 +289,16 @@ on a frontier is also fewest-reps-first.
 `prForRepRange()` picks the row the player shows: the heaviest record reaching
 the set's prescribed *lower* rep bound — a 1RM above a set of 8-12 is noise.
 Falls back to the heaviest record when you've never gone that long.
+
+**/progress shows one records table, not a card per exercise.** With 113
+exercises a page that grows a card each can't be searched, sorted or
+virtualized; carrying the exercise name on the row lets one table do all three,
+and the table then groups by exercise so a lift's records still read as a block.
+`records.ts` does that flattening — pure and naming-injected, like `pr.ts`, so
+it tests without the exercise library or the collection. The exercise column's
+accessor returns name *plus* movement so searching "row" finds the seated cable
+row, while the cell renders only the curated name; a hidden movement column
+would filter the same way but leave an empty cell in every row.
 
 Weight is optional, and `effectiveWeight()` is the one place that decides how
 two sets compare by load: an absent weight sorts as 0 (so `+20kg × 8` beats
@@ -264,14 +366,15 @@ nothing in common and nothing queries across them.
 adjusts to a 1.8 m reference with the standard `+ 6.1 × (1.8 − h)` correction
 because raw FFMI still drifts with height.
 
-**Height and sex live on the profile, not the entry** — see
+**Standing facts live on the profile, not the entry** — see
 `src/features/profile/profile-store.ts`, a plain TanStack Store persisted to
 localStorage in the same shape as `session-store.ts`, since a single
 always-present record doesn't want a queryable collection. Height is the FFMI
 denominator; storing it once means correcting a typo recalculates every row.
 Sex only picks which population the reference band comes from — fat-free mass
 norms differ enough that one scale would misdescribe half its readers — and
-when it's unset the numbers still show, just without a band.
+when it's unset the numbers still show, just without a band. `wristCm` and
+`ankleCm` are there for the same reason, and are only read by `/calculator`.
 
 `FfmiMeter` plots the normalized figure against those bands, on the classic
 FFMI chart's spectrum track (`--ffmi-spectrum` in `styles.css`).
@@ -290,11 +393,155 @@ Published cut-offs vary between sources, so finer gradations would imply
 precision the data doesn't support, and they say nothing about how a physique
 was built.
 
+### Trend charts (`BodyCharts.tsx`)
+
+The app's first TanStack Charts work: `lineY` + `dot` per measure, `scaleTime`
+x, `scaleLinear` y, through the `Chart` adapter from `@tanstack/react-charts`.
+Definitions are memoized on the rows because definition identity is the host's
+update boundary.
+
+**Weight and body fat get one chart each — never one chart with two y-axes.**
+They share no scale, and a second axis invites reading the crossing point as
+meaningful. Stacking them keeps the dates lined up by eye anyway.
+
+Points are converted to the *latest* entry's unit before plotting, since a run
+mixing 82kg and 181lb would draw a cliff that isn't there — `convertWeight` in
+`lib/units.ts`. Storage still keeps what was entered; the history table reads
+each row back in its own unit.
+
+Three things the library's defaults get wrong for this app, all fixed in the
+definitions: `theme` is overridden because the defaults are `currentColor` for
+foreground, muted *and* grid, which draws grid lines in body-text ink; the
+tooltip needs explicit `items` or it labels the x row "x" and prints a UTC ISO
+string; and the preset's `--chart-1..5` are greyscale, so the series colours are
+`--chart-weight` / `--chart-body-fat` in `styles.css` — slots 1 and 2 of the
+`dataviz` palette with their own dark steps, run through the skill's validator
+against both card surfaces.
+
+A single weigh-in is a dot, not a trend, so under two points the chart is
+replaced by an `Empty`.
+
+## Calculators (`src/features/calculator/`)
+
+`/calculator` is three tabs, all pure arithmetic — nothing here reads or writes
+the training log, beyond seeding a field from the latest weigh-in. Every panel
+is live: no submit button, results recalculate as you type, which is why
+`parse.ts` resolves a half-typed value to undefined rather than to an error
+that flashes on every keystroke.
+
+Plate loading is deliberately **not** a tab — see `/plates` below. It's the one
+you open standing at a rack rather than sitting down planning.
+
+### One-rep max (`one-rep-max.ts`)
+
+Epley, Brzycki, Lander, Lombardi and Mayhew, each carrying both directions:
+reps → max, and max → the load for a set of N. The inverse is what makes the
+estimate actionable and is half of what the tab shows.
+
+All five are displayed rather than one, because they disagree by 5kg+ once reps
+climb and a single number hides that. The tab shows the median as the headline
+and the spread underneath. The chosen formula only drives the rep table.
+
+`estimateAll` refuses a single rep. A single *is* the max, so there's nothing
+to estimate — and the formulas don't even agree on it (Epley reads a true
+single as 103% of itself, Mayhew as 109%), so five rows would be five wrong
+answers to a settled question. `one-rep-max.test.ts` pins that disagreement.
+
+### RPE (`rpe.ts`)
+
+**The published RPE grid is stored as one 23-entry list, not a 108-cell
+table.** Every cell in it is a function of one quantity — how many reps the set
+would have reached at failure. A single @ RPE 9 leaves one in reserve, so it
+sits exactly where a double @ RPE 10 sits: 95.5%. Storing the grid would let
+its two axes drift apart; deriving it can't. A test asserts the identity
+directly.
+
+Off-chart input returns undefined rather than extrapolating — past twelve reps
+to failure the relationship flattens and the published table stops for a
+reason. Quarter-point RPEs return undefined too; only the half-steps are
+published.
+
+### Natural potential (`casey-butt.ts`)
+
+Casey Butt's empirical model: peak lean body mass, plus the girths that come
+with it, from height, wrist, ankle and body fat. Wrist and ankle are the frame
+proxies — mostly bone and tendon, so they barely move with training or body fat.
+
+`casey-butt.ts` is pure and works in **inches and pounds internally**, even
+though the boundary is cm/kg. The mass formula has a published metric
+restatement but the six girth formulas are only published in inches, so keeping
+one internal unit avoids two conversion conventions in one file.
+
+`casey-butt.test.ts` pins all seven outputs against the published calculator's
+own numbers for 179cm / 18cm / 23cm / 12% — 83.2kg lean, and neck through calf.
+A mistyped coefficient fails there instead of rendering a plausible wrong
+number. `REALISTIC_SHARE` is the conventional 95% quoted alongside each figure.
+
+Height/wrist/ankle write straight through to the profile store on change, the
+way `ProfileFields` does — no submit button, results recalculate live. Body fat
+is deliberately **local** state seeded from the latest weigh-in: the log owns
+the real history, so the field here is a what-if dial, not a record.
+
+`potentialFor` returns undefined unless all four inputs are usable, so a
+half-filled form shows an `Empty` rather than "NaN kg". `percentOfPotential`
+can exceed 100 and is not clamped — only the progress bar is. The model is a
+fit to a population, not a wall, and the page says so.
+
+**A muscle-to-bone-ratio feature was built and removed.** The estimate-only
+form of it is a constant — bone and muscle both being fixed fractions of
+fat-free mass makes the ratio 0.65/0.145 = 4.48 for everyone — and the measured
+form doesn't work either, because an InBody reports bone *mineral* content
+rather than whole bone mass. Don't rebuild it without a real bone-mass source.
+
+## Plate loader (`src/features/plates/`)
+
+`/plates` — its own route, not a calculator tab, because it's the one you open
+at the rack rather than at a desk. Two directions: a target weight in, plates
+out; or plates in, total out.
+
+**The solver is not greedy.** Taking the heaviest plate that fits is right for
+an unlimited rack and wrong the moment a gym runs out of something: 13.75 a
+side with no 10s makes greedy take 5 + 5 + 2.5 and stall two and a half short,
+while 5 + 5 + 2.5 + 1.25 was on the rack the whole time. `solve.ts` is a
+bounded subset-sum minimising plate count, one DP layer per denomination.
+
+Layered rather than one rolled-up array specifically so reconstruction can't
+walk back through the same denomination twice and spend pairs the rack doesn't
+have — the bug the layering exists to prevent.
+
+**Everything is integer hundredths inside.** Plate weights are decimal and
+repeated float addition drifts; `47.5 - 20` is not exactly `27.5` to a
+computer. The boundary converts back.
+
+Inventory is in **pairs**, not plates: a single plate can't be loaded
+symmetrically, so half a pair is no pair. Zeroing a denomination is a supported
+move, not an edge case — it's what makes the search worth having.
+
+Kilo discs carry their competition colours (red 25, blue 20, yellow 15, green
+10, white 5, repeating on the change plates). Pound plates have no equivalent
+standard, so they get one neutral steel finish rather than an invented scheme
+that would read as meaning something. Disc *size* scales with weight on a cube
+root — a flat ratio renders a 1.25 as a sliver.
+
+**A plate is drawn twice, from two angles, and they are different components.**
+`PlateDisc` is face-on — an SVG with a coloured body, a bevel, a steel hub and
+the weight printed on the hub, because a row of coloured chips with numbers on
+them is a legend rather than a picture of your rack. `PlateEdge`, inside
+`BarDiagram`, is the same plate seen from the side: a thin slab whose height
+*and* thickness track the weight, since that is what tells a 25 from a 10 on a
+loaded bar. Using the face-on disc in the bar diagram would draw a bar strung
+with coins.
+
+Discs are tapped to add and remove rather than right-clicked: a context menu is
+undiscoverable on the phone you're actually holding at the rack.
+
 ## Shared units (`src/lib/units.ts`)
 
-`weightUnitSchema`, `UNITS` and `toKilograms` live in `lib/` rather than inside
-a feature because both `features/log` and `features/body` need them, and a
-feature importing another feature's schema is coupling worth avoiding.
+`weightUnitSchema`, `UNITS`, `toKilograms` and `convertWeight` live in `lib/`
+rather than inside a feature because both `features/log` and `features/body`
+need them, and a feature importing another feature's schema is coupling worth
+avoiding. `toKilograms` is for comparison, `convertWeight` for putting a run of
+entries on one axis — neither ever changes what is stored.
 
 ### Forms
 
@@ -343,18 +590,22 @@ reads like exercise naming but isn't:
 
 A single unified `TanStackDevtools` panel is mounted in `src/main.tsx` (dev
 only, gated on `import.meta.env.DEV`), with per-library panels registered as
-plugins: Query, Router, Form, Hotkeys, Pacer. Not every library has a devtools
-package — DB, Store, Virtual, Charts, Markdown, and Highlight don't ship one
-(confirmed against npm, not just docs).
+plugins: Query, Router, Form, Hotkeys, Table, Pacer. Not every library has a
+devtools package — DB, Store, Virtual, Charts, Markdown, and Highlight don't
+ship one (confirmed against npm, not just docs).
 
-Table's devtools panel needs a *single* live table instance (`table` and
-`setIsOpen` props), and `/progress` renders one `DataTable` per exercise — so
-there's no one instance to hand it and the panel stays unwired. It becomes
-wireable if a single-table view ever lands:
+Table's panel takes no `table` prop. Each live table registers itself by
+calling `useTanStackTableDevtools(table)` — `DataTable` does it once, gated on
+`devtoolsKey !== undefined`, and that key (`useTable`'s `key` option) is how the
+panel names it in its table picker. Several tables on a page is the normal case,
+not the blocker it used to be.
 
-```tsx
-{ name: "TanStack Table", render: (_el, props) => <ReactTableDevtoolsPanel {...props} table={table} /> }
-```
+That registration is the one devtools import app code makes, so unlike the
+panels above it isn't inside a dead `import.meta.env.DEV` branch and can't be
+tree-shaken. `vite.config.ts` aliases `@tanstack/react-table-devtools` to
+`src/lib/table-devtools-stub.ts` in production builds so ~200KB of a
+devDependency doesn't ship. The alias is bundler-only: TypeScript still resolves
+the real package, so the call sites stay honestly typed.
 
 `HotkeysDevtoolsPanel` requires `theme`/`devtoolsOpen` props that the shell
 only injects via the function form of `render` — use

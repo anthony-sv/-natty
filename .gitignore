@@ -7,6 +7,8 @@ dist/
 .DS_Store
 Thumbs.db
 apps/*/src/routeTree.gen.ts
+# Scratch files the TanStack Router plugin writes while code-splitting routes.
+apps/*/.tanstack/
 
 # Agent skills are vendored in .agents/skills/; .claude/skills/ is only a
 # mirror of it (a symlink on POSIX, a copy on Windows), so committing both

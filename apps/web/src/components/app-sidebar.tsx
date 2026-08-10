@@ -1,5 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { DumbbellIcon, HomeIcon, ListIcon, TrendingUpIcon } from "lucide-react";
+import {
+  CalculatorIcon,
+  CircleDotIcon,
+  DumbbellIcon,
+  HomeIcon,
+  ListIcon,
+  TrendingUpIcon,
+} from "lucide-react";
 import { Kbd } from "@/components/ui/kbd";
 import {
   Sidebar,
@@ -29,6 +36,8 @@ const NAV = [
   { to: "/", label: "Home", icon: HomeIcon },
   { to: "/routines", label: "Routines", icon: ListIcon },
   { to: "/progress", label: "Progress", icon: TrendingUpIcon },
+  { to: "/calculator", label: "Calculators", icon: CalculatorIcon },
+  { to: "/plates", label: "Plate loader", icon: CircleDotIcon },
 ] as const;
 
 export function AppSidebar() {
