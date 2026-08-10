@@ -664,6 +664,73 @@ with coins.
 Discs are tapped to add and remove rather than right-clicked: a context menu is
 undiscoverable on the phone you're actually holding at the rack.
 
+## Internationalization (`src/i18n/`)
+
+English and **es-MX**, hand-rolled rather than i18next — that would be ~40KB and
+a declaration-merge dance to get typed keys. Here the English dictionary *is*
+the type: `messages/es-MX.ts` is declared `Record<keyof typeof en, string>`, so a
+missing, misspelled or orphaned key fails the build instead of rendering a raw
+key at runtime.
+
+**URLs stay English.** The router does support optional segments (`{-$locale}`),
+but a locale prefix means moving every route file and threading `params.locale`
+through every `<Link>`, and buys nothing for an app nobody indexes. Locale is a
+stored preference, like the theme — `locale-store.ts` mirrors `theme-store.ts`
+including its "no system mode" rule, seeds once from `navigator.language`
+(matching on the language subtag, so `es-ES` lands on `es-MX`), and writes
+`document.documentElement.lang` at import time.
+
+**Two layers, because they fail differently.** `messages/` holds the app's own
+strings and the type system catches a gap. `names.ts` holds authored data names,
+where a gap is a catalog that hasn't caught up with a new exercise and should
+degrade to English rather than fail the build — `i18n.test.ts` is what stops one
+reaching a release.
+
+`src/data/` stays canonical English and is **not** touched, so adding an
+exercise doesn't require speaking Spanish. The catalog keys off ids where the
+data has them (113 exercises, 42 movements, 8 poses, 18 foods, 6 routines, 2
+plans) and off the **English source string** where it doesn't — day labels
+(`"Shoulder/Traps"`), meal names, variant labels, supplement timings and doses,
+and the free notes on foods, plans and hydration. Keying on a string is only
+safe because these are closed sets, which is exactly what the test walks.
+
+**`i18n.test.ts` is what makes the scope safe.** It walks the real data — the
+same discipline as `exercises.test.ts` and `macros.test.ts` — and reports gaps
+by name. It also asserts both dictionaries have identical keys, that
+`{placeholders}` match across languages (the type system can't see inside a
+string), that every plural key has an `.other` form, and that no message was
+copied across untranslated — via an **explicit allowlist** of the two dozen
+that are legitimately identical (loanwords, acronyms, symbols, pure templates),
+not a count threshold, so a new accidental copy fails by name.
+
+**Pure modules take an injected `{ names, t }`** (`Formatting`), the same shape
+`toRecordRows` already used for its `ExerciseNaming`. That's what lets
+`format.ts` and `buildSteps` render in the reader's language without importing a
+store, and `formattingFor()` in `test-formatting.ts` gives tests the same pair
+without a hook. `useFormatting` memoises it, and `useNames`/`useT` memoise on the
+locale — several callers put these in `useMemo` deps, where a fresh object each
+render would rebuild a day's steps on every unrelated change.
+
+**Plurals go through `Intl.PluralRules`, never `n === 1`.** English and Spanish
+happen to agree, so this looks like overkill for two locales — but hard-coding
+the comparison is the thing that has to be *undone* later rather than extended.
+Weekday names come from `Intl` too (`use-weekdays.ts`, walking forward from a
+fixed Monday), not the dictionary: the platform already knows them in every
+locale.
+
+**Every `Intl.DateTimeFormat` builds from the active locale**, via
+`useDateFormat`. They were all constructed with `undefined`, which follows the
+*browser* rather than the app — so switching to Spanish would have left every
+date in English.
+
+**Zod schemas are built per locale** (`buildSchema(t)`) rather than at module
+scope, because a validation message is a string like any other and Zod bakes it
+into the schema. Same for table column lists, whose headers are strings.
+
+The language picker is a `Select` in the sidebar footer beside `ThemeToggle` —
+theme is a `Switch` because it's binary; a language list isn't. Options are
+written in their own language, as language pickers always are.
+
 ## Shared units (`src/lib/units.ts`)
 
 `weightUnitSchema`, `UNITS`, `toKilograms` and `convertWeight` live in `lib/`

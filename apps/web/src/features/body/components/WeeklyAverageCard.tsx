@@ -7,14 +7,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useDateFormat, useT } from "@/i18n/use-t";
 import type { WeightUnit } from "@/lib/units";
 import { cn } from "@/lib/utils";
 import { DAYS_IN_WEEK, weekOverWeek, type WeeklyAverage } from "../weekly";
 
-const weekLabel = new Intl.DateTimeFormat(undefined, {
+const WEEK_LABEL: Intl.DateTimeFormatOptions = {
   day: "numeric",
   month: "short",
-});
+};
 
 /** Weight changes are small, so a rounded-to-the-kilo figure would show none. */
 function formatWeight(value: number, unit: WeightUnit): string {
@@ -57,6 +58,8 @@ export function WeeklyAverageCard({
   weekly: WeeklyAverage[];
   unit: WeightUnit;
 }) {
+  const t = useT();
+  const weekLabel = useDateFormat(WEEK_LABEL);
   const change = weekOverWeek(weekly);
   if (change === undefined) return null;
 
@@ -67,19 +70,20 @@ export function WeeklyAverageCard({
     <Card>
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-          <span>Weekly average</span>
+          <span>{t("weekly.title")}</span>
           {latest.isPartial ? (
             <Badge variant="outline">
-              {latest.count} of {DAYS_IN_WEEK} days
+              {t("weekly.partialBadge", {
+                count: latest.count,
+                total: DAYS_IN_WEEK,
+              })}
             </Badge>
           ) : null}
         </CardTitle>
         <CardDescription>
-          {latest.isPartial
-            ? // Said plainly rather than hidden: a Monday-to-Wednesday mean sits
-              // lower than a full week for reasons that aren't fat loss.
-              "This week is still running, so it's an average of the days so far — it'll move as the week fills in."
-            : "Monday to Sunday. A day-to-day change is mostly water; a week-to-week one isn't."}
+          {/* Said plainly rather than hidden: a Monday-to-Wednesday mean sits
+              lower than a full week for reasons that aren't fat loss. */}
+          {latest.isPartial ? t("weekly.partialBody") : t("weekly.body")}
         </CardDescription>
       </CardHeader>
 
@@ -87,7 +91,9 @@ export function WeeklyAverageCard({
         <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">
-              Week of {weekLabel.format(new Date(latest.weekStart))}
+              {t("weekly.weekOf", {
+                date: weekLabel.format(new Date(latest.weekStart)),
+              })}
             </span>
             <span className="text-3xl font-semibold tabular-nums">
               {formatWeight(latest.weight, unit)}
@@ -96,14 +102,16 @@ export function WeeklyAverageCard({
 
           {deltaWeight === undefined || deltaPercent === undefined ? (
             <p className="text-sm text-muted-foreground">
-              One more week of weigh-ins and this shows the change.
+              {t("weekly.needAnother")}
             </p>
           ) : (
             <DeltaStat
               deltaWeight={deltaWeight}
               deltaPercent={deltaPercent}
               unit={unit}
-              previousLabel={weekLabel.format(new Date(previous!.weekStart))}
+              versusLabel={t("weekly.versus", {
+                date: weekLabel.format(new Date(previous!.weekStart)),
+              })}
             />
           )}
         </div>
@@ -111,7 +119,7 @@ export function WeeklyAverageCard({
         {recent.length > 1 ? (
           <div className="flex flex-col gap-1">
             <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Recent weeks
+              {t("weekly.recent")}
             </h3>
             <ul className="divide-y">
               {recent.map((week, index) => {
@@ -124,8 +132,11 @@ export function WeeklyAverageCard({
                     className="flex items-center justify-between gap-4 py-1.5 text-sm"
                   >
                     <span className="text-muted-foreground">
-                      {weekLabel.format(new Date(week.weekStart))}
-                      {week.isPartial ? " · so far" : ""}
+                      {week.isPartial
+                        ? t("weekly.soFar", {
+                            date: weekLabel.format(new Date(week.weekStart)),
+                          })
+                        : weekLabel.format(new Date(week.weekStart))}
                     </span>
                     <span className="flex items-center gap-3 tabular-nums">
                       <span className="font-medium">
@@ -140,7 +151,7 @@ export function WeeklyAverageCard({
                         )}
                       >
                         {before === undefined
-                          ? "—"
+                          ? t("common.none")
                           : formatDelta(week.weight - before.weight, unit)}
                       </span>
                     </span>
@@ -167,12 +178,12 @@ function DeltaStat({
   deltaWeight,
   deltaPercent,
   unit,
-  previousLabel,
+  versusLabel,
 }: {
   deltaWeight: number;
   deltaPercent: number;
   unit: WeightUnit;
-  previousLabel: string;
+  versusLabel: string;
 }) {
   const Icon =
     deltaWeight > 0 ? TrendingUpIcon : deltaWeight < 0 ? TrendingDownIcon : MinusIcon;
@@ -180,7 +191,7 @@ function DeltaStat({
   return (
     <div className="flex flex-col gap-1">
       <span className="text-xs text-muted-foreground">
-        vs week of {previousLabel}
+        {versusLabel}
       </span>
       <span className="flex items-center gap-2 text-xl font-semibold tabular-nums">
         <Icon className="size-5 text-muted-foreground" />

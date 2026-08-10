@@ -11,6 +11,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import type { DietPlan } from "@/data/diets";
 import { KCAL_PER_GRAM, KCAL_PER_GRAM_FIBRE, kcalOf, percentSplit } from "../macros";
+import { useNames } from "@/i18n/names";
+import { useT } from "@/i18n/use-t";
 import { MacroSplit } from "./MacroSplit";
 
 /** Upper ends, generous enough for a big bulk without making the grams fiddly. */
@@ -30,6 +32,8 @@ const ROWS = [
  * abstraction.
  */
 export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
+  const t = useT();
+  const names = useNames();
   const [macros, setMacros] = useState({
     protein: plan.targets.protein,
     carbs: plan.targets.carbs,
@@ -50,10 +54,11 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
             <div className="flex flex-col gap-1.5">
-              <CardTitle>Build a split</CardTitle>
+              <CardTitle>{t("nutrition.buildSplit")}</CardTitle>
               <CardDescription>
-                Starting from {plan.name}. Drag a macro and everything else
-                follows.
+                {t("nutrition.splitBody", {
+                  plan: names.dietPlan(plan.slug, plan.name),
+                })}
               </CardDescription>
             </div>
             {isPlan ? null : (
@@ -120,9 +125,11 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
             as a slice would count part of the day twice and inflate the total.
           */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-4">
-            <span className="w-20 text-sm text-muted-foreground">Fibre</span>
+            <span className="w-20 text-sm text-muted-foreground">
+              {t("nutrition.fibre")}
+            </span>
             <Slider
-              aria-label="Fibre in grams"
+              aria-label={t("nutrition.fibreAria")}
               className="min-w-40 flex-1"
               min={0}
               max={LIMITS.fibre}

@@ -34,6 +34,7 @@ import {
 import { toast } from "@/components/ui/toast";
 import { exercises } from "@/data/exercises";
 import { matchesAllWords } from "@/lib/search";
+import { useDateFormat, useT, type Translate } from "@/i18n/use-t";
 import { logSet } from "../collection";
 import { formatSet } from "../pr";
 import { UNITS, weightUnitSchema, type WeightUnit } from "@/lib/units";
@@ -42,30 +43,34 @@ import { UNITS, weightUnitSchema, type WeightUnit } from "@/lib/units";
  * Form values stay strings, because that is what number inputs produce and
  * coercing mid-validation makes the error messages worse. They're converted
  * once, on submit.
+ *
+ * Built per locale rather than at module scope: a validation message is a
+ * string like any other, and Zod bakes it into the schema.
  */
-const formSchema = z.object({
-  exerciseId: z.string().min(1, "Pick an exercise"),
-  performedAt: z.number().int().positive(),
-  unit: weightUnitSchema,
-  weight: z
-    .string()
-    .refine(
-      (v) => v.trim() === "" || (Number.isFinite(Number(v)) && Number(v) >= 0),
-      "Enter a weight in kg, or leave it blank for bodyweight",
-    ),
-  reps: z
-    .string()
-    .refine(
-      (v) => Number.isInteger(Number(v)) && Number(v) > 0,
-      "Enter how many reps you did",
-    ),
-});
+const buildSchema = (t: Translate) =>
+  z.object({
+    exerciseId: z.string().min(1, t("log.pickExercise")),
+    performedAt: z.number().int().positive(),
+    unit: weightUnitSchema,
+    weight: z
+      .string()
+      .refine(
+        (v) => v.trim() === "" || (Number.isFinite(Number(v)) && Number(v) >= 0),
+        t("log.weightError"),
+      ),
+    reps: z
+      .string()
+      .refine(
+        (v) => Number.isInteger(Number(v)) && Number(v) > 0,
+        t("log.repsError"),
+      ),
+  });
 
-const dateFormat = new Intl.DateTimeFormat(undefined, {
+const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
   day: "numeric",
   month: "short",
   year: "numeric",
-});
+};
 
 interface ExerciseOption {
   id: string;
@@ -94,6 +99,8 @@ function filterOption(item: ExerciseOption, query: string): boolean {
 }
 
 export function LogEntryForm() {
+  const t = useT();
+  const dateFormat = useDateFormat(DATE_OPTIONS);
   const [justLogged, setJustLogged] = useState<string | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
 
@@ -110,7 +117,7 @@ export function LogEntryForm() {
       weight: "",
       reps: "",
     },
-    validators: { onChange: formSchema },
+    validators: { onChange: buildSchema(t) },
     onSubmit: ({ value }) => {
       const { set, transaction, isRecord } = logSet({
         performedAt: value.performedAt,
@@ -124,19 +131,19 @@ export function LogEntryForm() {
       // plain confirmation. Backdating can set a record too -- the frontier is
       // ranked by load and reps, not by when the set happened.
       void toast.promise(transaction.isPersisted.promise, {
-        loading: "Saving set...",
+        loading: t("log.saving"),
         success: isRecord
           ? {
-              title: "New record",
+              title: t("log.newRecord"),
               description: `${name ?? value.exerciseId} — ${formatSet(set)}`,
               type: "success",
             }
           : {
-              title: `Logged ${formatSet(set)}`,
+              title: t("log.saved", { set: formatSet(set) }),
               description: name,
               type: "success",
             },
-        error: { title: "Couldn't save that set", type: "error" },
+        error: { title: t("log.saveError"), type: "error" },
       });
       setJustLogged(name ?? value.exerciseId);
       // Keep the exercise and date: logging several sets of the same thing in
@@ -161,7 +168,9 @@ export function LogEntryForm() {
       <form.Field name="exerciseId">
         {(field) => (
           <Field>
-            <FieldLabel htmlFor="backfill-exercise">Exercise</FieldLabel>
+            <FieldLabel htmlFor="backfill-exercise">
+              {t("common.exercise")}
+            </FieldLabel>
             <Combobox
               items={options}
               itemToStringLabel={(item: ExerciseOption) => item.name}
@@ -173,10 +182,10 @@ export function LogEntryForm() {
             >
               <ComboboxInput
                 id="backfill-exercise"
-                placeholder="Search exercises..."
+                placeholder={t("common.searchExercises")}
               />
               <ComboboxContent>
-                <ComboboxEmpty>No exercise found.</ComboboxEmpty>
+                <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
                 <ComboboxList>
                   {(item: ExerciseOption) => (
                     <ComboboxItem key={item.id} value={item}>
@@ -194,7 +203,7 @@ export function LogEntryForm() {
       <form.Field name="performedAt">
         {(field) => (
           <Field>
-            <FieldLabel htmlFor="backfill-date">Date</FieldLabel>
+            <FieldLabel htmlFor="backfill-date">{t("common.date")}</FieldLabel>
             <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
               <PopoverTrigger
                 render={
@@ -229,7 +238,9 @@ export function LogEntryForm() {
         <form.Field name="weight">
           {(field) => (
             <Field className="flex-1">
-              <FieldLabel htmlFor="backfill-weight">Weight</FieldLabel>
+              <FieldLabel htmlFor="backfill-weight">
+                {t("common.weight")}
+              </FieldLabel>
               <div className="flex items-center gap-2">
                 <Input
                   id="backfill-weight"
@@ -237,7 +248,7 @@ export function LogEntryForm() {
                   inputMode="decimal"
                   step="0.5"
                   min="0"
-                  placeholder="Optional"
+                  placeholder={t("common.optional")}
                   className="min-w-0 flex-1"
                   value={field.state.value}
                   onBlur={field.handleBlur}
@@ -253,7 +264,7 @@ export function LogEntryForm() {
                       }
                     >
                       <SelectTrigger
-                        aria-label="Weight unit"
+                        aria-label={t("common.weightUnit")}
                         className="w-20 shrink-0"
                       >
                         <SelectValue />
@@ -277,7 +288,7 @@ export function LogEntryForm() {
         <form.Field name="reps">
           {(field) => (
             <Field className="flex-1">
-              <FieldLabel htmlFor="backfill-reps">Reps</FieldLabel>
+              <FieldLabel htmlFor="backfill-reps">{t("common.reps")}</FieldLabel>
               <Input
                 id="backfill-reps"
                 type="number"
@@ -298,11 +309,11 @@ export function LogEntryForm() {
         {([canSubmit, isSubmitting]) => (
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={!canSubmit || isSubmitting}>
-              Log set
+              {t("log.action")}
             </Button>
             {justLogged ? (
               <span className="text-sm text-muted-foreground">
-                Logged {justLogged}.
+                {t("log.saved", { set: justLogged })}
               </span>
             ) : null}
           </div>

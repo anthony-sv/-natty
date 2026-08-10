@@ -1,25 +1,30 @@
 import { useMemo } from "react";
 import { DataTable } from "@/components/data-table";
 import { createAppColumnHelper } from "@/lib/table";
+import { useDateFormat, useT, type Translate } from "@/i18n/use-t";
 import { ffmi, formatIndex, normalizedFfmi } from "../ffmi";
 import type { BodyEntry } from "../schema";
 
-const dateFormat = new Intl.DateTimeFormat(undefined, {
+const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
   day: "numeric",
   month: "short",
   year: "numeric",
-});
+};
 
 /**
  * Height comes from the profile, not the row, so the columns are built inside
  * a memo rather than at module scope — changing your height reworks every
  * row's FFMI, which is the point of storing it once.
  */
-function buildColumns(heightCm: number | undefined) {
+function buildColumns(
+  heightCm: number | undefined,
+  t: Translate,
+  dateFormat: Intl.DateTimeFormat,
+) {
   const column = createAppColumnHelper<BodyEntry>();
   return column.columns([
     column.accessor("measuredAt", {
-      header: "Date",
+      header: t("common.date"),
       sortFn: "datetime",
       cell: (info) => (
         <span className="text-muted-foreground">
@@ -28,7 +33,7 @@ function buildColumns(heightCm: number | undefined) {
       ),
     }),
     column.accessor("weight", {
-      header: "Weight",
+      header: t("common.weight"),
       sortFn: "basic",
       cell: (info) => (
         <span className="font-medium tabular-nums">
@@ -37,14 +42,14 @@ function buildColumns(heightCm: number | undefined) {
       ),
     }),
     column.accessor("bodyFatPercent", {
-      header: "Body fat",
+      header: t("body.stat.bodyFat"),
       sortFn: "basic",
       sortUndefined: "last",
       cell: (info) => {
         const value = info.getValue();
         return (
           <span className="tabular-nums">
-            {value === undefined ? "—" : `${value}%`}
+            {value === undefined ? t("common.none") : `${value}%`}
           </span>
         );
       },
@@ -53,7 +58,7 @@ function buildColumns(heightCm: number | undefined) {
     // tracks weight and body fat anyway, both of which are.
     column.display({
       id: "ffmi",
-      header: "FFMI",
+      header: t("body.stat.ffmi"),
       cell: (info) => (
         <span className="tabular-nums">
           {formatIndex(ffmi(info.row.original, heightCm))}
@@ -62,7 +67,7 @@ function buildColumns(heightCm: number | undefined) {
     }),
     column.display({
       id: "normalized",
-      header: "Normalized",
+      header: t("body.stat.normalized"),
       // Alignment on the column def rather than hand-rolled into both the
       // header and the cell, which is what `columnMeta` is for.
       meta: { align: "end" },
@@ -85,7 +90,12 @@ export function BodyHistoryTable({
   /** Optional, like `DataTable`'s own — an omitted one just isn't loading. */
   isLoading?: boolean;
 }) {
-  const columns = useMemo(() => buildColumns(heightCm), [heightCm]);
+  const t = useT();
+  const dateFormat = useDateFormat(DATE_OPTIONS);
+  const columns = useMemo(
+    () => buildColumns(heightCm, t, dateFormat),
+    [heightCm, t, dateFormat],
+  );
   return (
     <DataTable
       columns={columns}
@@ -93,7 +103,7 @@ export function BodyHistoryTable({
       isLoading={isLoading}
       getRowId={(entry) => entry.id}
       devtoolsKey="body-history"
-      empty="No weigh-ins logged yet."
+      empty={t("body.history.empty")}
     />
   );
 }

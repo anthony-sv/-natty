@@ -25,36 +25,43 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { UNITS, weightUnitSchema, type WeightUnit } from "@/lib/units";
+import { useDateFormat, useT, type Translate } from "@/i18n/use-t";
 import { logBodyEntry } from "../collection";
 import type { BodyEntry } from "../schema";
 
-/** Strings in, numbers out — same convention as the set-logging forms. */
-const formSchema = z.object({
-  measuredAt: z.number().int().positive(),
-  unit: weightUnitSchema,
-  weight: z
-    .string()
-    .refine(
-      (v) => Number.isFinite(Number(v)) && Number(v) > 0,
-      "Enter your weight",
-    ),
-  bodyFatPercent: z
-    .string()
-    .refine(
-      (v) =>
-        v.trim() === "" ||
-        (Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 100),
-      "Enter a percentage between 0 and 100, or leave it blank",
-    ),
-});
+/**
+ * Strings in, numbers out — same convention as the set-logging forms, and built
+ * per locale for the same reason: Zod bakes the messages into the schema.
+ */
+const buildSchema = (t: Translate) =>
+  z.object({
+    measuredAt: z.number().int().positive(),
+    unit: weightUnitSchema,
+    weight: z
+      .string()
+      .refine(
+        (v) => Number.isFinite(Number(v)) && Number(v) > 0,
+        t("body.logEntry.weightError"),
+      ),
+    bodyFatPercent: z
+      .string()
+      .refine(
+        (v) =>
+          v.trim() === "" ||
+          (Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 100),
+        t("body.logEntry.bodyFatError"),
+      ),
+  });
 
-const dateFormat = new Intl.DateTimeFormat(undefined, {
+const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
   day: "numeric",
   month: "short",
   year: "numeric",
-});
+};
 
 export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
+  const t = useT();
+  const dateFormat = useDateFormat(DATE_OPTIONS);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   // Lazily, not during render -- the purity lint rule rejects Date.now() there.
   const [defaultDate] = useState(() => Date.now());
@@ -69,7 +76,7 @@ export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
       bodyFatPercent:
         latest?.bodyFatPercent !== undefined ? String(latest.bodyFatPercent) : "",
     },
-    validators: { onChange: formSchema },
+    validators: { onChange: buildSchema(t) },
     onSubmit: ({ value }) => {
       const { entry, transaction } = logBodyEntry({
         measuredAt: value.measuredAt,
@@ -81,16 +88,20 @@ export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
             : Number(value.bodyFatPercent),
       });
       void toast.promise(transaction.isPersisted.promise, {
-        loading: "Saving...",
+        loading: t("body.logEntry.saving"),
         success: {
-          title: `Logged ${entry.weight}${entry.unit}`,
+          title: t("body.logEntry.saved", {
+            weight: `${entry.weight}${entry.unit}`,
+          }),
           description:
             entry.bodyFatPercent === undefined
               ? undefined
-              : `${entry.bodyFatPercent}% body fat`,
+              : t("body.logEntry.savedBodyFat", {
+                  percent: entry.bodyFatPercent,
+                }),
           type: "success",
         },
-        error: { title: "Couldn't save that weigh-in", type: "error" },
+        error: { title: t("body.logEntry.saveError"), type: "error" },
       });
     },
   });
@@ -107,7 +118,7 @@ export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
       <form.Field name="measuredAt">
         {(field) => (
           <Field>
-            <FieldLabel htmlFor="body-date">Date</FieldLabel>
+            <FieldLabel htmlFor="body-date">{t("common.date")}</FieldLabel>
             <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
               <PopoverTrigger
                 render={
@@ -141,7 +152,9 @@ export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
         <form.Field name="weight">
           {(field) => (
             <Field className="flex-1">
-              <FieldLabel htmlFor="body-weight">Weight</FieldLabel>
+              <FieldLabel htmlFor="body-weight">
+                {t("common.weight")}
+              </FieldLabel>
               <div className="flex items-center gap-2">
                 <Input
                   id="body-weight"
@@ -164,7 +177,7 @@ export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
                       }
                     >
                       <SelectTrigger
-                        aria-label="Weight unit"
+                        aria-label={t("common.weightUnit")}
                         className="w-20 shrink-0"
                       >
                         <SelectValue />
@@ -188,7 +201,9 @@ export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
         <form.Field name="bodyFatPercent">
           {(field) => (
             <Field className="flex-1">
-              <FieldLabel htmlFor="body-fat">Body fat (%)</FieldLabel>
+              <FieldLabel htmlFor="body-fat">
+                {t("common.bodyFatPercent")}
+              </FieldLabel>
               <Input
                 id="body-fat"
                 type="number"
@@ -196,7 +211,7 @@ export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
                 step="0.1"
                 min="0"
                 max="100"
-                placeholder="Optional"
+                placeholder={t("common.optional")}
                 value={field.state.value}
                 onBlur={field.handleBlur}
                 onChange={(e) => field.handleChange(e.target.value)}
@@ -211,7 +226,8 @@ export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
         {([canSubmit, isSubmitting]) => (
           <div>
             <Button type="submit" disabled={!canSubmit || isSubmitting}>
-              <CheckIcon data-icon="inline-start" /> Log weigh-in
+              <CheckIcon data-icon="inline-start" />{" "}
+              {t("body.logEntry.action")}
             </Button>
           </div>
         )}

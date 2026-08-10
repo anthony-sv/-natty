@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { summariseRoutine } from "./summary";
+import { formattingFor } from "@/i18n/test-formatting";
+
+/** English, so the assertions read against the source strings. */
+const F = formattingFor();
 import type { Routine, TrainingDay } from "@/data/routines";
 
 function day(dayNumber: number, label: string, isRest = false): TrainingDay {
@@ -30,7 +34,7 @@ function routine(partial: Partial<Routine> = {}): Routine {
 
 describe("summariseRoutine", () => {
   it("lists the training days in order and leaves rest out of the split", () => {
-    expect(summariseRoutine(routine()).split).toEqual([
+    expect(summariseRoutine(routine(), F).split).toEqual([
       "Chest",
       "Back",
       "Shoulder/Traps",
@@ -40,14 +44,14 @@ describe("summariseRoutine", () => {
   });
 
   it("counts training and rest days separately", () => {
-    const summary = summariseRoutine(routine());
+    const summary = summariseRoutine(routine(), F);
 
     expect(summary.trainingDays).toBe(5);
     expect(summary.restDays).toBe(2);
   });
 
   it("describes a single-week program as a cycle", () => {
-    expect(summariseRoutine(routine()).length).toBe("7-day cycle");
+    expect(summariseRoutine(routine(), F).length).toBe("7-day cycle");
   });
 
   it("describes a multi-week program in weeks", () => {
@@ -58,7 +62,7 @@ describe("summariseRoutine", () => {
       })),
     });
 
-    expect(summariseRoutine(eightWeeks).length).toBe("8 weeks");
+    expect(summariseRoutine(eightWeeks, F).length).toBe("8 weeks");
   });
 
   it("reads the split off the first week only", () => {
@@ -71,12 +75,12 @@ describe("summariseRoutine", () => {
       ],
     });
 
-    expect(summariseRoutine(drifting).split).toEqual(["Chest", "Back"]);
+    expect(summariseRoutine(drifting, F).split).toEqual(["Chest", "Back"]);
   });
 
   it("survives a program with no weeks worth of days", () => {
     const empty = routine({ weeks: [{ weekNumber: 1, days: [] }] });
-    const summary = summariseRoutine(empty);
+    const summary = summariseRoutine(empty, F);
 
     expect(summary.split).toEqual([]);
     expect(summary.trainingDays).toBe(0);

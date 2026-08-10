@@ -16,9 +16,11 @@ import { profileStore, setProfile } from "@/features/profile/profile-store";
 import { potentialFor } from "../casey-butt";
 import { PotentialResults } from "./PotentialResults";
 import { parseMeasurement } from "../parse";
+import { useT } from "@/i18n/use-t";
 
 /** Casey Butt's model: how much muscle a given frame can carry drug-free. */
 export function PotentialPanel() {
+  const t = useT();
   const profile = useStore(profileStore, (s) => s);
   const { latest } = useBodyEntries();
 
@@ -44,7 +46,7 @@ export function PotentialPanel() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Your measurements</CardTitle>
+          <CardTitle>{t("calc.potential.measurements")}</CardTitle>
           <CardDescription>
             Wrist and ankle at their narrowest point. Height, wrist and ankle
             are saved to your profile; body fat starts from your last weigh-in
@@ -53,14 +55,14 @@ export function PotentialPanel() {
         </CardHeader>
         <CardContent className="flex flex-wrap items-start gap-4">
           <Field className="w-40">
-            <FieldLabel htmlFor="calc-height">Height (cm)</FieldLabel>
+            <FieldLabel htmlFor="calc-height">{t("common.heightCm")}</FieldLabel>
             <Input
               id="calc-height"
               type="number"
               inputMode="decimal"
               min="1"
               step="0.5"
-              placeholder="e.g. 179"
+              placeholder={t("calc.potential.exampleHeight")}
               value={profile.heightCm ?? ""}
               onChange={(e) =>
                 setProfile({ heightCm: parseMeasurement(e.target.value) })
@@ -69,41 +71,43 @@ export function PotentialPanel() {
           </Field>
 
           <Field className="w-40">
-            <FieldLabel htmlFor="calc-wrist">Wrist (cm)</FieldLabel>
+            <FieldLabel htmlFor="calc-wrist">{t("calc.potential.wristCm")}</FieldLabel>
             <Input
               id="calc-wrist"
               type="number"
               inputMode="decimal"
               min="1"
               step="0.1"
-              placeholder="e.g. 18"
+              placeholder={t("calc.potential.exampleWrist")}
               value={profile.wristCm ?? ""}
               onChange={(e) =>
                 setProfile({ wristCm: parseMeasurement(e.target.value) })
               }
             />
-            <FieldDescription>Below the bone.</FieldDescription>
+            <FieldDescription>{t("calc.potential.wristHint")}</FieldDescription>
           </Field>
 
           <Field className="w-40">
-            <FieldLabel htmlFor="calc-ankle">Ankle (cm)</FieldLabel>
+            <FieldLabel htmlFor="calc-ankle">{t("calc.potential.ankleCm")}</FieldLabel>
             <Input
               id="calc-ankle"
               type="number"
               inputMode="decimal"
               min="1"
               step="0.1"
-              placeholder="e.g. 23"
+              placeholder={t("calc.potential.exampleAnkle")}
               value={profile.ankleCm ?? ""}
               onChange={(e) =>
                 setProfile({ ankleCm: parseMeasurement(e.target.value) })
               }
             />
-            <FieldDescription>Above the bone.</FieldDescription>
+            <FieldDescription>{t("calc.potential.ankleHint")}</FieldDescription>
           </Field>
 
           <Field className="w-40">
-            <FieldLabel htmlFor="calc-bodyfat">Body fat (%)</FieldLabel>
+            <FieldLabel htmlFor="calc-bodyfat">
+              {t("common.bodyFatPercent")}
+            </FieldLabel>
             <Input
               id="calc-bodyfat"
               type="number"
@@ -111,7 +115,7 @@ export function PotentialPanel() {
               min="0"
               max="99"
               step="0.1"
-              placeholder="e.g. 12"
+              placeholder={t("calc.potential.exampleBodyFat")}
               value={bodyFat}
               onChange={(e) => setBodyFat(e.target.value)}
             />
@@ -126,7 +130,7 @@ export function PotentialPanel() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Maximum realistic size</CardTitle>
+          <CardTitle>{t("calc.potential.max")}</CardTitle>
           <CardDescription>
             Dr Casey Butt's model, fitted to the measurements of drug-free
             bodybuilders. The second, smaller figure against each is 95% of the
@@ -136,9 +140,9 @@ export function PotentialPanel() {
         <CardContent>
           {potential === undefined ? (
             <Empty>
-              <EmptyTitle>Fill in all four</EmptyTitle>
+              <EmptyTitle>{t("calc.potential.fillAll")}</EmptyTitle>
               <EmptyDescription>
-                Height, wrist, ankle and body fat are all inputs to the formula.
+                {t("calc.potential.fillAllBody")}
               </EmptyDescription>
             </Empty>
           ) : (
@@ -152,7 +156,7 @@ export function PotentialPanel() {
 
       <Card>
         <CardHeader>
-          <CardTitle>What this is, and isn't</CardTitle>
+          <CardTitle>{t("calc.potential.whatThisIs")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
           <p>

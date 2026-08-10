@@ -1,5 +1,7 @@
 import { ClockIcon, FlameIcon, LayersIcon, ListChecksIcon } from "lucide-react";
 import type { TrainingDay } from "@/data/routines";
+import { useFormatting } from "@/i18n/use-formatting";
+import { useT } from "@/i18n/use-t";
 import { formatEstimate, summariseDay } from "../lib/day-summary";
 
 /**
@@ -9,21 +11,33 @@ import { formatEstimate, summariseDay } from "../lib/day-summary";
  * eighteen-set day from a nine-set one without adding up the chips yourself.
  */
 export function DaySummaryStrip({ day }: { day: TrainingDay }) {
-  const summary = summariseDay(day);
+  const t = useT();
+  const f = useFormatting();
+  const summary = summariseDay(day, f);
 
   const tiles = [
-    { icon: ListChecksIcon, label: "Exercises", value: String(summary.exercises) },
-    { icon: LayersIcon, label: "Working sets", value: String(summary.workingSets) },
+    {
+      icon: ListChecksIcon,
+      label: t("routines.summary.exercises"),
+      value: String(summary.exercises),
+    },
+    {
+      icon: LayersIcon,
+      label: t("routines.summary.workingSets"),
+      value: String(summary.workingSets),
+    },
     {
       icon: ClockIcon,
-      label: "Rough time",
+      label: t("routines.summary.roughTime"),
       value: formatEstimate(summary.estimatedSeconds),
     },
     ...(summary.finishers > 0
       ? [
           {
             icon: FlameIcon,
-            label: summary.finishers === 1 ? "Finisher" : "Finishers",
+            // The label is the plural form alone — the count is the tile's
+            // value, so interpolating it here would print it twice.
+            label: t.plural("routines.summary.finishers", summary.finishers),
             value: String(summary.finishers),
           },
         ]

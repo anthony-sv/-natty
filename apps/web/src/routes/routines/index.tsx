@@ -4,6 +4,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { ItemGroup } from "@/components/ui/item";
 import { RoutineRow } from "@/features/routines/components/RoutineRow";
 import { routinesQueryOptions } from "@/features/routines/queries";
+import { useT } from "@/i18n/use-t";
 
 export const Route = createFileRoute("/routines/")({
   loader: ({ context }) =>
@@ -13,13 +14,14 @@ export const Route = createFileRoute("/routines/")({
 
 function RoutinesIndex() {
   const { data: routines } = useSuspenseQuery(routinesQueryOptions());
+  const t = useT();
 
   return (
     <Page>
       <div>
-        <h1 className="text-2xl font-semibold">Routines</h1>
+        <h1 className="text-2xl font-semibold">{t("nav.routines")}</h1>
         <p className="text-sm text-muted-foreground">
-          {routines.length} programs. Each one lists the split it runs.
+          {t("routines.subtitle", { count: routines.length })}
         </p>
       </div>
       {/* A single column: the rows carry a week's worth of day labels, and

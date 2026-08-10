@@ -7,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { useT } from "@/i18n/use-t";
 import type { WeightUnit } from "@/lib/units";
 import { useExerciseLog } from "../queries";
 import { formatSet } from "../pr";
@@ -31,6 +32,7 @@ export function ExerciseDetailSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const { sets, frontier, last, isLoading } = useExerciseLog(exerciseId);
 
   // Charted in the unit the exercise was last logged in — a pounds-marked
@@ -47,10 +49,19 @@ export function ExerciseDetailSheet({
           <SheetTitle>{exerciseName}</SheetTitle>
           <SheetDescription>
             {isLoading
-              ? "Loading your history…"
+              ? t("detail.loading")
               : sets.length === 0
-                ? "Nothing logged for this one yet."
-                : `${sets.length} set${sets.length === 1 ? "" : "s"} logged · ${frontier.length} record${frontier.length === 1 ? "" : "s"}${best ? ` · best ${formatSet(best)}` : ""}`}
+                ? t("detail.nothingLogged")
+                : best
+                  ? t("detail.summary", {
+                      sets: t.plural("detail.sets", sets.length),
+                      records: t.plural("records.count", frontier.length),
+                      best: formatSet(best),
+                    })
+                  : t("detail.summaryNoBest", {
+                      sets: t.plural("detail.sets", sets.length),
+                      records: t.plural("records.count", frontier.length),
+                    })}
           </SheetDescription>
         </SheetHeader>
 
@@ -70,12 +81,14 @@ export function ExerciseDetailTrigger({
   exerciseName: string;
   onSelect: () => void;
 }) {
+  const t = useT();
+
   return (
     <Button
       variant="ghost"
       size="icon-sm"
       className="shrink-0 text-muted-foreground"
-      aria-label={`Chart ${exerciseName}`}
+      aria-label={t("records.chartAria", { exercise: exerciseName })}
       onClick={onSelect}
     >
       <ChartLineIcon />

@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAppTable, type ColumnDisplayMeta, type ColumnList } from "@/lib/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useT } from "@/i18n/use-t";
 import {
   Table,
   TableBody,
@@ -130,6 +131,7 @@ export function DataTable<TData extends RowData>({
 }) {
   // `useAppTable`, not `useTable`: the factory in `lib/table.ts` already binds
   // the feature set, so it isn't restated at every table.
+  const t = useT();
   const table = useAppTable({
     columns,
     data,
@@ -190,7 +192,7 @@ export function DataTable<TData extends RowData>({
           )}
           <span className="truncate font-medium">{String(value)}</span>
           <span className="shrink-0 text-muted-foreground tabular-nums">
-            {count} record{count === 1 ? "" : "s"}
+            {t.plural("records.count", count)}
           </span>
         </button>
         {renderGroupAction?.(

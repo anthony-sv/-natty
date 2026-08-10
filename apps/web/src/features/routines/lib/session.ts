@@ -9,6 +9,7 @@ import {
   formatAlternatives,
   formatDuration,
   formatRange,
+  type Formatting,
 } from "./format";
 
 /**
@@ -71,8 +72,11 @@ function countdownSeconds(value: number | [number, number]): number {
   return Array.isArray(value) ? value[1] : value;
 }
 
-function workLabel(step: WorkStep): string {
-  return `${step.exerciseName} — set ${step.setNumber} of ${step.setsInExercise}`;
+function workLabel(step: WorkStep, { t }: Formatting): string {
+  return `${step.exerciseName} — ${t("routines.setOf", {
+    number: step.setNumber,
+    total: step.setsInExercise,
+  })}`;
 }
 
 /**
@@ -82,8 +86,11 @@ function workLabel(step: WorkStep): string {
  * then 2 more @8-12/120s), not alternatives — so set numbering runs
  * continuously across them and the total is the sum. Rest steps come from each
  * set's own prescription, which is what lets rest change partway through.
+ *
+ * Naming is injected rather than resolved here, so the steps a player runs on
+ * carry names in the reader's language without this module importing a store.
  */
-export function buildSteps(day: TrainingDay): SessionStep[] {
+export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
   const steps: SessionStep[] = [];
 
   day.exercises.forEach((exercise, exerciseIndex) => {
@@ -101,7 +108,7 @@ export function buildSteps(day: TrainingDay): SessionStep[] {
           id: `${exerciseIndex}-${setNumber}-work`,
           exerciseIndex,
           exerciseId: exercise.exerciseId,
-          exerciseName: exerciseDisplayName(exercise),
+          exerciseName: exerciseDisplayName(exercise, f),
           kind: exercise.kind,
           isFinisher: exercise.isFinisher,
           setNumber,
@@ -115,7 +122,7 @@ export function buildSteps(day: TrainingDay): SessionStep[] {
           pose: p.pose,
           notes: exercise.notes,
           modifiers: p.modifiers,
-          alternatives: formatAlternatives(exercise),
+          alternatives: formatAlternatives(exercise, f),
         });
 
         // The hold belongs between the set and its rest: you finish the reps,
@@ -154,7 +161,7 @@ export function buildSteps(day: TrainingDay): SessionStep[] {
     const step = steps[i];
     if (step.type !== "rest") continue;
     const next = steps[i + 1];
-    if (next?.type === "work") step.nextLabel = workLabel(next);
+    if (next?.type === "work") step.nextLabel = workLabel(next, f);
   }
 
   return steps;
@@ -167,14 +174,17 @@ export function buildSteps(day: TrainingDay): SessionStep[] {
  * ("2×10-15"), and inside the player the set count is already shown as
  * "set 1 of 2", so repeating it would read as "1×10-15".
  */
-export function describeStep(step: WorkStep): string {
+export function describeStep(step: WorkStep, f: Formatting): string {
   if (step.reps !== undefined) {
-    return `${formatRange(step.reps)} reps${step.perSide ? " per side" : ""}`;
+    const range = formatRange(step.reps);
+    return step.perSide
+      ? f.t("format.repsPerSide", { range })
+      : f.t("format.repsOnly", { range });
   }
   if (step.durationSeconds !== undefined) {
-    return formatDuration(step.durationSeconds);
+    return formatDuration(step.durationSeconds, f);
   }
-  return "1 set";
+  return f.t.plural("format.setCount", 1);
 }
 
 /**

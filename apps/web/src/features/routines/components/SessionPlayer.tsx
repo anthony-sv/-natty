@@ -35,7 +35,8 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/toast";
-import { getPose } from "@/data/poses";
+import { useFormatting } from "@/i18n/use-formatting";
+import { useT, type Translate } from "@/i18n/use-t";
 import { useExerciseLog } from "@/features/log/queries";
 import { formatSet } from "@/features/log/pr";
 import { SetLogControl } from "@/features/log/components/SetLogControl";
@@ -45,6 +46,7 @@ import {
   formatElapsed,
   formatModifiers,
   formatPose,
+  type Formatting,
 } from "../lib/format";
 import {
   autoStartSecondsFor,
@@ -84,6 +86,8 @@ export function SessionPlayer({
   dayLabel: string;
 }) {
   const session = useStore(sessionStore, (s) => s);
+  const t = useT();
+  const f = useFormatting();
   if (session === null) return null;
 
   const step = steps[session.stepIndex];
@@ -93,7 +97,7 @@ export function SessionPlayer({
     return <StaleSession dayLabel={dayLabel} />;
   }
 
-  const action = primaryActionFor(step, session, steps, dayLabel);
+  const action = primaryActionFor(step, session, steps, dayLabel, t, f);
   const ActionIcon = action.icon;
 
   return (
@@ -113,8 +117,11 @@ export function SessionPlayer({
         <CardDescription className="flex flex-col gap-1.5">
           <Progress value={(session.stepIndex / steps.length) * 100} />
           <span className="text-xs tabular-nums">
-            Step {session.stepIndex + 1} of {steps.length} ·{" "}
-            {steps.length - session.stepIndex - 1} to go
+            {t("player.stepOf", {
+              current: session.stepIndex + 1,
+              total: steps.length,
+              left: steps.length - session.stepIndex - 1,
+            })}
           </span>
         </CardDescription>
       </CardHeader>
@@ -153,7 +160,7 @@ export function SessionPlayer({
             disabled={session.stepIndex === 0}
             onClick={() => goToStep(session.stepIndex - 1)}
           >
-            <ChevronLeftIcon data-icon="inline-start" /> Back
+            <ChevronLeftIcon data-icon="inline-start" /> {t("player.back")}
           </Button>
           <EndWorkoutButton
             dayLabel={dayLabel}
@@ -185,6 +192,8 @@ function primaryActionFor(
   session: SessionState,
   steps: SessionStep[],
   dayLabel: string,
+  t: Translate,
+  f: Formatting,
 ): PrimaryAction {
   const next = steps[session.stepIndex + 1];
 
@@ -192,7 +201,7 @@ function primaryActionFor(
   // otherwise, with the fields prefilled from your last set, simply moving
   // through a workout would record sets you never entered.
   const advance = () => {
-    if (finishIfLast(next, dayLabel)) return;
+    if (finishIfLast(next, dayLabel, t)) return;
     goToStep(session.stepIndex + 1, autoStartSecondsFor(next));
   };
 
@@ -204,29 +213,29 @@ function primaryActionFor(
   ) {
     const seconds = step.durationSeconds;
     return {
-      label: `Start ${describeStep(step)}`,
+      label: t("player.startTimed", { label: describeStep(step, f) }),
       icon: PlayIcon,
       onClick: () => startTimer(seconds),
     };
   }
 
   if (next === undefined) {
-    return { label: "Finish workout", icon: FlagIcon, onClick: advance };
+    return { label: t("player.finish"), icon: FlagIcon, onClick: advance };
   }
 
   // Rest and pose holds are tappable throughout, not just at zero — tapping
   // early is how you cut one short, so no separate skip control is needed.
   if (step.type === "rest") {
-    return { label: "Start next set", icon: CheckIcon, onClick: advance };
+    return { label: t("player.startNextSet"), icon: CheckIcon, onClick: advance };
   }
 
   return {
     label:
       next.type === "rest"
-        ? `Done — rest ${formatClock(next.seconds * 1000)}`
+        ? t("player.doneRest", { clock: formatClock(next.seconds * 1000) })
         : next.type === "pose"
-          ? `Done — hold ${next.seconds}s`
-          : "Done",
+          ? t("player.doneHold", { seconds: next.seconds })
+          : t("player.done"),
     icon: CheckIcon,
     onClick: advance,
   };
@@ -264,6 +273,7 @@ function EndWorkoutButton({
   stepCount: number;
 }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
 
   return (
     <>
@@ -273,33 +283,35 @@ function EndWorkoutButton({
         className="ml-auto text-muted-foreground"
         onClick={() => setOpen(true)}
       >
-        <CircleStopIcon data-icon="inline-start" /> End workout
+        <CircleStopIcon data-icon="inline-start" /> {t("player.endWorkout")}
       </Button>
 
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>End this workout?</AlertDialogTitle>
+            <AlertDialogTitle>{t("player.endConfirm.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              You're on step {stepIndex + 1} of {stepCount}. Every set you've
-              logged is kept — only your place in the day goes.
+              {t("player.endConfirm.body", {
+                current: stepIndex + 1,
+                total: stepCount,
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep going</AlertDialogCancel>
+            <AlertDialogCancel>{t("player.endConfirm.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 endSession();
                 // The player vanishing with no word reads as a misclick, even
                 // when it was deliberate.
                 toast.add({
-                  title: "Workout ended",
-                  description: `${dayLabel} — anything you logged is kept.`,
+                  title: t("player.ended"),
+                  description: t("player.endedBody", { day: dayLabel }),
                   type: "info",
                 });
               }}
             >
-              End workout
+              {t("player.endWorkout")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -315,10 +327,14 @@ function EndWorkoutButton({
  * the workout outright rather than parking on a "done" card that needs a
  * second press — the toast is the confirmation.
  */
-function finishIfLast(next: SessionStep | undefined, dayLabel: string): boolean {
+function finishIfLast(
+  next: SessionStep | undefined,
+  dayLabel: string,
+  t: Translate,
+): boolean {
   if (next !== undefined) return false;
   toast.add({
-    title: "Workout complete",
+    title: t("player.complete"),
     description: dayLabel,
     type: "success",
   });
@@ -372,6 +388,8 @@ function WorkStepBody({
   session: SessionState;
   steps: SessionStep[];
 }) {
+  const t = useT();
+  const f = useFormatting();
   const { remainingMs, isComplete } = useCountdown(session.timerEndsAt);
   const isTimed = step.durationSeconds !== undefined;
   const timerRunning = session.timerEndsAt !== null;
@@ -418,12 +436,12 @@ function WorkStepBody({
   // you get — it belongs on the set you're about to do, not only after it.
   const thenValue =
     next === undefined
-      ? "End of day"
+      ? t("player.thenEnd")
       : next.type === "rest"
-        ? `${next.seconds}s rest`
+        ? t("player.thenRest", { seconds: next.seconds })
         : next.type === "pose"
-          ? `${next.seconds}s hold`
-          : "Straight on";
+          ? t("player.thenHold", { seconds: next.seconds })
+          : t("player.thenStraightOn");
 
   // Which exercise of the day this is — context the card never carried, and the
   // one thing "set 2 of 4" can't tell you.
@@ -433,19 +451,22 @@ function WorkStepBody({
     <div className="flex flex-1 flex-col gap-3">
       <div className="flex flex-col gap-1.5">
         <Eyebrow>
-          Exercise {step.exerciseIndex + 1} of {exerciseCount}
+          {t("player.exerciseOf", {
+            current: step.exerciseIndex + 1,
+            total: exerciseCount,
+          })}
         </Eyebrow>
         <h2 className="text-2xl font-semibold leading-tight tracking-tight">
           {step.exerciseName}
         </h2>
         {step.isFinisher || step.kind === "cardio" || step.modifiers ? (
           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-            {step.isFinisher ? <Badge>Finisher</Badge> : null}
+            {step.isFinisher ? <Badge>{t("common.finisher")}</Badge> : null}
             {step.kind === "cardio" ? (
-              <Badge variant="outline">Cardio</Badge>
+              <Badge variant="outline">{t("common.cardio")}</Badge>
             ) : null}
             {step.modifiers
-              ? formatModifiers(step.modifiers).map((label) => (
+              ? formatModifiers(step.modifiers, f).map((label) => (
                   <Badge key={label} variant="destructive">
                     {label}
                   </Badge>
@@ -467,7 +488,9 @@ function WorkStepBody({
             isComplete={isComplete}
           />
           {isComplete ? (
-            <p className="text-sm font-medium text-primary">Time's up</p>
+            <p className="text-sm font-medium text-primary">
+              {t("player.timesUp")}
+            </p>
           ) : null}
         </div>
       ) : (
@@ -475,11 +498,18 @@ function WorkStepBody({
           items={[
             {
               icon: Repeat2Icon,
-              label: "Set",
-              value: `${step.setNumber} of ${step.setsInExercise}`,
+              label: t("player.set"),
+              value: t("player.setValue", {
+                number: step.setNumber,
+                total: step.setsInExercise,
+              }),
             },
-            { icon: TargetIcon, label: "Target", value: describeStep(step) },
-            { icon: TimerIcon, label: "Then", value: thenValue },
+            {
+              icon: TargetIcon,
+              label: t("player.target"),
+              value: describeStep(step, f),
+            },
+            { icon: TimerIcon, label: t("player.then"), value: thenValue },
           ]}
         />
       )}
@@ -494,8 +524,8 @@ function WorkStepBody({
           {step.alternatives ? <p>{step.alternatives}</p> : null}
           {step.pose ? (
             <p>
-              Pose:{" "}
-              <span className="text-foreground">{formatPose(step.pose)}</span>
+              {t("player.pose")}:{" "}
+              <span className="text-foreground">{formatPose(step.pose, f)}</span>
             </p>
           ) : null}
           {step.notes ? <p>{step.notes}</p> : null}
@@ -508,10 +538,10 @@ function WorkStepBody({
           60kg" is the thing you actually want to see between sets. */}
       {isLoggable ? (
         <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
-          <Eyebrow>Logged today</Eyebrow>
+          <Eyebrow>{t("player.loggedToday")}</Eyebrow>
           {loggedToday.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Nothing yet — log a set and it shows up here.
+              {t("player.nothingLoggedYet")}
             </p>
           ) : (
             <div className="flex flex-wrap gap-1.5">
@@ -577,6 +607,7 @@ function TimerStepBody({
   completeNote: string;
   nextLabel?: string;
 }) {
+  const t = useT();
   const { remainingMs, isComplete } = useCountdown(timerEndsAt);
   // Arriving here from "Done" auto-starts the clock; arriving by pressing Back
   // doesn't, and used to leave a dead 0:00 with no way to run it again.
@@ -601,7 +632,7 @@ function TimerStepBody({
       <div className="flex h-8 items-center">
         {!isRunning ? (
           <Button variant="ghost" size="sm" onClick={() => startTimer(seconds)}>
-            <PlayIcon data-icon="inline-start" /> Start the clock
+            <PlayIcon data-icon="inline-start" /> {t("player.startClock")}
           </Button>
         ) : isComplete ? (
           <p className="text-sm font-medium text-primary">{completeNote}</p>
@@ -610,7 +641,7 @@ function TimerStepBody({
 
       {nextLabel ? (
         <div className="flex flex-col gap-0.5">
-          <Eyebrow>Next up</Eyebrow>
+          <Eyebrow>{t("player.nextUp")}</Eyebrow>
           {/* Clamped rather than wrapped freely: on a phone a long exercise
               name runs to three lines and pushes the body past the stage's
               floor, which is the one way this layout can still resize. */}
@@ -630,21 +661,27 @@ function PoseStepBody({
   session: SessionState;
   steps: SessionStep[];
 }) {
+  const t = useT();
+  const { names } = useFormatting();
+
   // A pose is usually followed by rest, which announces the next set itself —
   // so only name what's next when the hold runs straight into it.
   const next = steps[session.stepIndex + 1];
   const nextLabel =
     next?.type === "work"
-      ? `${next.exerciseName} — set ${next.setNumber} of ${next.setsInExercise}`
+      ? `${next.exerciseName} — ${t("routines.setOf", {
+          number: next.setNumber,
+          total: next.setsInExercise,
+        })}`
       : undefined;
 
   return (
     <TimerStepBody
-      eyebrow="Hold"
-      title={getPose(step.pose.poseId)?.name ?? step.pose.poseId}
+      eyebrow={t("player.hold")}
+      title={names.pose(step.pose.poseId)}
       seconds={step.seconds}
       timerEndsAt={session.timerEndsAt}
-      completeNote="Hold complete."
+      completeNote={t("player.holdComplete")}
       nextLabel={nextLabel}
     />
   );
@@ -657,12 +694,14 @@ function RestStepBody({
   step: Extract<SessionStep, { type: "rest" }>;
   session: SessionState;
 }) {
+  const t = useT();
+
   return (
     <TimerStepBody
-      eyebrow="Rest"
+      eyebrow={t("player.rest")}
       seconds={step.seconds}
       timerEndsAt={session.timerEndsAt}
-      completeNote="Rest complete — go when you're ready."
+      completeNote={t("player.restComplete")}
       nextLabel={step.nextLabel || undefined}
     />
   );
@@ -675,17 +714,19 @@ function RestStepBody({
  * clears the orphaned session rather than confirming anything.
  */
 function StaleSession({ dayLabel }: { dayLabel: string }) {
+  const t = useT();
+
   return (
     <Card className="border-primary/40">
       <CardHeader>
-        <CardTitle>Nothing left in this workout</CardTitle>
+        <CardTitle>{t("player.stale.title")}</CardTitle>
         <CardDescription>
-          {dayLabel} — this session is further along than the day now goes.
+          {t("player.stale.body", { day: dayLabel })}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Button className="w-full" onClick={endSession}>
-          Clear it
+          {t("player.stale.action")}
         </Button>
       </CardContent>
     </Card>

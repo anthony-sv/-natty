@@ -1,21 +1,28 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DataTable } from "@/components/data-table";
 import { createAppColumnHelper } from "@/lib/table";
+import { useDateFormat, useT, type Translate } from "@/i18n/use-t";
 import type { RecordRow } from "../records";
 import {
   ExerciseDetailSheet,
   ExerciseDetailTrigger,
 } from "./ExerciseDetailSheet";
 
-const dateFormat = new Intl.DateTimeFormat(undefined, {
+const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
   day: "numeric",
   month: "short",
   year: "numeric",
-});
+};
 
 const column = createAppColumnHelper<RecordRow>();
 
-const columns = column.columns([
+/**
+ * Built per locale rather than at module scope, because a header is a string
+ * and a date cell needs a locale-aware formatter. Memoised on the two things
+ * that change it, so the table isn't handed a new column list every render.
+ */
+const buildColumns = (t: Translate, dateFormat: Intl.DateTimeFormat) =>
+  column.columns([
   // The accessor returns everything this lift can be called — the curated name,
   // its movement, and the library's other spellings — so "row" finds the seated
   // cable row and "pec deck" finds the machine fly. The cell shows only the
@@ -28,7 +35,7 @@ const columns = column.columns([
         .join(" "),
     {
       id: "exercise",
-      header: "Exercise",
+      header: t("common.exercise"),
       sortFn: "alphanumeric",
       // The accessor carries the movement and aliases so the filter can see
       // them; the group heading must not, or every heading would read "Lat
@@ -43,12 +50,12 @@ const columns = column.columns([
     },
   ),
   column.accessor("reps", {
-    header: "Reps",
+    header: t("common.reps"),
     sortFn: "basic",
     cell: (info) => <span className="tabular-nums">{info.getValue()}</span>,
   }),
   column.accessor("weight", {
-    header: "Weight",
+    header: t("common.weight"),
     sortFn: "basic",
     // An unweighted set is a real record, it just carries no load — it sorts
     // to the end rather than pretending to be zero.
@@ -58,14 +65,14 @@ const columns = column.columns([
       return (
         <span className="tabular-nums">
           {weight === undefined
-            ? "Bodyweight"
+            ? t("common.bodyweight")
             : `${weight} ${info.row.original.unit}`}
         </span>
       );
     },
   }),
   column.accessor("performedAt", {
-    header: "Set",
+    header: t("records.columnSet"),
     sortFn: "datetime",
     // The card is wide and there are only three values on a row, so
     // left-packing them all left two thirds of it empty. Reps and weight stay
@@ -77,7 +84,7 @@ const columns = column.columns([
       </span>
     ),
   }),
-]);
+  ]);
 
 /** Only the exercise column is searched — see `globalFilterColumns`. */
 const SEARCHABLE = ["exercise"] as const;
@@ -101,6 +108,10 @@ export function RecordsTable({
 }) {
   // Which exercise's charts are open. Held here rather than one sheet per
   // group: with 113 exercises that would mount 113 live queries.
+  const t = useT();
+  const dateFormat = useDateFormat(DATE_OPTIONS);
+  const columns = useMemo(() => buildColumns(t, dateFormat), [t, dateFormat]);
+
   const [detail, setDetail] = useState<
     { exerciseId: string; exerciseName: string } | undefined
   >(undefined);
@@ -134,7 +145,7 @@ export function RecordsTable({
         getRowId={(row) => row.id}
         devtoolsKey="records"
         empty={
-          search ? `No records match "${search}".` : "No records logged yet."
+          search ? t("records.emptySearch", { search }) : t("records.empty")
         }
         // The exercise column keeps a slot but narrows to an indent: its value
         // is the heading above each run, and the column has to stay in the table

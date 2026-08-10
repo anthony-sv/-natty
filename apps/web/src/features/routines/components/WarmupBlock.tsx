@@ -13,9 +13,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getWarmupSection } from "@/data/routines";
+import { useFormatting } from "@/i18n/use-formatting";
+import { useT } from "@/i18n/use-t";
 import { formatPrescription } from "../lib/format";
 
 export function WarmupBlock({ warmupRefs }: { warmupRefs: string[] }) {
+  const t = useT();
+  const f = useFormatting();
   const sections = warmupRefs
     .map((slug) => getWarmupSection(slug))
     .filter((s) => s !== undefined);
@@ -25,7 +29,7 @@ export function WarmupBlock({ warmupRefs }: { warmupRefs: string[] }) {
   return (
     <Collapsible className="rounded-lg border p-3">
       <CollapsibleTrigger render={<Button variant="ghost" className="w-full justify-between" />}>
-        Warm-up & stretching
+        {t("routines.warmup")}
         <ChevronsUpDownIcon className="size-4 text-muted-foreground" />
       </CollapsibleTrigger>
       <CollapsibleContent>
@@ -58,12 +62,15 @@ export function WarmupBlock({ warmupRefs }: { warmupRefs: string[] }) {
                       </span>
                       {move.sets !== undefined || move.durationSeconds !== undefined ? (
                         <Badge variant="secondary">
-                          {formatPrescription({
-                            sets: move.sets ?? 1,
-                            reps: move.reps,
-                            durationSeconds: move.durationSeconds,
-                            perSide: move.perSide,
-                          })}
+                          {formatPrescription(
+                            {
+                              sets: move.sets ?? 1,
+                              reps: move.reps,
+                              durationSeconds: move.durationSeconds,
+                              perSide: move.perSide,
+                            },
+                            f,
+                          )}
                         </Badge>
                       ) : null}
                     </li>

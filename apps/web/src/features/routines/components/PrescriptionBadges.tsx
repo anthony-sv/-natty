@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import type { Prescription } from "@/data/routines";
+import { useFormatting } from "@/i18n/use-formatting";
 import { formatModifiers, formatPrescription } from "../lib/format";
 
 export function PrescriptionBadges({
@@ -9,6 +10,8 @@ export function PrescriptionBadges({
   prescriptions: Prescription[];
   isFinisher?: boolean;
 }) {
+  const f = useFormatting();
+
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {prescriptions.map((p, i) => (
@@ -16,10 +19,10 @@ export function PrescriptionBadges({
         // applies them to its last phase reads correctly.
         <span key={i} className="flex flex-wrap items-center gap-1.5">
           <Badge variant={isFinisher ? "default" : "secondary"}>
-            {formatPrescription(p)}
+            {formatPrescription(p, f)}
           </Badge>
           {p.modifiers
-            ? formatModifiers(p.modifiers).map((label) => (
+            ? formatModifiers(p.modifiers, f).map((label) => (
                 <Badge key={label} variant="destructive">
                   {label}
                 </Badge>

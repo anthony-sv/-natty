@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { formatEstimate, setsPerExercise, summariseDay } from "./day-summary";
+import { formattingFor } from "@/i18n/test-formatting";
+
+/** English; nothing here asserts on wording, only on counts and durations. */
+const F = formattingFor();
 import type { ExerciseEntry, TrainingDay } from "@/data/routines";
 
 function exercise(partial: Partial<ExerciseEntry> = {}): ExerciseEntry {
@@ -35,6 +39,7 @@ describe("summariseDay", () => {
           ],
         }),
       ]),
+      F,
     );
 
     expect(summary.exercises).toBe(2);
@@ -44,6 +49,7 @@ describe("summariseDay", () => {
   it("counts finishers separately", () => {
     const summary = summariseDay(
       day([exercise(), exercise({ isFinisher: true })]),
+      F,
     );
 
     expect(summary.finishers).toBe(1);
@@ -52,9 +58,11 @@ describe("summariseDay", () => {
   it("adds rest into the estimate, not just the sets", () => {
     const short = summariseDay(
       day([exercise({ prescriptions: [{ sets: 3, reps: 10, restSeconds: 30 }] })]),
+      F,
     );
     const long = summariseDay(
       day([exercise({ prescriptions: [{ sets: 3, reps: 10, restSeconds: 180 }] })]),
+      F,
     );
 
     expect(long.estimatedSeconds).toBeGreaterThan(short.estimatedSeconds);
@@ -68,6 +76,7 @@ describe("summariseDay", () => {
           prescriptions: [{ sets: 1, durationSeconds: 1200, restSeconds: 0 }],
         }),
       ]),
+      F,
     );
 
     // The block itself, not the 45s guess a plain set gets.
@@ -75,7 +84,7 @@ describe("summariseDay", () => {
   });
 
   it("has nothing to say about a rest day", () => {
-    const summary = summariseDay(day([]));
+    const summary = summariseDay(day([]), F);
 
     expect(summary).toEqual({
       exercises: 0,
@@ -119,3 +128,4 @@ describe("setsPerExercise", () => {
     ).toEqual([4, 3]);
   });
 });
+

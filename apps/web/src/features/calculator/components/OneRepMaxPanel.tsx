@@ -25,6 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { UNITS, type WeightUnit } from "@/lib/units";
+import { useT } from "@/i18n/use-t";
 import {
   FORMULAS,
   MAX_USEFUL_REPS,
@@ -57,19 +58,18 @@ export function OneRepMaxPanel() {
   const formula = formulaById(formulaId);
   const chosen = estimates?.find((e) => e.formula.id === formulaId);
 
+  const t = useT();
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>The set you did</CardTitle>
-          <CardDescription>
-            A hard set, taken close to failure. A set with three left in the tank
-            estimates a max you don't have — use the RPE tab for those.
-          </CardDescription>
+          <CardTitle>{t("calc.setYouDid")}</CardTitle>
+          <CardDescription>{t("calc.setYouDidBody")}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-start gap-4">
           <Field className="w-48">
-            <FieldLabel htmlFor="orm-weight">Weight</FieldLabel>
+            <FieldLabel htmlFor="orm-weight">{t("common.weight")}</FieldLabel>
             <div className="flex items-center gap-2">
               <Input
                 id="orm-weight"
@@ -77,7 +77,7 @@ export function OneRepMaxPanel() {
                 inputMode="decimal"
                 min="0"
                 step="0.5"
-                placeholder="e.g. 100"
+                placeholder={t("calc.example100")}
                 className="min-w-0 flex-1"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
@@ -87,7 +87,10 @@ export function OneRepMaxPanel() {
                 value={unit}
                 onValueChange={(value) => setUnit(value as WeightUnit)}
               >
-                <SelectTrigger aria-label="Weight unit" className="w-20 shrink-0">
+                <SelectTrigger
+                  aria-label={t("common.weightUnit")}
+                  className="w-20 shrink-0"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -102,7 +105,7 @@ export function OneRepMaxPanel() {
           </Field>
 
           <Field className="w-40">
-            <FieldLabel htmlFor="orm-reps">Reps</FieldLabel>
+            <FieldLabel htmlFor="orm-reps">{t("common.reps")}</FieldLabel>
             <Input
               id="orm-reps"
               type="number"
@@ -112,27 +115,27 @@ export function OneRepMaxPanel() {
               value={reps}
               onChange={(e) => setReps(e.target.value)}
             />
-            <FieldDescription>2 to {MAX_USEFUL_REPS}.</FieldDescription>
+            <FieldDescription>
+              {t("calc.orm.repsRange", { max: MAX_USEFUL_REPS })}
+            </FieldDescription>
           </Field>
         </CardContent>
       </Card>
 
       {estimates === undefined ? (
         <Empty>
-          <EmptyTitle>Enter a set of two or more</EmptyTitle>
+          <EmptyTitle>{t("calc.orm.needTwo")}</EmptyTitle>
           <EmptyDescription>
-            A single already is your one-rep max, and past {MAX_USEFUL_REPS}{" "}
-            reps these curves stop agreeing with reality.
+            {t("calc.orm.needTwoBody", { max: MAX_USEFUL_REPS })}
           </EmptyDescription>
         </Empty>
       ) : (
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Estimated one-rep max</CardTitle>
+              <CardTitle>{t("calc.orm.title")}</CardTitle>
               <CardDescription>
-                Five fits of the same data. The spread between them is the
-                honest error bar on any single one.
+                {t("calc.orm.body")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
@@ -163,7 +166,7 @@ export function OneRepMaxPanel() {
 
           <Card>
             <CardHeader>
-              <CardTitle>What to lift for a given set</CardTitle>
+              <CardTitle>{t("calc.orm.forGivenSet")}</CardTitle>
               <CardDescription>
                 The same formula run backwards, off its own estimate — so the
                 row matching the set you entered reads back as the weight you
@@ -172,7 +175,7 @@ export function OneRepMaxPanel() {
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <Field className="w-56">
-                <FieldLabel htmlFor="orm-formula">Formula</FieldLabel>
+                <FieldLabel htmlFor="orm-formula">{t("calc.orm.formula")}</FieldLabel>
                 <Select
                   items={FORMULAS.map((f) => ({ value: f.id, label: f.name }))}
                   value={formulaId}
@@ -194,9 +197,9 @@ export function OneRepMaxPanel() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Reps</TableHead>
-                    <TableHead>Load</TableHead>
-                    <TableHead className="text-right">Of max</TableHead>
+                    <TableHead>{t("common.reps")}</TableHead>
+                    <TableHead>{t("calc.orm.load")}</TableHead>
+                    <TableHead className="text-right">{t("calc.orm.ofMax")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

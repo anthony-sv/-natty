@@ -5,9 +5,10 @@ import { tooltip } from "@tanstack/charts/tooltip";
 import { Chart } from "@tanstack/react-charts";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDateFormat, useT } from "@/i18n/use-t";
 import { convertWeight, type WeightUnit } from "@/lib/units";
 import type { BodyEntry } from "../schema";
-import type { WeeklyAverage } from "../weekly";
+import { DAYS_IN_WEEK, type WeeklyAverage } from "../weekly";
 
 /**
  * Chart paint, kept out of the definitions so light and dark are one swap.
@@ -33,18 +34,18 @@ const DAILY_DOT_RADIUS = 3;
  * Tooltip dates. Without an explicit item the default tooltip labels the row
  * "x" and prints a UTC ISO string, which is exact and unreadable.
  */
-const tooltipDate = new Intl.DateTimeFormat(undefined, {
+const TOOLTIP_DATE: Intl.DateTimeFormatOptions = {
   weekday: "short",
   day: "numeric",
   month: "short",
   year: "numeric",
-});
+};
 
 /** Weeks are named by the Monday they start on, not by their midpoint. */
-const weekDate = new Intl.DateTimeFormat(undefined, {
+const WEEK_DATE: Intl.DateTimeFormatOptions = {
   day: "numeric",
   month: "short",
-});
+};
 
 interface WeightPoint {
   id: string;
@@ -93,6 +94,9 @@ export function BodyCharts({
   // Charted in the unit of the most recent weigh-in: a run mixing 82kg and
   // 181lb would draw a cliff that isn't there. What's *stored* stays as
   // entered — the history table still reads back in each entry's own unit.
+  const t = useT();
+  const tooltipDate = useDateFormat(TOOLTIP_DATE);
+  const weekDate = useDateFormat(WEEK_DATE);
   const unit: WeightUnit = entries[0]?.unit ?? "kg";
 
   const weightPoints = useMemo<WeightPoint[]>(
@@ -183,7 +187,7 @@ export function BodyCharts({
           scale: scaleLinear,
           nice: true,
           grid: true,
-          axis: { label: `Weight (${unit})` },
+          axis: { label: t("body.chart.axisWeight", { unit }) },
         },
         theme,
         tooltip: {
@@ -191,18 +195,26 @@ export function BodyCharts({
           items: [
             {
               channel: "x",
-              label: "Date",
+              label: t("common.date"),
               text: (point) => tooltipDate.format(point.xValue),
             },
             {
               channel: "y",
-              label: "Weight",
+              label: t("common.weight"),
               text: (point) => `${point.yValue.toFixed(1)} ${unit}`,
             },
           ],
         },
       }),
-    [weightPoints, weeklyPoints, settledWeeks, runningWeek, unit],
+    [
+      weightPoints,
+      weeklyPoints,
+      settledWeeks,
+      runningWeek,
+      unit,
+      t,
+      tooltipDate,
+    ],
   );
 
   const bodyFatChart = useMemo(
@@ -226,7 +238,7 @@ export function BodyCharts({
           scale: scaleLinear,
           nice: true,
           grid: true,
-          axis: { label: "Body fat (%)" },
+          axis: { label: t("body.chart.axisBodyFat") },
         },
         theme,
         tooltip: {
@@ -234,18 +246,18 @@ export function BodyCharts({
           items: [
             {
               channel: "x",
-              label: "Date",
+              label: t("common.date"),
               text: (point) => tooltipDate.format(point.xValue),
             },
             {
               channel: "y",
-              label: "Body fat",
+              label: t("body.stat.bodyFat"),
               text: (point) => `${point.yValue.toFixed(1)}%`,
             },
           ],
         },
       }),
-    [bodyFatPoints],
+    [bodyFatPoints, t, tooltipDate],
   );
 
   if (isLoading) {
@@ -262,10 +274,8 @@ export function BodyCharts({
   if (weightPoints.length < 2) {
     return (
       <Empty>
-        <EmptyTitle>Not enough weigh-ins yet</EmptyTitle>
-        <EmptyDescription>
-          Log a second one and the trend shows up here.
-        </EmptyDescription>
+        <EmptyTitle>{t("body.chart.notEnough.title")}</EmptyTitle>
+        <EmptyDescription>{t("body.chart.notEnough.body")}</EmptyDescription>
       </Empty>
     );
   }
@@ -276,16 +286,19 @@ export function BodyCharts({
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-          <h3 className="text-sm font-medium">Weight</h3>
+          <h3 className="text-sm font-medium">{t("common.weight")}</h3>
           {/* Written in HTML rather than through the library's `colorLegend`,
               which legends a colour *scale* — these two marks carry fixed
               strokes, so there's no scale for it to read. */}
           <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            <LegendItem label="Each weigh-in" variant="daily" />
-            <LegendItem label="Weekly average" variant="weekly" />
+            <LegendItem label={t("body.chart.legendDaily")} variant="daily" />
+            <LegendItem label={t("body.chart.legendWeekly")} variant="weekly" />
             {partial ? (
               <LegendItem
-                label={`This week so far (${partial.count} of 7 days)`}
+                label={t("body.chart.legendPartial", {
+                  count: partial.count,
+                  total: DAYS_IN_WEEK,
+                })}
                 variant="partial"
               />
             ) : null}
@@ -294,29 +307,28 @@ export function BodyCharts({
         <Chart
           definition={weightChart}
           height={CHART_HEIGHT}
-          ariaLabel={`Body weight in ${unit} over time, with the weekly average`}
+          ariaLabel={t("body.chart.weightAria", { unit })}
         />
         {weeklyPoints.length >= 2 ? (
           <p className="text-xs text-muted-foreground">
-            Each average is plotted mid-week, on the Thursday, so the line sits
-            over the days it summarises.{" "}
-            {weekDate.format(weeklyPoints[0].weekStart)} onwards.
+            {t("body.chart.midweekNote", {
+              from: weekDate.format(weeklyPoints[0].weekStart),
+            })}
           </p>
         ) : null}
       </section>
 
       <section className="flex flex-col gap-2">
-        <h3 className="text-sm font-medium">Body fat</h3>
+        <h3 className="text-sm font-medium">{t("body.stat.bodyFat")}</h3>
         {bodyFatPoints.length < 2 ? (
           <p className="text-sm text-muted-foreground">
-            Body fat is optional, so this needs two weigh-ins that carry a
-            reading.
+            {t("body.chart.bodyFatNeedsTwo")}
           </p>
         ) : (
           <Chart
             definition={bodyFatChart}
             height={CHART_HEIGHT}
-            ariaLabel="Body fat percentage over time"
+            ariaLabel={t("body.chart.bodyFatAria")}
           />
         )}
       </section>

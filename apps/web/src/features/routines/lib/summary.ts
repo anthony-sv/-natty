@@ -1,4 +1,5 @@
 import type { Routine } from "@/data/routines";
+import type { Formatting } from "./format";
 
 /**
  * The at-a-glance shape of a program: how long it runs, and what the split is.
@@ -16,7 +17,10 @@ export interface RoutineSummary {
   split: string[];
 }
 
-export function summariseRoutine(routine: Routine): RoutineSummary {
+export function summariseRoutine(
+  routine: Routine,
+  { names, t }: Formatting,
+): RoutineSummary {
   // The first week stands for the program. Later weeks in these routines
   // repeat the same split with different prescriptions, so listing every week
   // would just say "Chest, Back, ..." eight times.
@@ -26,10 +30,12 @@ export function summariseRoutine(routine: Routine): RoutineSummary {
   return {
     length:
       routine.weeks.length > 1
-        ? `${routine.weeks.length} weeks`
-        : `${days.length}-day cycle`,
+        ? t.plural("routines.weeks", routine.weeks.length)
+        : t("routines.dayCycle", { count: days.length }),
     trainingDays: training.length,
     restDays: days.length - training.length,
-    split: training.map((day) => day.label),
+    // Day labels are muscle groups, so they translate like any other authored
+    // name — through the catalog, keyed by their English wording.
+    split: training.map((day) => names.text(day.label) ?? day.label),
   };
 }

@@ -5,6 +5,7 @@ import { tooltip } from "@tanstack/charts/tooltip";
 import { Chart } from "@tanstack/react-charts";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDateFormat, useT } from "@/i18n/use-t";
 import type { WeightUnit } from "@/lib/units";
 import {
   estimatedPoints,
@@ -25,11 +26,11 @@ const CHART_HEIGHT = 200;
 const RECORD_RADIUS = 5;
 const SET_RADIUS = 3;
 
-const tooltipDate = new Intl.DateTimeFormat(undefined, {
+const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
   day: "numeric",
   month: "short",
   year: "numeric",
-});
+};
 
 /**
  * One exercise's history, as two pictures.
@@ -47,6 +48,8 @@ export function ExerciseCharts({
   unit: WeightUnit;
   isLoading: boolean;
 }) {
+  const t = useT();
+  const tooltipDate = useDateFormat(DATE_OPTIONS);
   const points = useMemo(() => toSetPoints(sets, unit), [sets, unit]);
   const curve = useMemo(() => toStrengthCurve(sets, unit), [sets, unit]);
 
@@ -88,7 +91,7 @@ export function ExerciseCharts({
           scale: scaleLinear,
           nice: true,
           grid: true,
-          axis: { label: `Load (${unit})` },
+          axis: { label: t("detail.axis.load", { unit }) },
         },
         theme,
         tooltip: {
@@ -96,18 +99,18 @@ export function ExerciseCharts({
           items: [
             {
               channel: "x",
-              label: "Date",
+              label: t("common.date"),
               text: (point) => tooltipDate.format(point.xValue),
             },
             {
               channel: "y",
-              label: "Load",
+              label: t("calc.orm.load"),
               text: (point) => `${point.yValue.toFixed(1)} ${unit}`,
             },
           ],
         },
       }),
-    [estimates, ordinary, records, unit],
+    [estimates, ordinary, records, unit, t, tooltipDate],
   );
 
   const strengthCurve = useMemo(
@@ -126,12 +129,12 @@ export function ExerciseCharts({
             fill: "var(--chart-weight)",
           }),
         ],
-        x: { scale: scaleLinear, nice: true, axis: { label: "Reps" } },
+        x: { scale: scaleLinear, nice: true, axis: { label: t("common.reps") } },
         y: {
           scale: scaleLinear,
           nice: true,
           grid: true,
-          axis: { label: `Weight (${unit})` },
+          axis: { label: t("body.chart.axisWeight", { unit }) },
         },
         theme,
         tooltip: {
@@ -139,18 +142,18 @@ export function ExerciseCharts({
           items: [
             {
               channel: "x",
-              label: "Reps",
+              label: t("common.reps"),
               text: (point) => String(point.xValue),
             },
             {
               channel: "y",
-              label: "Weight",
+              label: t("common.weight"),
               text: (point) => `${point.yValue.toFixed(1)} ${unit}`,
             },
           ],
         },
       }),
-    [curve, unit],
+    [curve, unit, t],
   );
 
   if (isLoading) {
@@ -165,11 +168,11 @@ export function ExerciseCharts({
   if (loaded.length === 0) {
     return (
       <Empty>
-        <EmptyTitle>Nothing to plot yet</EmptyTitle>
+        <EmptyTitle>{t("detail.empty.title")}</EmptyTitle>
         <EmptyDescription>
           {points.length === 0
-            ? "Log a set for this exercise and its history shows up here."
-            : "Every set logged for this one was bodyweight, so there's no load to chart."}
+            ? t("detail.empty.body")
+            : t("detail.empty.bodyweight")}
         </EmptyDescription>
       </Empty>
     );
@@ -179,53 +182,51 @@ export function ExerciseCharts({
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-          <h3 className="text-sm font-medium">Every set, over time</h3>
+          <h3 className="text-sm font-medium">{t("detail.overTime")}</h3>
           <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-            <LegendItem label="Set" variant="set" />
-            <LegendItem label="Record" variant="record" />
+            <LegendItem label={t("detail.legend.set")} variant="set" />
+            <LegendItem label={t("detail.legend.record")} variant="record" />
             {estimates.length > 1 ? (
-              <LegendItem label="Estimated 1RM" variant="estimate" />
+              <LegendItem
+                label={t("detail.legend.estimate")}
+                variant="estimate"
+              />
             ) : null}
           </ul>
         </div>
         {loaded.length < 2 ? (
           <p className="text-sm text-muted-foreground">
-            One loaded set is a point, not a trend — log another and this fills
-            in.
+            {t("detail.needTwoSets")}
           </p>
         ) : (
           <>
             <Chart
               definition={overTime}
               height={CHART_HEIGHT}
-              ariaLabel="Every logged set over time, with records marked"
+              ariaLabel={t("detail.overTimeAria")}
             />
             <p className="text-xs text-muted-foreground">
-              Raw load can't be compared across rep counts, so the line is
-              Epley's estimated one-rep max — it puts a heavy triple and a long
-              set of twelve on the same axis.
+              {t("detail.overTimeNote")}
             </p>
           </>
         )}
       </section>
 
       <section className="flex flex-col gap-2">
-        <h3 className="text-sm font-medium">Strength curve</h3>
+        <h3 className="text-sm font-medium">{t("detail.strengthCurve")}</h3>
         {curve.length < 2 ? (
           <p className="text-sm text-muted-foreground">
-            This needs records at two different rep counts.
+            {t("detail.needTwoRepCounts")}
           </p>
         ) : (
           <>
             <Chart
               definition={strengthCurve}
               height={CHART_HEIGHT}
-              ariaLabel="Best weight at each rep count"
+              ariaLabel={t("detail.strengthCurveAria")}
             />
             <p className="text-xs text-muted-foreground">
-              Your best weight at each rep count — the same records as the
-              table, as a shape. How steeply it falls is how fast your strength
-              drops off as the set runs long.
+              {t("detail.strengthCurveNote")}
             </p>
           </>
         )}
