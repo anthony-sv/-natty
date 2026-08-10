@@ -1,6 +1,5 @@
-import { createColumnHelper } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
-import { features } from "@/lib/table";
+import { createAppColumnHelper } from "@/lib/table";
 import type { RecordRow } from "../records";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, {
@@ -9,7 +8,7 @@ const dateFormat = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
 });
 
-const column = createColumnHelper<typeof features, RecordRow>();
+const column = createAppColumnHelper<RecordRow>();
 
 const columns = column.columns([
   // The accessor returns the exercise name *plus* its movement so searching
@@ -55,6 +54,10 @@ const columns = column.columns([
   column.accessor("performedAt", {
     header: "Set",
     sortFn: "datetime",
+    // The card is wide and there are only three values on a row, so
+    // left-packing them all left two thirds of it empty. Reps and weight stay
+    // together where they read as one fact; the date bookends the row.
+    meta: { align: "end" },
     cell: (info) => (
       <span className="text-muted-foreground">
         {dateFormat.format(new Date(info.getValue()))}
@@ -72,15 +75,6 @@ const SEARCHABLE = ["exercise"] as const;
  * because the heading also carries the count.
  */
 const GROUP_BY = ["exercise"] as const;
-
-/**
- * The date bookends the row.
- *
- * The card is wide and there are only three values in it, so left-packing them
- * all left two thirds of every row empty. Reps and weight stay together on the
- * left where they read as one fact; the date goes to the far edge.
- */
-const ALIGN_END = ["performedAt"] as const;
 
 /** Every record across every exercise: one virtualized, sortable table. */
 export function RecordsTable({
@@ -100,7 +94,9 @@ export function RecordsTable({
       globalFilter={search}
       globalFilterColumns={SEARCHABLE}
       grouping={GROUP_BY}
-      alignEnd={ALIGN_END}
+      // The logged set's own id, so a row keeps its identity through a search
+      // or a re-sort — the virtual list keys its measurements off it.
+      getRowId={(row) => row.id}
       devtoolsKey="records"
       empty={
         search ? `No records match "${search}".` : "No records logged yet."

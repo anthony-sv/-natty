@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useTable, type RowData } from "@tanstack/react-table";
+import type { RowData } from "@tanstack/react-table";
 import { useTanStackTableDevtools } from "@tanstack/react-table-devtools";
 import {
   ArrowDownIcon,
@@ -10,7 +10,7 @@ import {
   ChevronsUpDownIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { features, type ColumnList } from "@/lib/table";
+import { useAppTable, type ColumnDisplayMeta, type ColumnList } from "@/lib/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -71,8 +71,8 @@ export function DataTable<TData extends RowData>({
   isLoading = false,
   globalFilter,
   globalFilterColumns,
-  alignEnd,
   grouping,
+  getRowId,
   devtoolsKey,
   virtual,
 }: {
@@ -91,30 +91,29 @@ export function DataTable<TData extends RowData>({
    */
   globalFilterColumns?: readonly string[];
   /**
-   * Column ids whose header and cells hug the right edge of their slot.
-   *
-   * For the trailing column of a wide table: left-aligning a date under a
-   * column that stretches leaves it stranded mid-row. Applied here rather than
-   * in each cell renderer because the header has to move with it, and the
-   * header lives inside a flex cell this component owns.
-   */
-  alignEnd?: readonly string[];
-  /**
    * Column ids to group rows under, as a starting state — the table owns it
    * from there. Group rows start expanded, so grouping reads as headings over
    * the same list rather than as hiding everything behind a click.
    */
   grouping?: readonly string[];
+  /**
+   * A stable id per row. Without it rows are keyed by position, so filtering
+   * or sorting hands the same key to a different record — which the virtual
+   * list then reuses a measurement for.
+   */
+  getRowId?: (row: TData, index: number) => string;
   /** Names this table in the devtools panel, which lists every live one. */
   devtoolsKey?: string;
   /** Renders only the visible rows. For lists that can grow without bound. */
   virtual?: VirtualOptions;
 }) {
-  const table = useTable({
-    features,
+  // `useAppTable`, not `useTable`: the factory in `lib/table.ts` already binds
+  // the feature set, so it isn't restated at every table.
+  const table = useAppTable({
     columns,
     data,
     key: devtoolsKey,
+    getRowId,
     state: { globalFilter },
     initialState: { grouping: [...(grouping ?? [])], expanded: true },
     globalFilterFn: "includesString",
@@ -128,7 +127,10 @@ export function DataTable<TData extends RowData>({
   useTanStackTableDevtools(table, { enabled: devtoolsKey !== undefined });
 
   const rows = table.getRowModel().rows;
-  const isAlignedEnd = (columnId: string) => alignEnd?.includes(columnId) ?? false;
+  // Read off the column def rather than a prop: `columnMeta` is the v9 slot
+  // for exactly this, and it keeps alignment next to the cell it aligns.
+  const isAlignedEnd = (column: { columnDef: { meta?: ColumnDisplayMeta } }) =>
+    column.columnDef.meta?.align === "end";
   const columnCount = table.getHeaderGroups()[0]?.headers.length ?? columns.length;
 
   /**
@@ -187,7 +189,7 @@ export function DataTable<TData extends RowData>({
               key={header.id}
               className={cn(
                 virtual && "flex items-center",
-                isAlignedEnd(header.column.id) && "justify-end text-right",
+                isAlignedEnd(header.column) && "justify-end text-right",
               )}
             >
               {/* A grouped column's header is redundant — its values are the
@@ -264,7 +266,7 @@ export function DataTable<TData extends RowData>({
               key={cell.id}
               className={cn(
                 "flex items-center",
-                isAlignedEnd(cell.column.id) && "justify-end text-right",
+                isAlignedEnd(cell.column) && "justify-end text-right",
               )}
             >
               {/* A placeholder is a leaf row's cell for the grouped column:
@@ -292,7 +294,7 @@ export function DataTable<TData extends RowData>({
                 row.getAllCells().map((cell) => (
                   <TableCell
                     key={cell.id}
-                    className={cn(isAlignedEnd(cell.column.id) && "text-right")}
+                    className={cn(isAlignedEnd(cell.column) && "text-right")}
                   >
                     {cell.getIsPlaceholder() ? null : (
                       <table.FlexRender cell={cell} />

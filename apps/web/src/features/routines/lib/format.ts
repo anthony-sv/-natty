@@ -82,6 +82,25 @@ export function formatWeekLabel(weekNumber: number): string {
   return `Week ${weekNumber}`;
 }
 
+/**
+ * Elapsed clock, e.g. 90000 → "1:30" and 5_400_000 → "1:30:00".
+ *
+ * Separate from `formatClock` because a countdown rounds *up* — a rest timer
+ * should read 0:00 only when it's actually done — while time already spent
+ * rounds down, so a session that started 59 seconds ago reads 0:59 rather than
+ * claiming a minute it hasn't had.
+ */
+export function formatElapsed(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const paddedSeconds = String(seconds).padStart(2, "0");
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${paddedSeconds}`
+    : `${minutes}:${paddedSeconds}`;
+}
+
 /** Countdown clock, e.g. 90000 → "1:30". Rounds up so it hits 0:00 only at zero. */
 export function formatClock(ms: number): string {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1000));

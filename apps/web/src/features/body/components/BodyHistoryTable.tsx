@@ -1,7 +1,6 @@
 import { useMemo } from "react";
-import { createColumnHelper } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
-import { features } from "@/lib/table";
+import { createAppColumnHelper } from "@/lib/table";
 import { ffmi, formatIndex, normalizedFfmi } from "../ffmi";
 import type { BodyEntry } from "../schema";
 
@@ -17,7 +16,7 @@ const dateFormat = new Intl.DateTimeFormat(undefined, {
  * row's FFMI, which is the point of storing it once.
  */
 function buildColumns(heightCm: number | undefined) {
-  const column = createColumnHelper<typeof features, BodyEntry>();
+  const column = createAppColumnHelper<BodyEntry>();
   return column.columns([
     column.accessor("measuredAt", {
       header: "Date",
@@ -63,9 +62,12 @@ function buildColumns(heightCm: number | undefined) {
     }),
     column.display({
       id: "normalized",
-      header: () => <span className="block text-right">Normalized</span>,
+      header: "Normalized",
+      // Alignment on the column def rather than hand-rolled into both the
+      // header and the cell, which is what `columnMeta` is for.
+      meta: { align: "end" },
       cell: (info) => (
-        <span className="block text-right tabular-nums">
+        <span className="tabular-nums">
           {formatIndex(normalizedFfmi(info.row.original, heightCm))}
         </span>
       ),
@@ -89,6 +91,7 @@ export function BodyHistoryTable({
       columns={columns}
       data={entries}
       isLoading={isLoading}
+      getRowId={(entry) => entry.id}
       devtoolsKey="body-history"
       empty="No weigh-ins logged yet."
     />

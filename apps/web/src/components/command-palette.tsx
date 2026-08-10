@@ -70,6 +70,7 @@ export function CommandPalette() {
           <CommandItem onSelect={() => go("/")}>Home</CommandItem>
           <CommandItem onSelect={() => go("/routines")}>Routines</CommandItem>
           <CommandItem onSelect={() => go("/progress")}>Progress</CommandItem>
+          <CommandItem onSelect={() => go("/nutrition")}>Nutrition</CommandItem>
           <CommandItem onSelect={() => go("/calculator")}>Calculators</CommandItem>
           <CommandItem onSelect={() => go("/plates")}>Plate loader</CommandItem>
         </CommandGroup>

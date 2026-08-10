@@ -6,6 +6,7 @@ import {
   ListIcon,
   PlayIcon,
   TrendingUpIcon,
+  UtensilsIcon,
 } from "lucide-react";
 import { Page } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -49,6 +50,12 @@ const DESTINATIONS = [
     icon: TrendingUpIcon,
     title: "Progress",
     description: "Records per exercise, weigh-ins, FFMI and trend charts.",
+  },
+  {
+    to: "/nutrition",
+    icon: UtensilsIcon,
+    title: "Nutrition",
+    description: "The diet plan, meal by meal, and a macro calculator.",
   },
   {
     to: "/calculator",

@@ -6,6 +6,7 @@ import {
   HomeIcon,
   ListIcon,
   TrendingUpIcon,
+  UtensilsIcon,
 } from "lucide-react";
 import { Kbd } from "@/components/ui/kbd";
 import {
@@ -36,6 +37,7 @@ const NAV = [
   { to: "/", label: "Home", icon: HomeIcon },
   { to: "/routines", label: "Routines", icon: ListIcon },
   { to: "/progress", label: "Progress", icon: TrendingUpIcon },
+  { to: "/nutrition", label: "Nutrition", icon: UtensilsIcon },
   { to: "/calculator", label: "Calculators", icon: CalculatorIcon },
   { to: "/plates", label: "Plate loader", icon: CircleDotIcon },
 ] as const;

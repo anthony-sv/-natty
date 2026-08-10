@@ -39,6 +39,7 @@
     "cmdk": "^1.1.1",
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
+    "d3-shape": "^3.2.0",
     "date-fns": "^4.4.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
@@ -57,6 +58,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@faker-js/faker": "^10.5.0",
+    "@tanstack/devtools-vite": "^0.8.3",
     "@tanstack/react-devtools": "^0.10.9",
     "@tanstack/react-form-devtools": "^0.2.32",
     "@tanstack/react-hotkeys-devtools": "^0.7.0",
@@ -67,6 +69,7 @@
     "@tanstack/router-plugin": "^1.168.23",
     "@types/d3-array": "^3.2.2",
     "@types/d3-scale": "^4.0.9",
+    "@types/d3-shape": "^3.1.8",
     "@types/node": "^26.1.2",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",

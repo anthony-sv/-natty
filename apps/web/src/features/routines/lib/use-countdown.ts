@@ -70,3 +70,21 @@ export function useCountdown(endsAt: number | null): {
 
   return { remainingMs, isComplete: endsAt !== null && remainingMs <= 0 };
 }
+
+/**
+ * Time since an absolute moment — how long a workout has been running.
+ *
+ * Shares the same clock as every countdown rather than starting a second
+ * interval, and is derived from the timestamp the same way, so locking the
+ * phone for ten minutes reports ten more minutes rather than losing them.
+ */
+export function useElapsed(since: number | null): number {
+  const subscribe = useCallback(
+    (onChange: () => void) =>
+      since === null ? noopSubscribe() : subscribeToClock(onChange),
+    [since],
+  );
+
+  const now = useSyncExternalStore(subscribe, getClockNow);
+  return since === null ? 0 : Math.max(0, now - since);
+}

@@ -43,10 +43,13 @@ Or scope to one app: `pnpm --filter web <script>`.
     subpath export (`@tanstack/markdown/react`, `@tanstack/highlight/react`).
   - When building any chart, load the `dataviz` skill first — it has house
     color/form rules for the placeholder palette.
-- Tables: **TanStack Table v9** (`useTable`, not v8's `useReactTable`). Shared
-  setup lives in `src/lib/table.ts` — import `features` from there so column
-  helpers are typed against the same feature set the table runs with. The
-  generic `src/components/data-table.tsx` renders through `ui/table.tsx`; it
+- Tables: **TanStack Table v9** (not v8's `useReactTable`). `src/lib/table.ts`
+  builds the app's factory with **`createTableHook`**, which binds the feature
+  set once: call sites use `createAppColumnHelper<Row>()` and `useAppTable(…)`
+  rather than restating `features` at each one. Build the factory at module
+  scope — one created during render hands back a new context and remounts every
+  table under it. The generic `src/components/data-table.tsx` renders through
+  `ui/table.tsx`; it
   sits outside `ui/` because that directory is vendored, and shadcn publishes
   no `data-table` component, only a docs recipe. v9 traps: no
   `getCoreRowModel()` (automatic), `row.getAllCells()` rather than
@@ -77,11 +80,15 @@ Or scope to one app: `pnpm --filter web <script>`.
   - `getGroupingValue` on a column def splits the grouped-by value from the
     accessor value. The records table needs that: its accessor returns name +
     movement so the filter can see both, while headings show only the name.
-  - `alignEnd` takes column ids and pushes their header *and* cells to the
-    right of the slot. On a wide card, left-packing three short values leaves
-    two thirds of every row empty; the trailing date belongs at the far edge.
-    It lives on the component because the header sits inside a flex cell the
-    component owns, so a cell renderer alone can't move it.
+  - Per-column display hints go in **`columnMeta`**, a type-only `tableFeatures`
+    slot declared with `metaHelper<ColumnDisplayMeta>()`. `meta: { align: "end" }`
+    on a column def moves its header *and* its cells; `DataTable` reads it off
+    `columnDef.meta`. It's typed, so a mistyped value fails the build — and it's
+    the v9 alternative to a `declare module` augmentation, which would leak the
+    keys onto every table in the app rather than ours.
+  - Pass **`getRowId`** wherever the data has a real id. Without it rows are
+    keyed by position, so filtering or re-sorting hands the same key to a
+    different record — which the virtualizer then reuses a measurement for.
   - Virtualization is a `virtual` prop, not a feature: TanStack Virtual
     controls rendering geometry only. It needs `gridTemplate` because the rows
     are absolutely positioned and the table layout algorithm can't size the
@@ -215,6 +222,52 @@ holds auto-start when you tap done, cardio waits for an explicit Start. Trailing
 `rest` steps are trimmed (nothing to rest *for*), but a trailing `pose` is not —
 the last finisher set still ends on a hold.
 
+### The player card
+
+**Three fixed zones, in the same order and at the same size on every step:**
+header (`CardHeader` — day label, live dot, elapsed clock, progress, step
+counter), stage (`CardContent`), action bar (`CardFooter`). `useElapsed` shares
+the same `useSyncExternalStore` tick as every countdown rather than starting a
+second interval, so a locked phone reports the ten minutes it lost.
+
+**The primary button lives in the shell, not in the step bodies.** Each body
+used to render its own `Button` at the end of its own content, so "Done" and
+"Start next set" landed at different heights and the card resized between a set
+and its rest — the control you press forty times a session moved under your
+thumb every other press. `primaryActionFor(step, session, steps, dayLabel)`
+returns `{label, icon, onClick}` and the footer renders it; only the wording
+changes between steps.
+
+**`min-h-80` on the stage is the other half of that.** Pinning the button last
+isn't enough when a rest step holds a third of what a work step does. The floor
+sits above the tallest body, verified by walking all 48 steps of a day at both
+1536px and 360px and asserting a single card height and button offset. Three
+things could otherwise breach it, and each is capped rather than left to grow:
+the reference block (`max-h-12`, scrolls), the "Logged today" block
+(`flex-1 min-h-0`, scrolls), and a rest step's "Next up" label
+(`line-clamp-2` — a long exercise name runs to three lines on a phone).
+
+Inside the stage a work step reads eyebrow (*which* exercise of the day —
+context the card never carried) → name → badges → `PrescriptionStrip` → logged
+sets → `SetLogControl`. The strip splits "Set 2 of 4 · 8-12 reps · then 90s
+rest" into three labelled cells, because as one muted sentence you have to parse
+a line to find the two numbers you act on. **"Logged today" is what fills the
+stage's slack** — with the button pinned and a floor set, a set with no notes
+left a visible hole, and "three sets in at 60kg" is what you want between sets
+anyway.
+
+Countdowns are a `TimerRing`, not a bar under a number: the remaining fraction
+belongs *around* the figure, and it's the affordance every gym timer already
+uses. Rest and pose share one `TimerStepBody`. A timer reached by pressing Back
+has no deadline (`autoStartSecondsFor` only fires going forward) and used to sit
+dead at 0:00 — it now shows the full duration and offers "Start the clock", in
+the same fixed-height slot that otherwise holds the "time's up" note.
+
+**Ending early is behind an `AlertDialog`**: it sits one mis-tap from Back and
+throws away your place in the day with no undo. Its icon is a stop sign, not a
+bare `SquareIcon` — an outlined square beside a label reads as an unchecked
+checkbox.
+
 The day page leads with `DaySummaryStrip` — exercises, working sets, a rough
 time, and finishers when there are any — because the page listed the work
 without ever saying how much of it there was. `summariseDay` derives all of it
@@ -314,6 +367,14 @@ pounds-marked machine stays in pounds without a per-exercise setting.
 
 `pr.ts` is deliberately free of React and of the collection, so the frontier is
 directly unit-tested (`pr.test.ts`).
+
+**Order in the live query, not in a JS sort afterwards.** `orderBy` is
+incrementally maintained; re-sorting the result array throws that away and
+redoes the whole thing on every change. The same goes for `where` over
+`.filter()`. The exceptions here are deliberate: `setsFor` reads the collection
+synchronously *because* the live-query snapshot is stale in event handlers, and
+the PR frontier is an ordering problem across a whole group that no operator
+expresses.
 
 **Event handlers must not read the `useLiveQuery` snapshot from
 `useExerciseLog`** — that snapshot is whatever the last render saw, and after
@@ -493,6 +554,74 @@ fat-free mass makes the ratio 0.65/0.145 = 4.48 for everyone — and the measure
 form doesn't work either, because an InBody reports bone *mineral* content
 rather than whole bone mass. Don't rebuild it without a real bone-mass source.
 
+## Nutrition (`src/data/diets/`, `src/features/nutrition/`)
+
+`/nutrition` is two tabs over a plan picker: **Plan**, the diet as a reference,
+and **Macros**, an interactive split. Nothing is logged — there's no intake
+collection, and adding one is a separate decision.
+
+Plans are authored data in `src/data/diets/`, mirroring `src/data/routines/`
+down to the `authoring.ts` shorthands and the throw-on-unknown-id rule. Named
+by their macros (`Cut v5 — 2,040 kcal`). **The source docs' personal metrics —
+body weight, measurements, the weekly progress table — are deliberately not
+transcribed**: `/progress` owns that data and it doesn't belong in the repo.
+
+### The shape, and why
+
+- **Items reference a food; macros are computed.** `foods.ts` holds per-100g
+  (or per-unit) values and a plan says "211g of carne asada". Storing macros on
+  the item would repeat them across four swap options of the same lunch.
+- **Every total is derived, never stored.** The docs state meal and day
+  subtotals; here those are the *assertion* the test checks, not the source.
+- **Raw and cooked are different foods, not a flag on one.** A gram of cooked
+  chicken holds a third more protein than a gram of raw. The badge on the row
+  is the most important word on it: 343g raw and 150g cooked are different
+  instructions, and the plan already says which to weigh — so nothing converts
+  between them.
+- **A swap option carries a complete item list**, not a delta. Changing the
+  protein moves the rice and the avocado too; the docs write four alternative
+  lunches and so does this.
+- **Day variants** (`days: ["tue","wed","thu"]`) are what make office and home
+  days different meals rather than a footnote. A variant with no `days` applies
+  to every day and is the fallback.
+- **Hydration is a standing protocol** in its own file, not a plan field — it
+  scales with body weight and training, not with the calorie target, and only
+  the earliest doc bothers to restate it.
+
+### The test that matters
+
+`macros.test.ts` walks **every plan × every weekday × every swap option** and
+asserts the computed day total lands within a few grams of what the plan says
+it should. Thirty rows of numbers transcribed by hand needs a backstop, and it
+is the only thing pinning the four swap proteins — the docs give their weights
+and a day total but never their macros, so those were solved for by subtracting
+the rest of the meal. Each one reconciles across two independent plan versions.
+
+Tolerances are looser than they look because **the v4 source contradicts
+itself**: its header says P220 and its own totals table says P222, and the
+meals really do add to the second. Anything tighter fails on the document.
+
+### Charts
+
+The macro split is a donut, which the `dataviz` skill allows for part-to-whole
+at a glance with ≤6 segments — this has three. The rule it would break is
+comparing close values by arc alone, so every slice is also written out in
+grams, calories and share beside it. The skill's own default for part-to-whole
+is a stacked bar; that form is used for each meal's share of the day.
+
+`--macro-protein` / `--macro-carbs` / `--macro-fat` are palette slots 1–3,
+validated **all-pairs** in both modes — a donut needs any two slices tellable
+apart, not just neighbours. Light-mode aqua lands at 2.82:1 on a white card,
+under the 3:1 line; the direct labelling is what discharges that.
+
+Fibre gets a slider but not a slice: it's a share of the carbohydrate already
+counted, so a fourth segment would count part of the day twice. It reads at
+~2 kcal/g rather than 4.
+
+**`ui/slider.tsx` renders one thumb per value and falls back to `[min, max]`
+for a non-array**, so `value={n}` silently draws two thumbs on top of each
+other. Always pass `value={[n]}`.
+
 ## Plate loader (`src/features/plates/`)
 
 `/plates` — its own route, not a calculator tab, because it's the one you open
@@ -606,6 +735,26 @@ tree-shaken. `vite.config.ts` aliases `@tanstack/react-table-devtools` to
 `src/lib/table-devtools-stub.ts` in production builds so ~200KB of a
 devDependency doesn't ship. The alias is bundler-only: TypeScript still resolves
 the real package, so the call sites stay honestly typed.
+
+The package's own `useTanStackTableDevtoolsNoOp` and `tableDevtoolsNoOpPlugin`
+would be the sanctioned way to do this, but neither is in the typed public
+surface — only the real ones are exported from `index.d.ts` — so the alias
+stands.
+
+`@tanstack/devtools-vite` runs first in the Vite plugin list and AST-strips
+every devtools *shell* import and the JSX it produces out of the production
+build, which is why `main.tsx` carries no environment guard around
+`<TanStackDevtools>`. It does **not** reach the registration hook above — that's
+app code, not a shell import — which is what the alias stub is still for.
+Verified: no panel UI reaches the bundle, and total assets came out marginally
+smaller than the hand-rolled guard it replaced.
+
+**A devtools event client does ship to production, and it isn't ours.**
+`@tanstack/form-core` lists `@tanstack/devtools-event-client` as a regular
+dependency and ships `EventClient.js` in its production build, so ~3KB of it
+rides along with `react-form` wherever a form renders. Nothing on our side
+pulls it in and nothing we can configure removes it. Don't go hunting for it as
+a leak in our devtools setup.
 
 `HotkeysDevtoolsPanel` requires `theme`/`devtoolsOpen` props that the shell
 only injects via the function form of `render` — use
