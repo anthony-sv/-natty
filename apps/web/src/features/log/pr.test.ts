@@ -6,7 +6,8 @@ import {
   prForRepRange,
   prFrontier,
 } from "./pr";
-import type { LoggedSet, WeightUnit } from "./schema";
+import type { WeightUnit } from "@/lib/units";
+import type { LoggedSet } from "./schema";
 
 let seq = 0;
 function set(

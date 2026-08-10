@@ -12,7 +12,12 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -30,7 +35,7 @@ import { toast } from "@/components/ui/toast";
 import { exercises } from "@/data/exercises";
 import { logSet } from "../collection";
 import { formatSet } from "../pr";
-import { UNITS, weightUnitSchema, type WeightUnit } from "../schema";
+import { UNITS, weightUnitSchema, type WeightUnit } from "@/lib/units";
 
 /**
  * Form values stay strings, because that is what number inputs produce and
@@ -124,13 +129,13 @@ export function LogEntryForm() {
 
   return (
     <form
-      className="flex flex-col gap-4"
       onSubmit={(e) => {
         e.preventDefault();
         e.stopPropagation();
         void form.handleSubmit();
       }}
     >
+      <FieldGroup>
       <form.Field name="exerciseId">
         {(field) => (
           <Field>
@@ -177,7 +182,7 @@ export function LogEntryForm() {
                     variant="outline"
                     className="justify-start font-normal"
                   >
-                    <CalendarIcon />
+                    <CalendarIcon data-icon="inline-start" />
                     {dateFormat.format(new Date(field.state.value))}
                   </Button>
                 }
@@ -211,7 +216,7 @@ export function LogEntryForm() {
                   inputMode="decimal"
                   step="0.5"
                   min="0"
-                  placeholder="Bodyweight"
+                  placeholder="Optional"
                   className="min-w-0 flex-1"
                   value={field.state.value}
                   onBlur={field.handleBlur}
@@ -282,6 +287,7 @@ export function LogEntryForm() {
           </div>
         )}
       </form.Subscribe>
+      </FieldGroup>
     </form>
   );
 }
