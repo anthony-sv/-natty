@@ -217,18 +217,56 @@ gets a real countdown rather than being a line of text on a set you've already
 finished. A pose without `holdSeconds` produces no step and stays a cue on the
 work step.
 
-The player card leads with the day label, a live dot, and the elapsed clock —
-`useElapsed` shares the same `useSyncExternalStore` tick as every countdown
-rather than starting a second interval. **Ending early is behind an
-`AlertDialog`**: it sits one mis-tap from Back, the control you press most, and
-throws away your place in the day with no undo. Its icon is a stop sign, not a
-bare `SquareIcon` — an outlined square beside a label reads as an unchecked
-checkbox.
-
 `autoStartSecondsFor()` decides what begins counting on arrival: rest and pose
 holds auto-start when you tap done, cardio waits for an explicit Start. Trailing
 `rest` steps are trimmed (nothing to rest *for*), but a trailing `pose` is not —
 the last finisher set still ends on a hold.
+
+### The player card
+
+**Three fixed zones, in the same order and at the same size on every step:**
+header (`CardHeader` — day label, live dot, elapsed clock, progress, step
+counter), stage (`CardContent`), action bar (`CardFooter`). `useElapsed` shares
+the same `useSyncExternalStore` tick as every countdown rather than starting a
+second interval, so a locked phone reports the ten minutes it lost.
+
+**The primary button lives in the shell, not in the step bodies.** Each body
+used to render its own `Button` at the end of its own content, so "Done" and
+"Start next set" landed at different heights and the card resized between a set
+and its rest — the control you press forty times a session moved under your
+thumb every other press. `primaryActionFor(step, session, steps, dayLabel)`
+returns `{label, icon, onClick}` and the footer renders it; only the wording
+changes between steps.
+
+**`min-h-80` on the stage is the other half of that.** Pinning the button last
+isn't enough when a rest step holds a third of what a work step does. The floor
+sits above the tallest body, verified by walking all 48 steps of a day at both
+1536px and 360px and asserting a single card height and button offset. Three
+things could otherwise breach it, and each is capped rather than left to grow:
+the reference block (`max-h-12`, scrolls), the "Logged today" block
+(`flex-1 min-h-0`, scrolls), and a rest step's "Next up" label
+(`line-clamp-2` — a long exercise name runs to three lines on a phone).
+
+Inside the stage a work step reads eyebrow (*which* exercise of the day —
+context the card never carried) → name → badges → `PrescriptionStrip` → logged
+sets → `SetLogControl`. The strip splits "Set 2 of 4 · 8-12 reps · then 90s
+rest" into three labelled cells, because as one muted sentence you have to parse
+a line to find the two numbers you act on. **"Logged today" is what fills the
+stage's slack** — with the button pinned and a floor set, a set with no notes
+left a visible hole, and "three sets in at 60kg" is what you want between sets
+anyway.
+
+Countdowns are a `TimerRing`, not a bar under a number: the remaining fraction
+belongs *around* the figure, and it's the affordance every gym timer already
+uses. Rest and pose share one `TimerStepBody`. A timer reached by pressing Back
+has no deadline (`autoStartSecondsFor` only fires going forward) and used to sit
+dead at 0:00 — it now shows the full duration and offers "Start the clock", in
+the same fixed-height slot that otherwise holds the "time's up" note.
+
+**Ending early is behind an `AlertDialog`**: it sits one mis-tap from Back and
+throws away your place in the day with no undo. Its icon is a stop sign, not a
+bare `SquareIcon` — an outlined square beside a label reads as an unchecked
+checkbox.
 
 The day page leads with `DaySummaryStrip` — exercises, working sets, a rough
 time, and finishers when there are any — because the page listed the work
