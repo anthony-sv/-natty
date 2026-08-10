@@ -1,6 +1,11 @@
+import { useState } from "react";
 import { DataTable } from "@/components/data-table";
 import { createAppColumnHelper } from "@/lib/table";
 import type { RecordRow } from "../records";
+import {
+  ExerciseDetailSheet,
+  ExerciseDetailTrigger,
+} from "./ExerciseDetailSheet";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, {
   day: "numeric",
@@ -94,25 +99,60 @@ export function RecordsTable({
   isLoading: boolean;
   search: string;
 }) {
+  // Which exercise's charts are open. Held here rather than one sheet per
+  // group: with 113 exercises that would mount 113 live queries.
+  const [detail, setDetail] = useState<
+    { exerciseId: string; exerciseName: string } | undefined
+  >(undefined);
+
   return (
-    <DataTable
-      columns={columns}
-      data={rows}
-      isLoading={isLoading}
-      globalFilter={search}
-      globalFilterColumns={SEARCHABLE}
-      grouping={GROUP_BY}
-      // The logged set's own id, so a row keeps its identity through a search
-      // or a re-sort — the virtual list keys its measurements off it.
-      getRowId={(row) => row.id}
-      devtoolsKey="records"
-      empty={
-        search ? `No records match "${search}".` : "No records logged yet."
-      }
-      // The exercise column keeps a slot but narrows to an indent: its value
-      // is the heading above each run, and the column has to stay in the table
-      // for the search to have something to match against.
-      virtual={{ gridTemplate: "1.75rem 6rem 10rem minmax(0, 1fr)" }}
-    />
+    <>
+      <DataTable
+        columns={columns}
+        data={rows}
+        isLoading={isLoading}
+        globalFilter={search}
+        globalFilterColumns={SEARCHABLE}
+        grouping={GROUP_BY}
+        // Every row under a heading is the same exercise, so the first one
+        // carries the id the charts need.
+        renderGroupAction={(groupRows, label) =>
+          groupRows[0] ? (
+            <ExerciseDetailTrigger
+              exerciseName={label}
+              onSelect={() =>
+                setDetail({
+                  exerciseId: groupRows[0].exerciseId,
+                  exerciseName: groupRows[0].exerciseName,
+                })
+              }
+            />
+          ) : null
+        }
+        // The logged set's own id, so a row keeps its identity through a search
+        // or a re-sort — the virtual list keys its measurements off it.
+        getRowId={(row) => row.id}
+        devtoolsKey="records"
+        empty={
+          search ? `No records match "${search}".` : "No records logged yet."
+        }
+        // The exercise column keeps a slot but narrows to an indent: its value
+        // is the heading above each run, and the column has to stay in the table
+        // for the search to have something to match against.
+        virtual={{ gridTemplate: "1.75rem 6rem 10rem minmax(0, 1fr)" }}
+      />
+
+      <ExerciseDetailSheet
+        // Keyed so switching exercises remounts the charts rather than
+        // animating one series into another's shape.
+        key={detail?.exerciseId ?? "none"}
+        exerciseId={detail?.exerciseId}
+        exerciseName={detail?.exerciseName ?? ""}
+        open={detail !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setDetail(undefined);
+        }}
+      />
+    </>
   );
 }

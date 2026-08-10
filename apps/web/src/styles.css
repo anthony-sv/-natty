@@ -55,21 +55,33 @@ body {
 }
 
 /*
- * Series colours for the body-composition charts.
+ * Series colours for the body-composition and per-exercise charts.
  *
- * Slots 1 and 2 of the house data-viz palette, with their own dark steps —
+ * Slots 1, 2 and 3 of the house data-viz palette, with their own dark steps —
  * the preset's `--chart-1..5` are greys, which is fine for a monochrome
  * dashboard and useless for a line you have to follow. Validated against both
  * card surfaces (contrast, chroma, lightness band, CVD separation).
+ *
+ * `--chart-estimate` is the derived one: a projected 1RM plotted alongside the
+ * loads it was computed from. That earns its own hue because it *is* a second
+ * measure — unlike daily weight and its weekly mean, which are one measure at
+ * two resolutions and so share `--chart-weight` and separate by size instead.
+ *
+ * Slot 3 lands at 2.82:1 on a light card, under the 3:1 line. The relief is the
+ * same one the macro donut carries: the chart has a legend, the line is the
+ * only line on it, and the caption underneath names it in words — colour is
+ * never the only thing saying which series is which.
  */
 :root {
   --chart-weight: #2a78d6;
   --chart-body-fat: #eb6834;
+  --chart-estimate: #1baf7a;
 }
 
 .dark {
   --chart-weight: #3987e5;
   --chart-body-fat: #d95926;
+  --chart-estimate: #199e70;
 }
 
 /*
