@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useTable, type RowData } from "@tanstack/react-table";
+import type { RowData } from "@tanstack/react-table";
 import { useTanStackTableDevtools } from "@tanstack/react-table-devtools";
 import {
   ArrowDownIcon,
@@ -10,7 +10,7 @@ import {
   ChevronsUpDownIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { features, type ColumnDisplayMeta, type ColumnList } from "@/lib/table";
+import { useAppTable, type ColumnDisplayMeta, type ColumnList } from "@/lib/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -107,8 +107,9 @@ export function DataTable<TData extends RowData>({
   /** Renders only the visible rows. For lists that can grow without bound. */
   virtual?: VirtualOptions;
 }) {
-  const table = useTable({
-    features,
+  // `useAppTable`, not `useTable`: the factory in `lib/table.ts` already binds
+  // the feature set, so it isn't restated at every table.
+  const table = useAppTable({
     columns,
     data,
     key: devtoolsKey,

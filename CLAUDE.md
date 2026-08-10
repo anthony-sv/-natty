@@ -43,10 +43,13 @@ Or scope to one app: `pnpm --filter web <script>`.
     subpath export (`@tanstack/markdown/react`, `@tanstack/highlight/react`).
   - When building any chart, load the `dataviz` skill first — it has house
     color/form rules for the placeholder palette.
-- Tables: **TanStack Table v9** (`useTable`, not v8's `useReactTable`). Shared
-  setup lives in `src/lib/table.ts` — import `features` from there so column
-  helpers are typed against the same feature set the table runs with. The
-  generic `src/components/data-table.tsx` renders through `ui/table.tsx`; it
+- Tables: **TanStack Table v9** (not v8's `useReactTable`). `src/lib/table.ts`
+  builds the app's factory with **`createTableHook`**, which binds the feature
+  set once: call sites use `createAppColumnHelper<Row>()` and `useAppTable(…)`
+  rather than restating `features` at each one. Build the factory at module
+  scope — one created during render hands back a new context and remounts every
+  table under it. The generic `src/components/data-table.tsx` renders through
+  `ui/table.tsx`; it
   sits outside `ui/` because that directory is vendored, and shadcn publishes
   no `data-table` component, only a docs recipe. v9 traps: no
   `getCoreRowModel()` (automatic), `row.getAllCells()` rather than
@@ -214,6 +217,14 @@ gets a real countdown rather than being a line of text on a set you've already
 finished. A pose without `holdSeconds` produces no step and stays a cue on the
 work step.
 
+The player card leads with the day label, a live dot, and the elapsed clock —
+`useElapsed` shares the same `useSyncExternalStore` tick as every countdown
+rather than starting a second interval. **Ending early is behind an
+`AlertDialog`**: it sits one mis-tap from Back, the control you press most, and
+throws away your place in the day with no undo. Its icon is a stop sign, not a
+bare `SquareIcon` — an outlined square beside a label reads as an unchecked
+checkbox.
+
 `autoStartSecondsFor()` decides what begins counting on arrival: rest and pose
 holds auto-start when you tap done, cardio waits for an explicit Start. Trailing
 `rest` steps are trimmed (nothing to rest *for*), but a trailing `pose` is not —
@@ -318,6 +329,14 @@ pounds-marked machine stays in pounds without a per-exercise setting.
 
 `pr.ts` is deliberately free of React and of the collection, so the frontier is
 directly unit-tested (`pr.test.ts`).
+
+**Order in the live query, not in a JS sort afterwards.** `orderBy` is
+incrementally maintained; re-sorting the result array throws that away and
+redoes the whole thing on every change. The same goes for `where` over
+`.filter()`. The exceptions here are deliberate: `setsFor` reads the collection
+synchronously *because* the live-query snapshot is stale in event handlers, and
+the PR frontier is an ordering problem across a whole group that no operator
+expresses.
 
 **Event handlers must not read the `useLiveQuery` snapshot from
 `useExerciseLog`** — that snapshot is whatever the last render saw, and after
@@ -684,11 +703,13 @@ would be the sanctioned way to do this, but neither is in the typed public
 surface — only the real ones are exported from `index.d.ts` — so the alias
 stands.
 
-`@tanstack/devtools-vite` is **not** installed. It AST-strips imports of the
-devtools *shell* packages on build, which would make `main.tsx`'s
-`import.meta.env.DEV` guard redundant; it would not touch the registration hook
-above. The guard is verified working — no panel UI reaches the bundle — so this
-is a simplification available, not a gap.
+`@tanstack/devtools-vite` runs first in the Vite plugin list and AST-strips
+every devtools *shell* import and the JSX it produces out of the production
+build, which is why `main.tsx` carries no environment guard around
+`<TanStackDevtools>`. It does **not** reach the registration hook above — that's
+app code, not a shell import — which is what the alias stub is still for.
+Verified: no panel UI reaches the bundle, and total assets came out marginally
+smaller than the hand-rolled guard it replaced.
 
 **A devtools event client does ship to production, and it isn't ours.**
 `@tanstack/form-core` lists `@tanstack/devtools-event-client` as a regular

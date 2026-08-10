@@ -1,6 +1,5 @@
-import { createColumnHelper } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
-import { features } from "@/lib/table";
+import { createAppColumnHelper } from "@/lib/table";
 import type { RecordRow } from "../records";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, {
@@ -9,7 +8,7 @@ const dateFormat = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
 });
 
-const column = createColumnHelper<typeof features, RecordRow>();
+const column = createAppColumnHelper<RecordRow>();
 
 const columns = column.columns([
   // The accessor returns the exercise name *plus* its movement so searching

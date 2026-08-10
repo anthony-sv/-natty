@@ -39,31 +39,32 @@ if (!rootElement.innerHTML) {
             <RouterProvider router={router} />
           </Toaster>
         </TooltipProvider>
-        {import.meta.env.DEV ? (
-          <TanStackDevtools
-            plugins={[
-              { name: "TanStack Query", render: <ReactQueryDevtoolsPanel /> },
-              {
-                name: "TanStack Router",
-                // Rendered outside RouterProvider, so pass the router
-                // explicitly — context lookup returns null here.
-                render: <TanStackRouterDevtoolsPanel router={router} />,
-              },
-              { name: "TanStack Form", render: <FormDevtoolsPanel /> },
-              {
-                // Every mounted DataTable registers itself, so the panel lists
-                // them by key — no single instance to hand it.
-                name: "TanStack Table",
-                render: <TableDevtoolsPanel />,
-              },
-              {
-                name: "TanStack Hotkeys",
-                render: (_el, props) => <HotkeysDevtoolsPanel {...props} />,
-              },
-              { name: "TanStack Pacer", render: <PacerDevtoolsPanel /> },
-            ]}
-          />
-        ) : null}
+        {/* No environment guard: `@tanstack/devtools-vite` strips this import
+            and the JSX it produces out of the production build, which is the
+            sanctioned setup and beats hand-rolling the condition. */}
+        <TanStackDevtools
+          plugins={[
+            { name: "TanStack Query", render: <ReactQueryDevtoolsPanel /> },
+            {
+              name: "TanStack Router",
+              // Rendered outside RouterProvider, so pass the router
+              // explicitly — context lookup returns null here.
+              render: <TanStackRouterDevtoolsPanel router={router} />,
+            },
+            { name: "TanStack Form", render: <FormDevtoolsPanel /> },
+            {
+              // Every mounted DataTable registers itself, so the panel lists
+              // them by key — no single instance to hand it.
+              name: "TanStack Table",
+              render: <TableDevtoolsPanel />,
+            },
+            {
+              name: "TanStack Hotkeys",
+              render: (_el, props) => <HotkeysDevtoolsPanel {...props} />,
+            },
+            { name: "TanStack Pacer", render: <PacerDevtoolsPanel /> },
+          ]}
+        />
       </QueryClientProvider>
     </StrictMode>,
   );

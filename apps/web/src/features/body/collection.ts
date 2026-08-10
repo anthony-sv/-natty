@@ -33,12 +33,14 @@ export function useBodyEntries(): {
   latest: BodyEntry | undefined;
   isLoading: boolean;
 } {
-  const { data, isLoading } = useLiveQuery((q) => q.from({ entry: bodyEntries }));
-
-  const entries = useMemo(
-    () => [...(data ?? [])].sort((a, b) => b.measuredAt - a.measuredAt),
-    [data],
+  // Ordered by the query, not by a JS sort afterwards: `orderBy` is
+  // incrementally maintained, where re-sorting the result array throws that
+  // away and redoes the whole thing on every change.
+  const { data, isLoading } = useLiveQuery((q) =>
+    q.from({ entry: bodyEntries }).orderBy(({ entry }) => entry.measuredAt, "desc"),
   );
+
+  const entries = useMemo(() => data ?? [], [data]);
 
   return { entries, latest: entries[0], isLoading };
 }

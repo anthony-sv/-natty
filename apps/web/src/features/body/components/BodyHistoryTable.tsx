@@ -1,7 +1,6 @@
 import { useMemo } from "react";
-import { createColumnHelper } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
-import { features } from "@/lib/table";
+import { createAppColumnHelper } from "@/lib/table";
 import { ffmi, formatIndex, normalizedFfmi } from "../ffmi";
 import type { BodyEntry } from "../schema";
 
@@ -17,7 +16,7 @@ const dateFormat = new Intl.DateTimeFormat(undefined, {
  * row's FFMI, which is the point of storing it once.
  */
 function buildColumns(heightCm: number | undefined) {
-  const column = createColumnHelper<typeof features, BodyEntry>();
+  const column = createAppColumnHelper<BodyEntry>();
   return column.columns([
     column.accessor("measuredAt", {
       header: "Date",

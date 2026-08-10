@@ -1,5 +1,22 @@
+import { useState } from "react";
 import { useStore } from "@tanstack/react-store";
-import { CheckIcon, ChevronLeftIcon, PlayIcon, SquareIcon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronLeftIcon,
+  CircleStopIcon,
+  ClockIcon,
+  PlayIcon,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,13 +31,18 @@ import { toast } from "@/components/ui/toast";
 import { getPose } from "@/data/poses";
 import { useExerciseLog } from "@/features/log/queries";
 import { SetLogControl } from "@/features/log/components/SetLogControl";
-import { formatClock, formatModifiers, formatPose } from "../lib/format";
+import {
+  formatClock,
+  formatElapsed,
+  formatModifiers,
+  formatPose,
+} from "../lib/format";
 import {
   autoStartSecondsFor,
   describeStep,
   type SessionStep,
 } from "../lib/session";
-import { useCountdown } from "../lib/use-countdown";
+import { useCountdown, useElapsed } from "../lib/use-countdown";
 import {
   endSession,
   goToStep,
@@ -49,13 +71,21 @@ export function SessionPlayer({
   return (
     <Card className="border-primary/40 ring-primary/30">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between gap-2">
-          <span>Workout in progress</span>
-          <span className="text-xs font-normal text-muted-foreground tabular-nums">
-            Step {session.stepIndex + 1} of {steps.length}
+        <CardTitle className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+          <span className="flex items-center gap-2">
+            {/* A live dot says "running" without spending a line on the words. */}
+            <span aria-hidden className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-60" />
+              <span className="relative inline-flex size-2 rounded-full bg-primary" />
+            </span>
+            {dayLabel}
           </span>
+          <Elapsed since={session.startedAt} />
         </CardTitle>
-        <CardDescription>{dayLabel}</CardDescription>
+        <CardDescription className="tabular-nums">
+          Step {session.stepIndex + 1} of {steps.length} ·{" "}
+          {steps.length - session.stepIndex - 1} to go
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <Progress value={(session.stepIndex / steps.length) * 100} />
@@ -91,26 +121,90 @@ export function SessionPlayer({
           >
             <ChevronLeftIcon data-icon="inline-start" /> Back
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="ml-auto text-muted-foreground"
-            onClick={() => {
-              endSession();
-              // Stopping early is not the same as finishing, and the player
-              // vanishing on its own is easy to read as a misclick.
-              toast.add({
-                title: "Workout ended",
-                description: `${dayLabel} — anything you logged is kept.`,
-                type: "info",
-              });
-            }}
-          >
-            <SquareIcon data-icon="inline-start" /> End workout
-          </Button>
+          <EndWorkoutButton
+            dayLabel={dayLabel}
+            stepIndex={session.stepIndex}
+            stepCount={steps.length}
+          />
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/** How long this session has been running, ticking on the shared clock. */
+function Elapsed({ since }: { since: number }) {
+  const elapsedMs = useElapsed(since);
+  return (
+    <span className="flex items-center gap-1.5 text-sm font-normal text-muted-foreground tabular-nums">
+      <ClockIcon className="size-3.5" />
+      {formatElapsed(elapsedMs)}
+    </span>
+  );
+}
+
+/**
+ * Ending early, behind a confirmation.
+ *
+ * It sits next to Back, one mis-tap from the control you press most, and it
+ * throws away where you are in the day with nothing to undo it — so it asks
+ * first and says what survives.
+ *
+ * The icon is a stop sign rather than a bare square: an outlined square beside
+ * a label reads as an unchecked checkbox, which is the opposite of a button
+ * that ends something.
+ */
+function EndWorkoutButton({
+  dayLabel,
+  stepIndex,
+  stepCount,
+}: {
+  dayLabel: string;
+  stepIndex: number;
+  stepCount: number;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="ml-auto text-muted-foreground"
+        onClick={() => setOpen(true)}
+      >
+        <CircleStopIcon data-icon="inline-start" /> End workout
+      </Button>
+
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>End this workout?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You're on step {stepIndex + 1} of {stepCount}. Every set you've
+              logged is kept — only your place in the day goes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep going</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                endSession();
+                // The player vanishing with no word reads as a misclick, even
+                // when it was deliberate.
+                toast.add({
+                  title: "Workout ended",
+                  description: `${dayLabel} — anything you logged is kept.`,
+                  type: "info",
+                });
+              }}
+            >
+              End workout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
