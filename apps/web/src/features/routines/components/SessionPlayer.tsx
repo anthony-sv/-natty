@@ -41,9 +41,9 @@ export function SessionPlayer({
 
   const step = steps[session.stepIndex];
   // The stored index can outrun the day if program data changed under a
-  // persisted session — treat that as finished rather than crashing.
+  // persisted session — offer a way out rather than crashing.
   if (step === undefined) {
-    return <SessionComplete dayLabel={dayLabel} />;
+    return <StaleSession dayLabel={dayLabel} />;
   }
 
   return (
@@ -89,15 +89,24 @@ export function SessionPlayer({
             disabled={session.stepIndex === 0}
             onClick={() => goToStep(session.stepIndex - 1)}
           >
-            <ChevronLeftIcon /> Back
+            <ChevronLeftIcon data-icon="inline-start" /> Back
           </Button>
           <Button
             variant="ghost"
             size="sm"
             className="ml-auto text-muted-foreground"
-            onClick={endSession}
+            onClick={() => {
+              endSession();
+              // Stopping early is not the same as finishing, and the player
+              // vanishing on its own is easy to read as a misclick.
+              toast.add({
+                title: "Workout ended",
+                description: `${dayLabel} — anything you logged is kept.`,
+                type: "info",
+              });
+            }}
           >
-            <SquareIcon /> End workout
+            <SquareIcon data-icon="inline-start" /> End workout
           </Button>
         </div>
       </CardContent>
@@ -106,17 +115,24 @@ export function SessionPlayer({
 }
 
 /**
- * Announce the end of the day when there's no step after this one. Called from
- * every step body that can be last — a work set, or the pose closing a finisher
- * (trailing rests are trimmed, so a rest never is).
+ * Close the session when there's no step after this one, and say so.
+ *
+ * Returns true when it finished, so the caller skips advancing. Finishing ends
+ * the workout outright rather than parking on a "done" card that needs a
+ * second press — the toast is the confirmation.
+ *
+ * Called from every step body that can be last: a work set, or the pose
+ * closing a finisher (trailing rests are trimmed, so a rest never is).
  */
-function announceIfFinished(next: SessionStep | undefined, dayLabel: string) {
-  if (next !== undefined) return;
+function finishIfLast(next: SessionStep | undefined, dayLabel: string): boolean {
+  if (next !== undefined) return false;
   toast.add({
     title: "Workout complete",
     description: dayLabel,
     type: "success",
   });
+  endSession();
+  return true;
 }
 
 function WorkStepBody({
@@ -165,7 +181,7 @@ function WorkStepBody({
   // otherwise, with the fields prefilled from your last set, simply moving
   // through a workout would record sets you never entered.
   function advance() {
-    announceIfFinished(next, dayLabel);
+    if (finishIfLast(next, dayLabel)) return;
     goToStep(session.stepIndex + 1, autoStartSecondsFor(next));
   }
 
@@ -239,7 +255,7 @@ function WorkStepBody({
           className="w-full"
           onClick={() => startTimer(step.durationSeconds!)}
         >
-          <PlayIcon /> Start {describeStep(step)}
+          <PlayIcon data-icon="inline-start" /> Start {describeStep(step)}
         </Button>
       ) : (
         <Button size="lg" className="w-full" onClick={advance}>
@@ -303,7 +319,7 @@ function PoseStepBody({
         size="lg"
         className="w-full"
         onClick={() => {
-          announceIfFinished(next, dayLabel);
+          if (finishIfLast(next, dayLabel)) return;
           goToStep(session.stepIndex + 1, autoStartSecondsFor(next));
         }}
       >
@@ -372,16 +388,24 @@ function RestStepBody({
   );
 }
 
-function SessionComplete({ dayLabel }: { dayLabel: string }) {
+/**
+ * Only reachable when a persisted session's step index outruns the day — say,
+ * the program data changed underneath it. Finishing normally closes the session
+ * outright, so this is a recovery path, not the end of a workout: the button
+ * clears the orphaned session rather than confirming anything.
+ */
+function StaleSession({ dayLabel }: { dayLabel: string }) {
   return (
     <Card className="border-primary/40">
       <CardHeader>
-        <CardTitle>Workout complete</CardTitle>
-        <CardDescription>{dayLabel}</CardDescription>
+        <CardTitle>Nothing left in this workout</CardTitle>
+        <CardDescription>
+          {dayLabel} — this session is further along than the day now goes.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Button className="w-full" onClick={endSession}>
-          Done
+          Clear it
         </Button>
       </CardContent>
     </Card>

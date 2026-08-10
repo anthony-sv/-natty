@@ -253,6 +253,49 @@ Both log forms — the popover and the `/progress` backfill — use TanStack For
 The popover's is a separate component so `defaultValues` can be seeded from the
 last set on mount, and the player holds it back until the log query has loaded.
 
+## Body measurements (`src/features/body/`)
+
+Weigh-ins — weight, optional body-fat percentage — in their own localStorage
+collection (`natty.body.v1`), separate from the set log since the shapes have
+nothing in common and nothing queries across them.
+
+`ffmi.ts` is pure and directly tested: `leanMassKg` (weight minus fat),
+`ffmi` (lean mass over height in metres squared), and `normalizedFfmi`, which
+adjusts to a 1.8 m reference with the standard `+ 6.1 × (1.8 − h)` correction
+because raw FFMI still drifts with height.
+
+**Height and sex live on the profile, not the entry** — see
+`src/features/profile/profile-store.ts`, a plain TanStack Store persisted to
+localStorage in the same shape as `session-store.ts`, since a single
+always-present record doesn't want a queryable collection. Height is the FFMI
+denominator; storing it once means correcting a typo recalculates every row.
+Sex only picks which population the reference band comes from — fat-free mass
+norms differ enough that one scale would misdescribe half its readers — and
+when it's unset the numbers still show, just without a band.
+
+`FfmiMeter` plots the normalized figure against those bands, on the classic
+FFMI chart's spectrum track (`--ffmi-spectrum` in `styles.css`).
+
+That spectrum is a deliberate, requested exception to the `dataviz` skill,
+which names a multi-hue ramp for ordered magnitude as an anti-pattern — hue
+carries no inherent order. It holds here only because all seven bands are
+directly labelled and the axis is numbered, so colour decorates a scale that is
+already readable without it. Don't copy the pattern to a chart where colour
+would be the sole encoding. Labels are white with a shadow rather than a
+per-band ink, since a continuous gradient has no flat colour to contrast
+against.
+
+The bands in `describeFfmi` are deliberately coarse and purely descriptive.
+Published cut-offs vary between sources, so finer gradations would imply
+precision the data doesn't support, and they say nothing about how a physique
+was built.
+
+## Shared units (`src/lib/units.ts`)
+
+`weightUnitSchema`, `UNITS` and `toKilograms` live in `lib/` rather than inside
+a feature because both `features/log` and `features/body` need them, and a
+feature importing another feature's schema is coupling worth avoiding.
+
 ### Forms
 
 shadcn's `form.tsx` is **not** installed and shouldn't be — it's
@@ -318,6 +361,24 @@ only injects via the function form of `render` — use
 `render: (_el, props) => <HotkeysDevtoolsPanel {...props} />`, not
 `render: <HotkeysDevtoolsPanel />` (the latter fails to typecheck).
 
+## Agent skills
+
+Third-party skills are vendored into `.agents/skills/` via
+`pnpm dlx skills add <pkg>`, which also mirrors them into `.claude/skills/` — a
+symlink on POSIX, a plain copy on Windows. Only `.agents/skills/` and
+`skills-lock.json` are committed; the mirror is gitignored so the copy doesn't
+duplicate every file. Installed: **shadcn/ui**
+and **migrate-radix-to-base**. Some libraries also ship skills inside their own
+package — TanStack DB has `db-core` under `node_modules/@tanstack/db/skills/`,
+and TanStack Table v9 ships a `migrate-v8-to-v9` guide the same way. Read those
+before writing against either library; they're version-exact where the docs
+aren't.
+
+The shadcn skill's rules are house rules here: `FieldGroup` + `Field` for form
+layout (never a bare `div` with gaps), `data-icon="inline-start"` on icons
+inside `Button`, `gap-*` over `space-y-*`, `size-*` when width equals height,
+semantic tokens over raw colours, and existing components before custom markup.
+
 ## UI components (shadcn/ui)
 
 All shadcn/ui components are installed in `src/components/ui/` (`npx shadcn@latest
@@ -337,9 +398,18 @@ Radix default. Preset is **Nova** (Lucide icons, Geist Variable font via
   `ui/` still gets full strict linting.
 - `TooltipProvider` (required by the Tooltip component) is mounted once in
   `src/main.tsx` around `RouterProvider` — don't add another one per-page.
-- Any component needing dark mode: it's class-based (`.dark` on an ancestor),
-  not wired to a toggle yet — add one when the app actually needs theme
-  switching, don't build it speculatively.
+- Dark mode is class-based (`.dark` on `<html>`), owned by
+  `src/features/theme/theme-store.ts`. **Two states only, light and dark** —
+  `prefers-color-scheme` is queried once to seed a first-time visitor, then the
+  choice is explicit and sticks; there is deliberately no "system" mode to
+  pick. Applied at *import time* so the first paint is right rather than
+  flashing and correcting; `__root.tsx` imports it for that side effect.
+  Switched from the sidebar footer (a `Switch`, not a select) or the command
+  palette.
+- Navigation is a shadcn **sidebar** (`src/components/app-sidebar.tsx`), not a
+  top nav — `SidebarProvider` + `SidebarInset` wrap the outlet in `__root.tsx`.
+  Note `SidebarMenuButton` composes via `useRender` and takes `render={<Link/>}`
+  directly; it has no `nativeButton` prop (that one is `Button`'s).
 
 ## Conventions
 

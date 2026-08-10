@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Page } from "@/components/page";
 import { PlayIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "@/components/ui/toast";
 import { routinesQueryOptions } from "@/features/routines/queries";
 import { endSession } from "@/features/routines/session-store";
 import { useActiveSession } from "@/features/routines/lib/use-active-session";
@@ -23,7 +25,7 @@ function Index() {
   const active = useActiveSession();
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6 p-6">
+    <Page>
       <div>
         <h1 className="text-2xl font-semibold">!natty</h1>
         <p className="text-sm text-muted-foreground">
@@ -45,7 +47,7 @@ function Index() {
           </Button>
         </div>
       )}
-    </div>
+    </Page>
   );
 }
 
@@ -85,9 +87,21 @@ function ResumeCard() {
               />
             }
           >
-            <PlayIcon /> Resume
+            <PlayIcon data-icon="inline-start" /> Resume
           </Button>
-          <Button variant="ghost" onClick={endSession}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              endSession();
+              // Same reasoning as End workout in the player: the card
+              // disappearing with no word reads as a misclick.
+              toast.add({
+                title: "Workout discarded",
+                description: `${routine.name} — anything you logged is kept.`,
+                type: "info",
+              });
+            }}
+          >
             Discard
           </Button>
         </div>
