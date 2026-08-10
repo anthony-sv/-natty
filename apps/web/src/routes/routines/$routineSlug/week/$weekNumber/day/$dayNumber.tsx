@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Page } from "@/components/page";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
@@ -55,14 +56,14 @@ export const Route = createFileRoute(
     if (!week || !day) throw notFound();
   },
   notFoundComponent: () => (
-    <div className="mx-auto max-w-3xl p-6">
+    <Page>
       <Empty>
         <EmptyTitle>Day not found</EmptyTitle>
         <EmptyDescription>
           That week/day doesn't exist in this program.
         </EmptyDescription>
       </Empty>
-    </div>
+    </Page>
   ),
   component: DayDetail,
 });
@@ -102,7 +103,7 @@ function DayDetail() {
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 p-6">
+    <Page>
       <div className="flex flex-col gap-1 text-sm text-muted-foreground">
         <Link to="/routines/$routineSlug" params={{ routineSlug }}>
           ← {routine.name}
@@ -115,7 +116,7 @@ function DayDetail() {
         {day.isRest ? <Badge variant="outline">Rest</Badge> : null}
         {canStart && !isActiveHere ? (
           <Button className="ml-auto" onClick={handleStart}>
-            <PlayIcon /> Start workout
+            <PlayIcon data-icon="inline-start" /> Start workout
           </Button>
         ) : null}
       </div>
@@ -161,6 +162,6 @@ function DayDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </Page>
   );
 }

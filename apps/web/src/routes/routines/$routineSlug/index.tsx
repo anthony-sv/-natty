@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Page } from "@/components/page";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
@@ -12,14 +13,14 @@ export const Route = createFileRoute("/routines/$routineSlug/")({
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(routineQueryOptions(params.routineSlug)),
   notFoundComponent: () => (
-    <div className="mx-auto max-w-3xl p-6">
+    <Page>
       <Empty>
         <EmptyTitle>Routine not found</EmptyTitle>
         <EmptyDescription>
           This program doesn't exist. <Link to="/routines">Back to routines</Link>
         </EmptyDescription>
       </Empty>
-    </div>
+    </Page>
   ),
   component: RoutineDetail,
 });
@@ -29,7 +30,7 @@ function RoutineDetail() {
   const { data: routine } = useSuspenseQuery(routineQueryOptions(routineSlug));
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 p-6">
+    <Page>
       <div>
         <h1 className="text-2xl font-semibold">{routine.name}</h1>
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -62,7 +63,7 @@ function RoutineDetail() {
       ) : (
         <WeekDayList routineSlug={routineSlug} week={routine.weeks[0]} />
       )}
-    </div>
+    </Page>
   );
 }
 

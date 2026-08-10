@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useHotkey } from "@tanstack/react-hotkeys";
+import { useStore } from "@tanstack/react-store";
+import { MoonIcon, SunIcon } from "lucide-react";
 import {
   CommandDialog,
   CommandEmpty,
@@ -13,6 +15,7 @@ import {
 } from "@/components/ui/command";
 import { routinesQueryOptions } from "@/features/routines/queries";
 import { useActiveSession } from "@/features/routines/lib/use-active-session";
+import { themeStore, toggleTheme } from "@/features/theme/theme-store";
 
 // Global ⌘K / Ctrl+K command palette. Scoped for now to the only routes that
 // exist — Pages + Routines. Adding a future feature area is just another
@@ -32,6 +35,7 @@ export function CommandPalette() {
   // instant if /routines was already visited, fetched on demand otherwise.
   const { data: routines, isPending } = useQuery(routinesQueryOptions());
   const active = useActiveSession();
+  const theme = useStore(themeStore, (t) => t);
 
   function go(to: string, params?: Record<string, string | number>) {
     navigate({ to, params });
@@ -66,6 +70,19 @@ export function CommandPalette() {
           <CommandItem onSelect={() => go("/")}>Home</CommandItem>
           <CommandItem onSelect={() => go("/routines")}>Routines</CommandItem>
           <CommandItem onSelect={() => go("/progress")}>Progress</CommandItem>
+        </CommandGroup>
+        <CommandSeparator />
+        <CommandGroup heading="Theme">
+          <CommandItem
+            value="Toggle dark mode theme"
+            onSelect={() => {
+              toggleTheme();
+              setOpen(false);
+            }}
+          >
+            {theme === "dark" ? <SunIcon /> : <MoonIcon />}
+            Switch to {theme === "dark" ? "light" : "dark"} mode
+          </CommandItem>
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading="Routines">

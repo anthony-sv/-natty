@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Page } from "@/components/page";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { RoutineCard } from "@/features/routines/components/RoutineCard";
 import { routinesQueryOptions } from "@/features/routines/queries";
@@ -13,13 +14,13 @@ function RoutinesIndex() {
   const { data: routines } = useSuspenseQuery(routinesQueryOptions());
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 p-6">
+    <Page>
       <h1 className="text-2xl font-semibold">Routines</h1>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {routines.map((routine) => (
           <RoutineCard key={routine.slug} routine={routine} />
         ))}
       </div>
-    </div>
+    </Page>
   );
 }
