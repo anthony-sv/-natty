@@ -16,6 +16,8 @@ import {
 import { routinesQueryOptions } from "@/features/routines/queries";
 import { useActiveSession } from "@/features/routines/lib/use-active-session";
 import { themeStore, toggleTheme } from "@/features/theme/theme-store";
+import { useNames } from "@/i18n/names";
+import { useT } from "@/i18n/use-t";
 
 // Global ⌘K / Ctrl+K command palette. Scoped for now to the only routes that
 // exist — Pages + Routines. Adding a future feature area is just another
@@ -35,7 +37,9 @@ export function CommandPalette() {
   // instant if /routines was already visited, fetched on demand otherwise.
   const { data: routines, isPending } = useQuery(routinesQueryOptions());
   const active = useActiveSession();
-  const theme = useStore(themeStore, (t) => t);
+  const theme = useStore(themeStore, (s) => s);
+  const t = useT();
+  const names = useNames();
 
   function go(to: string, params?: Record<string, string | number>) {
     navigate({ to, params });
@@ -44,14 +48,14 @@ export function CommandPalette() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Search pages and routines..." />
+      <CommandInput placeholder={t("palette.placeholder")} />
       <CommandList>
-        <CommandEmpty>No results.</CommandEmpty>
+        <CommandEmpty>{t("palette.empty")}</CommandEmpty>
         {active ? (
           <>
-            <CommandGroup heading="Workout">
+            <CommandGroup heading={t("palette.groupWorkout")}>
               <CommandItem
-                value="Resume workout"
+                value={t("palette.resumeWorkout")}
                 onSelect={() =>
                   go("/routines/$routineSlug/week/$weekNumber/day/$dayNumber", {
                     routineSlug: active.state.routineSlug,
@@ -60,49 +64,66 @@ export function CommandPalette() {
                   })
                 }
               >
-                Resume workout — {active.routine.name}, Day {active.day.dayNumber}
+                {t("palette.resumeWorkout")} —{" "}
+                {names.routine(active.routine.slug, active.routine.name)},{" "}
+                {t("routines.day", { number: active.day.dayNumber })}
               </CommandItem>
             </CommandGroup>
             <CommandSeparator />
           </>
         ) : null}
-        <CommandGroup heading="Pages">
-          <CommandItem onSelect={() => go("/")}>Home</CommandItem>
-          <CommandItem onSelect={() => go("/routines")}>Routines</CommandItem>
-          <CommandItem onSelect={() => go("/progress")}>Progress</CommandItem>
-          <CommandItem onSelect={() => go("/nutrition")}>Nutrition</CommandItem>
-          <CommandItem onSelect={() => go("/calculator")}>Calculators</CommandItem>
-          <CommandItem onSelect={() => go("/plates")}>Plate loader</CommandItem>
+        <CommandGroup heading={t("palette.groupPages")}>
+          <CommandItem onSelect={() => go("/")}>{t("nav.home")}</CommandItem>
+          <CommandItem onSelect={() => go("/routines")}>
+            {t("nav.routines")}
+          </CommandItem>
+          <CommandItem onSelect={() => go("/progress")}>
+            {t("nav.progress")}
+          </CommandItem>
+          <CommandItem onSelect={() => go("/nutrition")}>
+            {t("nav.nutrition")}
+          </CommandItem>
+          <CommandItem onSelect={() => go("/calculator")}>
+            {t("nav.calculators")}
+          </CommandItem>
+          <CommandItem onSelect={() => go("/plates")}>
+            {t("nav.plates")}
+          </CommandItem>
         </CommandGroup>
         <CommandSeparator />
-        <CommandGroup heading="Theme">
+        <CommandGroup heading={t("palette.groupTheme")}>
           <CommandItem
-            value="Toggle dark mode theme"
+            value={t("palette.toggleTheme")}
             onSelect={() => {
               toggleTheme();
               setOpen(false);
             }}
           >
             {theme === "dark" ? <SunIcon /> : <MoonIcon />}
-            Switch to {theme === "dark" ? "light" : "dark"} mode
+            {theme === "dark" ? t("palette.switchLight") : t("palette.switchDark")}
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
-        <CommandGroup heading="Routines">
+        <CommandGroup heading={t("palette.groupRoutines")}>
           {isPending ? (
-            <CommandItem disabled>Loading routines...</CommandItem>
+            <CommandItem disabled>{t("palette.loading")}</CommandItem>
           ) : (
-            routines?.map((routine) => (
-              <CommandItem
-                key={routine.slug}
-                value={routine.name}
-                onSelect={() =>
-                  go("/routines/$routineSlug", { routineSlug: routine.slug })
-                }
-              >
-                {routine.name}
-              </CommandItem>
-            ))
+            routines?.map((routine) => {
+              // `value` is what the palette searches, so it has to be the name
+              // the reader can see.
+              const name = names.routine(routine.slug, routine.name);
+              return (
+                <CommandItem
+                  key={routine.slug}
+                  value={name}
+                  onSelect={() =>
+                    go("/routines/$routineSlug", { routineSlug: routine.slug })
+                  }
+                >
+                  {name}
+                </CommandItem>
+              );
+            })
           )}
         </CommandGroup>
       </CommandList>

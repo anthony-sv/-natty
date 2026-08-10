@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getFood } from "@/data/diets";
+import { useNames } from "@/i18n/names";
+import { useT } from "@/i18n/use-t";
 import { macrosForItem } from "../macros";
 import type { ResolvedMeal } from "../macros";
 
@@ -35,6 +37,8 @@ export function MealCard({
   dayKcal: number;
   onChooseOption: (index: number) => void;
 }) {
+  const t = useT();
+  const names = useNames();
   const share = dayKcal > 0 ? (meal.kcal / dayKcal) * 100 : 0;
   const options = meal.variant.options;
   const hasSwaps = options.length > 1;
@@ -44,9 +48,9 @@ export function MealCard({
       <CardHeader>
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <CardTitle className="flex flex-wrap items-center gap-2">
-            {meal.name}
+            {names.text(meal.name)}
             {meal.variant.label ? (
-              <Badge variant="secondary">{meal.variant.label}</Badge>
+              <Badge variant="secondary">{names.text(meal.variant.label)}</Badge>
             ) : null}
           </CardTitle>
           <span className="text-sm text-muted-foreground tabular-nums">
@@ -57,14 +61,18 @@ export function MealCard({
             </span>
           </span>
         </div>
-        {meal.note ? <CardDescription>{meal.note}</CardDescription> : null}
+        {meal.note ? (
+          <CardDescription>{names.text(meal.note)}</CardDescription>
+        ) : null}
 
         {/* Share of the day, as a slim track rather than another number. */}
         <div className="pt-1">
           <div
             className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
             role="img"
-            aria-label={`${share.toFixed(0)}% of the day's calories`}
+            aria-label={t("nutrition.mealShare", {
+              percent: share.toFixed(0),
+            })}
           >
             <div
               className="h-full rounded-full bg-foreground/60"
@@ -72,7 +80,7 @@ export function MealCard({
             />
           </div>
           <span className="text-xs text-muted-foreground tabular-nums">
-            {share.toFixed(0)}% of the day
+            {t("nutrition.mealShare", { percent: share.toFixed(0) })}
           </span>
         </div>
       </CardHeader>
@@ -81,8 +89,7 @@ export function MealCard({
         {hasSwaps ? (
           <div className="flex flex-col gap-1.5">
             <span className="text-xs text-muted-foreground">
-              Pick one — the rest of the meal moves to keep the day's macros
-              matched.
+              {t("nutrition.swapHint")}
             </span>
             <ToggleGroup
               value={[String(meal.optionIndex)]}
@@ -94,7 +101,8 @@ export function MealCard({
             >
               {options.map((option, index) => (
                 <ToggleGroupItem key={option.label ?? index} value={String(index)}>
-                  {option.label ?? `Option ${index + 1}`}
+                  {names.text(option.label) ??
+                    t("nutrition.option", { number: index + 1 })}
                 </ToggleGroupItem>
               ))}
             </ToggleGroup>
@@ -104,8 +112,8 @@ export function MealCard({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-24">Amount</TableHead>
-              <TableHead>Item</TableHead>
+              <TableHead className="w-24">{t("nutrition.amount")}</TableHead>
+              <TableHead>{t("nutrition.item")}</TableHead>
               <TableHead className="text-right">P</TableHead>
               <TableHead className="text-right">C</TableHead>
               <TableHead className="text-right">F</TableHead>
@@ -123,7 +131,7 @@ export function MealCard({
                   </TableCell>
                   <TableCell className="align-top whitespace-normal">
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span>{food.name}</span>
+                      <span>{names.food(item.foodId)}</span>
                       {/* The single most important word on the row: 343g raw
                           and 150g cooked are different instructions. */}
                       {food.state ? (
@@ -131,13 +139,15 @@ export function MealCard({
                           variant={food.state === "raw" ? "destructive" : "outline"}
                           className="uppercase"
                         >
-                          {food.state}
+                          {food.state === "raw"
+                            ? t("nutrition.raw")
+                            : t("nutrition.cooked")}
                         </Badge>
                       ) : null}
                     </span>
-                    {item.note ?? food.unitNote ? (
+                    {(item.note ?? food.unitNote) !== undefined ? (
                       <span className="block text-xs text-muted-foreground">
-                        {item.note ?? food.unitNote}
+                        {names.text(item.note ?? food.unitNote)}
                       </span>
                     ) : null}
                   </TableCell>

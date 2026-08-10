@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { useStore } from "@tanstack/react-store";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,66 +9,94 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { profileStore } from "@/features/profile/profile-store";
+import { useNames } from "@/i18n/names";
+import { useT } from "@/i18n/use-t";
+import type { WeightUnit } from "@/lib/units";
 import { useBodyEntries } from "../collection";
 import { describeFfmi, ffmi, formatIndex, leanMassKg, normalizedFfmi } from "../ffmi";
+import { weeklyAverages } from "../weekly";
 import { BodyCharts } from "./BodyCharts";
 import { BodyEntryForm } from "./BodyEntryForm";
 import { FfmiMeter } from "./FfmiMeter";
 import { BodyHistoryTable } from "./BodyHistoryTable";
 import { ProfileFields } from "./ProfileFields";
+import { WeeklyAverageCard } from "./WeeklyAverageCard";
 
 export function BodyPanel() {
   const { entries, latest, isLoading } = useBodyEntries();
   const profile = useStore(profileStore, (s) => s);
+  const t = useT();
+  const names = useNames();
 
   const normalized = latest ? normalizedFfmi(latest, profile.heightCm) : undefined;
-  const band = describeFfmi(normalized, profile.sex);
+  // `describeFfmi` is pure and returns the English band; it's a closed set with
+  // no ids, so it translates by source string the way day labels do.
+  const band = names.text(describeFfmi(normalized, profile.sex));
   const lean = latest ? leanMassKg(latest) : undefined;
+
+  // Read once on mount rather than during render: `react-hooks/purity` rejects
+  // a mid-render clock read, and "which week is the current one" shouldn't
+  // change under the card while you're looking at it.
+  const [now] = useState(() => Date.now());
+  // Averaged in the latest weigh-in's unit, the same one the chart plots in, so
+  // the card and the line can't disagree.
+  const unit: WeightUnit = latest?.unit ?? "kg";
+  const weekly = useMemo(
+    () => weeklyAverages(entries, unit, now),
+    [entries, unit, now],
+  );
 
   return (
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>About you</CardTitle>
-          <CardDescription>
-            Stored once and applied to every weigh-in, so correcting a typo here
-            recalculates the whole history.
-          </CardDescription>
+          <CardTitle>{t("body.profile.title")}</CardTitle>
+          <CardDescription>{t("body.profile.body")}</CardDescription>
         </CardHeader>
         <CardContent>
           <ProfileFields />
         </CardContent>
       </Card>
 
+      <WeeklyAverageCard weekly={weekly} unit={unit} />
+
       {latest ? (
         <Card>
           <CardHeader>
-            <CardTitle>Latest</CardTitle>
+            <CardTitle>{t("body.latest.title")}</CardTitle>
             <CardDescription>
               {profile.heightCm === undefined
-                ? "Add your height above to see FFMI."
+                ? t("body.latest.needHeight")
                 : latest.bodyFatPercent === undefined
-                  ? "Add a body-fat reading to a weigh-in to see FFMI."
-                  : "Fat-free mass index — lean mass over height squared."}
+                  ? t("body.latest.needBodyFat")
+                  : t("body.latest.body")}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-x-10 gap-y-4">
-            <Stat label="Weight" value={`${latest.weight} ${latest.unit}`} />
             <Stat
-              label="Body fat"
+              label={t("common.weight")}
+              value={`${latest.weight} ${latest.unit}`}
+            />
+            <Stat
+              label={t("body.stat.bodyFat")}
               value={
                 latest.bodyFatPercent === undefined
-                  ? "—"
+                  ? t("common.none")
                   : `${latest.bodyFatPercent}%`
               }
             />
             <Stat
-              label="Lean mass"
-              value={lean === undefined ? "—" : `${lean.toFixed(1)} kg`}
+              label={t("body.stat.leanMass")}
+              value={
+                lean === undefined ? t("common.none") : `${lean.toFixed(1)} kg`
+              }
             />
-            <Stat label="FFMI" value={formatIndex(ffmi(latest, profile.heightCm))} />
             <Stat
-              label="Normalized"
+              label={t("body.stat.ffmi")}
+              value={formatIndex(ffmi(latest, profile.heightCm))}
+            />
+            <Stat
+              label={t("body.stat.normalized")}
               value={formatIndex(normalized)}
               badge={band}
             />
@@ -82,10 +111,8 @@ export function BodyPanel() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Log a weigh-in</CardTitle>
-          <CardDescription>
-            Body fat is optional — weight alone is still worth tracking.
-          </CardDescription>
+          <CardTitle>{t("body.logEntry.title")}</CardTitle>
+          <CardDescription>{t("body.logEntry.body")}</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Keyed on the latest entry so the prefill follows it rather than
@@ -96,25 +123,21 @@ export function BodyPanel() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Trend</CardTitle>
-          <CardDescription>
-            Weight and body fat on their own scales — one chart each, since a
-            shared axis would only invite reading a crossing point as
-            meaningful.
-          </CardDescription>
+          <CardTitle>{t("body.trend.title")}</CardTitle>
+          <CardDescription>{t("body.trend.body")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <BodyCharts entries={entries} isLoading={isLoading} />
+          <BodyCharts entries={entries} weekly={weekly} isLoading={isLoading} />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>History</CardTitle>
+          <CardTitle>{t("body.history.title")}</CardTitle>
           <CardDescription>
             {profile.sex === undefined && normalized !== undefined
-              ? "Set your sex above to see where a normalized figure sits against population norms."
-              : "Most recent first."}
+              ? t("body.history.needSex")
+              : t("body.history.body")}
           </CardDescription>
         </CardHeader>
         <CardContent>

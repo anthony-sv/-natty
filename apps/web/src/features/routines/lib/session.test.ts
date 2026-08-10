@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { getRoutineBySlug, type TrainingDay } from "@/data/routines";
+import { formattingFor } from "@/i18n/test-formatting";
 import { autoStartSecondsFor, buildSteps, countWorkSteps } from "./session";
+
+/** English, so the assertions here read against the source strings. */
+const F = formattingFor();
 
 /** The first day in the app that contains a finisher, so a pose hold exists. */
 function dayWithFinisher(): TrainingDay {
@@ -16,7 +20,7 @@ function dayWithFinisher(): TrainingDay {
 
 describe("pose hold steps", () => {
   it("puts the hold between the set and its rest", () => {
-    const steps = buildSteps(dayWithFinisher());
+    const steps = buildSteps(dayWithFinisher(), F);
     const poseIndex = steps.findIndex((s) => s.type === "pose");
     expect(poseIndex).toBeGreaterThan(0);
     expect(steps[poseIndex - 1].type).toBe("work");
@@ -25,7 +29,7 @@ describe("pose hold steps", () => {
 
   it("holds after every set of the finisher, not just the last", () => {
     const day = dayWithFinisher();
-    const steps = buildSteps(day);
+    const steps = buildSteps(day, F);
     const finisherSets = day.exercises
       .filter((e) => e.isFinisher)
       .flatMap((e) => e.prescriptions)
@@ -35,7 +39,7 @@ describe("pose hold steps", () => {
 
   it("does not count a hold as a work set", () => {
     const day = dayWithFinisher();
-    const steps = buildSteps(day);
+    const steps = buildSteps(day, F);
     const sets = day.exercises
       .flatMap((e) => e.prescriptions)
       .reduce((total, p) => total + p.sets, 0);
@@ -64,7 +68,7 @@ describe("pose hold steps", () => {
         },
       ],
     };
-    const steps = buildSteps(day);
+    const steps = buildSteps(day, F);
     expect(steps.map((s) => s.type)).toEqual(["work", "pose"]);
   });
 
@@ -88,13 +92,13 @@ describe("pose hold steps", () => {
         },
       ],
     };
-    expect(buildSteps(day).map((s) => s.type)).toEqual(["work"]);
+    expect(buildSteps(day, F).map((s) => s.type)).toEqual(["work"]);
   });
 });
 
 describe("auto-start", () => {
   it("starts rest and pose holds, but waits on cardio and work", () => {
-    const steps = buildSteps(dayWithFinisher());
+    const steps = buildSteps(dayWithFinisher(), F);
     const pose = steps.find((s) => s.type === "pose")!;
     const rest = steps.find((s) => s.type === "rest")!;
     const work = steps.find((s) => s.type === "work")!;

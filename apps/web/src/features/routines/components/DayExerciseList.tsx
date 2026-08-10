@@ -13,6 +13,8 @@ import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Marker } from "@/components/ui/marker";
 import { cn } from "@/lib/utils";
 import type { ExerciseEntry } from "@/data/routines";
+import { useFormatting } from "@/i18n/use-formatting";
+import { useT, type MessageKey } from "@/i18n/use-t";
 import { exerciseDisplayName, formatAlternatives } from "../lib/format";
 import { PrescriptionBadges } from "./PrescriptionBadges";
 import { SetDots } from "./SetDots";
@@ -28,11 +30,14 @@ export function DayExerciseList({
   /** "set 2 of 3" for the active exercise. */
   activeSetLabel?: string;
 }) {
+  const t = useT();
+  const f = useFormatting();
+
   if (exercises.length === 0) {
     return (
       <Empty>
-        <EmptyTitle>No exercises listed</EmptyTitle>
-        <EmptyDescription>This day has no exercises recorded.</EmptyDescription>
+        <EmptyTitle>{t("routines.noExercises")}</EmptyTitle>
+        <EmptyDescription>{t("routines.noExercisesBody")}</EmptyDescription>
       </Empty>
     );
   }
@@ -42,12 +47,12 @@ export function DayExerciseList({
   return (
     <ItemGroup>
       {phases.map((phase) => (
-        <Fragment key={phase.label}>
+        <Fragment key={phase.labelKey}>
           {/* A single phase needs no heading -- "Main work" on a day that is
               nothing but main work is noise. */}
           {phases.length > 1 ? (
             <Marker variant="separator" className="my-1">
-              {phase.label}
+              {t(phase.labelKey)}
             </Marker>
           ) : null}
           {phase.entries.map(({ exercise, index: i }) => {
@@ -77,18 +82,20 @@ export function DayExerciseList({
             </ItemMedia>
             <ItemContent className="gap-1">
               <ItemTitle className="flex-wrap">
-                {exerciseDisplayName(exercise)}
-                {exercise.isFinisher ? <Badge variant="default">Finisher</Badge> : null}
+                {exerciseDisplayName(exercise, f)}
+                {exercise.isFinisher ? (
+                  <Badge variant="default">{t("common.finisher")}</Badge>
+                ) : null}
                 {exercise.kind === "cardio" ? (
-                  <Badge variant="outline">Cardio</Badge>
+                  <Badge variant="outline">{t("common.cardio")}</Badge>
                 ) : null}
                 {isActive && activeSetLabel ? (
                   <Badge variant="default">{activeSetLabel}</Badge>
                 ) : null}
               </ItemTitle>
-              {formatAlternatives(exercise) ? (
+              {formatAlternatives(exercise, f) ? (
                 <ItemDescription>
-                  {formatAlternatives(exercise)}
+                  {formatAlternatives(exercise, f)}
                 </ItemDescription>
               ) : null}
               {exercise.notes ? (
@@ -117,11 +124,11 @@ export function DayExerciseList({
 }
 
 /** Display order and wording for the parts of a session. */
-const PHASES: Array<{ label: string; kinds: ExerciseEntry["kind"][] }> = [
-  { label: "Main work", kinds: ["resistance"] },
-  { label: "Mobility", kinds: ["mobility"] },
-  { label: "Stretch", kinds: ["stretch"] },
-  { label: "Cardio", kinds: ["cardio"] },
+const PHASES: Array<{ labelKey: MessageKey; kinds: ExerciseEntry["kind"][] }> = [
+  { labelKey: "routines.phase.main", kinds: ["resistance"] },
+  { labelKey: "routines.phase.mobility", kinds: ["mobility"] },
+  { labelKey: "routines.phase.stretch", kinds: ["stretch"] },
+  { labelKey: "routines.phase.cardio", kinds: ["cardio"] },
 ];
 
 /**
@@ -134,7 +141,7 @@ const PHASES: Array<{ label: string; kinds: ExerciseEntry["kind"][] }> = [
  */
 function groupIntoPhases(exercises: ExerciseEntry[]) {
   return PHASES.map((phase) => ({
-    label: phase.label,
+    labelKey: phase.labelKey,
     entries: exercises
       .map((exercise, index) => ({ exercise, index }))
       .filter(({ exercise }) => phase.kinds.includes(exercise.kind)),

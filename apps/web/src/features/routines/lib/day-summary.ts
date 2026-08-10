@@ -1,4 +1,5 @@
 import type { TrainingDay } from "@/data/routines";
+import type { Formatting } from "./format";
 import { buildSteps, type SessionStep } from "./session";
 
 /**
@@ -27,8 +28,10 @@ export interface DaySummary {
  */
 const WORK_SET_SECONDS = 45;
 
-export function summariseDay(day: TrainingDay): DaySummary {
-  const steps = buildSteps(day);
+export function summariseDay(day: TrainingDay, f: Formatting): DaySummary {
+  // Only the counts and the estimate are used here, so the naming `buildSteps`
+  // needs is passed straight through rather than mattering to the result.
+  const steps = buildSteps(day, f);
 
   return {
     exercises: day.exercises.length,

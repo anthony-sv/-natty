@@ -13,6 +13,7 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { useT } from "@/i18n/use-t";
 import { LogEntryForm } from "./LogEntryForm";
 import { RecordsTable } from "./RecordsTable";
 import { useAllRecords } from "../queries";
@@ -20,6 +21,7 @@ import { useAllRecords } from "../queries";
 /** The records half of /progress: every PR, plus backfill logging. */
 export function RecordsPanel() {
   const { rows, isLoading, loggedSetCount } = useAllRecords();
+  const t = useT();
   // No debounce: the filter runs over rows already in memory, so a keystroke
   // costs less than the lag a debounce would add.
   const [search, setSearch] = useState("");
@@ -30,11 +32,8 @@ export function RecordsPanel() {
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Log a set</CardTitle>
-          <CardDescription>
-            For work done outside the player, or to catch up on a session you
-            didn't log at the time.
-          </CardDescription>
+          <CardTitle>{t("records.logSet.title")}</CardTitle>
+          <CardDescription>{t("records.logSet.body")}</CardDescription>
         </CardHeader>
         <CardContent>
           <LogEntryForm />
@@ -43,19 +42,14 @@ export function RecordsPanel() {
 
       {hasNothingLogged ? (
         <Empty>
-          <EmptyTitle>Nothing logged yet</EmptyTitle>
-          <EmptyDescription>
-            Log a set above, or start a workout and record your sets as you go.
-          </EmptyDescription>
+          <EmptyTitle>{t("records.nothingLogged.title")}</EmptyTitle>
+          <EmptyDescription>{t("records.nothingLogged.body")}</EmptyDescription>
         </Empty>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Records</CardTitle>
-            <CardDescription>
-              The best weight at each rep count, per exercise — a set only shows
-              here when nothing beat it on both weight and reps.
-            </CardDescription>
+            <CardTitle>{t("records.title")}</CardTitle>
+            <CardDescription>{t("records.body")}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <InputGroup>
@@ -63,8 +57,8 @@ export function RecordsPanel() {
                 <SearchIcon />
               </InputGroupAddon>
               <InputGroupInput
-                aria-label="Search records by exercise"
-                placeholder="Search exercises..."
+                aria-label={t("records.searchLabel")}
+                placeholder={t("common.searchExercises")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />

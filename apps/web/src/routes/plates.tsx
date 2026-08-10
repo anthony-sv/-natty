@@ -29,6 +29,8 @@ import {
 import { cn } from "@/lib/utils";
 import { UNITS, type WeightUnit } from "@/lib/units";
 import { parseMeasurement } from "@/features/calculator/parse";
+import { useNames } from "@/i18n/names";
+import { useT } from "@/i18n/use-t";
 import { BarDiagram } from "@/features/plates/components/BarDiagram";
 import { PlateDisc } from "@/features/plates/components/PlateDisc";
 import {
@@ -44,6 +46,8 @@ export const Route = createFileRoute("/plates")({
 });
 
 function PlatesPage() {
+  const t = useT();
+  const names = useNames();
   const [unit, setUnit] = useState<WeightUnit>("kg");
   const bars = barsFor(unit);
   const plates = platesFor(unit);
@@ -90,19 +94,17 @@ function PlatesPage() {
   return (
     <Page>
       <div>
-        <h1 className="text-2xl font-semibold">Plate loader</h1>
-        <p className="text-sm text-muted-foreground">
-          What to hang on each end, from what your gym actually has.
-        </p>
+        <h1 className="text-2xl font-semibold">{t("plates.title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("plates.subtitle")}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>The bar</CardTitle>
+          <CardTitle>{t("plates.theBar")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap items-start gap-4">
           <Field className="w-32">
-            <FieldLabel htmlFor="plates-unit">Units</FieldLabel>
+            <FieldLabel htmlFor="plates-unit">{t("plates.units")}</FieldLabel>
             <Select
               items={UNITS}
               value={unit}
@@ -122,11 +124,14 @@ function PlatesPage() {
           </Field>
 
           <Field className="w-64">
-            <FieldLabel htmlFor="plates-bar">Bar</FieldLabel>
+            <FieldLabel htmlFor="plates-bar">{t("plates.bar")}</FieldLabel>
+            {/* `SelectValue` renders the *item's* label for whatever is
+                selected, not the `SelectItem` children — so the label here has
+                to be translated too, not just the list below. */}
             <Select
               items={bars.map((candidate) => ({
                 value: candidate.id,
-                label: candidate.name,
+                label: names.bar(candidate.id, candidate.name),
               }))}
               value={bar.id}
               onValueChange={(value) => setBarId(value ?? bars[0]!.id)}
@@ -137,13 +142,14 @@ function PlatesPage() {
               <SelectContent>
                 {bars.map((candidate) => (
                   <SelectItem key={candidate.id} value={candidate.id}>
-                    {candidate.name} — {candidate.weight} {candidate.unit}
+                    {names.bar(candidate.id, candidate.name)} —{" "}
+                    {candidate.weight} {candidate.unit}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <FieldDescription>
-              Every total below includes the bar's {bar.weight} {unit}.
+              {t("plates.barIncluded", { weight: bar.weight, unit })}
             </FieldDescription>
           </Field>
         </CardContent>
@@ -151,12 +157,8 @@ function PlatesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>What's on the rack</CardTitle>
-          <CardDescription>
-            Pairs of each disc — one for each end. Set a denomination to zero
-            and the loader stops using it, which is the point: it will find a
-            longer combination that still lands exactly rather than rounding.
-          </CardDescription>
+          <CardTitle>{t("plates.rack")}</CardTitle>
+          <CardDescription>{t("plates.rackBody")}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4">
           {plates.map((plate) => {
@@ -179,7 +181,10 @@ function PlatesPage() {
                   {plate.weight} {unit}
                 </span>
                 <Input
-                  aria-label={`Pairs of ${plate.weight} ${unit}`}
+                  aria-label={t("plates.pairsLabel", {
+                    weight: plate.weight,
+                    unit,
+                  })}
                   type="number"
                   inputMode="numeric"
                   min="0"
@@ -203,21 +208,21 @@ function PlatesPage() {
 
       <Tabs defaultValue="load">
         <TabsList>
-          <TabsTrigger value="load">Load a weight</TabsTrigger>
-          <TabsTrigger value="add">Add plates up</TabsTrigger>
+          <TabsTrigger value="load">{t("plates.loadWeight")}</TabsTrigger>
+          <TabsTrigger value="add">{t("plates.addUp")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="load">
           <Card>
             <CardHeader>
-              <CardTitle>Load a weight</CardTitle>
-              <CardDescription>
-                The fewest discs that reach the target without going over.
-              </CardDescription>
+              <CardTitle>{t("plates.loadWeight")}</CardTitle>
+              <CardDescription>{t("plates.loadBody")}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <Field className="w-48">
-                <FieldLabel htmlFor="plates-target">Target ({unit})</FieldLabel>
+                <FieldLabel htmlFor="plates-target">
+                  {t("plates.target", { unit })}
+                </FieldLabel>
                 <Input
                   id="plates-target"
                   type="number"
@@ -231,7 +236,7 @@ function PlatesPage() {
 
               {!solved.ok ? (
                 <p className="text-sm text-muted-foreground">
-                  That's less than the bar on its own ({bar.weight} {unit}).
+                  {t("plates.belowBar", { weight: bar.weight, unit })}
                 </p>
               ) : (
                 <>
@@ -243,18 +248,22 @@ function PlatesPage() {
                     </span>
                     {solved.loading.isApproximate ? (
                       <Badge variant="destructive">
-                        {solved.loading.shortBy} {unit} short — no combination
-                        on the rack lands exactly
+                        {t("plates.short", {
+                          short: solved.loading.shortBy,
+                          unit,
+                        })}
                       </Badge>
                     ) : (
-                      <Badge variant="secondary">Exact</Badge>
+                      <Badge variant="secondary">{t("plates.exact")}</Badge>
                     )}
                   </div>
 
                   <p className="text-sm">
-                    <span className="text-muted-foreground">Per side: </span>
+                    <span className="text-muted-foreground">
+                      {t("plates.perSide")}{" "}
+                    </span>
                     {solved.loading.perSide.length === 0
-                      ? "nothing, just the bar"
+                      ? t("plates.justTheBar")
                       : solved.loading.perSide
                           .map(
                             (entry) =>
@@ -271,12 +280,8 @@ function PlatesPage() {
         <TabsContent value="add">
           <Card>
             <CardHeader>
-              <CardTitle>Add plates up</CardTitle>
-              <CardDescription>
-                The same thing backwards: put discs on one end and read the
-                total. Tap a disc below to add a pair, or tap one on the bar to
-                take a pair off.
-              </CardDescription>
+              <CardTitle>{t("plates.addUp")}</CardTitle>
+              <CardDescription>{t("plates.addBody")}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <BarDiagram
@@ -289,8 +294,11 @@ function PlatesPage() {
                   {pickedTotal} {unit}
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  {bar.weight} {unit} bar +{" "}
-                  {(pickedTotal - bar.weight) / 2} {unit} a side
+                  {t("plates.barPlusSide", {
+                    weight: bar.weight,
+                    unit,
+                    side: (pickedTotal - bar.weight) / 2,
+                  })}
                 </span>
               </div>
 
@@ -304,7 +312,10 @@ function PlatesPage() {
                       <PlateDisc
                         plate={plate}
                         size={44}
-                        title={`Add a pair of ${plate.weight} ${unit}`}
+                        title={t("plates.addPair", {
+                          weight: plate.weight,
+                          unit,
+                        })}
                         onClick={() => adjustPicked(plate, 1)}
                       />
                     </span>
@@ -316,7 +327,10 @@ function PlatesPage() {
                         size="icon-sm"
                         variant="ghost"
                         className="size-6"
-                        aria-label={`Add a pair of ${plate.weight} ${unit}`}
+                        aria-label={t("plates.addPair", {
+                          weight: plate.weight,
+                          unit,
+                        })}
                         onClick={() => adjustPicked(plate, 1)}
                       >
                         <PlusIcon />
@@ -325,7 +339,10 @@ function PlatesPage() {
                         size="icon-sm"
                         variant="ghost"
                         className="size-6"
-                        aria-label={`Remove a pair of ${plate.weight} ${unit}`}
+                        aria-label={t("plates.removePair", {
+                          weight: plate.weight,
+                          unit,
+                        })}
                         onClick={() => adjustPicked(plate, -1)}
                       >
                         <MinusIcon />
@@ -338,7 +355,7 @@ function PlatesPage() {
               {Object.values(picked).some((pairs) => pairs > 0) ? (
                 <div>
                   <Button variant="outline" onClick={() => setPicked({})}>
-                    Strip the bar
+                    {t("plates.strip")}
                   </Button>
                 </div>
               ) : null}

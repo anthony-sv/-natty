@@ -11,6 +11,8 @@ import {
 import { Slider } from "@/components/ui/slider";
 import type { DietPlan } from "@/data/diets";
 import { KCAL_PER_GRAM, KCAL_PER_GRAM_FIBRE, kcalOf, percentSplit } from "../macros";
+import { useNames } from "@/i18n/names";
+import { useT } from "@/i18n/use-t";
 import { MacroSplit } from "./MacroSplit";
 
 /** Upper ends, generous enough for a big bulk without making the grams fiddly. */
@@ -30,6 +32,9 @@ const ROWS = [
  * abstraction.
  */
 export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
+  const t = useT();
+  const names = useNames();
+  const planName = names.dietPlan(plan.slug, plan.name);
   const [macros, setMacros] = useState({
     protein: plan.targets.protein,
     carbs: plan.targets.carbs,
@@ -50,10 +55,11 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
             <div className="flex flex-col gap-1.5">
-              <CardTitle>Build a split</CardTitle>
+              <CardTitle>{t("nutrition.buildSplit")}</CardTitle>
               <CardDescription>
-                Starting from {plan.name}. Drag a macro and everything else
-                follows.
+                {t("nutrition.splitBody", {
+                  plan: planName,
+                })}
               </CardDescription>
             </div>
             {isPlan ? null : (
@@ -68,7 +74,8 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
                   })
                 }
               >
-                <RotateCcwIcon data-icon="inline-start" /> Reset to plan
+                <RotateCcwIcon data-icon="inline-start" />{" "}
+                {t("nutrition.resetToPlan")}
               </Button>
             )}
           </div>
@@ -120,9 +127,11 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
             as a slice would count part of the day twice and inflate the total.
           */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t pt-4">
-            <span className="w-20 text-sm text-muted-foreground">Fibre</span>
+            <span className="w-20 text-sm text-muted-foreground">
+              {t("nutrition.fibre")}
+            </span>
             <Slider
-              aria-label="Fibre in grams"
+              aria-label={t("nutrition.fibreAria")}
               className="min-w-40 flex-1"
               min={0}
               max={LIMITS.fibre}
@@ -140,9 +149,10 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
             </span>
             <span className="w-12" />
             <p className="basis-full text-xs text-muted-foreground">
-              Counted inside the carbs above, at roughly {KCAL_PER_GRAM_FIBRE}{" "}
-              kcal a gram rather than {KCAL_PER_GRAM.carbs} — fibre is a
-              carbohydrate the body only partly gets at, not a fourth macro.
+              {t("nutrition.fibreNote", {
+                fibreKcal: KCAL_PER_GRAM_FIBRE,
+                carbKcal: KCAL_PER_GRAM.carbs,
+              })}
             </p>
           </div>
         </CardContent>
@@ -151,14 +161,26 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
       <Card>
         <CardHeader>
           <CardTitle>
-            {Math.round(total).toLocaleString()} kcal a day
+            {t("nutrition.kcalADay", {
+              kcal: Math.round(total).toLocaleString(t.locale),
+            })}
           </CardTitle>
           <CardDescription>
             {total > plan.targetKcal
-              ? `${Math.round(total - plan.targetKcal).toLocaleString()} kcal above ${plan.name}.`
+              ? t("nutrition.above", {
+                  kcal: Math.round(total - plan.targetKcal).toLocaleString(
+                    t.locale,
+                  ),
+                  plan: planName,
+                })
               : total < plan.targetKcal
-                ? `${Math.round(plan.targetKcal - total).toLocaleString()} kcal below ${plan.name}.`
-                : `Exactly ${plan.name}.`}
+                ? t("nutrition.below", {
+                    kcal: Math.round(plan.targetKcal - total).toLocaleString(
+                      t.locale,
+                    ),
+                    plan: planName,
+                  })
+                : t("nutrition.exactly", { plan: planName })}
           </CardDescription>
         </CardHeader>
         <CardContent>

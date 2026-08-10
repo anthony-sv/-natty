@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { eq, useLiveQuery } from "@tanstack/react-db";
-import { getExercise, getMovement } from "@/data/exercises";
+import { getExercise } from "@/data/exercises";
+import { useNames } from "@/i18n/names";
 import { loggedSets } from "./collection";
 import { lastSetFor, prFrontier } from "./pr";
 import { toRecordRows, type RecordRow } from "./records";
@@ -49,17 +50,20 @@ export function useAllRecords(): {
   loggedSetCount: number;
 } {
   const { data, isLoading } = useLiveQuery((q) => q.from({ set: loggedSets }));
+  // Names in the reader's language, not the library's English — the table's
+  // headings, its cells and the text its search runs over are all this.
+  const names = useNames();
 
   const rows = useMemo(
     () =>
       toRecordRows(data ?? [], {
-        exerciseName: (id) => getExercise(id)?.name ?? id,
-        movementName: (id) => {
-          const exercise = getExercise(id);
-          return exercise ? getMovement(exercise.movementId)?.name : undefined;
-        },
+        exerciseName: (id) => names.exercise(id),
+        movementName: (id) => names.movement(id),
+        // Aliases stay as authored: they're the spellings you'd *type*, and
+        // they're searched rather than shown.
+        aliases: (id) => getExercise(id)?.aliases ?? [],
       }),
-    [data],
+    [data, names],
   );
 
   return { rows, isLoading, loggedSetCount: data?.length ?? 0 };

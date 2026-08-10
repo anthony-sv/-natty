@@ -17,11 +17,13 @@ import {
 } from "@/components/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { hydration } from "@/data/diets";
+import { useNames } from "@/i18n/names";
+import { useT } from "@/i18n/use-t";
+import { useWeekdayLabels } from "@/i18n/use-weekdays";
 import type { DietPlan, Weekday } from "@/data/diets";
 import { useBodyEntries } from "@/features/body/collection";
 import { toKilograms } from "@/lib/units";
 import {
-  WEEKDAY_LABELS,
   dayTotals,
   deficitPerDay,
   kcalOf,
@@ -39,6 +41,9 @@ import { MealCard } from "./MealCard";
 export function PlanPanel({ plan }: { plan: DietPlan }) {
   // Lazily, not during render — the purity lint rule rejects a `new Date()`
   // there, the same way it rejects `Date.now()`.
+  const t = useT();
+  const names = useNames();
+  const weekdayLabels = useWeekdayLabels();
   const [today] = useState(() => weekdayOf(new Date()));
   const [day, setDay] = useState<Weekday>(today);
   const [choices, setChoices] = useState<SwapChoices>({});
@@ -59,41 +64,57 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Stat icon={FlameIcon} label="TDEE" value={plan.tdeeKcal.toLocaleString()} unit="kcal" />
-        <Stat icon={TargetIcon} label="Target" value={plan.targetKcal.toLocaleString()} unit="kcal" />
         <Stat
-          icon={deficit >= 0 ? TrendingDownIcon : TrendingUpIcon}
-          label={deficit >= 0 ? "Deficit" : "Surplus"}
-          value={Math.abs(deficit).toLocaleString()}
-          unit="kcal/day"
+          icon={FlameIcon}
+          label={t("nutrition.tdee")}
+          value={plan.tdeeKcal.toLocaleString()}
+          unit="kcal"
+        />
+        <Stat
+          icon={TargetIcon}
+          label={t("nutrition.target")}
+          value={plan.targetKcal.toLocaleString()}
+          unit="kcal"
         />
         <Stat
           icon={deficit >= 0 ? TrendingDownIcon : TrendingUpIcon}
-          label="Rough pace"
+          label={deficit >= 0 ? t("nutrition.deficit") : t("nutrition.surplus")}
+          value={Math.abs(deficit).toLocaleString()}
+          unit={t("nutrition.kcalPerDay")}
+        />
+        <Stat
+          icon={deficit >= 0 ? TrendingDownIcon : TrendingUpIcon}
+          label={t("nutrition.pace")}
           value={`${Math.abs(rate).toFixed(2)}`}
-          unit="kg/week"
+          unit={t("nutrition.kgPerWeek")}
         />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Daily targets</CardTitle>
+          <CardTitle>{t("nutrition.dailyTargets")}</CardTitle>
           <CardDescription>
-            {plan.targets.protein}g protein · {plan.targets.carbs}g carbs ·{" "}
-            {plan.targets.fat}g fat
-            {perKg !== undefined
-              ? ` — ${perKg.toFixed(1)}g of protein per kg at your last weigh-in`
-              : ""}
-            . The ring shows what the meals below actually add to.
+            {perKg === undefined
+              ? t("nutrition.targetsBody", {
+                  protein: plan.targets.protein,
+                  carbs: plan.targets.carbs,
+                  fat: plan.targets.fat,
+                })
+              : t("nutrition.targetsBodyPerKg", {
+                  protein: plan.targets.protein,
+                  carbs: plan.targets.carbs,
+                  fat: plan.targets.fat,
+                  perKg: perKg.toFixed(1),
+                })}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <MacroSplit macros={macros} caption={WEEKDAY_LABELS[day]} />
+          <MacroSplit macros={macros} caption={weekdayLabels[day]} />
         </CardContent>
       </Card>
 
       <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium">Day</span>
+        <span className="text-sm font-medium">{t("nutrition.day")}</span>
         <ToggleGroup
           value={[day]}
           onValueChange={(value) => {
@@ -104,9 +125,11 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
         >
           {weekdays().map((candidate) => (
             <ToggleGroupItem key={candidate} value={candidate}>
-              {WEEKDAY_LABELS[candidate]}
+              {weekdayLabels[candidate]}
               {candidate === today ? (
-                <span className="ml-1 text-xs opacity-60">today</span>
+                <span className="ml-1 text-xs opacity-60">
+                  {t("nutrition.today")}
+                </span>
               ) : null}
             </ToggleGroupItem>
           ))}
@@ -128,7 +151,8 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <PillIcon className="size-4 text-muted-foreground" /> Supplements
+              <PillIcon className="size-4 text-muted-foreground" />{" "}
+              {t("nutrition.supplements")}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
@@ -137,11 +161,13 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
                 key={supplement.name}
                 className="flex flex-wrap items-baseline gap-x-3 gap-y-1"
               >
-                <span className="font-medium">{supplement.name}</span>
-                <Badge variant="secondary">{supplement.dose}</Badge>
+                <span className="font-medium">
+                  {names.text(supplement.name)}
+                </span>
+                <Badge variant="secondary">{names.text(supplement.dose)}</Badge>
                 <span className="text-sm text-muted-foreground">
-                  {supplement.timing}
-                  {supplement.note ? ` — ${supplement.note}` : ""}
+                  {names.text(supplement.timing)}
+                  {supplement.note ? ` — ${names.text(supplement.note)}` : ""}
                 </span>
               </div>
             ))}
@@ -152,28 +178,32 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <DropletsIcon className="size-4 text-muted-foreground" /> Hydration
+            <DropletsIcon className="size-4 text-muted-foreground" />{" "}
+            {t("nutrition.hydration")}
           </CardTitle>
-          <CardDescription>
-            A zero-sugar coke counts toward the total, but not one for one — the
-            alternatives are listed rather than calculated.
-          </CardDescription>
+          <CardDescription>{t("nutrition.hydrationBody")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6 sm:grid-cols-2">
-          <HydrationColumn title="Rest day" options={hydration.restDay} />
-          <HydrationColumn title="Training day" options={hydration.trainingDay} />
+          <HydrationColumn
+            title={t("nutrition.restDay")}
+            options={hydration.restDay}
+          />
+          <HydrationColumn
+            title={t("nutrition.trainingDay")}
+            options={hydration.trainingDay}
+          />
         </CardContent>
       </Card>
 
       {plan.notes.length > 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Notes</CardTitle>
+            <CardTitle>{t("nutrition.notes")}</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="flex list-disc flex-col gap-2 pl-4 text-sm text-muted-foreground">
               {plan.notes.map((note) => (
-                <li key={note}>{note}</li>
+                <li key={note}>{names.text(note)}</li>
               ))}
             </ul>
           </CardContent>
@@ -190,6 +220,9 @@ function HydrationColumn({
   title: string;
   options: typeof hydration.restDay;
 }) {
+  const t = useT();
+  const names = useNames();
+
   return (
     <div className="flex flex-col gap-2">
       <span className="text-sm font-medium">{title}</span>
@@ -203,9 +236,9 @@ function HydrationColumn({
           </span>
           <span className="text-sm text-muted-foreground">
             {option.zeroCokes === 0
-              ? "water only"
-              : `+ ${option.zeroCokes} zero coke${option.zeroCokes === 1 ? "" : "s"}`}
-            {option.note ? `, ${option.note}` : ""}
+              ? t("nutrition.waterOnly")
+              : t.plural("nutrition.zeroCokes", option.zeroCokes)}
+            {option.note ? `, ${names.text(option.note)}` : ""}
           </span>
         </div>
       ))}

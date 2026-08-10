@@ -1,6 +1,7 @@
 import {
   columnFilteringFeature,
   columnGroupingFeature,
+  constructFilterFn,
   createExpandedRowModel,
   createFilteredRowModel,
   createGroupedRowModel,
@@ -17,6 +18,7 @@ import {
   tableFeatures,
 } from "@tanstack/react-table";
 import type { RowData } from "@tanstack/react-table";
+import { searchable, searchWords } from "@/lib/search";
 
 export interface ColumnDisplayMeta {
   /**
@@ -27,6 +29,26 @@ export interface ColumnDisplayMeta {
    */
   align?: "end";
 }
+
+/**
+ * The house search behaviour (`lib/search.ts`) as a table filter function.
+ *
+ * Built with `constructFilterFn` off the built-in rather than written from
+ * scratch — that's the sanctioned way to vary one, and it keeps the auto-remove
+ * behaviour that clears an emptied search box. The resolvers are where the
+ * folding belongs: the table applies `resolveFilterValue` once per filter and
+ * `resolveDataValue` once per row, so nothing re-splits the query per row.
+ */
+const filterFn_matchesAllWords = constructFilterFn({
+  ...filterFn_includesString,
+  filter: (dataValue: string, words: string[]) =>
+    words.every((word) => dataValue.includes(word)),
+  resolveFilterValue: (value: unknown) => searchWords(String(value ?? "")),
+  resolveDataValue: (value: unknown) => searchable(String(value ?? "")),
+  // Runs against whichever form the table hands it; both stringify to "" when
+  // there's nothing to search for.
+  autoRemove: (value: unknown) => String(value ?? "").trim() === "",
+});
 
 /**
  * The feature set every table in the app runs with.
@@ -56,7 +78,10 @@ const features = tableFeatures({
   columnFilteringFeature,
   globalFilteringFeature,
   filteredRowModel: createFilteredRowModel(),
-  filterFns: { includesString: filterFn_includesString },
+  filterFns: {
+    includesString: filterFn_includesString,
+    matchesAllWords: filterFn_matchesAllWords,
+  },
   columnGroupingFeature,
   groupedRowModel: createGroupedRowModel(),
   rowExpandingFeature,

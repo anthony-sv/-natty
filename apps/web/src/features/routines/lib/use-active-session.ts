@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "@tanstack/react-store";
 import type { Routine, TrainingDay } from "@/data/routines";
+import { useFormatting } from "@/i18n/use-formatting";
 import { routinesQueryOptions } from "../queries";
 import { sessionStore, type SessionState } from "../session-store";
 import { exerciseDisplayName } from "./format";
@@ -27,6 +28,7 @@ export interface ResolvedSession {
 export function useActiveSession(): ResolvedSession | null {
   const state = useStore(sessionStore, (s) => s);
   const { data: routines } = useQuery(routinesQueryOptions());
+  const f = useFormatting();
 
   if (state === null || routines === undefined) return null;
 
@@ -35,14 +37,14 @@ export function useActiveSession(): ResolvedSession | null {
   const day = week?.days.find((d) => d.dayNumber === state.dayNumber);
   if (!routine || !day) return null;
 
-  const steps = buildSteps(day);
+  const steps = buildSteps(day, f);
   const currentStep = steps[state.stepIndex];
   const activeEntry =
     currentStep === undefined
       ? undefined
       : day.exercises[currentStep.exerciseIndex];
   const currentExerciseName =
-    activeEntry === undefined ? undefined : exerciseDisplayName(activeEntry);
+    activeEntry === undefined ? undefined : exerciseDisplayName(activeEntry, f);
 
   return { state, routine, day, steps, currentStep, currentExerciseName };
 }

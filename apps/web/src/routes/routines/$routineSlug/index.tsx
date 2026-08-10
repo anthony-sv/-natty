@@ -25,31 +25,42 @@ import { routineQueryOptions } from "@/features/routines/queries";
 import {
   exerciseDisplayName,
   formatDefaultPrescription,
-  formatWeekLabel,
 } from "@/features/routines/lib/format";
 import { summariseRoutine } from "@/features/routines/lib/summary";
+import { useFormatting } from "@/i18n/use-formatting";
+import { useT } from "@/i18n/use-t";
 import type { TrainingWeek } from "@/data/routines";
 
 export const Route = createFileRoute("/routines/$routineSlug/")({
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(routineQueryOptions(params.routineSlug)),
-  notFoundComponent: () => (
+  notFoundComponent: () => <RoutineNotFound />,
+  component: RoutineDetail,
+});
+
+/** Split out so it can call hooks — `notFoundComponent` takes a component. */
+function RoutineNotFound() {
+  const t = useT();
+  return (
     <Page>
       <Empty>
-        <EmptyTitle>Routine not found</EmptyTitle>
+        <EmptyTitle>{t("routines.notFound")}</EmptyTitle>
         <EmptyDescription>
-          This program doesn't exist. <Link to="/routines">Back to routines</Link>
+          {t("routines.notFoundBody")}{" "}
+          <Link to="/routines">{t("routines.backToList")}</Link>
         </EmptyDescription>
       </Empty>
     </Page>
-  ),
-  component: RoutineDetail,
-});
+  );
+}
 
 function RoutineDetail() {
   const { routineSlug } = Route.useParams();
   const { data: routine } = useSuspenseQuery(routineQueryOptions(routineSlug));
-  const summary = summariseRoutine(routine);
+  const t = useT();
+  const f = useFormatting();
+  const summary = summariseRoutine(routine, f);
+  const routineName = f.names.routine(routine.slug, routine.name);
 
   return (
     <Page>
@@ -59,32 +70,38 @@ function RoutineDetail() {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink render={<Link to="/routines" />}>
-              Routines
+              {t("nav.routines")}
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>{routine.name}</BreadcrumbPage>
+            <BreadcrumbPage>{routineName}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <h1 className="text-2xl font-semibold">{routine.name}</h1>
+          <h1 className="text-2xl font-semibold">{routineName}</h1>
           <p className="text-sm text-muted-foreground">
-            {summary.length} · {summary.trainingDays} training day
-            {summary.trainingDays === 1 ? "" : "s"}
-            {summary.restDays > 0 ? ` · ${summary.restDays} rest` : ""}
+            {summary.length} ·{" "}
+            {t.plural("routines.trainingDays", summary.trainingDays)}
+            {summary.restDays > 0
+              ? ` · ${t("routines.restDays", { count: summary.restDays })}`
+              : ""}
           </p>
         </div>
         <div className="flex flex-wrap gap-1.5">
           {routine.source ? <Badge variant="outline">{routine.source}</Badge> : null}
-          {routine.style ? <Badge variant="secondary">{routine.style}</Badge> : null}
-          {routine.goal ? <Badge>{routine.goal}</Badge> : null}
+          {routine.style ? (
+            <Badge variant="secondary">{f.names.text(routine.style)}</Badge>
+          ) : null}
+          {routine.goal ? <Badge>{f.names.text(routine.goal)}</Badge> : null}
           {routine.defaultPrescription ? (
             <Badge variant="outline">
-              Default: {formatDefaultPrescription(routine.defaultPrescription)}
+              {t("routines.defaultPrescription", {
+                value: formatDefaultPrescription(routine.defaultPrescription, f),
+              })}
             </Badge>
           ) : null}
         </div>
@@ -95,7 +112,7 @@ function RoutineDetail() {
           <TabsList>
             {routine.weeks.map((week) => (
               <TabsTrigger key={week.weekNumber} value={String(week.weekNumber)}>
-                {formatWeekLabel(week.weekNumber)}
+                {t("routines.week", { number: week.weekNumber })}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -119,6 +136,9 @@ function WeekDayList({
   routineSlug: string;
   week: TrainingWeek;
 }) {
+  const t = useT();
+  const f = useFormatting();
+
   return (
     <ItemGroup className="gap-2">
       {week.days.map((day) => (
@@ -140,14 +160,16 @@ function WeekDayList({
           <ItemContent className="gap-1">
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
               <ItemTitle className={day.isRest ? "text-muted-foreground" : ""}>
-                Day {day.dayNumber} — {day.label}
+                {t("routines.dayLabel", {
+                  number: day.dayNumber,
+                  label: f.names.text(day.label) ?? day.label,
+                })}
               </ItemTitle>
               {day.isRest ? (
-                <Badge variant="outline">Rest</Badge>
+                <Badge variant="outline">{t("routines.restDay")}</Badge>
               ) : (
                 <Badge variant="secondary">
-                  {day.exercises.length} exercise
-                  {day.exercises.length === 1 ? "" : "s"}
+                  {t.plural("routines.exerciseCount", day.exercises.length)}
                 </Badge>
               )}
             </div>
@@ -157,7 +179,9 @@ function WeekDayList({
                 left two thirds of itself empty saying it. */}
             {day.exercises.length > 0 ? (
               <ItemDescription className="line-clamp-2">
-                {day.exercises.map(exerciseDisplayName).join(" · ")}
+                {day.exercises
+                  .map((entry) => exerciseDisplayName(entry, f))
+                  .join(" · ")}
               </ItemDescription>
             ) : null}
           </ItemContent>

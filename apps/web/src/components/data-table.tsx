@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAppTable, type ColumnDisplayMeta, type ColumnList } from "@/lib/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useT } from "@/i18n/use-t";
 import {
   Table,
   TableBody,
@@ -33,6 +34,17 @@ function countLeafRows(rows: { subRows: unknown[] }[]): number {
         ? countLeafRows(row.subRows as { subRows: unknown[] }[])
         : 1),
     0,
+  );
+}
+
+/** The caller's own rows from under a group heading, at any depth. */
+function leafOriginals<TData>(
+  rows: { subRows: unknown[]; original: TData }[],
+): TData[] {
+  return rows.flatMap((row) =>
+    row.subRows.length
+      ? leafOriginals(row.subRows as { subRows: unknown[]; original: TData }[])
+      : [row.original],
   );
 }
 
@@ -72,6 +84,7 @@ export function DataTable<TData extends RowData>({
   globalFilter,
   globalFilterColumns,
   grouping,
+  renderGroupAction,
   getRowId,
   devtoolsKey,
   virtual,
@@ -82,7 +95,7 @@ export function DataTable<TData extends RowData>({
   empty?: React.ReactNode;
   /** Renders placeholder rows instead of rows or the empty state. */
   isLoading?: boolean;
-  /** Substring match across the searchable columns. */
+  /** Word-wise, punctuation-insensitive match across the searchable columns. */
   globalFilter?: string;
   /**
    * Which column ids the global filter searches. Worth setting: by default
@@ -97,6 +110,15 @@ export function DataTable<TData extends RowData>({
    */
   grouping?: readonly string[];
   /**
+   * A control for the end of each group heading, given that group's own rows
+   * and its heading text.
+   *
+   * The heading is already a button that toggles expansion, so anything else
+   * belongs beside it rather than folded into it. Handing back `TData` keeps
+   * the table's own row type out of the caller's signature.
+   */
+  renderGroupAction?: (rows: TData[], groupLabel: string) => React.ReactNode;
+  /**
    * A stable id per row. Without it rows are keyed by position, so filtering
    * or sorting hands the same key to a different record — which the virtual
    * list then reuses a measurement for.
@@ -109,6 +131,7 @@ export function DataTable<TData extends RowData>({
 }) {
   // `useAppTable`, not `useTable`: the factory in `lib/table.ts` already binds
   // the feature set, so it isn't restated at every table.
+  const t = useT();
   const table = useAppTable({
     columns,
     data,
@@ -116,7 +139,9 @@ export function DataTable<TData extends RowData>({
     getRowId,
     state: { globalFilter },
     initialState: { grouping: [...(grouping ?? [])], expanded: true },
-    globalFilterFn: "includesString",
+    // Word-wise and punctuation-insensitive, so "bench incline" and "pec-deck"
+    // both land — see `lib/table.ts`.
+    globalFilterFn: "matchesAllWords",
     getColumnCanGlobalFilter: (column) =>
       globalFilterColumns === undefined ||
       globalFilterColumns.includes(column.id),
@@ -134,7 +159,11 @@ export function DataTable<TData extends RowData>({
   const columnCount = table.getHeaderGroups()[0]?.headers.length ?? columns.length;
 
   /**
-   * A group's heading row: one full-width cell with a disclosure control.
+   * A group's heading row: one full-width cell with a disclosure control, and
+   * optionally a caller's own control at the end.
+   *
+   * The heading's own button already owns expansion, so a second action can't
+   * be folded into it — `renderGroupAction` sits beside it rather than inside.
    *
    * The count comes from walking `subRows`, not from the render model — that
    * model interleaves group rows with expanded leaves, so filtering it would
@@ -147,14 +176,14 @@ export function DataTable<TData extends RowData>({
     return (
       <TableCell
         colSpan={columnCount}
-        className="bg-muted/40"
+        className="flex items-center gap-2 bg-muted/40"
         style={virtual ? { gridColumn: "1 / -1" } : undefined}
       >
         <button
           type="button"
           onClick={row.getToggleExpandedHandler()}
           aria-expanded={row.getIsExpanded()}
-          className="flex w-full items-center gap-2 text-left"
+          className="flex min-w-0 flex-1 items-center gap-2 text-left"
         >
           {row.getIsExpanded() ? (
             <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
@@ -162,10 +191,16 @@ export function DataTable<TData extends RowData>({
             <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
           )}
           <span className="truncate font-medium">{String(value)}</span>
-          <span className="text-muted-foreground tabular-nums">
-            {count} record{count === 1 ? "" : "s"}
+          <span className="shrink-0 text-muted-foreground tabular-nums">
+            {t.plural("records.count", count)}
           </span>
         </button>
+        {renderGroupAction?.(
+          // The originals, not the table's rows — the caller wants its own data
+          // back, not a handle on the table's internals.
+          leafOriginals(row.subRows),
+          String(value),
+        )}
       </TableCell>
     );
   }

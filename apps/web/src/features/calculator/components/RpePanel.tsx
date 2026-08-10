@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { UNITS, type WeightUnit } from "@/lib/units";
+import { useT, type Translate } from "@/i18n/use-t";
 import {
   CHART_REPS,
   RPE_VALUES,
@@ -36,10 +37,16 @@ import {
 } from "../rpe";
 import { parseMeasurement } from "../parse";
 
-const RPE_OPTIONS = RPE_VALUES.map((rpe) => ({
-  value: String(rpe),
-  label: `${rpe} — ${rirForRpe(rpe)} in reserve`,
-}));
+/**
+ * Built per locale rather than at module scope: `SelectValue` renders the
+ * *item's* label for the current value, so a translated `SelectItem` child
+ * isn't enough on its own.
+ */
+const rpeOptions = (t: Translate) =>
+  RPE_VALUES.map((rpe) => ({
+    value: String(rpe),
+    label: `${rpe} — ${t("calc.rpe.inReserve", { count: rirForRpe(rpe) })}`,
+  }));
 
 /**
  * The RPE chart, and a one-rep max read off it.
@@ -64,20 +71,19 @@ export function RpePanel() {
     rpeValue,
   );
 
+  const t = useT();
+  const options = useMemo(() => rpeOptions(t), [t]);
+
   return (
     <div className="flex flex-col gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>The set you did</CardTitle>
-          <CardDescription>
-            RPE is how hard the set was out of 10; reps in reserve is the same
-            statement counted the other way. RPE 8 and 2 in reserve are one
-            thing said twice.
-          </CardDescription>
+          <CardTitle>{t("calc.setYouDid")}</CardTitle>
+          <CardDescription>{t("calc.rpe.setBody")}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-start gap-4">
           <Field className="w-48">
-            <FieldLabel htmlFor="rpe-weight">Weight</FieldLabel>
+            <FieldLabel htmlFor="rpe-weight">{t("common.weight")}</FieldLabel>
             <div className="flex items-center gap-2">
               <Input
                 id="rpe-weight"
@@ -85,7 +91,7 @@ export function RpePanel() {
                 inputMode="decimal"
                 min="0"
                 step="0.5"
-                placeholder="e.g. 100"
+                placeholder={t("calc.example100")}
                 className="min-w-0 flex-1"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
@@ -95,7 +101,10 @@ export function RpePanel() {
                 value={unit}
                 onValueChange={(value) => setUnit(value as WeightUnit)}
               >
-                <SelectTrigger aria-label="Weight unit" className="w-20 shrink-0">
+                <SelectTrigger
+                  aria-label={t("common.weightUnit")}
+                  className="w-20 shrink-0"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -110,7 +119,7 @@ export function RpePanel() {
           </Field>
 
           <Field className="w-32">
-            <FieldLabel htmlFor="rpe-reps">Reps</FieldLabel>
+            <FieldLabel htmlFor="rpe-reps">{t("common.reps")}</FieldLabel>
             <Input
               id="rpe-reps"
               type="number"
@@ -125,7 +134,7 @@ export function RpePanel() {
           <Field className="w-56">
             <FieldLabel htmlFor="rpe-rpe">RPE</FieldLabel>
             <Select
-              items={RPE_OPTIONS}
+              items={options}
               value={rpe}
               onValueChange={(value) => setRpe(value ?? "8")}
             >
@@ -133,7 +142,7 @@ export function RpePanel() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {RPE_OPTIONS.map((option) => (
+                {options.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -147,31 +156,35 @@ export function RpePanel() {
 
       <Card>
         <CardHeader>
-          <CardTitle>What that set implies</CardTitle>
+          <CardTitle>{t("calc.rpe.implies")}</CardTitle>
           <CardDescription>
             {percent === undefined
-              ? "That combination is off the published chart — it stops at twelve reps to failure."
-              : `${reps} reps at RPE ${rpe} is ${percent}% of a one-rep max.`}
+              ? t("calc.rpe.offChart")
+              : t("calc.rpe.impliesBody", { reps, rpe, percent })}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-x-10 gap-y-4">
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Share of max</span>
+            <span className="text-xs text-muted-foreground">
+              {t("calc.rpe.shareOfMax")}
+            </span>
             <span className="text-3xl font-semibold tabular-nums">
-              {percent === undefined ? "—" : `${percent}%`}
+              {percent === undefined ? t("common.none") : `${percent}%`}
             </span>
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">
-              Estimated one-rep max
+              {t("calc.orm.title")}
             </span>
             <span className="flex items-center gap-2">
               <span className="text-3xl font-semibold tabular-nums">
-                {max === undefined ? "—" : `${max.toFixed(1)} ${unit}`}
+                {max === undefined
+                  ? t("common.none")
+                  : `${max.toFixed(1)} ${unit}`}
               </span>
               {repsValue !== undefined && percent !== undefined ? (
                 <Badge variant="secondary">
-                  {rirForRpe(rpeValue)} in reserve
+                  {t("calc.rpe.inReserve", { count: rirForRpe(rpeValue) })}
                 </Badge>
               ) : null}
             </span>
@@ -181,18 +194,18 @@ export function RpePanel() {
 
       <Card>
         <CardHeader>
-          <CardTitle>The chart</CardTitle>
+          <CardTitle>{t("calc.rpe.chart")}</CardTitle>
           <CardDescription>
             {max === undefined
-              ? "Percentages of a one-rep max. Enter a set above to see them as weights."
-              : `Loads against the ${max.toFixed(1)} ${unit} estimate above. Your set is highlighted.`}
+              ? t("calc.rpe.percentNote")
+              : t("calc.rpe.chartBody", { max: max.toFixed(1), unit })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Reps</TableHead>
+                <TableHead>{t("common.reps")}</TableHead>
                 {RPE_VALUES.map((value) => (
                   <TableHead key={value} className="text-right">
                     @{value}

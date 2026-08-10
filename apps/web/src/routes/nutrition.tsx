@@ -13,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { diets } from "@/data/diets";
 import { MacroCalculatorPanel } from "@/features/nutrition/components/MacroCalculatorPanel";
 import { PlanPanel } from "@/features/nutrition/components/PlanPanel";
+import { useNames } from "@/i18n/names";
+import { useT } from "@/i18n/use-t";
 
 export const Route = createFileRoute("/nutrition")({
   component: NutritionPage,
@@ -28,21 +30,26 @@ export const Route = createFileRoute("/nutrition")({
 function NutritionPage() {
   const [slug, setSlug] = useState(diets[0]!.slug);
   const plan = diets.find((diet) => diet.slug === slug) ?? diets[0]!;
+  const t = useT();
+  const names = useNames();
 
   return (
     <Page>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Nutrition</h1>
+          <h1 className="text-2xl font-semibold">{t("nutrition.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            What the plan says to eat, and what any split of macros comes to.
+            {t("nutrition.subtitle")}
           </p>
         </div>
 
         <Field className="w-60">
-          <FieldLabel htmlFor="diet-plan">Plan</FieldLabel>
+          <FieldLabel htmlFor="diet-plan">{t("nutrition.tab.plan")}</FieldLabel>
           <Select
-            items={diets.map((diet) => ({ value: diet.slug, label: diet.name }))}
+            items={diets.map((diet) => ({
+              value: diet.slug,
+              label: names.dietPlan(diet.slug, diet.name),
+            }))}
             value={plan.slug}
             onValueChange={(value) => setSlug(value ?? diets[0]!.slug)}
           >
@@ -52,7 +59,7 @@ function NutritionPage() {
             <SelectContent>
               {diets.map((diet) => (
                 <SelectItem key={diet.slug} value={diet.slug}>
-                  {diet.name}
+                  {names.dietPlan(diet.slug, diet.name)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -62,8 +69,8 @@ function NutritionPage() {
 
       <Tabs defaultValue="plan">
         <TabsList>
-          <TabsTrigger value="plan">Plan</TabsTrigger>
-          <TabsTrigger value="macros">Macros</TabsTrigger>
+          <TabsTrigger value="plan">{t("nutrition.tab.plan")}</TabsTrigger>
+          <TabsTrigger value="macros">{t("nutrition.tab.macros")}</TabsTrigger>
         </TabsList>
         <TabsContent value="plan">
           {/* Keyed so switching plans resets the day and swap choices rather

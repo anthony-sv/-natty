@@ -9,6 +9,8 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import type { Routine } from "@/data/routines";
+import { useFormatting } from "@/i18n/use-formatting";
+import { useT } from "@/i18n/use-t";
 import { summariseRoutine } from "../lib/summary";
 
 /**
@@ -20,7 +22,9 @@ import { summariseRoutine } from "../lib/summary";
  * is the thing you're actually choosing between.
  */
 export function RoutineRow({ routine }: { routine: Routine }) {
-  const summary = summariseRoutine(routine);
+  const t = useT();
+  const f = useFormatting();
+  const summary = summariseRoutine(routine, f);
 
   return (
     <Item
@@ -37,23 +41,27 @@ export function RoutineRow({ routine }: { routine: Routine }) {
             leaving a gap between the text and the chevron. */}
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <ItemTitle className="text-base">{routine.name}</ItemTitle>
+            <ItemTitle className="text-base">
+              {f.names.routine(routine.slug, routine.name)}
+            </ItemTitle>
             {routine.goal ? (
               <Badge
                 variant={routine.goal === "cutting" ? "destructive" : "default"}
               >
-                {routine.goal}
+                {f.names.text(routine.goal)}
               </Badge>
             ) : null}
             {routine.style ? (
-              <Badge variant="secondary">{routine.style}</Badge>
+              <Badge variant="secondary">{f.names.text(routine.style)}</Badge>
             ) : null}
           </div>
 
           <ItemDescription className="shrink-0">
-            {summary.length} · {summary.trainingDays} training day
-            {summary.trainingDays === 1 ? "" : "s"}
-            {summary.restDays > 0 ? ` · ${summary.restDays} rest` : ""}
+            {summary.length} ·{" "}
+            {t.plural("routines.trainingDays", summary.trainingDays)}
+            {summary.restDays > 0
+              ? ` · ${t("routines.restDays", { count: summary.restDays })}`
+              : ""}
           </ItemDescription>
         </div>
 

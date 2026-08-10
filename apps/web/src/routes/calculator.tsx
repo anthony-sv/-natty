@@ -9,6 +9,7 @@ import {
 import { OneRepMaxPanel } from "@/features/calculator/components/OneRepMaxPanel";
 import { PotentialPanel } from "@/features/calculator/components/PotentialPanel";
 import { RpePanel } from "@/features/calculator/components/RpePanel";
+import { useT } from "@/i18n/use-t";
 
 export const Route = createFileRoute("/calculator")({
   component: CalculatorPage,
@@ -22,20 +23,20 @@ export const Route = createFileRoute("/calculator")({
  * own route and its own place in the nav.
  */
 function CalculatorPage() {
+  const t = useT();
+
   return (
     <Page>
       <div>
-        <h1 className="text-2xl font-semibold">Calculators</h1>
-        <p className="text-sm text-muted-foreground">
-          What you could build, what you could lift, and how hard a set was.
-        </p>
+        <h1 className="text-2xl font-semibold">{t("calc.title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("calc.subtitle")}</p>
       </div>
 
       <Tabs defaultValue="max">
         <TabsList>
-          <TabsTrigger value="max">One-rep max</TabsTrigger>
-          <TabsTrigger value="rpe">RPE &amp; RIR</TabsTrigger>
-          <TabsTrigger value="potential">Natural potential</TabsTrigger>
+          <TabsTrigger value="max">{t("calc.tab.oneRepMax")}</TabsTrigger>
+          <TabsTrigger value="rpe">{t("calc.tab.rpe")}</TabsTrigger>
+          <TabsTrigger value="potential">{t("calc.tab.potential")}</TabsTrigger>
         </TabsList>
         <TabsContent value="max">
           <OneRepMaxPanel />

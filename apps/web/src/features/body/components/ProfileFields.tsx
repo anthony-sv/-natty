@@ -9,11 +9,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { profileStore, setProfile } from "@/features/profile/profile-store";
+import { useT, type MessageKey } from "@/i18n/use-t";
 
-const SEXES = [
-  { value: "male", label: "Male" },
-  { value: "female", label: "Female" },
-] as const;
+const SEX_KEYS: Array<{ value: "male" | "female"; labelKey: MessageKey }> = [
+  { value: "male", labelKey: "body.profile.male" },
+  { value: "female", labelKey: "body.profile.female" },
+];
 
 /**
  * Height and sex, edited inline because they are the only two settings the app
@@ -24,11 +25,18 @@ const SEXES = [
  */
 export function ProfileFields() {
   const profile = useStore(profileStore, (s) => s);
+  const t = useT();
+  // `items` wants `{ value, label }`, and the label is what the Select renders
+  // for the current value — so it has to be resolved, not a key.
+  const sexes = SEX_KEYS.map((sex) => ({
+    value: sex.value,
+    label: t(sex.labelKey),
+  }));
 
   return (
     <div className="flex flex-wrap items-start gap-4">
       <Field className="w-40">
-        <FieldLabel htmlFor="profile-height">Height (cm)</FieldLabel>
+        <FieldLabel htmlFor="profile-height">{t("common.heightCm")}</FieldLabel>
         <Input
           id="profile-height"
           type="number"
@@ -46,30 +54,30 @@ export function ProfileFields() {
             });
           }}
         />
-        <FieldDescription>Needed for FFMI.</FieldDescription>
+        <FieldDescription>{t("body.profile.heightHint")}</FieldDescription>
       </Field>
 
       <Field className="w-40">
-        <FieldLabel htmlFor="profile-sex">Sex</FieldLabel>
+        <FieldLabel htmlFor="profile-sex">{t("body.profile.sex")}</FieldLabel>
         <Select
-          items={SEXES}
+          items={sexes}
           value={profile.sex ?? null}
           onValueChange={(value) =>
             setProfile({ sex: (value as "male" | "female" | null) ?? undefined })
           }
         >
-          <SelectTrigger id="profile-sex" aria-label="Sex">
-            <SelectValue placeholder="Not set" />
+          <SelectTrigger id="profile-sex" aria-label={t("body.profile.sex")}>
+            <SelectValue placeholder={t("body.profile.sexUnset")} />
           </SelectTrigger>
           <SelectContent>
-            {SEXES.map((option) => (
+            {sexes.map((option) => (
               <SelectItem key={option.value} value={option.value}>
                 {option.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <FieldDescription>Only picks the reference scale.</FieldDescription>
+        <FieldDescription>{t("body.profile.sexHint")}</FieldDescription>
       </Field>
     </div>
   );

@@ -27,25 +27,32 @@ import {
 import { toast } from "@/components/ui/toast";
 import { logSet, type StepRef } from "../collection";
 import { formatSet, prForRepRange } from "../pr";
+import { useT, type Translate } from "@/i18n/use-t";
 import { UNITS, weightUnitSchema, type WeightUnit } from "@/lib/units";
 import type { LoggedSet } from "../schema";
 
-/** Strings in, numbers out — same shape as the backfill form on /progress. */
-const formSchema = z.object({
-  unit: weightUnitSchema,
-  weight: z
-    .string()
-    .refine(
-      (v) => v.trim() === "" || (Number.isFinite(Number(v)) && Number(v) >= 0),
-      "Enter a weight, or leave blank for bodyweight",
-    ),
-  reps: z
-    .string()
-    .refine(
-      (v) => Number.isInteger(Number(v)) && Number(v) > 0,
-      "Enter how many reps you did",
-    ),
-});
+/**
+ * Strings in, numbers out — same shape as the backfill form on /progress.
+ *
+ * Built per locale rather than at module scope: a validation message is a
+ * string like any other, and Zod bakes it into the schema.
+ */
+const buildSchema = (t: Translate) =>
+  z.object({
+    unit: weightUnitSchema,
+    weight: z
+      .string()
+      .refine(
+        (v) => v.trim() === "" || (Number.isFinite(Number(v)) && Number(v) >= 0),
+        t("log.weightError"),
+      ),
+    reps: z
+      .string()
+      .refine(
+        (v) => Number.isInteger(Number(v)) && Number(v) > 0,
+        t("log.repsError"),
+      ),
+  });
 
 /**
  * The logging control on an active set: a one-line readout of what you've done
@@ -78,20 +85,21 @@ export function SetLogControl({
   loggedHere: LoggedSet[];
 }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
   const pr = prForRepRange(frontier, targetReps);
   const triggerLabel =
     loggedHere.length === 0
-      ? "Log set"
+      ? t("log.action")
       : loggedHere.length === 1
         ? formatSet(loggedHere[0])
-        : `${loggedHere.length} logged`;
+        : t("log.countLogged", { count: loggedHere.length });
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         {pr ? (
           <span>
-            <span className="text-muted-foreground">PR </span>
+            <span className="text-muted-foreground">{t("log.pr")} </span>
             <span className="font-medium tabular-nums">{formatSet(pr)}</span>
           </span>
         ) : null}
@@ -102,14 +110,12 @@ export function SetLogControl({
         ) : null}
         {last ? (
           <span>
-            <span className="text-muted-foreground">Last </span>
+            <span className="text-muted-foreground">{t("log.last")} </span>
             <span className="font-medium tabular-nums">{formatSet(last)}</span>
           </span>
         ) : null}
         {!pr && !last ? (
-          <span className="text-muted-foreground">
-            First time logging this one.
-          </span>
+          <span className="text-muted-foreground">{t("log.firstTime")}</span>
         ) : null}
       </div>
 
@@ -160,6 +166,7 @@ function SetLogForm({
   exerciseName: string;
   onLogged: () => void;
 }) {
+  const t = useT();
   const form = useForm({
     defaultValues: {
       // Prefilled from your last set on this exercise, since the weight
@@ -168,7 +175,7 @@ function SetLogForm({
       weight: last?.weight !== undefined ? String(last.weight) : "",
       reps: last ? String(last.reps) : "",
     },
-    validators: { onChange: formSchema },
+    validators: { onChange: buildSchema(t) },
     onSubmit: ({ value }) => {
       const { set, transaction, isRecord } = logSet({
         performedAt: Date.now(),
@@ -180,15 +187,15 @@ function SetLogForm({
       // A record announces itself instead of the plain confirmation -- two
       // toasts for one action would just be noise.
       void toast.promise(transaction.isPersisted.promise, {
-        loading: "Saving set...",
+        loading: t("log.saving"),
         success: isRecord
           ? {
-              title: "New record",
+              title: t("log.newRecord"),
               description: `${exerciseName} — ${formatSet(set)}`,
               type: "success",
             }
-          : { title: `Logged ${formatSet(set)}`, type: "success" },
-        error: { title: "Couldn't save that set", type: "error" },
+          : { title: t("log.saved", { set: formatSet(set) }), type: "success" },
+        error: { title: t("log.saveError"), type: "error" },
       });
       onLogged();
     },
@@ -203,19 +210,21 @@ function SetLogForm({
       }}
     >
       <PopoverTitle>
-        {loggedHere.length > 0 ? "Log another" : "Log this set"}
+        {loggedHere.length > 0 ? t("log.another") : t("log.thisSet")}
       </PopoverTitle>
       <PopoverDescription>
         {loggedHere.length > 0
-          ? `Already here: ${loggedHere.map(formatSet).join(", ")}. Logging adds another.`
-          : "Nothing is recorded until you log it."}
+          ? t("log.alreadyHere", {
+              sets: loggedHere.map(formatSet).join(", "),
+            })
+          : t("log.nothingUntilLogged")}
       </PopoverDescription>
 
       <FieldGroup className="mt-3">
         <form.Field name="weight">
           {(field) => (
             <Field>
-              <FieldLabel htmlFor="log-weight">Weight</FieldLabel>
+              <FieldLabel htmlFor="log-weight">{t("common.weight")}</FieldLabel>
               <div className="flex items-center gap-2">
                 <Input
                   id="log-weight"
@@ -223,7 +232,7 @@ function SetLogForm({
                   inputMode="decimal"
                   step="0.5"
                   min="0"
-                  placeholder="Optional"
+                  placeholder={t("common.optional")}
                   className="min-w-0 flex-1"
                   value={field.state.value}
                   onBlur={field.handleBlur}
@@ -241,7 +250,7 @@ function SetLogForm({
                       }
                     >
                       <SelectTrigger
-                        aria-label="Weight unit"
+                        aria-label={t("common.weightUnit")}
                         className="w-20 shrink-0"
                       >
                         <SelectValue />
@@ -265,7 +274,7 @@ function SetLogForm({
         <form.Field name="reps">
           {(field) => (
             <Field>
-              <FieldLabel htmlFor="log-reps">Reps</FieldLabel>
+              <FieldLabel htmlFor="log-reps">{t("common.reps")}</FieldLabel>
               <Input
                 id="log-reps"
                 type="number"
@@ -289,7 +298,7 @@ function SetLogForm({
               className="w-full"
               disabled={!canSubmit || isSubmitting}
             >
-              <CheckIcon data-icon="inline-start" /> Log set
+              <CheckIcon data-icon="inline-start" /> {t("log.action")}
             </Button>
           )}
         </form.Subscribe>

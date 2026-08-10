@@ -6,6 +6,7 @@ import { Chart } from "@tanstack/react-charts";
 import { pie } from "d3-shape";
 import { cn } from "@/lib/utils";
 import type { Macros } from "@/data/diets";
+import { useT, type MessageKey, type Translate } from "@/i18n/use-t";
 import { KCAL_PER_GRAM, kcalOf, percentSplit } from "../macros";
 
 /**
@@ -28,17 +29,19 @@ interface MacroSlice {
   color: string;
 }
 
-const ORDER: Array<{ key: keyof Macros; label: string; color: string }> = [
-  { key: "protein", label: "Protein", color: "var(--macro-protein)" },
-  { key: "carbs", label: "Carbs", color: "var(--macro-carbs)" },
-  { key: "fat", label: "Fat", color: "var(--macro-fat)" },
+const ORDER: Array<{ key: keyof Macros; labelKey: MessageKey; color: string }> = [
+  { key: "protein", labelKey: "nutrition.protein", color: "var(--macro-protein)" },
+  { key: "carbs", labelKey: "nutrition.carbs", color: "var(--macro-carbs)" },
+  { key: "fat", labelKey: "nutrition.fat", color: "var(--macro-fat)" },
 ];
 
-function slicesOf(macros: Macros): MacroSlice[] {
+function slicesOf(macros: Macros, t: Translate): MacroSlice[] {
   const split = percentSplit(macros);
-  return ORDER.map(({ key, label, color }) => ({
+  return ORDER.map(({ key, labelKey, color }) => ({
     key,
-    label,
+    // The label is the chart's colour-domain key *and* what the legend shows,
+    // so it has to be the translated word rather than the message key.
+    label: t(labelKey),
     grams: macros[key],
     kcal: macros[key] * KCAL_PER_GRAM[key],
     percent: split[key],
@@ -64,7 +67,8 @@ export function MacroSplit({
   size?: number;
   className?: string;
 }) {
-  const slices = useMemo(() => slicesOf(macros), [macros]);
+  const t = useT();
+  const slices = useMemo(() => slicesOf(macros, t), [macros, t]);
   const total = kcalOf(macros);
 
   const definition = useMemo(() => {
@@ -105,7 +109,7 @@ export function MacroSplit({
         items: [
           {
             channel: "y",
-            label: "Calories",
+            label: t("nutrition.calories"),
             // `datum` is d3's arc wrapper; the slice itself is on `.data`.
             text: (point) => {
               const slice = point.datum.data;
@@ -115,7 +119,7 @@ export function MacroSplit({
         ],
       },
     });
-  }, [slices]);
+  }, [slices, t]);
 
   const isEmpty = total <= 0;
 

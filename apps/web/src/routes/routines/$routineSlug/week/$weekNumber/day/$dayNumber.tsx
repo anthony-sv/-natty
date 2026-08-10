@@ -37,7 +37,8 @@ import {
   sessionStore,
   startSession,
 } from "@/features/routines/session-store";
-import { formatWeekLabel } from "@/features/routines/lib/format";
+import { useFormatting } from "@/i18n/use-formatting";
+import { useT } from "@/i18n/use-t";
 
 const positiveInt = z.coerce.number().int().positive();
 
@@ -64,18 +65,22 @@ export const Route = createFileRoute(
     const day = week?.days.find((d) => d.dayNumber === params.dayNumber);
     if (!week || !day) throw notFound();
   },
-  notFoundComponent: () => (
-    <Page>
-      <Empty>
-        <EmptyTitle>Day not found</EmptyTitle>
-        <EmptyDescription>
-          That week/day doesn't exist in this program.
-        </EmptyDescription>
-      </Empty>
-    </Page>
-  ),
+  notFoundComponent: () => <DayNotFound />,
   component: DayDetail,
 });
+
+/** Split out so it can call hooks — `notFoundComponent` takes a component. */
+function DayNotFound() {
+  const t = useT();
+  return (
+    <Page>
+      <Empty>
+        <EmptyTitle>{t("routines.dayNotFound")}</EmptyTitle>
+        <EmptyDescription>{t("routines.dayNotFoundBody")}</EmptyDescription>
+      </Empty>
+    </Page>
+  );
+}
 
 function DayDetail() {
   const { routineSlug, weekNumber, dayNumber } = Route.useParams();
@@ -88,8 +93,13 @@ function DayDetail() {
   const isActiveHere = isSessionFor(session, target);
   const [confirmReplace, setConfirmReplace] = useState(false);
 
-  const steps = useMemo(() => buildSteps(day), [day]);
-  const dayLabel = `Day ${day.dayNumber} — ${day.label}`;
+  const t = useT();
+  const f = useFormatting();
+  const steps = useMemo(() => buildSteps(day, f), [day, f]);
+  const dayLabel = t("routines.dayLabel", {
+    number: day.dayNumber,
+    label: f.names.text(day.label) ?? day.label,
+  });
   const canStart = !day.isRest && steps.length > 0;
 
   const currentStep = isActiveHere ? steps[session!.stepIndex] : undefined;
@@ -97,12 +107,15 @@ function DayDetail() {
     currentStep?.type === "work"
       ? {
           index: currentStep.exerciseIndex,
-          label: `set ${currentStep.setNumber} of ${currentStep.setsInExercise}`,
+          label: t("routines.setOf", {
+            number: currentStep.setNumber,
+            total: currentStep.setsInExercise,
+          }),
         }
       : currentStep?.type === "pose"
-        ? { index: currentStep.exerciseIndex, label: "holding" }
+        ? { index: currentStep.exerciseIndex, label: t("routines.holding") }
         : currentStep?.type === "rest"
-          ? { index: currentStep.exerciseIndex, label: "resting" }
+          ? { index: currentStep.exerciseIndex, label: t("routines.resting") }
           : undefined;
 
   function handleStart() {
@@ -119,7 +132,7 @@ function DayDetail() {
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink render={<Link to="/routines" />}>
-              Routines
+              {t("nav.routines")}
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -129,7 +142,7 @@ function DayDetail() {
                 <Link to="/routines/$routineSlug" params={{ routineSlug }} />
               }
             >
-              {routine.name}
+              {f.names.routine(routine.slug, routine.name)}
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
@@ -142,20 +155,24 @@ function DayDetail() {
       <div className="flex flex-wrap items-center gap-2">
         <h1 className="text-2xl font-semibold">{dayLabel}</h1>
         {routine.weeks.length > 1 ? (
-          <Badge variant="secondary">{formatWeekLabel(weekNumber)}</Badge>
+          <Badge variant="secondary">
+            {t("routines.week", { number: weekNumber })}
+          </Badge>
         ) : null}
-        {day.isRest ? <Badge variant="outline">Rest</Badge> : null}
+        {day.isRest ? (
+          <Badge variant="outline">{t("routines.restDay")}</Badge>
+        ) : null}
         {canStart && !isActiveHere ? (
           <Button className="ml-auto" onClick={handleStart}>
-            <PlayIcon data-icon="inline-start" /> Start workout
+            <PlayIcon data-icon="inline-start" /> {t("routines.startWorkout")}
           </Button>
         ) : null}
       </div>
 
       {day.isRest ? (
         <Empty>
-          <EmptyTitle>Rest day</EmptyTitle>
-          <EmptyDescription>No training scheduled — recovery day.</EmptyDescription>
+          <EmptyTitle>{t("routines.restDayTitle")}</EmptyTitle>
+          <EmptyDescription>{t("routines.restDayBody")}</EmptyDescription>
         </Empty>
       ) : (
         <>
@@ -178,21 +195,20 @@ function DayDetail() {
       <AlertDialog open={confirmReplace} onOpenChange={setConfirmReplace}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Replace current workout?</AlertDialogTitle>
+            <AlertDialogTitle>{t("routines.replace.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              You have a workout in progress on another day. Starting this one
-              discards that progress.
+              {t("routines.replace.body")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 startSession(target);
                 setConfirmReplace(false);
               }}
             >
-              Start anyway
+              {t("routines.replace.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
