@@ -493,6 +493,74 @@ fat-free mass makes the ratio 0.65/0.145 = 4.48 for everyone — and the measure
 form doesn't work either, because an InBody reports bone *mineral* content
 rather than whole bone mass. Don't rebuild it without a real bone-mass source.
 
+## Nutrition (`src/data/diets/`, `src/features/nutrition/`)
+
+`/nutrition` is two tabs over a plan picker: **Plan**, the diet as a reference,
+and **Macros**, an interactive split. Nothing is logged — there's no intake
+collection, and adding one is a separate decision.
+
+Plans are authored data in `src/data/diets/`, mirroring `src/data/routines/`
+down to the `authoring.ts` shorthands and the throw-on-unknown-id rule. Named
+by their macros (`Cut v5 — 2,040 kcal`). **The source docs' personal metrics —
+body weight, measurements, the weekly progress table — are deliberately not
+transcribed**: `/progress` owns that data and it doesn't belong in the repo.
+
+### The shape, and why
+
+- **Items reference a food; macros are computed.** `foods.ts` holds per-100g
+  (or per-unit) values and a plan says "211g of carne asada". Storing macros on
+  the item would repeat them across four swap options of the same lunch.
+- **Every total is derived, never stored.** The docs state meal and day
+  subtotals; here those are the *assertion* the test checks, not the source.
+- **Raw and cooked are different foods, not a flag on one.** A gram of cooked
+  chicken holds a third more protein than a gram of raw. The badge on the row
+  is the most important word on it: 343g raw and 150g cooked are different
+  instructions, and the plan already says which to weigh — so nothing converts
+  between them.
+- **A swap option carries a complete item list**, not a delta. Changing the
+  protein moves the rice and the avocado too; the docs write four alternative
+  lunches and so does this.
+- **Day variants** (`days: ["tue","wed","thu"]`) are what make office and home
+  days different meals rather than a footnote. A variant with no `days` applies
+  to every day and is the fallback.
+- **Hydration is a standing protocol** in its own file, not a plan field — it
+  scales with body weight and training, not with the calorie target, and only
+  the earliest doc bothers to restate it.
+
+### The test that matters
+
+`macros.test.ts` walks **every plan × every weekday × every swap option** and
+asserts the computed day total lands within a few grams of what the plan says
+it should. Thirty rows of numbers transcribed by hand needs a backstop, and it
+is the only thing pinning the four swap proteins — the docs give their weights
+and a day total but never their macros, so those were solved for by subtracting
+the rest of the meal. Each one reconciles across two independent plan versions.
+
+Tolerances are looser than they look because **the v4 source contradicts
+itself**: its header says P220 and its own totals table says P222, and the
+meals really do add to the second. Anything tighter fails on the document.
+
+### Charts
+
+The macro split is a donut, which the `dataviz` skill allows for part-to-whole
+at a glance with ≤6 segments — this has three. The rule it would break is
+comparing close values by arc alone, so every slice is also written out in
+grams, calories and share beside it. The skill's own default for part-to-whole
+is a stacked bar; that form is used for each meal's share of the day.
+
+`--macro-protein` / `--macro-carbs` / `--macro-fat` are palette slots 1–3,
+validated **all-pairs** in both modes — a donut needs any two slices tellable
+apart, not just neighbours. Light-mode aqua lands at 2.82:1 on a white card,
+under the 3:1 line; the direct labelling is what discharges that.
+
+Fibre gets a slider but not a slice: it's a share of the carbohydrate already
+counted, so a fourth segment would count part of the day twice. It reads at
+~2 kcal/g rather than 4.
+
+**`ui/slider.tsx` renders one thumb per value and falls back to `[min, max]`
+for a non-array**, so `value={n}` silently draws two thumbs on top of each
+other. Always pass `value={[n]}`.
+
 ## Plate loader (`src/features/plates/`)
 
 `/plates` — its own route, not a calculator tab, because it's the one you open
