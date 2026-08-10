@@ -1,4 +1,20 @@
-import { createColumnHelper, tableFeatures } from "@tanstack/react-table";
+import {
+  columnFilteringFeature,
+  columnGroupingFeature,
+  createColumnHelper,
+  createExpandedRowModel,
+  createFilteredRowModel,
+  createGroupedRowModel,
+  createSortedRowModel,
+  filterFn_includesString,
+  globalFilteringFeature,
+  rowExpandingFeature,
+  rowSortingFeature,
+  sortFn_alphanumeric,
+  sortFn_basic,
+  sortFn_datetime,
+  tableFeatures,
+} from "@tanstack/react-table";
 import type { RowData } from "@tanstack/react-table";
 
 /**
@@ -7,15 +23,41 @@ import type { RowData } from "@tanstack/react-table";
  * Declaring a second `tableFeatures({})` at a call site would typecheck today
  * and drift silently the moment a feature is registered here.
  *
- * Empty on purpose: these tables render an already-derived, already-ordered
- * result. Sorting or filtering means adding the matching `*Feature` plus its
- * row-model slot. In v9 features are opt-in and the core row model is
- * automatic — there is no `getCoreRowModel()`.
+ * In v9 features are opt-in, each processing slot has to be registered
+ * alongside the feature that owns it, and the core row model is automatic —
+ * there is no `getCoreRowModel()`. Global filtering additionally requires
+ * column filtering; registering it alone throws on the slot prerequisite.
+ *
+ * The `sortFns` registry is spelled out rather than imported wholesale so only
+ * the three comparators the app's columns actually name get bundled. Anything
+ * not registered here falls back to a basic comparator, `'auto'` included.
+ *
+ * Grouping needs expansion registered alongside it: without the expanded row
+ * model a grouped table renders group rows and nothing under them. No
+ * aggregation feature — group rows here carry a heading and a count we render
+ * ourselves, not a rolled-up value, and registering it would pull every
+ * aggregation function in.
  *
  * Lives in `lib/` rather than beside the component so the component file
  * exports only components, which is what React Fast Refresh needs.
  */
-export const features = tableFeatures({});
+export const features = tableFeatures({
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: {
+    alphanumeric: sortFn_alphanumeric,
+    basic: sortFn_basic,
+    datetime: sortFn_datetime,
+  },
+  columnFilteringFeature,
+  globalFilteringFeature,
+  filteredRowModel: createFilteredRowModel(),
+  filterFns: { includesString: filterFn_includesString },
+  columnGroupingFeature,
+  groupedRowModel: createGroupedRowModel(),
+  rowExpandingFeature,
+  expandedRowModel: createExpandedRowModel(),
+});
 
 /**
  * Exactly what `createColumnHelper(...).columns([...])` hands back.
