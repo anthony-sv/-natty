@@ -319,6 +319,25 @@ export const en = {
 
   // ── Calculators ──────────────────────────────────────────────────────────
   "calc.title": "Calculators",
+  "body.chart.ffmiCaption":
+    "Normalized FFMI against {sex} population norms. Descriptive only — the upper bands describe what is typically observed drug-free, not evidence about anyone in particular.",
+  "body.profile.maleAdj": "male",
+  "body.profile.femaleAdj": "female",
+  "calc.orm.median": "Median of the five",
+  "calc.orm.forGivenSetBody":
+    "The same formula run backwards, off its own estimate — so the row matching the set you entered reads back as the weight you lifted.",
+  "calc.potential.measurementsBody":
+    "Wrist and ankle at their narrowest point. Height, wrist and ankle are saved to your profile; body fat starts from your last weigh-in and you can move it to see what changes.",
+  "calc.potential.lastWeighIn": "Last weigh-in: {percent}%.",
+  "calc.potential.maxBody":
+    "Dr Casey Butt's model, fitted to the measurements of drug-free bodybuilders. The second, smaller figure against each is 95% of the maximum — the one usually described as realistically achievable.",
+  "calc.potential.explain1":
+    "The model predicts peak lean body mass — everything that isn't fat, so muscle plus bone, organs and water — from four numbers, with height, wrist and ankle in centimetres and the result in kilograms. Wrist and ankle stand in for skeletal frame, since they're mostly bone and tendon and barely move with training.",
+  "calc.potential.explain2":
+    "It's a curve fitted to a population of drug-free bodybuilders, not a law. Genetics, muscle insertions, training history and endocrine variation all move the real answer, and none of them are inputs here. Read it as roughly where the distribution sits for a frame like yours, not as a limit on you in particular.",
+  "calc.potential.explain3":
+    "The girth predictions are the same model's estimates for the size each measurement reaches at that lean mass — chest and biceps from wrist and height, thigh and calf from ankle and height.",
+  "plates.strip": "Strip the bar",
   "calc.subtitle": "The arithmetic around training, none of it touching your log.",
   "calc.tab.oneRepMax": "One-rep max",
   "calc.tab.rpe": "RPE & RIR",
@@ -440,7 +459,20 @@ export const en = {
   "nutrition.fibre": "Fibre",
   "nutrition.calories": "Calories",
   "nutrition.fibreAria": "Fibre in grams",
+  "nutrition.resetToPlan": "Reset to plan",
+  "nutrition.fibreNote":
+    "Counted inside the carbs above, at roughly {fibreKcal} kcal a gram rather than {carbKcal} — fibre is a carbohydrate the body only partly gets at, not a fourth macro.",
   "nutrition.buildSplit": "Build a split",
+  "nutrition.kcalADay": "{kcal} kcal a day",
+  "nutrition.above": "{kcal} kcal above {plan}.",
+  "nutrition.below": "{kcal} kcal below {plan}.",
+  "nutrition.exactly": "Exactly {plan}.",
+  "formula.epley": "The common default. Linear in reps, and near the middle throughout.",
+  "formula.brzycki": "Lowest of the five on short sets, among the highest past ten reps.",
+  "formula.lander": "Tracks Brzycki closely, and climbs highest of all on long sets.",
+  "formula.lombardi":
+    "A power curve: near the top on short sets, clearly lowest on long ones.",
+  "formula.mayhew": "Fitted to bench press, and the highest of the five on short sets.",
   "nutrition.splitBody": "Starting from {plan}. Drag a macro and everything else follows.",
   "nutrition.swapHint":
     "Pick one — the rest of the meal moves to keep the day's macros matched.",

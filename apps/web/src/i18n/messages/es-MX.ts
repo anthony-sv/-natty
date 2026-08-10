@@ -327,6 +327,25 @@ export const esMX: Record<keyof typeof en, string> = {
 
   // ── Calculators ──────────────────────────────────────────────────────────
   "calc.title": "Calculadoras",
+  "body.chart.ffmiCaption":
+    "FFMI normalizado contra las normas poblacionales {sex}. Solo descriptivo — las bandas altas describen lo que se observa normalmente sin fármacos, no evidencia sobre nadie en particular.",
+  "body.profile.maleAdj": "masculinas",
+  "body.profile.femaleAdj": "femeninas",
+  "calc.orm.median": "Mediana de las cinco",
+  "calc.orm.forGivenSetBody":
+    "La misma fórmula al revés, sobre su propia estimación — así el renglón que corresponde al set que pusiste te devuelve el peso que levantaste.",
+  "calc.potential.measurementsBody":
+    "Muñeca y tobillo en su punto más angosto. La estatura, la muñeca y el tobillo se guardan en tu perfil; la grasa corporal parte de tu último pesaje y la puedes mover para ver qué cambia.",
+  "calc.potential.lastWeighIn": "Último pesaje: {percent}%.",
+  "calc.potential.maxBody":
+    "El modelo del Dr. Casey Butt, ajustado a las medidas de fisicoculturistas sin fármacos. La segunda cifra, más chica, es el 95% del máximo — la que suele describirse como realmente alcanzable.",
+  "calc.potential.explain1":
+    "El modelo predice la masa magra máxima — todo lo que no es grasa, o sea músculo más hueso, órganos y agua — a partir de cuatro números, con la estatura, la muñeca y el tobillo en centímetros y el resultado en kilogramos. La muñeca y el tobillo representan la estructura ósea, porque son casi puro hueso y tendón y apenas cambian con el entrenamiento.",
+  "calc.potential.explain2":
+    "Es una curva ajustada a una población de fisicoculturistas sin fármacos, no una ley. La genética, las inserciones musculares, el historial de entrenamiento y la variación hormonal mueven la respuesta real, y ninguno de esos es una entrada aquí. Léelo como más o menos dónde cae la distribución para una estructura como la tuya, no como un límite para ti en particular.",
+  "calc.potential.explain3":
+    "Las predicciones de perímetros son las estimaciones del mismo modelo para el tamaño que alcanza cada medida con esa masa magra — pecho y bíceps a partir de la muñeca y la estatura, muslo y pantorrilla a partir del tobillo y la estatura.",
+  "plates.strip": "Vaciar la barra",
   "calc.subtitle":
     "La aritmética alrededor del entrenamiento, sin tocar tu registro.",
   "calc.tab.oneRepMax": "Máximo de una rep",
@@ -449,7 +468,20 @@ export const esMX: Record<keyof typeof en, string> = {
   "nutrition.fibre": "Fibra",
   "nutrition.calories": "Calorías",
   "nutrition.fibreAria": "Fibra en gramos",
+  "nutrition.resetToPlan": "Volver al plan",
+  "nutrition.fibreNote":
+    "Contada dentro de los carbohidratos de arriba, a unas {fibreKcal} kcal por gramo en vez de {carbKcal} — la fibra es un carbohidrato que el cuerpo solo aprovecha en parte, no un cuarto macro.",
   "nutrition.buildSplit": "Arma un reparto",
+  "nutrition.kcalADay": "{kcal} kcal al día",
+  "nutrition.above": "{kcal} kcal por encima de {plan}.",
+  "nutrition.below": "{kcal} kcal por debajo de {plan}.",
+  "nutrition.exactly": "Exactamente {plan}.",
+  "formula.epley": "La opción común. Lineal en reps, y cerca del promedio en todo el rango.",
+  "formula.brzycki": "La más baja de las cinco en sets cortos, de las más altas pasadas las diez reps.",
+  "formula.lander": "Sigue de cerca a Brzycki, y es la que más sube en sets largos.",
+  "formula.lombardi":
+    "Una curva de potencia: casi la más alta en sets cortos y claramente la más baja en los largos.",
+  "formula.mayhew": "Ajustada al press de banca, y la más alta de las cinco en sets cortos.",
   "nutrition.splitBody": "Partiendo de {plan}. Mueve un macro y todo lo demás se acomoda.",
   "nutrition.swapHint":
     "Elige uno — el resto de la comida se ajusta para que los macros del día cuadren.",

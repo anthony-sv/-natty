@@ -48,9 +48,7 @@ export function PotentialPanel() {
         <CardHeader>
           <CardTitle>{t("calc.potential.measurements")}</CardTitle>
           <CardDescription>
-            Wrist and ankle at their narrowest point. Height, wrist and ankle
-            are saved to your profile; body fat starts from your last weigh-in
-            and you can move it to see what changes.
+            {t("calc.potential.measurementsBody")}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-start gap-4">
@@ -121,8 +119,8 @@ export function PotentialPanel() {
             />
             <FieldDescription>
               {currentBodyFat === undefined
-                ? "No weigh-in to draw from yet."
-                : `Last weigh-in: ${currentBodyFat}%.`}
+                ? t("calc.potential.noWeighIn")
+                : t("calc.potential.lastWeighIn", { percent: currentBodyFat })}
             </FieldDescription>
           </Field>
         </CardContent>
@@ -131,11 +129,7 @@ export function PotentialPanel() {
       <Card>
         <CardHeader>
           <CardTitle>{t("calc.potential.max")}</CardTitle>
-          <CardDescription>
-            Dr Casey Butt's model, fitted to the measurements of drug-free
-            bodybuilders. The second, smaller figure against each is 95% of the
-            maximum — the one usually described as realistically achievable.
-          </CardDescription>
+          <CardDescription>{t("calc.potential.maxBody")}</CardDescription>
         </CardHeader>
         <CardContent>
           {potential === undefined ? (
@@ -159,28 +153,14 @@ export function PotentialPanel() {
           <CardTitle>{t("calc.potential.whatThisIs")}</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 text-sm text-muted-foreground">
-          <p>
-            The model predicts peak lean body mass — everything that isn't fat,
-            so muscle plus bone, organs and water — from four numbers:{" "}
-            <span className="font-mono text-xs">
-              M = H^1.5 × (√W ÷ 322.4 + √A ÷ 241.9) × (F ÷ 224 + 1)
-            </span>
-            , with H, W and A in centimetres and M in kilograms. Wrist and ankle
-            stand in for skeletal frame, since they're mostly bone and tendon
-            and barely move with training.
+          <p>{t("calc.potential.explain1")}</p>
+          {/* The formula itself is notation, not prose — it reads the same in
+              every language, so it sits outside the translated paragraph. */}
+          <p className="font-mono text-xs">
+            M = H^1.5 × (√W ÷ 322.4 + √A ÷ 241.9) × (F ÷ 224 + 1)
           </p>
-          <p>
-            It's a curve fitted to a population of drug-free bodybuilders, not a
-            law. Genetics, muscle insertions, training history and endocrine
-            variation all move the real answer, and none of them are inputs
-            here. Read it as roughly where the distribution sits for a frame
-            like yours, not as a limit on you in particular.
-          </p>
-          <p>
-            The girth predictions are the same model's estimates for the size
-            each measurement reaches at that lean mass — chest and biceps from
-            wrist and height, thigh and calf from ankle and height.
-          </p>
+          <p>{t("calc.potential.explain2")}</p>
+          <p>{t("calc.potential.explain3")}</p>
         </CardContent>
       </Card>
     </div>

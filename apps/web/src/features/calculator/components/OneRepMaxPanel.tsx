@@ -25,7 +25,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { UNITS, type WeightUnit } from "@/lib/units";
-import { useT } from "@/i18n/use-t";
+import { useT, type MessageKey } from "@/i18n/use-t";
 import {
   FORMULAS,
   MAX_USEFUL_REPS,
@@ -141,7 +141,7 @@ export function OneRepMaxPanel() {
             <CardContent className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
                 <span className="text-xs text-muted-foreground">
-                  Median of the five
+                  {t("calc.orm.median")}
                 </span>
                 <span className="text-4xl font-semibold tabular-nums">
                   {medianEstimate(estimates).toFixed(1)} {unit}
@@ -157,7 +157,9 @@ export function OneRepMaxPanel() {
                         {oneRepMax.toFixed(1)} {unit}
                       </span>
                     </dt>
-                    <dd className="text-xs text-muted-foreground">{f.note}</dd>
+                    <dd className="text-xs text-muted-foreground">
+                      {t(`formula.${f.id}` as MessageKey)}
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -167,11 +169,7 @@ export function OneRepMaxPanel() {
           <Card>
             <CardHeader>
               <CardTitle>{t("calc.orm.forGivenSet")}</CardTitle>
-              <CardDescription>
-                The same formula run backwards, off its own estimate — so the
-                row matching the set you entered reads back as the weight you
-                lifted.
-              </CardDescription>
+              <CardDescription>{t("calc.orm.forGivenSetBody")}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <Field className="w-56">

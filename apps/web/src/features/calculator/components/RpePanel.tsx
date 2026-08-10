@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { UNITS, type WeightUnit } from "@/lib/units";
-import { useT } from "@/i18n/use-t";
+import { useT, type Translate } from "@/i18n/use-t";
 import {
   CHART_REPS,
   RPE_VALUES,
@@ -37,10 +37,16 @@ import {
 } from "../rpe";
 import { parseMeasurement } from "../parse";
 
-const RPE_OPTIONS = RPE_VALUES.map((rpe) => ({
-  value: String(rpe),
-  label: `${rpe} — ${rirForRpe(rpe)} in reserve`,
-}));
+/**
+ * Built per locale rather than at module scope: `SelectValue` renders the
+ * *item's* label for the current value, so a translated `SelectItem` child
+ * isn't enough on its own.
+ */
+const rpeOptions = (t: Translate) =>
+  RPE_VALUES.map((rpe) => ({
+    value: String(rpe),
+    label: `${rpe} — ${t("calc.rpe.inReserve", { count: rirForRpe(rpe) })}`,
+  }));
 
 /**
  * The RPE chart, and a one-rep max read off it.
@@ -66,6 +72,7 @@ export function RpePanel() {
   );
 
   const t = useT();
+  const options = useMemo(() => rpeOptions(t), [t]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -127,7 +134,7 @@ export function RpePanel() {
           <Field className="w-56">
             <FieldLabel htmlFor="rpe-rpe">RPE</FieldLabel>
             <Select
-              items={RPE_OPTIONS}
+              items={options}
               value={rpe}
               onValueChange={(value) => setRpe(value ?? "8")}
             >
@@ -135,7 +142,7 @@ export function RpePanel() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {RPE_OPTIONS.map((option) => (
+                {options.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>

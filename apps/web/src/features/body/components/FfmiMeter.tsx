@@ -1,3 +1,5 @@
+import { useNames } from "@/i18n/names";
+import { useT } from "@/i18n/use-t";
 import { ffmiScale } from "../ffmi";
 import type { Profile } from "@/features/profile/profile-store";
 
@@ -22,6 +24,8 @@ export function FfmiMeter({
   value: number;
   sex: NonNullable<Profile["sex"]>;
 }) {
+  const t = useT();
+  const names = useNames();
   const scale = ffmiScale(sex);
   const span = scale.max - scale.min;
   const percentOf = (n: number) => ((n - scale.min) / span) * 100;
@@ -52,7 +56,7 @@ export function FfmiMeter({
           {scale.bands.map((band) => (
             <div
               key={band.label}
-              title={`${band.label} — ${band.from} to ${band.to}`}
+              title={`${names.text(band.label)} — ${band.from} – ${band.to}`}
               className="flex items-center justify-center overflow-hidden"
               style={{ flexGrow: band.to - band.from }}
             >
@@ -63,7 +67,7 @@ export function FfmiMeter({
                 // any label to contrast against.
                 style={{ textShadow: "0 1px 2px rgba(0,0,0,0.65)" }}
               >
-                {band.label}
+                {names.text(band.label)}
               </span>
             </div>
           ))}
@@ -83,9 +87,12 @@ export function FfmiMeter({
       </div>
 
       <figcaption className="text-xs text-muted-foreground">
-        Normalized FFMI against {sex} population norms. Descriptive only — the
-        upper bands describe what is typically observed drug-free, not evidence
-        about anyone in particular.
+        {t("body.chart.ffmiCaption", {
+          sex:
+            sex === "male"
+              ? t("body.profile.maleAdj")
+              : t("body.profile.femaleAdj"),
+        })}
       </figcaption>
     </figure>
   );

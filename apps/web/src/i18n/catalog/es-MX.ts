@@ -245,6 +245,19 @@ export const routineNames: Record<string, string> = {
   "chest-arms-program": "Programa de pecho y brazos",
 };
 
+/** Bar id → name. */
+export const barNames: Record<string, string> = {
+  "olympic-20": "Barra olímpica",
+  "womens-15": "Barra olímpica de mujer",
+  "training-10": "Barra de entrenamiento",
+  "ez-7.5": "Barra Z",
+  "trap-25": "Barra hexagonal",
+  "safety-squat-25": "Barra de sentadilla segura",
+  "olympic-45lb": "Barra olímpica",
+  "womens-35lb": "Barra olímpica de mujer",
+  "ez-15lb": "Barra Z",
+};
+
 /** Diet plan slug → name. The kcal figure reads the same in both languages. */
 export const dietPlanNames: Record<string, string> = {
   "cut-v5-2040": "Definición v5 — 2,040 kcal",
@@ -260,6 +273,21 @@ export const dietPlanNames: Record<string, string> = {
  * written — it's the source's own separator, not prose.
  */
 export const text: Record<string, string> = {
+  // Program goals, which the data carries as bare words rather than ids.
+  cutting: "definición",
+  bulking: "volumen",
+  maintenance: "mantenimiento",
+
+  // FFMI bands. Descriptive on purpose — see the note in `ffmi.ts` about why
+  // they stay coarse.
+  "Below average": "Bajo el promedio",
+  Average: "Promedio",
+  "Above average": "Sobre el promedio",
+  Excellent: "Excelente",
+  Superior: "Superior",
+  Suspicious: "Sospechoso",
+  Unlikely: "Improbable",
+
   // Day labels
   Arms: "Brazos",
   "Arms/Calves": "Brazos/Pantorrillas",

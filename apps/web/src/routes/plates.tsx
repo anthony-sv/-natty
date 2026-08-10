@@ -29,6 +29,7 @@ import {
 import { cn } from "@/lib/utils";
 import { UNITS, type WeightUnit } from "@/lib/units";
 import { parseMeasurement } from "@/features/calculator/parse";
+import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 import { BarDiagram } from "@/features/plates/components/BarDiagram";
 import { PlateDisc } from "@/features/plates/components/PlateDisc";
@@ -46,6 +47,7 @@ export const Route = createFileRoute("/plates")({
 
 function PlatesPage() {
   const t = useT();
+  const names = useNames();
   const [unit, setUnit] = useState<WeightUnit>("kg");
   const bars = barsFor(unit);
   const plates = platesFor(unit);
@@ -123,10 +125,13 @@ function PlatesPage() {
 
           <Field className="w-64">
             <FieldLabel htmlFor="plates-bar">{t("plates.bar")}</FieldLabel>
+            {/* `SelectValue` renders the *item's* label for whatever is
+                selected, not the `SelectItem` children — so the label here has
+                to be translated too, not just the list below. */}
             <Select
               items={bars.map((candidate) => ({
                 value: candidate.id,
-                label: candidate.name,
+                label: names.bar(candidate.id, candidate.name),
               }))}
               value={bar.id}
               onValueChange={(value) => setBarId(value ?? bars[0]!.id)}
@@ -137,7 +142,8 @@ function PlatesPage() {
               <SelectContent>
                 {bars.map((candidate) => (
                   <SelectItem key={candidate.id} value={candidate.id}>
-                    {candidate.name} — {candidate.weight} {candidate.unit}
+                    {names.bar(candidate.id, candidate.name)} —{" "}
+                    {candidate.weight} {candidate.unit}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -175,7 +181,10 @@ function PlatesPage() {
                   {plate.weight} {unit}
                 </span>
                 <Input
-                  aria-label={`Pairs of ${plate.weight} ${unit}`}
+                  aria-label={t("plates.pairsLabel", {
+                    weight: plate.weight,
+                    unit,
+                  })}
                   type="number"
                   inputMode="numeric"
                   min="0"
@@ -346,7 +355,7 @@ function PlatesPage() {
               {Object.values(picked).some((pairs) => pairs > 0) ? (
                 <div>
                   <Button variant="outline" onClick={() => setPicked({})}>
-                    Strip the bar
+                    {t("plates.strip")}
                   </Button>
                 </div>
               ) : null}

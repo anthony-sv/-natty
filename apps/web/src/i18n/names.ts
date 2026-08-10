@@ -24,6 +24,7 @@ interface Catalog {
   movementNames: Record<string, string>;
   poseNames: Record<string, string>;
   foodNames: Record<string, string>;
+  barNames: Record<string, string>;
   routineNames: Record<string, string>;
   dietPlanNames: Record<string, string>;
   text: Record<string, string>;
@@ -35,6 +36,7 @@ const EMPTY: Catalog = {
   movementNames: {},
   poseNames: {},
   foodNames: {},
+  barNames: {},
   routineNames: {},
   dietPlanNames: {},
   text: {},
@@ -52,6 +54,8 @@ export interface Names {
   movement: (exerciseId: string) => string | undefined;
   pose: (poseId: string) => string;
   food: (foodId: string) => string;
+  /** Bar names come from `features/plates/equipment.ts`, which has ids. */
+  bar: (barId: string, fallback: string) => string;
   routine: (slug: string, fallback: string) => string;
   dietPlan: (slug: string, fallback: string) => string;
   /**
@@ -96,6 +100,8 @@ export function namesFor(locale: Locale): Names {
     // `getFood` throws on an unknown id by design — a typo should fail at
     // import rather than render a blank row — so there's nothing to guard here.
     food: (foodId) => catalog.foodNames[foodId] ?? getFood(foodId).name,
+
+    bar: (barId, fallback) => catalog.barNames[barId] ?? fallback,
 
     routine: (slug, fallback) => catalog.routineNames[slug] ?? fallback,
 

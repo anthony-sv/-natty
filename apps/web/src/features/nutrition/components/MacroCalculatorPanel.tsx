@@ -34,6 +34,7 @@ const ROWS = [
 export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
   const t = useT();
   const names = useNames();
+  const planName = names.dietPlan(plan.slug, plan.name);
   const [macros, setMacros] = useState({
     protein: plan.targets.protein,
     carbs: plan.targets.carbs,
@@ -57,7 +58,7 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
               <CardTitle>{t("nutrition.buildSplit")}</CardTitle>
               <CardDescription>
                 {t("nutrition.splitBody", {
-                  plan: names.dietPlan(plan.slug, plan.name),
+                  plan: planName,
                 })}
               </CardDescription>
             </div>
@@ -73,7 +74,8 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
                   })
                 }
               >
-                <RotateCcwIcon data-icon="inline-start" /> Reset to plan
+                <RotateCcwIcon data-icon="inline-start" />{" "}
+                {t("nutrition.resetToPlan")}
               </Button>
             )}
           </div>
@@ -147,9 +149,10 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
             </span>
             <span className="w-12" />
             <p className="basis-full text-xs text-muted-foreground">
-              Counted inside the carbs above, at roughly {KCAL_PER_GRAM_FIBRE}{" "}
-              kcal a gram rather than {KCAL_PER_GRAM.carbs} — fibre is a
-              carbohydrate the body only partly gets at, not a fourth macro.
+              {t("nutrition.fibreNote", {
+                fibreKcal: KCAL_PER_GRAM_FIBRE,
+                carbKcal: KCAL_PER_GRAM.carbs,
+              })}
             </p>
           </div>
         </CardContent>
@@ -158,14 +161,26 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
       <Card>
         <CardHeader>
           <CardTitle>
-            {Math.round(total).toLocaleString()} kcal a day
+            {t("nutrition.kcalADay", {
+              kcal: Math.round(total).toLocaleString(t.locale),
+            })}
           </CardTitle>
           <CardDescription>
             {total > plan.targetKcal
-              ? `${Math.round(total - plan.targetKcal).toLocaleString()} kcal above ${plan.name}.`
+              ? t("nutrition.above", {
+                  kcal: Math.round(total - plan.targetKcal).toLocaleString(
+                    t.locale,
+                  ),
+                  plan: planName,
+                })
               : total < plan.targetKcal
-                ? `${Math.round(plan.targetKcal - total).toLocaleString()} kcal below ${plan.name}.`
-                : `Exactly ${plan.name}.`}
+                ? t("nutrition.below", {
+                    kcal: Math.round(plan.targetKcal - total).toLocaleString(
+                      t.locale,
+                    ),
+                    plan: planName,
+                  })
+                : t("nutrition.exactly", { plan: planName })}
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -703,6 +703,20 @@ copied across untranslated — via an **explicit allowlist** of the two dozen
 that are legitimately identical (loanwords, acronyms, symbols, pure templates),
 not a count threshold, so a new accidental copy fails by name.
 
+**The test only catches what it walks**, which is the failure mode to watch:
+every gap that reached the browser was a vocabulary it didn't yet know about —
+food `unitNote`s, bar names, FFMI band labels, routine `goal`/`style`. Adding a
+new authored string means adding it to `sourceStrings()` in the same commit,
+or nothing will tell you.
+
+**A Select needs its `items` labels translated, not just its `SelectItem`
+children.** `SelectValue` renders the *item's* label for the current value, so
+translating only the open list leaves the closed trigger in English — which
+looks like the component ignoring the locale. Same for any list built at module
+scope: options whose text a reader sees have to be built per locale, and sorted
+per locale too (`localeCompare(a, b, locale)` — an alphabetical list of English
+names is not alphabetical in Spanish).
+
 **Pure modules take an injected `{ names, t }`** (`Formatting`), the same shape
 `toRecordRows` already used for its `ExerciseNaming`. That's what lets
 `format.ts` and `buildSteps` render in the reader's language without importing a

@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { profileStore } from "@/features/profile/profile-store";
+import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 import type { WeightUnit } from "@/lib/units";
 import { useBodyEntries } from "../collection";
@@ -25,9 +26,12 @@ export function BodyPanel() {
   const { entries, latest, isLoading } = useBodyEntries();
   const profile = useStore(profileStore, (s) => s);
   const t = useT();
+  const names = useNames();
 
   const normalized = latest ? normalizedFfmi(latest, profile.heightCm) : undefined;
-  const band = describeFfmi(normalized, profile.sex);
+  // `describeFfmi` is pure and returns the English band; it's a closed set with
+  // no ids, so it translates by source string the way day labels do.
+  const band = names.text(describeFfmi(normalized, profile.sex));
   const lean = latest ? leanMassKg(latest) : undefined;
 
   // Read once on mount rather than during render: `react-hooks/purity` rejects

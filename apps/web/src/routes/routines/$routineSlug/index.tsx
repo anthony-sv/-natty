@@ -93,8 +93,10 @@ function RoutineDetail() {
         </div>
         <div className="flex flex-wrap gap-1.5">
           {routine.source ? <Badge variant="outline">{routine.source}</Badge> : null}
-          {routine.style ? <Badge variant="secondary">{routine.style}</Badge> : null}
-          {routine.goal ? <Badge>{routine.goal}</Badge> : null}
+          {routine.style ? (
+            <Badge variant="secondary">{f.names.text(routine.style)}</Badge>
+          ) : null}
+          {routine.goal ? <Badge>{f.names.text(routine.goal)}</Badge> : null}
           {routine.defaultPrescription ? (
             <Badge variant="outline">
               {t("routines.defaultPrescription", {

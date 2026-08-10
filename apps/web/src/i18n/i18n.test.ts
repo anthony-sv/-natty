@@ -4,6 +4,8 @@ import { poses } from "@/data/poses";
 import { foods } from "@/data/diets/foods";
 import { diets, hydration } from "@/data/diets";
 import { routines } from "@/data/routines";
+import { BARS } from "@/features/plates/equipment";
+import { ffmiScale } from "@/features/body/ffmi";
 import { CATALOGS } from "./names";
 import { LOCALES, type Locale } from "./locale-store";
 import { MESSAGES } from "./use-t";
@@ -37,6 +39,9 @@ function sourceStrings(): Map<string, string> {
   };
 
   for (const routine of routines) {
+    // Bare words rather than ids, and both render as badges on the program.
+    add(routine.goal, `${routine.slug} goal`);
+    add(routine.style, `${routine.slug} style`);
     for (const week of routine.weeks) {
       for (const day of week.days) {
         // Rest days carry no label worth translating beyond the app's own word.
@@ -78,6 +83,14 @@ function sourceStrings(): Map<string, string> {
     add(food.unitNote, "foods.ts");
   }
 
+  // FFMI band labels. `describeFfmi` is pure and returns the English word, so
+  // it translates by source string the way day labels do.
+  for (const sex of ["male", "female"] as const) {
+    for (const band of ffmiScale(sex).bands) {
+      add(band.label, "ffmi.ts bands");
+    }
+  }
+
   return found;
 }
 
@@ -107,6 +120,15 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
 
   it("names every food", () => {
     expect(missing(foods, catalog.foodNames)).toEqual([]);
+  });
+
+  it("names every bar", () => {
+    expect(
+      missing(
+        BARS.map((bar) => ({ id: bar.id, name: bar.name })),
+        catalog.barNames,
+      ),
+    ).toEqual([]);
   });
 
   it("names every routine", () => {
