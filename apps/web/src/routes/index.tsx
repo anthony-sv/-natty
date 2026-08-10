@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   CalculatorIcon,
@@ -27,7 +28,9 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/toast";
 import { useBodyEntries } from "@/features/body/collection";
+import { weeklyAverages, weekOverWeek } from "@/features/body/weekly";
 import { useAllRecords } from "@/features/log/queries";
+import type { WeightUnit } from "@/lib/units";
 import { routinesQueryOptions } from "@/features/routines/queries";
 import { endSession } from "@/features/routines/session-store";
 import { useActiveSession } from "@/features/routines/lib/use-active-session";
@@ -120,6 +123,14 @@ function Stats() {
   const { rows, loggedSetCount } = useAllRecords();
   const { entries, latest } = useBodyEntries();
 
+  // Read once on mount rather than during render, per `react-hooks/purity`.
+  const [now] = useState(() => Date.now());
+  const unit: WeightUnit = latest?.unit ?? "kg";
+  const change = useMemo(
+    () => weekOverWeek(weeklyAverages(entries, unit, now)),
+    [entries, unit, now],
+  );
+
   if (loggedSetCount === 0 && entries.length === 0) return null;
 
   const exercisesTrained = new Set(rows.map((row) => row.exerciseId)).size;
@@ -132,16 +143,41 @@ function Stats() {
       <Stat
         label="Latest weigh-in"
         value={latest ? `${latest.weight} ${latest.unit}` : "—"}
+        // The tile that matters most is the average, not the morning: a single
+        // weigh-in is mostly water. It rides as a hint rather than a fifth tile
+        // so the four-column grid stays whole.
+        hint={
+          change === undefined
+            ? undefined
+            : `Week avg ${change.latest.weight.toFixed(1)} ${unit}${
+                change.deltaWeight === undefined
+                  ? ""
+                  : ` · ${change.deltaWeight > 0 ? "+" : change.deltaWeight < 0 ? "−" : ""}${Math.abs(change.deltaWeight).toFixed(1)} vs last`
+              }`
+        }
       />
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
   return (
     <div className="flex flex-col gap-0.5 rounded-lg border px-3 py-2">
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="text-xl font-semibold tabular-nums">{value}</span>
+      {hint ? (
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {hint}
+        </span>
+      ) : null}
     </div>
   );
 }

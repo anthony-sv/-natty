@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { useStore } from "@tanstack/react-store";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,13 +9,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { profileStore } from "@/features/profile/profile-store";
+import type { WeightUnit } from "@/lib/units";
 import { useBodyEntries } from "../collection";
 import { describeFfmi, ffmi, formatIndex, leanMassKg, normalizedFfmi } from "../ffmi";
+import { weeklyAverages } from "../weekly";
 import { BodyCharts } from "./BodyCharts";
 import { BodyEntryForm } from "./BodyEntryForm";
 import { FfmiMeter } from "./FfmiMeter";
 import { BodyHistoryTable } from "./BodyHistoryTable";
 import { ProfileFields } from "./ProfileFields";
+import { WeeklyAverageCard } from "./WeeklyAverageCard";
 
 export function BodyPanel() {
   const { entries, latest, isLoading } = useBodyEntries();
@@ -23,6 +27,18 @@ export function BodyPanel() {
   const normalized = latest ? normalizedFfmi(latest, profile.heightCm) : undefined;
   const band = describeFfmi(normalized, profile.sex);
   const lean = latest ? leanMassKg(latest) : undefined;
+
+  // Read once on mount rather than during render: `react-hooks/purity` rejects
+  // a mid-render clock read, and "which week is the current one" shouldn't
+  // change under the card while you're looking at it.
+  const [now] = useState(() => Date.now());
+  // Averaged in the latest weigh-in's unit, the same one the chart plots in, so
+  // the card and the line can't disagree.
+  const unit: WeightUnit = latest?.unit ?? "kg";
+  const weekly = useMemo(
+    () => weeklyAverages(entries, unit, now),
+    [entries, unit, now],
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -38,6 +54,8 @@ export function BodyPanel() {
           <ProfileFields />
         </CardContent>
       </Card>
+
+      <WeeklyAverageCard weekly={weekly} unit={unit} />
 
       {latest ? (
         <Card>
@@ -104,7 +122,7 @@ export function BodyPanel() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <BodyCharts entries={entries} isLoading={isLoading} />
+          <BodyCharts entries={entries} weekly={weekly} isLoading={isLoading} />
         </CardContent>
       </Card>
 
