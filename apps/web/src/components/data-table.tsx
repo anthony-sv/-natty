@@ -116,7 +116,9 @@ export function DataTable<TData extends RowData>({
     getRowId,
     state: { globalFilter },
     initialState: { grouping: [...(grouping ?? [])], expanded: true },
-    globalFilterFn: "includesString",
+    // Word-wise and punctuation-insensitive, so "bench incline" and "pec-deck"
+    // both land — see `lib/table.ts`.
+    globalFilterFn: "matchesAllWords",
     getColumnCanGlobalFilter: (column) =>
       globalFilterColumns === undefined ||
       globalFilterColumns.includes(column.id),

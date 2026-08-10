@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { exercises } from "@/data/exercises";
+import { matchesAllWords } from "@/lib/search";
 import { logSet } from "../collection";
 import { formatSet } from "../pr";
 import { UNITS, weightUnitSchema, type WeightUnit } from "@/lib/units";
@@ -66,10 +67,31 @@ const dateFormat = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
 });
 
+interface ExerciseOption {
+  id: string;
+  name: string;
+  /** Everything this lift answers to, for the filter below. */
+  search: string;
+}
+
 /** Exercise options, sorted by display name so the combobox reads alphabetically. */
-const options = [...exercises]
-  .map((e) => ({ id: e.id, name: e.name }))
+const options: ExerciseOption[] = [...exercises]
+  .map((e) => ({
+    id: e.id,
+    name: e.name,
+    search: [e.name, ...e.aliases].join(" "),
+  }))
   .sort((a, b) => a.name.localeCompare(b.name));
+
+/**
+ * The Combobox filters on its label by default, which is the same blind spot
+ * the records table had: 113 curated names, and none of the spellings you'd
+ * actually type. This searches the aliases too, through the house matcher — so
+ * "pec deck", "flat db press" and "bench incline" all land.
+ */
+function filterOption(item: ExerciseOption, query: string): boolean {
+  return matchesAllWords(item.search, query);
+}
 
 export function LogEntryForm() {
   const [justLogged, setJustLogged] = useState<string | null>(null);
@@ -142,11 +164,10 @@ export function LogEntryForm() {
             <FieldLabel htmlFor="backfill-exercise">Exercise</FieldLabel>
             <Combobox
               items={options}
-              itemToStringLabel={(item: { id: string; name: string }) =>
-                item.name
-              }
+              itemToStringLabel={(item: ExerciseOption) => item.name}
+              filter={filterOption}
               value={options.find((o) => o.id === field.state.value) ?? null}
-              onValueChange={(item: { id: string; name: string } | null) =>
+              onValueChange={(item: ExerciseOption | null) =>
                 field.handleChange(item?.id ?? "")
               }
             >
@@ -157,7 +178,7 @@ export function LogEntryForm() {
               <ComboboxContent>
                 <ComboboxEmpty>No exercise found.</ComboboxEmpty>
                 <ComboboxList>
-                  {(item: { id: string; name: string }) => (
+                  {(item: ExerciseOption) => (
                     <ComboboxItem key={item.id} value={item}>
                       {item.name}
                     </ComboboxItem>

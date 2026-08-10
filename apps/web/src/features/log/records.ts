@@ -17,6 +17,12 @@ export interface RecordRow {
   exerciseName: string;
   /** Rolled into the searchable text, not shown: "row" should find seated row. */
   movementName: string | undefined;
+  /**
+   * The library's other spellings for this lift, also searchable and also not
+   * shown. The curated name is one way to say it; "pec deck", "flat db press"
+   * and "lat pulldown wide" are the ways you'd actually type it.
+   */
+  aliases: string[];
   reps: number;
   weight: number | undefined;
   unit: WeightUnit;
@@ -27,6 +33,8 @@ export interface RecordRow {
 export interface ExerciseNaming {
   exerciseName: (exerciseId: string) => string;
   movementName: (exerciseId: string) => string | undefined;
+  /** Every other spelling the library accepts for this exercise. */
+  aliases: (exerciseId: string) => string[];
 }
 
 /**
@@ -57,6 +65,7 @@ export function toRecordRows(
         exerciseId,
         exerciseName: naming.exerciseName(exerciseId),
         movementName: naming.movementName(exerciseId),
+        aliases: naming.aliases(exerciseId),
         reps: record.reps,
         weight: record.weight,
         unit: record.unit,

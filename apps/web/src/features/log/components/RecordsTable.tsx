@@ -11,24 +11,32 @@ const dateFormat = new Intl.DateTimeFormat(undefined, {
 const column = createAppColumnHelper<RecordRow>();
 
 const columns = column.columns([
-  // The accessor returns the exercise name *plus* its movement so searching
-  // "row" finds the seated cable row; the cell shows only the curated name.
-  // A hidden second column would work too, but it would still render an empty
-  // cell in every row.
-  column.accessor((row) => `${row.exerciseName} ${row.movementName ?? ""}`, {
-    id: "exercise",
-    header: "Exercise",
-    sortFn: "alphanumeric",
-    // The accessor carries the movement so the filter can see it; the group
-    // heading must not, or every heading would read "Lat pulldown (Wide) Lat
-    // pulldown". `getGroupingValue` is the hook for exactly that split.
-    getGroupingValue: (row) => row.exerciseName,
-    cell: (info) => (
-      <span className="truncate font-medium">
-        {info.row.original.exerciseName}
-      </span>
-    ),
-  }),
+  // The accessor returns everything this lift can be called — the curated name,
+  // its movement, and the library's other spellings — so "row" finds the seated
+  // cable row and "pec deck" finds the machine fly. The cell shows only the
+  // curated name. A hidden second column would filter the same way but leave an
+  // empty cell in every row.
+  column.accessor(
+    (row) =>
+      [row.exerciseName, row.movementName, ...row.aliases]
+        .filter(Boolean)
+        .join(" "),
+    {
+      id: "exercise",
+      header: "Exercise",
+      sortFn: "alphanumeric",
+      // The accessor carries the movement and aliases so the filter can see
+      // them; the group heading must not, or every heading would read "Lat
+      // pulldown (Wide) Lat pulldown Lat pulldown wide". `getGroupingValue` is
+      // the hook for exactly that split.
+      getGroupingValue: (row) => row.exerciseName,
+      cell: (info) => (
+        <span className="truncate font-medium">
+          {info.row.original.exerciseName}
+        </span>
+      ),
+    },
+  ),
   column.accessor("reps", {
     header: "Reps",
     sortFn: "basic",

@@ -23,6 +23,8 @@ function set(
 const naming = {
   exerciseName: (id: string) => (id === "known" ? "Lat pulldown (Wide)" : id),
   movementName: (id: string) => (id === "known" ? "Lat pulldown" : undefined),
+  aliases: (id: string) =>
+    id === "known" ? ["Lat pulldown wide grip", "Wide pulldown"] : [],
 };
 
 const shape = (rows: ReturnType<typeof toRecordRows>) =>
@@ -59,12 +61,15 @@ describe("toRecordRows", () => {
     expect(rows.map((row) => row.exerciseId)).toEqual(["a", "c", "b"]);
   });
 
-  it("carries the name and movement used for searching", () => {
+  it("carries the name, movement and aliases used for searching", () => {
     const [row] = toRecordRows([set("known", 70, 10)], naming);
 
+    // The curated name is one way to say it; the aliases are the ways someone
+    // would actually type it, and the table's search accessor joins all three.
     expect(row).toMatchObject({
       exerciseName: "Lat pulldown (Wide)",
       movementName: "Lat pulldown",
+      aliases: ["Lat pulldown wide grip", "Wide pulldown"],
     });
   });
 
@@ -74,6 +79,7 @@ describe("toRecordRows", () => {
     expect(row).toMatchObject({
       exerciseName: "mystery",
       movementName: undefined,
+      aliases: [],
     });
   });
 

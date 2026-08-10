@@ -58,6 +58,7 @@ export function useAllRecords(): {
           const exercise = getExercise(id);
           return exercise ? getMovement(exercise.movementId)?.name : undefined;
         },
+        aliases: (id) => getExercise(id)?.aliases ?? [],
       }),
     [data],
   );
