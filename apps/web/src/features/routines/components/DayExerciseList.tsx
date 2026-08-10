@@ -4,6 +4,7 @@ import {
   ItemContent,
   ItemDescription,
   ItemGroup,
+  ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
 import { Fragment } from "react";
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils";
 import type { ExerciseEntry } from "@/data/routines";
 import { exerciseDisplayName, formatAlternatives } from "../lib/format";
 import { PrescriptionBadges } from "./PrescriptionBadges";
+import { SetDots } from "./SetDots";
 
 export function DayExerciseList({
   exercises,
@@ -54,10 +56,27 @@ export function DayExerciseList({
           <Item
             key={i}
             variant="outline"
-            className={cn(isActive && "bg-muted/60 ring-2 ring-primary")}
+            className={cn(
+              "items-start gap-x-3",
+              isActive && "bg-muted/60 ring-2 ring-primary",
+            )}
           >
-            <ItemContent>
-              <ItemTitle>
+            {/* Position in the day. Small, but it gives the list a spine and
+                turns "the third one" into something you can point at. */}
+            <ItemMedia>
+              <span
+                className={cn(
+                  "flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium tabular-nums",
+                  isActive
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "text-muted-foreground",
+                )}
+              >
+                {i + 1}
+              </span>
+            </ItemMedia>
+            <ItemContent className="gap-1">
+              <ItemTitle className="flex-wrap">
                 {exerciseDisplayName(exercise)}
                 {exercise.isFinisher ? <Badge variant="default">Finisher</Badge> : null}
                 {exercise.kind === "cardio" ? (
@@ -75,8 +94,14 @@ export function DayExerciseList({
               {exercise.notes ? (
                 <ItemDescription>{exercise.notes}</ItemDescription>
               ) : null}
+              {exercise.kind === "cardio" ? null : (
+                <SetDots
+                  prescriptions={exercise.prescriptions}
+                  isFinisher={exercise.isFinisher}
+                />
+              )}
             </ItemContent>
-            <ItemActions>
+            <ItemActions className="self-start">
               <PrescriptionBadges
                 prescriptions={exercise.prescriptions}
                 isFinisher={exercise.isFinisher}
