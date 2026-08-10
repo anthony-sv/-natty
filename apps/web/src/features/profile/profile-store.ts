@@ -20,6 +20,15 @@ const profileSchema = z.object({
    * just without a band.
    */
   sex: z.enum(["male", "female"]).optional(),
+  /**
+   * Centimetres, measured at the narrowest point. Frame proxies for the
+   * `/calculator` route: both are mostly bone and tendon, so they barely move
+   * with training or body fat, which is what makes them usable as one. Stored
+   * here rather than on a weigh-in for the same reason height is — they belong
+   * to you, not to a given morning.
+   */
+  wristCm: z.number().positive().optional(),
+  ankleCm: z.number().positive().optional(),
 });
 
 export type Profile = z.infer<typeof profileSchema>;
