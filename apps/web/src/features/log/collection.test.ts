@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { loggedSetsForStep, loggedSets, logSet, setsFor } from "./collection";
+import {
+  deleteSet,
+  loggedSetsForStep,
+  loggedSets,
+  logSet,
+  restoreSet,
+  setsFor,
+  updateSet,
+} from "./collection";
+import { prFrontier } from "./pr";
 
 function clear() {
   for (const set of [...loggedSets.values()]) loggedSets.delete(set.id);
@@ -98,5 +107,107 @@ describe("record detection", () => {
     expect(log(60, 12)).toBe(false);
     expect(log(65, 12)).toBe(true);
     expect(log(65, 10)).toBe(false);
+  });
+});
+
+describe("correcting a logged set", () => {
+  /**
+   * The reason edit and delete are safe to offer at all: `isRecord` is decided
+   * by `prFrontier` every time it's asked and is never stored, so a correction
+   * flows through to the records table, the charts and the player's PR line
+   * with nothing to fix up afterwards. These pin that.
+   */
+  const frontierReps = () =>
+    prFrontier(setsFor("hack-squat"))
+      .map((set) => `${set.weight}x${set.reps}`)
+      .sort();
+
+  it("moves the frontier when a mistyped weight is corrected", () => {
+    const good = logSet({
+      performedAt: 1,
+      exerciseId: "hack-squat",
+      unit: "kg",
+      weight: 100,
+      reps: 8,
+    });
+    // The classic slip: a stray zero, which then sits on the frontier forever
+    // as a personal record nobody set.
+    const typo = logSet({
+      performedAt: 2,
+      exerciseId: "hack-squat",
+      unit: "kg",
+      weight: 1000,
+      reps: 5,
+    });
+
+    expect(frontierReps()).toContain("1000x5");
+
+    updateSet(typo.set.id, {
+      weight: 100,
+      unit: "kg",
+      reps: 5,
+      performedAt: typo.set.performedAt,
+    });
+
+    // The phantom is gone, and 100x8 still holds the record it always did.
+    expect(frontierReps()).not.toContain("1000x5");
+    expect(frontierReps()).toContain(`${good.set.weight}x8`);
+  });
+
+  it("leaves the next-best set holding the record after a delete", () => {
+    logSet({ performedAt: 1, exerciseId: "hack-squat", unit: "kg", weight: 100, reps: 5 });
+    const best = logSet({
+      performedAt: 2,
+      exerciseId: "hack-squat",
+      unit: "kg",
+      weight: 140,
+      reps: 5,
+    });
+
+    expect(frontierReps()).toEqual(["140x5"]);
+
+    deleteSet(best.set.id);
+
+    expect(frontierReps()).toEqual(["100x5"]);
+  });
+
+  it("hands the deleted row back so an undo can put it there again", () => {
+    const logged = logSet({
+      performedAt: 1,
+      exerciseId: "hack-squat",
+      unit: "kg",
+      weight: 120,
+      reps: 3,
+    });
+
+    const { set: removed } = deleteSet(logged.set.id);
+    expect(setsFor("hack-squat")).toHaveLength(0);
+
+    restoreSet(removed!);
+
+    // Same id, so it lands back where it was rather than as a duplicate.
+    expect(setsFor("hack-squat").map((s) => s.id)).toEqual([logged.set.id]);
+  });
+
+  it("does not let an edit move a set to another exercise", () => {
+    const logged = logSet({
+      performedAt: 1,
+      exerciseId: "hack-squat",
+      unit: "kg",
+      weight: 100,
+      reps: 8,
+    });
+
+    updateSet(logged.set.id, {
+      weight: 110,
+      unit: "kg",
+      reps: 8,
+      performedAt: logged.set.performedAt,
+    });
+
+    // A set logged against the wrong lift is a different set; moving it would
+    // rewrite two exercises' histories at once.
+    expect(setsFor("hack-squat")).toHaveLength(1);
+    expect(loggedSets.get(logged.set.id)?.exerciseId).toBe("hack-squat");
   });
 });

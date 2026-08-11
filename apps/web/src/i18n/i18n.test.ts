@@ -199,6 +199,8 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "volume.sets",
       "volume.setsAxis",
       "split.cardio",
+      "history.setsOnDay.one",
+      "history.setsOnDay.other",
     ]);
 
     const unexplained = Object.keys(en).filter(

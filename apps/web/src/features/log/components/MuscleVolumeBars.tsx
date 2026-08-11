@@ -102,7 +102,10 @@ export function MuscleVolumeBars({ muscles }: { muscles: MuscleVolume[] }) {
                     + {entry.indirectSets}
                   </span>
                 ) : null}
-                <span className="sr-only"> {t("volume.setsSuffix", { total })}</span>
+                <span className="sr-only">
+                  {" "}
+                  {t.plural("volume.setsSuffix", total)}
+                </span>
               </span>
             </li>
           );
