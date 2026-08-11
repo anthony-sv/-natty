@@ -409,12 +409,87 @@ prescription can be recorded. What's already on the step is listed in the
 popover so an accidental duplicate is visible. Entries are matched to a step by
 **provenance** (`routineSlug`/`weekNumber`/`dayNumber`/`setNumber`) via
 `loggedSetsForStep()`, not component state, so they survive stepping Back and
-forward. Editing or deleting a logged set isn't built yet — a mistyped set can
-currently only be followed by a correct one.
+forward.
 
 Both log forms — the popover and the `/progress` backfill — use TanStack Form.
 The popover's is a separate component so `defaultValues` can be seeded from the
 last set on mount, and the player holds it back until the log query has loaded.
+
+### Correcting a set
+
+`updateSet` / `deleteSet` / `restoreSet` in `collection.ts`, surfaced by
+`LoggedSetList` — one component in two homes: a day opened from the heatmap,
+and below the charts in the exercise sheet. The second is the one that matters:
+a mistyped 1000kg sits on the frontier as a phantom record, and where you
+*notice* that is the exercise's own page.
+
+**Nothing needs fixing up afterwards, and that's why this is safe to offer at
+all.** `isRecord` is recomputed by `prFrontier` on every read and never stored,
+so an edit silently corrects the records table, both charts and the player's PR
+line. Without a derived frontier this would have needed a migration.
+
+**`exerciseId` isn't editable.** A set logged against the wrong lift is a
+different set, and moving it would rewrite two exercises' histories at once —
+delete it and log the right one.
+
+**Delete is immediate with an Undo on the toast**, not a confirm dialog. Small,
+frequent and fully reversible, so a confirm buys nothing; undo also covers the
+misclick you meant to make differently. `deleteSet` returns the row so the toast
+can restore it.
+
+### Volume (`volume.ts`)
+
+Pure and injected (`ExerciseAnatomy`), like `pr.ts` and `records.ts` — no
+library import, no collection.
+
+**Direct and indirect sets are counted separately and never fused.** Squats
+give quads a direct set and glutes an indirect one; a 0.5 coefficient is a
+convention, not a measurement, and merging them would hide the finding rather
+than surface it. A muscle listed both ways on one exercise counts once, as
+direct.
+
+**The split comes from the movement's pattern, not the muscle**, so it survives
+an exercise that hits several. `SPLIT_FOR_PATTERN` is total over
+`movementPatternSchema`, so a new pattern fails the build rather than landing in
+no bucket. `spinal-extension` → `pull` is the one judgment call. Cardio is its
+own bucket and never counts as resistance volume.
+
+**`muscleGaps` separates three reasons**, which is the whole point: `never-direct`
+(no exercise in the library makes it primary), `indirect-only` (you've hit it,
+never on purpose) and `not-trained`. Against the real library `glutes`, `abs`
+and `adductors` come back `never-direct` — worked constantly, never deliberately,
+and no exercise here would fix it. `forearms` does *not*, because
+`ez-bar-reverse-curl` carries a `muscleOverride`: directness is decided at the
+exercise level, not the movement's.
+
+Bars are plain HTML, not a chart — a ranked horizontal bar with aligned labels
+needs no axis, and the `dataviz` skill says to build those in HTML. The 10–20
+band behind the track is captioned as a rule of thumb, not a target.
+
+### The training heatmap (`heatmap.ts`)
+
+`toCalendar(sets, { weeks, now })` — a commit-graph grid, because five blank
+weeks in the middle of a year read as a layoff by shape alone.
+
+Local calendar days via `startOfDay`, same reasoning as the weekly averages: a
+UTC bucket files a late-evening session under tomorrow. **`currentStreak` counts
+back from today, not from the last day trained**, so a broken streak reads 0
+rather than flattering you with its old length.
+
+Colour is a **sequential ramp — one hue, four steps** (`--heat-1..4`), since
+this encodes magnitude; the categorical palette is reserved for identity. Steps
+are quartiles of *your own* busiest day, not a fixed set count, so the scale
+means something at 4 sets a day or 40. An empty day is `--muted`, never a fifth
+hue. The caption says these are days you *logged* — the app can't know about a
+session you didn't record.
+
+**Panel bodies on `/progress` render only while their tab is selected.** Two of
+them own a `Sheet`, which portals to the body, and Base UI keeps an inactive
+panel mounted — so opening a day and switching to Records left the day sheet
+floating over a tab it doesn't belong to, with a second sheet stacking on it.
+`keepMounted={false}` does **not** fix this: the panel gets `inert` and an
+ending style that never resolves, so it stays mounted and so does its portal.
+Gate on the controlled `value` instead.
 
 ## Body measurements (`src/features/body/`)
 

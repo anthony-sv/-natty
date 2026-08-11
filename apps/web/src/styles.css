@@ -85,6 +85,55 @@ body {
 }
 
 /*
+ * The training heatmap's intensity ramp.
+ *
+ * **Sequential, not categorical**: this encodes magnitude, so it's one hue
+ * stepping light-to-dark rather than four colours from the palette. Checked for
+ * lightness monotonicity in Oklab (light 0.90 → 0.58, dark 0.41 → 0.64) and for
+ * clearing the empty cell — an untrained day is `--muted`, and step 1 has to be
+ * visibly more than nothing without shouting.
+ *
+ * Dark mode climbs the other way for the same reason every ramp does: on a dark
+ * surface, "more" is lighter. Not an inversion of the light steps — its own.
+ */
+:root {
+  --heat-1: #cfe0f5;
+  --heat-2: #96bdea;
+  --heat-3: #5b96de;
+  --heat-4: #2a78d6;
+}
+
+.dark {
+  --heat-1: #1d4a80;
+  --heat-2: #2461a8;
+  --heat-3: #2f7ad0;
+  --heat-4: #3d8ce8;
+}
+
+/*
+ * Push / pull / legs, slots 1–3 of the same palette.
+ *
+ * Deliberately their own tokens rather than reusing `--macro-*`: they happen to
+ * be the same three hexes, but a variable called `--macro-protein` standing for
+ * "push" is the kind of thing that survives one refactor and breaks the next.
+ * Validated all-pairs in both modes, which a stacked bar needs — any two
+ * segments have to be tellable apart, not just adjacent ones. Slot 3 lands at
+ * 2.82:1 on a light card, so the split always carries a legend and its set
+ * counts in text; colour is never the only thing saying which band is which.
+ */
+:root {
+  --split-push: #2a78d6;
+  --split-pull: #eb6834;
+  --split-legs: #1baf7a;
+}
+
+.dark {
+  --split-push: #3987e5;
+  --split-pull: #d95926;
+  --split-legs: #199e70;
+}
+
+/*
  * Macro colours, slots 1–3 of the same palette in the same fixed order.
  *
  * Validated all-pairs in both modes, which a donut needs and an adjacent-only

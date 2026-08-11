@@ -1,5 +1,10 @@
 import { convertWeight, type WeightUnit } from "@/lib/units";
+import { addDays, DAYS_IN_WEEK, startOfWeek } from "@/lib/week";
 import type { BodyEntry } from "./schema";
+
+// Re-exported because callers of this module already import them from here,
+// and because "how long is a week" belongs with the weekly figures that use it.
+export { DAYS_IN_WEEK, startOfWeek };
 
 /**
  * Weigh-ins collapsed to one number a week.
@@ -12,9 +17,6 @@ import type { BodyEntry } from "./schema";
  *
  * Pure and directly tested, like `ffmi.ts`: no React, no collection.
  */
-
-/** Days in a full week, and the divisor for "3 of 7 days". */
-export const DAYS_IN_WEEK = 7;
 
 export interface WeeklyAverage {
   /** Local midnight on the week's Monday. Identifies the week. */
@@ -41,36 +43,6 @@ export interface WeeklyAverage {
    * that hasn't happened. Callers say so rather than hiding it.
    */
   isPartial: boolean;
-}
-
-/**
- * Local midnight on the Monday of `ms`'s week.
- *
- * Built from year/month/day rather than by subtracting `days * 86_400_000`:
- * a day is not always 86,400,000 ms (the clocks change twice a year), and a
- * UTC-based boundary would file a Sunday-night weigh-in under the wrong week
- * for anyone west of Greenwich. `Date` normalises an out-of-range day-of-month,
- * so no month-boundary arithmetic is needed.
- */
-export function startOfWeek(ms: number): number {
-  const date = new Date(ms);
-  // getDay() is 0 for Sunday; the week starts Monday, so Sunday is 6 days in.
-  const daysSinceMonday = (date.getDay() + 6) % DAYS_IN_WEEK;
-  return new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate() - daysSinceMonday,
-  ).getTime();
-}
-
-/** Local midnight `days` after `weekStart`, in calendar days rather than ms. */
-function addDays(ms: number, days: number): number {
-  const date = new Date(ms);
-  return new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate() + days,
-  ).getTime();
 }
 
 function mean(values: number[]): number {

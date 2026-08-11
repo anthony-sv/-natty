@@ -91,3 +91,47 @@ export function logSet(input: LoggedSetInput) {
   const transaction = loggedSets.insert(set);
   return { set, transaction, isRecord: isNewRecord(previouslyLogged, set) };
 }
+
+/**
+ * Correct a set that was logged wrong.
+ *
+ * **Nothing needs fixing up afterwards.** `isRecord` is decided by `prFrontier`
+ * every time it's asked and is never stored, so changing a weight silently
+ * corrects the records table, both exercise charts and the PR line the player
+ * shows mid-set. That is the whole reason this is safe to offer: without a
+ * derived frontier, editing one row would leave a stale record behind it.
+ *
+ * `exerciseId` deliberately isn't editable — a set logged against the wrong
+ * lift is a different set, and moving it would silently rewrite two exercises'
+ * histories at once. Delete it and log the right one.
+ */
+export function updateSet(
+  id: string,
+  patch: Pick<LoggedSet, "weight" | "unit" | "reps" | "performedAt">,
+) {
+  return loggedSets.update(id, (draft) => {
+    draft.weight = patch.weight;
+    draft.unit = patch.unit;
+    draft.reps = patch.reps;
+    draft.performedAt = patch.performedAt;
+  });
+}
+
+/** Remove a set. Returns the row too, so the caller can offer an undo. */
+export function deleteSet(id: string) {
+  const set = loggedSets.get(id);
+  const transaction = loggedSets.delete(id);
+  return { set, transaction };
+}
+
+/** Put a deleted set back, id and all — what the undo on the toast calls. */
+export function restoreSet(set: LoggedSet) {
+  return loggedSets.insert(set);
+}
+
+/** Every set logged on one local calendar day, for the history sheet. */
+export function setsBetween(from: number, to: number): LoggedSet[] {
+  return [...loggedSets.values()]
+    .filter((set) => set.performedAt >= from && set.performedAt < to)
+    .sort((a, b) => a.performedAt - b.performedAt);
+}

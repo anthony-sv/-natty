@@ -12,6 +12,7 @@ import type { WeightUnit } from "@/lib/units";
 import { useExerciseLog } from "../queries";
 import { formatSet } from "../pr";
 import { ExerciseCharts } from "./ExerciseCharts";
+import { LoggedSetList } from "./LoggedSetList";
 
 /**
  * One exercise's history, opened from its heading in the records table.
@@ -65,8 +66,20 @@ export function ExerciseDetailSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="px-4 pb-6">
+        <div className="flex flex-col gap-6 px-4 pb-6">
           <ExerciseCharts sets={sets} unit={unit} isLoading={isLoading} />
+
+          {sets.length > 0 ? (
+            <section className="flex flex-col gap-1">
+              <h3 className="text-sm font-medium">{t("detail.loggedSets")}</h3>
+              {/* Newest first: a set you need to correct is almost always one
+                  you just logged. */}
+              <LoggedSetList
+                sets={[...sets].sort((a, b) => b.performedAt - a.performedAt)}
+                showExercise={false}
+              />
+            </section>
+          ) : null}
         </div>
       </SheetContent>
     </Sheet>
