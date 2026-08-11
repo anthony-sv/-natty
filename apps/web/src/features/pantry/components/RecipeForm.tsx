@@ -1,0 +1,379 @@
+import { useState } from "react";
+import { PlusIcon, XIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "@/components/ui/toast";
+import type { MealItem } from "@/data/diets";
+import { kcalOf } from "@/features/nutrition/macros";
+import { useT } from "@/i18n/use-t";
+import { createRecipe, updateRecipe } from "../collection";
+import { recipeAsFood, recipeTotal } from "../pantry";
+import { cookingMethodSchema, FAT_ADDING_METHODS, type Recipe } from "../schema";
+import {
+  filterFoodOption,
+  useFoodOptions,
+  usePantry,
+  type FoodOption,
+} from "../use-pantry";
+
+const METHODS = cookingMethodSchema.options;
+
+/**
+ * A recipe: what's in it, how it was cooked, and how it's measured out.
+ *
+ * Held as plain state and validated on save rather than as a TanStack Form,
+ * for the same reason `RoutineBuilder` is — the ingredient list is a dynamic
+ * array where nearly every interaction is structural, and `recipeSchema` is the
+ * authority either way.
+ */
+export function RecipeForm({
+  existing,
+  onDone,
+}: {
+  existing?: Recipe;
+  onDone: () => void;
+}) {
+  const t = useT();
+  const pantry = usePantry();
+  const options = useFoodOptions();
+
+  const [name, setName] = useState(existing?.name ?? "");
+  const [method, setMethod] = useState(existing?.method ?? "none");
+  const [ingredients, setIngredients] = useState<MealItem[]>(
+    existing?.ingredients ?? [],
+  );
+  const [kind, setKind] = useState<"servings" | "weight">(
+    existing?.portioning.kind ?? "servings",
+  );
+  const [servings, setServings] = useState(
+    existing?.portioning.kind === "servings"
+      ? String(existing.portioning.servings)
+      : "4",
+  );
+  const [cookedGrams, setCookedGrams] = useState(
+    existing?.portioning.kind === "weight"
+      ? String(existing.portioning.cookedGrams)
+      : "",
+  );
+
+  const portioning =
+    kind === "servings"
+      ? Number(servings) > 0
+        ? ({ kind: "servings", servings: Math.round(Number(servings)) } as const)
+        : undefined
+      : Number(cookedGrams) > 0
+        ? ({ kind: "weight", cookedGrams: Number(cookedGrams) } as const)
+        : undefined;
+
+  const canSave =
+    name.trim() !== "" && ingredients.length > 0 && portioning !== undefined;
+
+  // Previewed live off the same functions the meal model will use, so what the
+  // form shows and what a plan computes can't disagree.
+  const draft: Recipe | undefined = portioning && {
+    id: existing?.id ?? "recipe:preview",
+    name: name.trim() || "…",
+    ingredients,
+    method: method === "none" ? undefined : method,
+    portioning,
+    createdAt: existing?.createdAt ?? 0,
+  };
+  const total = draft ? recipeTotal(draft, pantry.ingredientSource) : undefined;
+  const portion = draft ? recipeAsFood(draft, pantry.ingredientSource) : undefined;
+
+  const methods = METHODS.map((value) => ({
+    value,
+    label: t(`method.${value}` as never),
+  }));
+
+  function save() {
+    if (draft === undefined || !canSave) return;
+    const input = {
+      name: draft.name,
+      ingredients: draft.ingredients,
+      method: draft.method,
+      portioning: draft.portioning,
+    };
+    const transaction = existing
+      ? updateRecipe(existing.id, input)
+      : createRecipe(input).transaction;
+
+    void toast.promise(transaction.isPersisted.promise, {
+      loading: t("pantry.saving"),
+      success: { title: t("pantry.saved", { name: input.name }), type: "success" },
+      error: { title: t("pantry.saveError"), type: "error" },
+    });
+    onDone();
+  }
+
+  return (
+    <FieldGroup>
+      <Field>
+        <FieldLabel htmlFor="recipe-name">{t("pantry.name")}</FieldLabel>
+        <Input
+          id="recipe-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </Field>
+
+      <Field>
+        <FieldLabel>{t("pantry.method")}</FieldLabel>
+        <Select
+          items={methods}
+          value={method}
+          onValueChange={(value) => setMethod(value as typeof method)}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {methods.map((m) => (
+              <SelectItem key={m.value} value={m.value}>
+                {m.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <FieldDescription>{t("pantry.methodHint")}</FieldDescription>
+      </Field>
+
+      <div className="flex flex-col gap-2">
+        <span className="text-sm font-medium">{t("pantry.ingredients")}</span>
+
+        {ingredients.map((item, index) => (
+          <IngredientRow
+            key={index}
+            item={item}
+            options={options}
+            onChange={(next) =>
+              setIngredients(ingredients.map((it, i) => (i === index ? next : it)))
+            }
+            onRemove={() =>
+              setIngredients(ingredients.filter((_, i) => i !== index))
+            }
+          />
+        ))}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setIngredients([...ingredients, { foodId: "", amount: 100 }])
+            }
+          >
+            <PlusIcon data-icon="inline-start" />
+            {t("pantry.addIngredient")}
+          </Button>
+          {/* A nudge rather than a calculation. The method needs fat; how much
+              of it ends up in the food is yours to say. */}
+          {FAT_ADDING_METHODS.includes(method) ? (
+            <span className="text-xs text-muted-foreground">
+              {t("pantry.addFat")}
+            </span>
+          ) : null}
+          {ingredients.length === 0 ? (
+            <span className="text-xs text-destructive">
+              {t("pantry.needIngredient")}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      <Field>
+        <FieldLabel>{t("pantry.portioning")}</FieldLabel>
+        <div className="flex flex-wrap items-end gap-2">
+          <Select
+            items={[
+              { value: "servings", label: t("pantry.portioning.servings") },
+              { value: "weight", label: t("pantry.portioning.weight") },
+            ]}
+            value={kind}
+            onValueChange={(value) => setKind(value as typeof kind)}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="servings">
+                {t("pantry.portioning.servings")}
+              </SelectItem>
+              <SelectItem value="weight">
+                {t("pantry.portioning.weight")}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+
+          {kind === "servings" ? (
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="recipe-servings" className="text-xs">
+                {t("pantry.servings")}
+              </Label>
+              <Input
+                id="recipe-servings"
+                type="number"
+                min="1"
+                className="w-24"
+                value={servings}
+                onChange={(e) => setServings(e.target.value)}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="recipe-cooked" className="text-xs">
+                {t("pantry.cookedGrams")}
+              </Label>
+              <Input
+                id="recipe-cooked"
+                type="number"
+                min="1"
+                className="w-32"
+                value={cookedGrams}
+                onChange={(e) => setCookedGrams(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+        {kind === "weight" ? (
+          <FieldDescription>{t("pantry.cookedGramsHint")}</FieldDescription>
+        ) : null}
+      </Field>
+
+      {total && portion ? (
+        <div className="flex flex-col gap-1 rounded-md border p-3 text-sm tabular-nums">
+          <span className="flex justify-between">
+            <span className="text-muted-foreground">
+              {t("pantry.recipeTotal")}
+            </span>
+            <span>
+              P{total.protein.toFixed(0)} · C{total.carbs.toFixed(0)} · F
+              {total.fat.toFixed(0)} ·{" "}
+              {Math.round(kcalOf(total)).toLocaleString()} kcal
+            </span>
+          </span>
+          <span className="flex justify-between">
+            <span className="text-muted-foreground">
+              {kind === "servings"
+                ? t("pantry.perServing")
+                : t("pantry.per100Cooked")}
+            </span>
+            <span>
+              P{portion.macros.protein.toFixed(1)} · C
+              {portion.macros.carbs.toFixed(1)} · F{portion.macros.fat.toFixed(1)}{" "}
+              · {Math.round(kcalOf(portion.macros)).toLocaleString()} kcal
+            </span>
+          </span>
+        </div>
+      ) : null}
+
+      <Button disabled={!canSave} onClick={save}>
+        {t("pantry.save")}
+      </Button>
+    </FieldGroup>
+  );
+}
+
+function IngredientRow({
+  item,
+  options,
+  onChange,
+  onRemove,
+}: {
+  item: MealItem;
+  options: FoodOption[];
+  onChange: (next: MealItem) => void;
+  onRemove: () => void;
+}) {
+  const t = useT();
+  // Recipes are excluded: an ingredient can't be another recipe in v1.
+  const selectable = options.filter((option) => option.kind !== "recipe");
+  const selected = selectable.find((option) => option.id === item.foodId) ?? null;
+
+  return (
+    <div className="flex flex-wrap items-end gap-2 rounded-md border p-2">
+      <div className="flex min-w-48 flex-1 flex-col gap-1">
+        <Combobox
+          items={selectable}
+          filter={filterFoodOption}
+          value={selected}
+          onValueChange={(option: FoodOption | null) =>
+            onChange({ ...item, foodId: option?.id ?? "" })
+          }
+          itemToStringLabel={(option: FoodOption) => option.name}
+        >
+          <ComboboxInput placeholder={t("nutrition.item")} />
+          <ComboboxContent>
+            <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
+            <ComboboxList>
+              {(option: FoodOption) => (
+                <ComboboxItem key={option.id} value={option}>
+                  <span className="flex items-center gap-2">
+                    {option.name}
+                    {option.kind === "food" ? (
+                      <Badge variant="secondary">{t("pantry.yours")}</Badge>
+                    ) : null}
+                  </span>
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <Label className="text-xs">{t("nutrition.amount")}</Label>
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            min="0"
+            step="1"
+            className="w-24"
+            value={String(item.amount)}
+            onChange={(e) => onChange({ ...item, amount: Number(e.target.value) })}
+          />
+          <span className="text-xs text-muted-foreground">
+            {selected && selected.unit !== "unit" ? selected.unit : ""}
+          </span>
+        </div>
+      </div>
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        className="ml-auto text-muted-foreground"
+        aria-label={t("pantry.removeIngredient", {
+          name: selected?.name ?? t("nutrition.item"),
+        })}
+        onClick={onRemove}
+      >
+        <XIcon />
+      </Button>
+    </div>
+  );
+}

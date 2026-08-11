@@ -9,7 +9,14 @@ export function getDietBySlug(slug: string): DietPlan | undefined {
   return diets.find((diet) => diet.slug === slug);
 }
 
-export { foods, getFood } from "./foods";
+export { foods, findFood, getFood } from "./foods";
+export {
+  dietPlanSchema,
+  foodSchema,
+  foodStateSchema,
+  macrosSchema,
+  mealItemSchema,
+} from "./schema";
 export { hydration } from "./hydration";
 export type {
   DietPlan,

@@ -209,6 +209,8 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "builder.sets",
       "builder.reps",
       "builder.segmentKind.reps",
+      // A placeholder and the kcal symbol; there is nothing in it to translate.
+      "pantry.kcal",
       "volume.sets",
       "volume.setsAxis",
       "split.cardio",

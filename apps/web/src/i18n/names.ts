@@ -3,6 +3,7 @@ import { useStore } from "@tanstack/react-store";
 import { useLiveQuery } from "@tanstack/react-db";
 import { getExercise, getMovement } from "@/data/exercises";
 import { userExercises } from "@/features/library/collection";
+import { userFoods, userRecipes } from "@/features/pantry/collection";
 import { getPose } from "@/data/poses";
 import { findFood } from "@/data/diets/foods";
 import * as esMX from "./catalog/es-MX";
@@ -134,10 +135,24 @@ export function useNames(): Names {
   const locale = useStore(localeStore, (s) => s);
   const { data } = useLiveQuery((q) => q.from({ e: userExercises }));
 
+  const { data: ownFoods } = useLiveQuery((q) => q.from({ f: userFoods }));
+  const { data: ownRecipes } = useLiveQuery((q) => q.from({ r: userRecipes }));
+
   return useMemo(() => {
     const base = namesFor(locale);
-    const own = new Map((data ?? []).map((e) => [e.id, e.name]));
-    if (own.size === 0) return base;
-    return { ...base, exercise: (id) => own.get(id) ?? base.exercise(id) };
-  }, [locale, data]);
+    const exercises = new Map((data ?? []).map((e) => [e.id, e.name]));
+    // Foods and recipes share one namespace here because they share one
+    // downstream: `MealItem.foodId` holds either.
+    const foods = new Map<string, string>([
+      ...(ownFoods ?? []).map((f) => [f.id, f.name] as const),
+      ...(ownRecipes ?? []).map((r) => [r.id, r.name] as const),
+    ]);
+
+    if (exercises.size === 0 && foods.size === 0) return base;
+    return {
+      ...base,
+      exercise: (id) => exercises.get(id) ?? base.exercise(id),
+      food: (id) => foods.get(id) ?? base.food(id),
+    };
+  }, [locale, data, ownFoods, ownRecipes]);
 }

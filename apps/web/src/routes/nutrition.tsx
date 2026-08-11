@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { diets } from "@/data/diets";
 import { MacroCalculatorPanel } from "@/features/nutrition/components/MacroCalculatorPanel";
 import { PlanPanel } from "@/features/nutrition/components/PlanPanel";
+import { PantryPanel } from "@/features/pantry/components/PantryPanel";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 
@@ -29,6 +30,7 @@ export const Route = createFileRoute("/nutrition")({
  */
 function NutritionPage() {
   const [slug, setSlug] = useState(diets[0]!.slug);
+  const [tab, setTab] = useState("plan");
   const plan = diets.find((diet) => diet.slug === slug) ?? diets[0]!;
   const t = useT();
   const names = useNames();
@@ -67,18 +69,27 @@ function NutritionPage() {
         </Field>
       </div>
 
-      <Tabs defaultValue="plan">
+      {/* Controlled and gated on the active tab, for the reason /progress is:
+          the pantry owns a Dialog, and Base UI keeps an inactive panel mounted
+          so it would stay open across a tab switch. */}
+      <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
         <TabsList>
           <TabsTrigger value="plan">{t("nutrition.tab.plan")}</TabsTrigger>
           <TabsTrigger value="macros">{t("nutrition.tab.macros")}</TabsTrigger>
+          <TabsTrigger value="pantry">{t("pantry.tab")}</TabsTrigger>
         </TabsList>
         <TabsContent value="plan">
           {/* Keyed so switching plans resets the day and swap choices rather
               than carrying a selection onto a plan that may not have it. */}
-          <PlanPanel key={plan.slug} plan={plan} />
+          {tab === "plan" ? <PlanPanel key={plan.slug} plan={plan} /> : null}
         </TabsContent>
         <TabsContent value="macros">
-          <MacroCalculatorPanel key={plan.slug} plan={plan} />
+          {tab === "macros" ? (
+            <MacroCalculatorPanel key={plan.slug} plan={plan} />
+          ) : null}
+        </TabsContent>
+        <TabsContent value="pantry">
+          {tab === "pantry" ? <PantryPanel /> : null}
         </TabsContent>
       </Tabs>
     </Page>
