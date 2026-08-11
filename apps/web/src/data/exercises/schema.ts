@@ -50,6 +50,13 @@ export const movementPatternSchema = z.enum([
   "lunge",
   "knee-extension",
   "knee-flexion",
+  // Hip isolation, kept as three patterns rather than one. A pattern is what
+  // makes two exercises plausible substitutes, and abduction and adduction are
+  // opposites — a machine that spreads your knees is no substitute for one that
+  // squeezes them. Extension (thrusts, bridges, kickbacks) is a third thing.
+  "hip-extension",
+  "hip-abduction",
+  "hip-adduction",
   "calf-raise",
   "spinal-extension",
   "cardio",

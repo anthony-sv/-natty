@@ -310,6 +310,47 @@ const raw: z.input<typeof movementSchema>[] = [
     secondaryMuscles: [],
   },
 
+  // ── Hips ───────────────────────────────────────────────────────────────
+  // The only movements in the library that make glutes or adductors *primary*.
+  // Everything above works them constantly and never on purpose, which is
+  // exactly what `muscleGaps` was reporting as `never-direct` — a hole nothing
+  // in the library could fill until these landed.
+  {
+    id: "hip-thrust",
+    name: "Hip thrust",
+    pattern: "hip-extension",
+    primaryMuscles: ["glutes"],
+    secondaryMuscles: ["hamstrings", "quads"],
+  },
+  {
+    id: "glute-bridge",
+    name: "Glute bridge",
+    pattern: "hip-extension",
+    primaryMuscles: ["glutes"],
+    secondaryMuscles: ["hamstrings"],
+  },
+  {
+    id: "glute-kickback",
+    name: "Glute kickback",
+    pattern: "hip-extension",
+    primaryMuscles: ["glutes"],
+    secondaryMuscles: ["hamstrings"],
+  },
+  {
+    id: "hip-abduction",
+    name: "Hip abduction",
+    pattern: "hip-abduction",
+    primaryMuscles: ["glutes"],
+    secondaryMuscles: [],
+  },
+  {
+    id: "hip-adduction",
+    name: "Hip adduction",
+    pattern: "hip-adduction",
+    primaryMuscles: ["adductors"],
+    secondaryMuscles: [],
+  },
+
   // ── Conditioning ───────────────────────────────────────────────────────
   {
     id: "steady-state-cardio",

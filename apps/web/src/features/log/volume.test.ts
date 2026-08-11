@@ -260,14 +260,28 @@ describe("against the real exercise library", () => {
     exercises.flatMap((exercise) => musclesForExercise(exercise).primaryMuscles),
   );
 
-  it("cannot train glutes, abs or adductors directly", () => {
-    // The finding the gaps card exists to report: three muscles have no
-    // exercise in the whole library that makes them the point of the set.
-    // If someone adds one, this fails and the wording should change with it.
+  it("cannot train abs directly", () => {
+    // The finding the gaps card exists to report: a muscle with no exercise in
+    // the whole library that makes it the point of the set.
+    //
+    // This used to read ["abs", "adductors", "glutes"]. The hip movements —
+    // thrusts, bridges, kickbacks, abduction and adduction — are what took the
+    // other two off the list, and they were added *because* this reported them:
+    // a gaps card naming a deficiency the app gives you no way to fix is a
+    // complaint, not a finding. Abs are still on it, and the fix is the same
+    // shape whenever someone wants it.
     const undirectable = muscleSchema.options.filter(
       (muscle) => !trainableDirectly.has(muscle),
     );
-    expect([...undirectable].sort()).toEqual(["abs", "adductors", "glutes"]);
+    expect([...undirectable].sort()).toEqual(["abs"]);
+  });
+
+  it("makes glutes and adductors directly trainable", () => {
+    // Stated separately from the list above so it fails by name if a hip
+    // movement is ever removed or repointed, rather than silently folding back
+    // into the undirectable set.
+    expect(trainableDirectly.has("glutes")).toBe(true);
+    expect(trainableDirectly.has("adductors")).toBe(true);
   });
 
   it("counts a muscle an exercise overrides to primary as directly trainable", () => {
