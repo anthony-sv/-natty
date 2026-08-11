@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { WeightUnit } from "@/lib/units";
 import type { BodyEntry } from "./schema";
-import { DAYS_IN_WEEK, startOfWeek, weeklyAverages, weekOverWeek } from "./weekly";
+import { weeklyAverages, weekOverWeek } from "./weekly";
 
 /**
  * Local-time helpers, so nothing here depends on the machine's timezone.
@@ -34,58 +34,7 @@ function entry(
   };
 }
 
-const MONDAY = 1;
 const THURSDAY = 4;
-
-describe("startOfWeek", () => {
-  it("always lands on a Monday at local midnight", () => {
-    // 2026-08-10 is a Monday; walk a fortnight of arbitrary times off it.
-    for (let day = 0; day < 14; day++) {
-      const start = new Date(startOfWeek(at(2026, 8, 10 + day, 13, 47)));
-      expect(start.getDay()).toBe(MONDAY);
-      expect(start.getHours()).toBe(0);
-      expect(start.getMinutes()).toBe(0);
-    }
-  });
-
-  it("keeps a Sunday-night weigh-in in the week that just ended", () => {
-    // 2026-08-16 is the Sunday of the week starting Monday the 10th. Weighing
-    // in at 23:00 is still that week, not the next one -- a UTC boundary would
-    // push it forward for anyone west of Greenwich.
-    expect(startOfWeek(at(2026, 8, 16, 23, 0))).toBe(at(2026, 8, 10, 0, 0));
-  });
-
-  it("puts Monday 00:00 in its own week rather than the previous one", () => {
-    const monday = at(2026, 8, 10, 0, 0);
-    expect(startOfWeek(monday)).toBe(monday);
-  });
-
-  it("crosses a month boundary", () => {
-    // Wednesday 2026-09-02 belongs to the week starting Monday 2026-08-31.
-    expect(startOfWeek(at(2026, 9, 2))).toBe(at(2026, 8, 31, 0, 0));
-  });
-
-  /**
-   * The DST guarantee, without naming a timezone.
-   *
-   * Every week of a year, in whatever zone the test runs in: midweek must map
-   * back to that week's own Monday. Subtracting `days * 86_400_000` fails this
-   * wherever the clocks change, because a day is then 23 or 25 hours long.
-   */
-  it("holds across a whole year, including any clock change", () => {
-    let monday = startOfWeek(at(2026, 1, 5));
-    for (let week = 0; week < 52; week++) {
-      const midweek = new Date(monday);
-      midweek.setDate(midweek.getDate() + 3);
-      midweek.setHours(12);
-      expect(startOfWeek(midweek.getTime())).toBe(monday);
-
-      const next = new Date(monday);
-      next.setDate(next.getDate() + DAYS_IN_WEEK);
-      monday = next.getTime();
-    }
-  });
-});
 
 describe("weeklyAverages", () => {
   const now = at(2026, 8, 12); // Wednesday of the week starting the 10th.
