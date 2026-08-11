@@ -952,6 +952,74 @@ const raw: z.input<typeof exerciseSchema>[] = [
     facets: { implement: "machine", orientation: "toes-out" },
   },
 
+  // ── Hips ───────────────────────────────────────────────────────────────
+  // No built-in program prescribes any of these — the source docs train glutes
+  // and adductors only as a by-product of squatting and pressing. They're here
+  // to be reachable from a routine you write yourself, and because the volume
+  // gaps card was otherwise naming a deficiency the app gave you no way to fix.
+  {
+    id: "barbell-hip-thrust",
+    movementId: "hip-thrust",
+    name: "Barbell hip thrust",
+    aliases: ["Hip thrust", "Hip thrusts"],
+    facets: { implement: "barbell" },
+  },
+  {
+    id: "machine-hip-thrust",
+    movementId: "hip-thrust",
+    name: "Machine hip thrust",
+    facets: { implement: "machine" },
+  },
+  {
+    id: "single-leg-hip-thrust",
+    movementId: "hip-thrust",
+    name: "Single-leg hip thrust",
+    facets: { stance: "single-leg", laterality: "unilateral" },
+  },
+  {
+    id: "barbell-glute-bridge",
+    movementId: "glute-bridge",
+    name: "Barbell glute bridge",
+    aliases: ["Glute bridge"],
+    facets: { implement: "barbell" },
+  },
+  {
+    id: "cable-glute-kickback",
+    movementId: "glute-kickback",
+    name: "Cable glute kickback",
+    aliases: ["Glute kickback", "Cable kickback"],
+    facets: { implement: "cable", laterality: "unilateral" },
+  },
+  {
+    id: "machine-hip-abduction",
+    movementId: "hip-abduction",
+    name: "Seated hip abduction machine",
+    // "Abductor" is what the machine is called in most gyms, and it's what
+    // someone writing their own routine will type.
+    aliases: ["Hip abduction", "Abductor machine", "Abductor"],
+    facets: { implement: "machine", posture: "seated" },
+  },
+  {
+    id: "cable-hip-abduction",
+    movementId: "hip-abduction",
+    name: "Cable hip abduction",
+    facets: { implement: "cable", posture: "standing", laterality: "unilateral" },
+  },
+  {
+    id: "banded-hip-abduction",
+    movementId: "hip-abduction",
+    name: "Banded hip abduction",
+    aliases: ["Band hip abduction"],
+    facets: { implement: "bodyweight", posture: "seated" },
+  },
+  {
+    id: "machine-hip-adduction",
+    movementId: "hip-adduction",
+    name: "Seated hip adduction machine",
+    aliases: ["Hip adduction", "Adductor machine", "Adductor"],
+    facets: { implement: "machine", posture: "seated" },
+  },
+
   // ── Conditioning ───────────────────────────────────────────────────────
   {
     id: "liss-cardio",

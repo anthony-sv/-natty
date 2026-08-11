@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useStore } from "@tanstack/react-store";
 import {
   CheckIcon,
@@ -46,12 +46,15 @@ import {
   formatElapsed,
   formatModifiers,
   formatPose,
+  formatSegment,
   type Formatting,
 } from "../lib/format";
 import {
   autoStartSecondsFor,
   describeStep,
+  isLoggableStep,
   type SessionStep,
+  type WorkStep,
 } from "../lib/session";
 import { useCountdown, useElapsed } from "../lib/use-countdown";
 import {
@@ -395,10 +398,14 @@ function WorkStepBody({
   const timerRunning = session.timerEndsAt !== null;
 
   // Cardio already carries its own duration; there is no weight or rep count
-  // worth recording for it.
-  const isLoggable = step.kind !== "cardio";
+  // worth recording for it. A segmented set logs once, on its last leg — see
+  // `isLoggableStep`.
+  const isLoggable = isLoggableStep(step);
+  // The "logged today" list still belongs on every leg: it's what fills the
+  // stage, and hiding it for four of five steps would make the card jump.
+  const showsLog = step.kind !== "cardio";
   const { sets, frontier, last, isLoading } = useExerciseLog(
-    isLoggable ? step.exerciseId : undefined,
+    showsLog ? step.exerciseId : undefined,
   );
 
   const stepRef = {
@@ -430,6 +437,24 @@ function WorkStepBody({
   const loggedHere = loggedToday.filter(
     (logged) => logged.setNumber === step.setNumber,
   );
+
+  // The other legs of this set, read back off the step list rather than copied
+  // onto every step: they're already there, keyed by the same setNumber, and
+  // duplicating the array five times per set to save a filter is the wrong
+  // trade.
+  const segmentSequence = step.segment
+    ? steps
+        .filter(
+          (other) =>
+            other.type === "work" &&
+            other.exerciseIndex === step.exerciseIndex &&
+            other.setNumber === step.setNumber &&
+            other.segment !== undefined,
+        )
+        .map((other) =>
+          formatSegment((other as WorkStep).segment!.detail, f),
+        )
+    : [];
 
   const next = steps[session.stepIndex + 1];
   // Rest is its own step, so what follows this set is what tells you how long
@@ -519,6 +544,36 @@ function WorkStepBody({
           part of the card allowed to scroll: a long note on one exercise would
           otherwise push the card past the stage's floor and start the buttons
           moving again, which is the thing this layout exists to stop. */}
+      {/* The whole sequence, with the leg you're on marked. A segmented set is
+          five steps that all say the same exercise name, so without this the
+          card gives you no way to tell "hold, then pulses" from "pulses, then
+          another hold" — and you can't see what's coming. Its own row above the
+          reference block, since it's live state rather than something you read
+          once. */}
+      {step.segment ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-1 text-xs">
+          {segmentSequence.map((label, index) => (
+            <Fragment key={index}>
+              {index > 0 ? (
+                <span className="text-muted-foreground/50">→</span>
+              ) : null}
+              <span
+                className={cn(
+                  "rounded px-1.5 py-0.5 tabular-nums",
+                  index + 1 === step.segment!.index
+                    ? "bg-primary/15 font-medium text-foreground"
+                    : index + 1 < step.segment!.index
+                      ? "text-muted-foreground/60 line-through"
+                      : "text-muted-foreground",
+                )}
+              >
+                {label}
+              </span>
+            </Fragment>
+          ))}
+        </div>
+      ) : null}
+
       {step.alternatives || step.pose || step.notes ? (
         <div className="flex max-h-12 shrink-0 flex-col gap-1 overflow-y-auto text-sm text-muted-foreground">
           {step.alternatives ? <p>{step.alternatives}</p> : null}
@@ -536,7 +591,7 @@ function WorkStepBody({
           slack, which is the point: the floor that keeps the card one size
           otherwise leaves a hole on a set with no notes, and "three sets in at
           60kg" is the thing you actually want to see between sets. */}
-      {isLoggable ? (
+      {showsLog ? (
         <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
           <Eyebrow>{t("player.loggedToday")}</Eyebrow>
           {loggedToday.length === 0 ? (

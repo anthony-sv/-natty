@@ -151,6 +151,17 @@ export const exerciseNames: Record<string, string> = {
   "calf-extension-toes-in": "Máquina de pantorrilla (puntas adentro)",
   "calf-extension-toes-out": "Máquina de pantorrilla (puntas afuera)",
 
+  // Cadera
+  "barbell-hip-thrust": "Empuje de cadera con barra",
+  "machine-hip-thrust": "Empuje de cadera en máquina",
+  "single-leg-hip-thrust": "Empuje de cadera a una pierna",
+  "barbell-glute-bridge": "Puente de glúteo con barra",
+  "cable-glute-kickback": "Patada de glúteo en polea",
+  "machine-hip-abduction": "Máquina de abductores sentado",
+  "cable-hip-abduction": "Abducción de cadera en polea",
+  "banded-hip-abduction": "Abducción de cadera con banda",
+  "machine-hip-adduction": "Máquina de aductores sentado",
+
   // Cardio
   "liss-cardio": "Cardio continuo de baja intensidad",
 };
@@ -198,6 +209,11 @@ export const movementNames: Record<string, string> = {
   "leg-curl": "Curl femoral",
   "romanian-deadlift": "Peso muerto rumano",
   "calf-raise": "Elevación de talones",
+  "hip-thrust": "Empuje de cadera",
+  "glute-bridge": "Puente de glúteo",
+  "glute-kickback": "Patada de glúteo",
+  "hip-abduction": "Abducción de cadera",
+  "hip-adduction": "Aducción de cadera",
   "steady-state-cardio": "Cardio continuo",
 };
 

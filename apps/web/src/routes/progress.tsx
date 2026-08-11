@@ -8,6 +8,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { BodyPanel } from "@/features/body/components/BodyPanel";
+import { LibraryPanel } from "@/features/library/components/LibraryPanel";
 import { RecordsPanel } from "@/features/log/components/RecordsPanel";
 import { HistoryPanel } from "@/features/log/components/HistoryPanel";
 import { VolumePanel } from "@/features/log/components/VolumePanel";
@@ -43,6 +44,7 @@ function ProgressPage() {
           <TabsTrigger value="records">{t("progress.tab.records")}</TabsTrigger>
           <TabsTrigger value="volume">{t("volume.tab")}</TabsTrigger>
           <TabsTrigger value="history">{t("history.tab")}</TabsTrigger>
+          <TabsTrigger value="library">{t("library.tab")}</TabsTrigger>
           <TabsTrigger value="body">{t("progress.tab.body")}</TabsTrigger>
         </TabsList>
         <TabsContent value="records">
@@ -53,6 +55,9 @@ function ProgressPage() {
         </TabsContent>
         <TabsContent value="history">
           {tab === "history" ? <HistoryPanel /> : null}
+        </TabsContent>
+        <TabsContent value="library">
+          {tab === "library" ? <LibraryPanel /> : null}
         </TabsContent>
         <TabsContent value="body">
           {tab === "body" ? <BodyPanel /> : null}

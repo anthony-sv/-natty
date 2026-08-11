@@ -125,9 +125,26 @@ describe("routine coverage", () => {
       .filter((e) => !used.has(e.id))
       .map((e) => e.id)
       .sort();
-    // Reached only as the other half of "Cable cambered bar pushdowns/ straight
-    // bar", i.e. via orAlternatives rather than as an entry's own exerciseId.
-    expect(unused).toEqual(["straight-bar-pushdown"]);
+    // Two deliberate reasons to be here, and neither is an oversight:
+    //
+    // - `straight-bar-pushdown` is reached only as the other half of "Cable
+    //   cambered bar pushdowns/ straight bar", i.e. via orAlternatives rather
+    //   than as an entry's own exerciseId.
+    // - The hip movements are prescribed by no built-in program at all. The
+    //   source docs train glutes and adductors only as a by-product, so these
+    //   exist to be reachable from a routine you write yourself.
+    expect(unused).toEqual([
+      "banded-hip-abduction",
+      "barbell-glute-bridge",
+      "barbell-hip-thrust",
+      "cable-glute-kickback",
+      "cable-hip-abduction",
+      "machine-hip-abduction",
+      "machine-hip-adduction",
+      "machine-hip-thrust",
+      "single-leg-hip-thrust",
+      "straight-bar-pushdown",
+    ]);
   });
 });
 

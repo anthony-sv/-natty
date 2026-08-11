@@ -118,7 +118,12 @@ Or scope to one app: `pnpm --filter web <script>`.
 
 ## Exercise library
 
-`src/data/exercises/` is the canonical list of lifts. Two levels:
+`src/data/exercises/` is the canonical **built-in** list of lifts, and stays
+compiled-in and indexed at import time. It is no longer the whole library — a
+user's own exercises live in a collection and are merged over it; see *Your own
+exercises and routines* below. Nothing outside that feature writes here.
+
+Two levels:
 
 - **Movement** (`movements.ts`) — the identity of a lift (`lat-pulldown`).
   The aggregation key for per-muscle volume, and the rollup shown alongside an
@@ -164,11 +169,45 @@ Render an entry with `exerciseDisplayName()` from
 ### Modifiers and alternatives
 
 `prescriptions[].modifiers` (`setModifiersSchema`) carries the intensity
-techniques: `forcedReps`, `negatives`, `partials`, `staticHolds`, and `ladder`
-(a `string[]` of positions, because one "rep" is several — see the vocabulary
-below). Only techniques the routines actually prescribe are modelled; adding
-to-failure, drop sets, rest-pause or tempo is a field each, when a routine needs
-one.
+techniques: `forcedReps`, `negatives`, `partials`, `staticHolds`, `dropSet`, and
+`ladder` (a `string[]` of positions, because one "rep" is several — see the
+vocabulary below). Only techniques some routine actually prescribes are
+modelled; adding to-failure, rest-pause or tempo is a field each, when one needs
+it. `dropSet` arrived that way, for a user-written routine.
+
+### A set that runs as a sequence
+
+`prescriptions[].segments` (`setSegmentSchema`) is for a set made of *parts* run
+in a fixed order — a 10s hold, then 12 pulses, then 12 reps each ending in a
+pulse, then another hold and more pulses. Three kinds only: `reps` (with an
+optional `pulsePerRep`), `pulses`, and a timed `hold`.
+
+**`modifiers` couldn't express this and neither could `ladder`.** Modifiers say
+*how* a set is run, not what it's made of; `ladder` is a per-rep structure (one
+rep is three partial reps) rather than a per-set one.
+
+A prescription describes its set **either** as `reps`/`durationSeconds` **or**
+as `segments`, never both — enforced by a `.refine`, because carrying both would
+leave the player, the day list and the time estimate to each guess which wins.
+`min(2)`, since a one-segment sequence is a plain prescription written long-hand.
+
+**The ramp needs no new structure**: four sets adding weight while the rep part
+falls 12/10/8/6 is four prescriptions of `sets: 1`.
+
+In the player, **each part is its own `WorkStep`** — not a new step type, since
+a hold is just `durationSeconds`, which is already how cardio gets its
+countdown. The load-bearing rule is that **every part of one set shares its
+`setNumber`**: "set 2 of 4" keeps counting sets, and `StepRef` still matches
+every part to the same logged entries, so provenance needed no migration.
+`isLoggableStep` puts the log control on the **last** part only — offering it on
+all five would read as five chances to log one set. A hold inside a set is the
+one work step that auto-starts (`autoStartSecondsFor`), the exact opposite of
+the cardio case that rule was written for: you're already loaded and in
+position.
+
+`summariseDay` counts sets at the part that *ends* them, and charges
+`WORK_SET_SECONDS` once per set rather than per part — counting steps reported
+three sets as fifteen and multiplied the estimate's only guess by five.
 
 Because a phase covers a run of sets, **"drop set on the last set only" needs no
 new structure** — split the exercise into two phases:
@@ -456,11 +495,15 @@ own bucket and never counts as resistance volume.
 
 **`muscleGaps` separates three reasons**, which is the whole point: `never-direct`
 (no exercise in the library makes it primary), `indirect-only` (you've hit it,
-never on purpose) and `not-trained`. Against the real library `glutes`, `abs`
-and `adductors` come back `never-direct` — worked constantly, never deliberately,
-and no exercise here would fix it. `forearms` does *not*, because
+never on purpose) and `not-trained`. `forearms` is *not* `never-direct`, because
 `ez-bar-reverse-curl` carries a `muscleOverride`: directness is decided at the
 exercise level, not the movement's.
+
+Against the real library only **`abs`** now comes back `never-direct`. It used
+to be `glutes`, `abs` and `adductors` — and the hip movements were added
+*because* of that reading: a card naming a deficiency the app gave you no way to
+fix is a complaint, not a finding. A custom exercise can close the last one, and
+`merged.test.ts` covers exactly that.
 
 Bars are plain HTML, not a chart — a ranked horizontal bar with aligned labels
 needs no axis, and the `dataviz` skill says to build those in HTML. The 10–20
@@ -490,6 +533,84 @@ floating over a tab it doesn't belong to, with a second sheet stacking on it.
 `keepMounted={false}` does **not** fix this: the panel gets `inert` and an
 ending style that never resolves, so it stays mounted and so does its portal.
 Gate on the controlled `value` instead.
+
+## Your own exercises and routines
+
+Six transcribed programs and 113 lifts was a hard ceiling: everything downstream
+is keyed on `exerciseId`, so a lift the library never transcribed was one you
+could not log, PR on, or count.
+
+### Custom exercises (`src/features/library/`)
+
+`userExercises`, a localStorage collection on `natty.exercises.v1`. Ids are
+prefixed **`user:`** — no collision with a kebab-case built-in id, survives a
+built-in of the same name landing later, and makes it obvious in a stored log
+row which sets are against a custom lift.
+
+**A custom exercise names its muscles and pattern directly rather than pointing
+at a movement.** Picking from 42 movements is a worse question than "what does
+it work", and reusing `muscleSchema` and `movementPatternSchema` verbatim is
+exactly what makes volume, the split chart and the gaps card read it with **no
+change to any of them**. What it gives up is the movement rollup — and that's
+right to give up, since a movement is a claim that two variants are the same
+lift and only the curated half has the curation to make it.
+
+`mergeLibrary(userRows)` in `merged.ts` is pure and injected, like `pr.ts` and
+`volume.ts`, so it tests without a collection or React; `useLibrary` is a memo
+over it. **First writer wins on names**, so a custom exercise can never shadow a
+built-in one — letting it would silently repoint an authored routine's lookup.
+
+The derivation layer needed no changes at all. Only the two module-scope
+constants in `features/log/queries.ts` that *built* the anatomy had to move,
+because half the library now arrives at runtime.
+
+**`useExerciseOptions` is shared by every picker.** Getting this wrong is
+invisible: a picker built off `exercises` alone still works, still filters, and
+simply never offers a lift you added.
+
+**Archive, not delete, once anything is logged against it.** Deleting would
+leave those sets showing a raw id in the records table, both charts and the
+heatmap. Archived lifts are hidden from pickers but still resolve and still
+count. A custom exercise with no logged sets deletes outright — it's just a name.
+
+Custom exercises are authored in whatever language you wrote them in and are
+**not** translation targets: `useNames` layers them over the catalog, and
+`i18n.test.ts` neither walks them nor should. The 24 movement patterns *are*
+translated, since you pick one from a list.
+
+### Custom routines (`features/routines/collection.ts`)
+
+`userRoutines` on `natty.routines.v1`. `userRoutineSchema` is `routineSchema`
+verbatim plus two timestamps, so **a user routine *is* a `Routine`** and
+`buildSteps`, `summariseRoutine`, `summariseDay`, the day page, the player and
+the log's provenance all work on it untouched.
+
+**One week, which repeats.** `weeks` was already `.min(1)`.
+
+**Never resolve a routine slug in a route loader.** `routineQueryOptions` used
+to `throw notFound()` there, which 404s every user routine — the compiled-in
+list has never heard of one, and the collection may not have loaded when a
+loader runs. `useRoutine(slug)` returns `isLoading` separately from "not found"
+so the component decides once the answer is knowable. All three routine routes
+lost their loaders for this.
+
+**Slugs carry a random suffix** because a slug is provenance in
+`LoggedSet.routineSlug` — two routines sharing one would merge each other's
+history, and "Push day" is the name one person picks twice. Built-in slugs are
+checked too.
+
+**Built-ins can't be edited in place**; "start from a copy" loads one into the
+same editor. `/routines/$slug/edit` refuses anything that isn't custom.
+
+The builder holds a **draft** (`builder/draft.ts`) and parses with
+`routineSchema` on save, rather than being a TanStack Form. The house rule still
+holds for flat forms with per-field validation — this is a document editor with
+four levels of dynamic arrays where nearly every interaction is structural, and
+the schema is the authority either way. `draft.test.ts` pins the **round trip**:
+loading a routine into the editor and saving it must not quietly rewrite it.
+
+Typing a lift the picker doesn't know offers to create it inline, because that's
+the moment you discover it's missing.
 
 ## Body measurements (`src/features/body/`)
 

@@ -68,6 +68,9 @@ export const SPLIT_FOR_PATTERN: Record<MovementPattern, TrainingSplit> = {
   lunge: "legs",
   "knee-extension": "legs",
   "knee-flexion": "legs",
+  "hip-extension": "legs",
+  "hip-abduction": "legs",
+  "hip-adduction": "legs",
   "calf-raise": "legs",
 
   cardio: "cardio",

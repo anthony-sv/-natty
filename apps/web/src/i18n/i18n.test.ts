@@ -196,6 +196,19 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "nutrition.tab.plan",
       "nutrition.tab.macros",
       "nutrition.tdee",
+      "modifier.dropSet",
+      // Gym loanwords: "pullover" and "curl" are what the movements are called
+      // in Spanish too, and "cardio" is already on this list twice over.
+      "pattern.pullover",
+      "pattern.elbow-flexion",
+      "pattern.cardio",
+      "library.setsLogged.one",
+      "library.setsLogged.other",
+      // "Sets" and "reps" are the words a Mexican gym uses, which is why
+      // `common.reps` and `format.setCount` are already on this list.
+      "builder.sets",
+      "builder.reps",
+      "builder.segmentKind.reps",
       "volume.sets",
       "volume.setsAxis",
       "split.cardio",

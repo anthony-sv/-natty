@@ -4,6 +4,7 @@ import type {
   Prescription,
   Routine,
   SetModifiers,
+  SetSegment,
 } from "@/data/routines";
 import type { Names } from "@/i18n/names";
 import type { Translate } from "@/i18n/use-t";
@@ -72,10 +73,38 @@ export function formatModifiers(
   if (modifiers.negatives) labels.push(t("modifier.negatives"));
   if (modifiers.partials) labels.push(t("modifier.partials"));
   if (modifiers.staticHolds) labels.push(t("modifier.staticHolds"));
+  if (modifiers.dropSet) labels.push(t("modifier.dropSet"));
   if (modifiers.ladder) {
     labels.push(t("modifier.ladder", { positions: modifiers.ladder.join(" → ") }));
   }
   return labels;
+}
+
+/**
+ * One leg of a segmented set: "10s hold", "12 pulses", "12 reps, pulse each".
+ *
+ * Short on purpose — these are read as a list of five, mid-set, so anything
+ * longer stops being scannable at exactly the moment it has to be.
+ */
+export function formatSegment(segment: SetSegment, { t }: Formatting): string {
+  switch (segment.kind) {
+    case "hold":
+      return t("segment.hold", { seconds: segment.seconds });
+    case "pulses":
+      return t("segment.pulses", { count: formatRange(segment.count) });
+    case "reps":
+      return segment.pulsePerRep
+        ? t("segment.repsPulsed", { count: formatRange(segment.count) })
+        : t("format.repsOnly", { range: formatRange(segment.count) });
+  }
+}
+
+/** The whole sequence, joined — "10s hold → 12 pulses → 12 reps, pulse each". */
+export function formatSegments(
+  segments: SetSegment[],
+  f: Formatting,
+): string {
+  return segments.map((segment) => formatSegment(segment, f)).join(" → ");
 }
 
 /** Numbers and a dash, so it needs no translation. */
@@ -103,7 +132,12 @@ export function formatDuration(
 export function formatPrescription(p: Prescription, f: Formatting): string {
   const parts: string[] = [];
 
-  if (p.reps !== undefined) {
+  if (p.segments !== undefined) {
+    // The sets multiplier stays in front, so a four-set sequence still reads as
+    // four of one thing rather than as one long instruction.
+    const sequence = formatSegments(p.segments, f);
+    parts.push(p.sets > 1 ? `${p.sets}× ${sequence}` : sequence);
+  } else if (p.reps !== undefined) {
     parts.push(
       `${p.sets}×${formatRange(p.reps)}${p.perSide ? f.t("format.perSide") : ""}`,
     );

@@ -129,3 +129,46 @@ describe("setsPerExercise", () => {
   });
 });
 
+
+describe("a day with segmented sets", () => {
+  /** Three sets, each running hold → pulses → reps → hold → pulses. */
+  const day: TrainingDay = {
+    dayNumber: 1,
+    label: "Glutes",
+    isRest: false,
+    warmupRefs: [],
+    exercises: [
+      {
+        exerciseId: "machine-hip-abduction",
+        orAlternatives: [],
+        kind: "resistance",
+        isFinisher: false,
+        prescriptions: [
+          {
+            sets: 3,
+            restSeconds: 90,
+            segments: [
+              { kind: "hold", seconds: 10 },
+              { kind: "pulses", count: 12 },
+              { kind: "reps", count: 12, pulsePerRep: true },
+              { kind: "hold", seconds: 10 },
+              { kind: "pulses", count: 12 },
+            ],
+          },
+        ],
+      },
+    ],
+  };
+
+  it("counts sets, not the legs they run in", () => {
+    // The strip said fifteen for three sets before this: it was counting work
+    // steps, and a sequence is five of them.
+    expect(summariseDay(day, F).workingSets).toBe(3);
+  });
+
+  it("charges the per-set guess once per set, plus the real holds", () => {
+    // 3 × (45s guess + two 10s holds) + 2 × 90s rest. The trailing rest is
+    // trimmed by `buildSteps`, which is why it's two and not three.
+    expect(summariseDay(day, F).estimatedSeconds).toBe(3 * 65 + 180);
+  });
+});
