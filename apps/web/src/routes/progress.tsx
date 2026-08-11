@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/tabs";
 import { BodyPanel } from "@/features/body/components/BodyPanel";
 import { RecordsPanel } from "@/features/log/components/RecordsPanel";
+import { VolumePanel } from "@/features/log/components/VolumePanel";
 import { useT } from "@/i18n/use-t";
 
 export const Route = createFileRoute("/progress")({
@@ -27,10 +28,14 @@ function ProgressPage() {
       <Tabs defaultValue="records">
         <TabsList>
           <TabsTrigger value="records">{t("progress.tab.records")}</TabsTrigger>
+          <TabsTrigger value="volume">{t("volume.tab")}</TabsTrigger>
           <TabsTrigger value="body">{t("progress.tab.body")}</TabsTrigger>
         </TabsList>
         <TabsContent value="records">
           <RecordsPanel />
+        </TabsContent>
+        <TabsContent value="volume">
+          <VolumePanel />
         </TabsContent>
         <TabsContent value="body">
           <BodyPanel />

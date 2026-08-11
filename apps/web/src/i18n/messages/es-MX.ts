@@ -100,6 +100,65 @@ export const esMX: Record<keyof typeof en, string> = {
   "index.dest.calculators": "Máximo de una rep, RPE y RIR, y potencial natural.",
   "index.dest.plates": "Qué colgar en cada extremo, con los discos que tiene tu gym.",
 
+  // ── Volume ───────────────────────────────────────────────────────────────
+  "volume.tab": "Volumen",
+  "volume.thisWeek": "Esta semana",
+  "volume.partial": "en curso",
+  "volume.thisWeekBody": "Semana del {week} \u00b7 {sets} sets efectivos hasta ahora.",
+  "volume.noSetsThisWeek": "Todav\u00eda no has registrado nada esta semana.",
+  "volume.direct": "Directo",
+  "volume.indirect": "Indirecto",
+  "volume.setsSuffix": "{total} sets en total",
+  "volume.referenceBand": "{min}\u2013{max} sets, el rango habitual",
+  "volume.split": "Empuje, jal\u00f3n y pierna",
+  "volume.splitBody":
+    "Las \u00faltimas {weeks} semanas: {push} de empuje, {pull} de jal\u00f3n, {legs} de pierna. El cardio se cuenta aparte \u2014 no es volumen de pesas.",
+  "volume.needTwoWeeks": "Dos semanas de registro y aqu\u00ed aparece la tendencia.",
+  "volume.sets": "Sets",
+  "volume.setsAxis": "Sets",
+  "volume.splitAria": "Sets por semana, divididos en empuje, jal\u00f3n y pierna",
+  "volume.gaps": "Sin trabajo directo",
+  "volume.gapsBody": "M\u00fasculos sin sets directos en las \u00faltimas {weeks} semanas.",
+  "volume.gapsNote":
+    "Un set directo es aquel donde el m\u00fasculo es el punto del ejercicio; uno indirecto es donde solo va de pasajero. Los dos nunca se suman \u2014 lo de contar medio set es una convenci\u00f3n, no una medici\u00f3n.",
+  "volume.indirectCount": "\u00b7 {count} indirectos",
+  "volume.reason.indirect-only": "Solo trabajados de forma indirecta",
+  "volume.reasonBody.indirect-only":
+    "Reciben carga en otros ejercicios pero nunca les toca un set propio.",
+  "volume.reason.never-direct": "Ning\u00fan ejercicio de aqu\u00ed los trabaja directo",
+  "volume.reasonBody.never-direct":
+    "Nada en el cat\u00e1logo los tiene como m\u00fasculo principal, as\u00ed que por m\u00e1s que registres no van a salir de esta lista. Agregarles un ejercicio directo es un cambio al cat\u00e1logo, no a tu entrenamiento.",
+  "volume.reason.not-trained": "Sin entrenar en este periodo",
+  "volume.reasonBody.not-trained":
+    "El cat\u00e1logo s\u00ed puede trabajarlos directo \u2014 simplemente no lo has hecho \u00faltimamente.",
+  "volume.empty.title": "Todav\u00eda no hay nada que medir",
+  "volume.empty.body":
+    "Registra algunos sets y aqu\u00ed se desglosan por m\u00fasculo y por empuje, jal\u00f3n y pierna.",
+
+  "split.push": "Empuje",
+  "split.pull": "Jal\u00f3n",
+  "split.legs": "Pierna",
+  "split.cardio": "Cardio",
+
+  "muscle.chest": "Pecho",
+  "muscle.upper-chest": "Pecho superior",
+  "muscle.lats": "Dorsales",
+  "muscle.upper-back": "Espalda alta",
+  "muscle.traps": "Trapecios",
+  "muscle.front-delts": "Deltoides anterior",
+  "muscle.side-delts": "Deltoides lateral",
+  "muscle.rear-delts": "Deltoides posterior",
+  "muscle.biceps": "B\u00edceps",
+  "muscle.triceps": "Tr\u00edceps",
+  "muscle.forearms": "Antebrazos",
+  "muscle.quads": "Cu\u00e1driceps",
+  "muscle.hamstrings": "Femorales",
+  "muscle.glutes": "Gl\u00fateos",
+  "muscle.adductors": "Aductores",
+  "muscle.calves": "Pantorrillas",
+  "muscle.spinal-erectors": "Erectores espinales",
+  "muscle.abs": "Abdominales",
+
   // ── Progress ─────────────────────────────────────────────────────────────
   "progress.title": "Progreso",
   "progress.subtitle": "Lo que has levantado y cómo va tu composición corporal.",

@@ -85,6 +85,29 @@ body {
 }
 
 /*
+ * Push / pull / legs, slots 1–3 of the same palette.
+ *
+ * Deliberately their own tokens rather than reusing `--macro-*`: they happen to
+ * be the same three hexes, but a variable called `--macro-protein` standing for
+ * "push" is the kind of thing that survives one refactor and breaks the next.
+ * Validated all-pairs in both modes, which a stacked bar needs — any two
+ * segments have to be tellable apart, not just adjacent ones. Slot 3 lands at
+ * 2.82:1 on a light card, so the split always carries a legend and its set
+ * counts in text; colour is never the only thing saying which band is which.
+ */
+:root {
+  --split-push: #2a78d6;
+  --split-pull: #eb6834;
+  --split-legs: #1baf7a;
+}
+
+.dark {
+  --split-push: #3987e5;
+  --split-pull: #d95926;
+  --split-legs: #199e70;
+}
+
+/*
  * Macro colours, slots 1–3 of the same palette in the same fixed order.
  *
  * Validated all-pairs in both modes, which a donut needs and an adjacent-only

@@ -97,6 +97,65 @@ export const en = {
   "index.dest.calculators": "One-rep max, RPE and RIR, and natural potential.",
   "index.dest.plates": "What to hang on each end, from the plates your gym has.",
 
+  // ── Volume ───────────────────────────────────────────────────────────────
+  "volume.tab": "Volume",
+  "volume.thisWeek": "This week",
+  "volume.partial": "still running",
+  "volume.thisWeekBody": "Week of {week} · {sets} working sets so far.",
+  "volume.noSetsThisWeek": "Nothing logged this week yet.",
+  "volume.direct": "Direct",
+  "volume.indirect": "Indirect",
+  "volume.setsSuffix": "{total} sets in total",
+  "volume.referenceBand": "{min}\u2013{max} sets, the usual range",
+  "volume.split": "Push, pull and legs",
+  "volume.splitBody":
+    "The last {weeks} weeks: {push} push, {pull} pull, {legs} legs. Cardio is counted elsewhere \u2014 it isn't resistance volume.",
+  "volume.needTwoWeeks": "Two weeks of logging and the trend shows up here.",
+  "volume.sets": "Sets",
+  "volume.setsAxis": "Sets",
+  "volume.splitAria": "Sets per week, split into push, pull and legs",
+  "volume.gaps": "Going without direct work",
+  "volume.gapsBody": "Muscles with no direct sets across the last {weeks} weeks.",
+  "volume.gapsNote":
+    "A direct set is one where the muscle is the point of the exercise; an indirect one is where it came along for the ride. The two are never added together \u2014 the usual half-a-set convention is a convention, not a measurement.",
+  "volume.indirectCount": "\u00b7 {count} indirect",
+  "volume.reason.indirect-only": "Only ever worked indirectly",
+  "volume.reasonBody.indirect-only":
+    "These take load on other lifts but never get a set of their own.",
+  "volume.reason.never-direct": "No exercise here trains these directly",
+  "volume.reasonBody.never-direct":
+    "Nothing in the library lists these as the primary muscle, so no amount of logging will move them out of this list. Adding a direct exercise for them is a change to the exercise library, not to your training.",
+  "volume.reason.not-trained": "Not trained in this window",
+  "volume.reasonBody.not-trained":
+    "The library can train these directly \u2014 you just haven't lately.",
+  "volume.empty.title": "Nothing to measure yet",
+  "volume.empty.body":
+    "Log some sets and this breaks them down by muscle and by push, pull and legs.",
+
+  "split.push": "Push",
+  "split.pull": "Pull",
+  "split.legs": "Legs",
+  "split.cardio": "Cardio",
+
+  "muscle.chest": "Chest",
+  "muscle.upper-chest": "Upper chest",
+  "muscle.lats": "Lats",
+  "muscle.upper-back": "Upper back",
+  "muscle.traps": "Traps",
+  "muscle.front-delts": "Front delts",
+  "muscle.side-delts": "Side delts",
+  "muscle.rear-delts": "Rear delts",
+  "muscle.biceps": "Biceps",
+  "muscle.triceps": "Triceps",
+  "muscle.forearms": "Forearms",
+  "muscle.quads": "Quads",
+  "muscle.hamstrings": "Hamstrings",
+  "muscle.glutes": "Glutes",
+  "muscle.adductors": "Adductors",
+  "muscle.calves": "Calves",
+  "muscle.spinal-erectors": "Spinal erectors",
+  "muscle.abs": "Abs",
+
   // ── Progress ─────────────────────────────────────────────────────────────
   "progress.title": "Progress",
   "progress.subtitle":

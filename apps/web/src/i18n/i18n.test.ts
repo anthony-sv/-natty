@@ -4,6 +4,8 @@ import { poses } from "@/data/poses";
 import { foods } from "@/data/diets/foods";
 import { diets, hydration } from "@/data/diets";
 import { routines } from "@/data/routines";
+import { muscleSchema } from "@/data/exercises";
+import { SPLIT_FOR_PATTERN } from "@/features/log/volume";
 import { BARS } from "@/features/plates/equipment";
 import { ffmiScale } from "@/features/body/ffmi";
 import { CATALOGS } from "./names";
@@ -194,6 +196,9 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "nutrition.tab.plan",
       "nutrition.tab.macros",
       "nutrition.tdee",
+      "volume.sets",
+      "volume.setsAxis",
+      "split.cardio",
     ]);
 
     const unexplained = Object.keys(en).filter(
@@ -216,6 +221,24 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
         placeholders(MESSAGES[locale][key as keyof typeof en]),
     );
     expect(mismatched).toEqual([]);
+  });
+});
+
+describe("closed enums that render as text", () => {
+  // These aren't catalog entries — they're a fixed set the schema owns, so a
+  // new one should fail the build in every language rather than fall back to
+  // English. The check is here anyway, because "the type system covers it" is
+  // exactly what was assumed about the vocabularies that shipped untranslated.
+  it("names every muscle", () => {
+    for (const muscle of muscleSchema.options) {
+      expect(Object.keys(en)).toContain(`muscle.${muscle}`);
+    }
+  });
+
+  it("names every training split", () => {
+    for (const split of new Set(Object.values(SPLIT_FOR_PATTERN))) {
+      expect(Object.keys(en)).toContain(`split.${split}`);
+    }
   });
 });
 
