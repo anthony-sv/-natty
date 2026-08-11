@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { ChevronRightIcon } from "lucide-react";
+import { ChevronRightIcon, PencilLineIcon } from "lucide-react";
 import { Page } from "@/components/page";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -21,7 +21,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { routineQueryOptions } from "@/features/routines/queries";
+import { useRoutine } from "@/features/routines/use-routines";
 import {
   exerciseDisplayName,
   formatDefaultPrescription,
@@ -29,12 +29,9 @@ import {
 import { summariseRoutine } from "@/features/routines/lib/summary";
 import { useFormatting } from "@/i18n/use-formatting";
 import { useT } from "@/i18n/use-t";
-import type { TrainingWeek } from "@/data/routines";
+import type { Routine, TrainingWeek } from "@/data/routines";
 
 export const Route = createFileRoute("/routines/$routineSlug/")({
-  loader: ({ context, params }) =>
-    context.queryClient.ensureQueryData(routineQueryOptions(params.routineSlug)),
-  notFoundComponent: () => <RoutineNotFound />,
   component: RoutineDetail,
 });
 
@@ -56,7 +53,24 @@ function RoutineNotFound() {
 
 function RoutineDetail() {
   const { routineSlug } = Route.useParams();
-  const { data: routine } = useSuspenseQuery(routineQueryOptions(routineSlug));
+  const { routine, isLoading, isCustom } = useRoutine(routineSlug);
+
+  // "Not found" is only true once the collection has answered. Deciding it in a
+  // loader — which is what this used to do — 404s every user routine, because
+  // the compiled-in list has never heard of one.
+  if (isLoading) return null;
+  if (routine === undefined) return <RoutineNotFound />;
+
+  return <RoutineBody routine={routine} isCustom={isCustom} />;
+}
+
+function RoutineBody({
+  routine,
+  isCustom,
+}: {
+  routine: Routine;
+  isCustom: boolean;
+}) {
   const t = useT();
   const f = useFormatting();
   const summary = summariseRoutine(routine, f);
@@ -91,7 +105,26 @@ function RoutineDetail() {
               : ""}
           </p>
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          {isCustom ? (
+            <>
+              <Badge variant="secondary">{t("builder.yours")}</Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={
+                  <Link
+                    to="/routines/$routineSlug/edit"
+                    params={{ routineSlug: routine.slug }}
+                  />
+                }
+              >
+                <PencilLineIcon data-icon="inline-start" />
+                {t("builder.edit")}
+              </Button>
+            </>
+          ) : null}
           {routine.source ? <Badge variant="outline">{routine.source}</Badge> : null}
           {routine.style ? (
             <Badge variant="secondary">{f.names.text(routine.style)}</Badge>
@@ -118,12 +151,12 @@ function RoutineDetail() {
           </TabsList>
           {routine.weeks.map((week) => (
             <TabsContent key={week.weekNumber} value={String(week.weekNumber)}>
-              <WeekDayList routineSlug={routineSlug} week={week} />
+              <WeekDayList routineSlug={routine.slug} week={week} />
             </TabsContent>
           ))}
         </Tabs>
       ) : (
-        <WeekDayList routineSlug={routineSlug} week={routine.weeks[0]} />
+        <WeekDayList routineSlug={routine.slug} week={routine.weeks[0]} />
       )}
     </Page>
   );

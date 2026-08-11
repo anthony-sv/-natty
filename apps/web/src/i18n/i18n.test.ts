@@ -204,6 +204,11 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "pattern.cardio",
       "library.setsLogged.one",
       "library.setsLogged.other",
+      // "Sets" and "reps" are the words a Mexican gym uses, which is why
+      // `common.reps` and `format.setCount` are already on this list.
+      "builder.sets",
+      "builder.reps",
+      "builder.segmentKind.reps",
       "volume.sets",
       "volume.setsAxis",
       "split.cardio",

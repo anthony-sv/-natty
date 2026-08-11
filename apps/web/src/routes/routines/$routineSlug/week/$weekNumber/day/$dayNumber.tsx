@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Page } from "@/components/page";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useStore } from "@tanstack/react-store";
 import { PlayIcon } from "lucide-react";
 import { z } from "zod";
@@ -30,7 +29,7 @@ import { DayExerciseList } from "@/features/routines/components/DayExerciseList"
 import { DaySummaryStrip } from "@/features/routines/components/DaySummaryStrip";
 import { SessionPlayer } from "@/features/routines/components/SessionPlayer";
 import { WarmupBlock } from "@/features/routines/components/WarmupBlock";
-import { routineQueryOptions } from "@/features/routines/queries";
+import { useRoutine } from "@/features/routines/use-routines";
 import { buildSteps } from "@/features/routines/lib/session";
 import {
   isSessionFor,
@@ -39,6 +38,7 @@ import {
 } from "@/features/routines/session-store";
 import { useFormatting } from "@/i18n/use-formatting";
 import { useT } from "@/i18n/use-t";
+import type { Routine, TrainingDay } from "@/data/routines";
 
 const positiveInt = z.coerce.number().int().positive();
 
@@ -57,15 +57,10 @@ export const Route = createFileRoute(
       dayNumber: String(params.dayNumber),
     }),
   },
-  loader: async ({ context, params }) => {
-    const routine = await context.queryClient.ensureQueryData(
-      routineQueryOptions(params.routineSlug),
-    );
-    const week = routine.weeks.find((w) => w.weekNumber === params.weekNumber);
-    const day = week?.days.find((d) => d.dayNumber === params.dayNumber);
-    if (!week || !day) throw notFound();
-  },
-  notFoundComponent: () => <DayNotFound />,
+  // No loader. It used to resolve the routine here and `throw notFound()`,
+  // which 404s every user routine — the compiled-in list has never heard of one
+  // and the collection may not have loaded when a loader runs. The component
+  // decides, once the answer is actually knowable.
   component: DayDetail,
 });
 
@@ -84,10 +79,34 @@ function DayNotFound() {
 
 function DayDetail() {
   const { routineSlug, weekNumber, dayNumber } = Route.useParams();
-  const { data: routine } = useSuspenseQuery(routineQueryOptions(routineSlug));
-  const week = routine.weeks.find((w) => w.weekNumber === weekNumber)!;
-  const day = week.days.find((d) => d.dayNumber === dayNumber)!;
+  const { routine, isLoading } = useRoutine(routineSlug);
 
+  if (isLoading) return null;
+
+  const week = routine?.weeks.find((w) => w.weekNumber === weekNumber);
+  const day = week?.days.find((d) => d.dayNumber === dayNumber);
+  if (routine === undefined || week === undefined || day === undefined) {
+    return <DayNotFound />;
+  }
+
+  return (
+    <DayBody
+      routine={routine}
+      day={day}
+      params={{ routineSlug, weekNumber, dayNumber }}
+    />
+  );
+}
+
+function DayBody({
+  routine,
+  day,
+  params: { routineSlug, weekNumber, dayNumber },
+}: {
+  routine: Routine;
+  day: TrainingDay;
+  params: { routineSlug: string; weekNumber: number; dayNumber: number };
+}) {
   const target = { routineSlug, weekNumber, dayNumber };
   const session = useStore(sessionStore, (s) => s);
   const isActiveHere = isSessionFor(session, target);

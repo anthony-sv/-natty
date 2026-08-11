@@ -35,16 +35,27 @@ export function summariseDay(day: TrainingDay, f: Formatting): DaySummary {
 
   return {
     exercises: day.exercises.length,
-    workingSets: steps.filter((step) => step.type === "work").length,
+    // Sets, not steps. A set that runs as a sequence is several work steps and
+    // still one set — counting steps reported a three-set exercise as fifteen.
+    workingSets: steps.filter(isSetEnd).length,
     finishers: day.exercises.filter((exercise) => exercise.isFinisher).length,
     estimatedSeconds: steps.reduce(secondsForStep, 0),
   };
 }
 
+/** The step that completes a set: an unsegmented one, or a sequence's last leg. */
+function isSetEnd(step: SessionStep): boolean {
+  return step.type === "work" && (step.segment?.isLast ?? true);
+}
+
 function secondsForStep(total: number, step: SessionStep): number {
   if (step.type === "rest" || step.type === "pose") return total + step.seconds;
-  // Cardio and timed holds carry a real duration; everything else is the guess.
-  return total + (step.durationSeconds ?? WORK_SET_SECONDS);
+  // Timed things carry a real duration — cardio blocks and holds inside a set.
+  if (step.durationSeconds !== undefined) return total + step.durationSeconds;
+  // The guess is per *set*, so a sequence's untimed legs don't each charge it
+  // again. Multiplying the one guess in the estimate by five would be a worse
+  // error than under-counting the pulses.
+  return total + (isSetEnd(step) ? WORK_SET_SECONDS : 0);
 }
 
 /** "1h 05m" or "48m" — minutes only, since the estimate isn't finer than that. */
