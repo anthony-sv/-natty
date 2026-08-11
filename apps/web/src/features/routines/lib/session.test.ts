@@ -1,7 +1,14 @@
 ﻿import { describe, expect, it } from "vitest";
 import { getRoutineBySlug, type TrainingDay } from "@/data/routines";
 import { formattingFor } from "@/i18n/test-formatting";
-import { autoStartSecondsFor, buildSteps, countWorkSteps } from "./session";
+import {
+  autoStartSecondsFor,
+  buildSteps,
+  countWorkSteps,
+  describeStep,
+  isLoggableStep,
+  type WorkStep,
+} from "./session";
 
 /** English, so the assertions here read against the source strings. */
 const F = formattingFor();
@@ -106,5 +113,107 @@ describe("auto-start", () => {
     expect(autoStartSecondsFor(rest)).toBe(rest.seconds);
     expect(autoStartSecondsFor(work)).toBeUndefined();
     expect(autoStartSecondsFor(undefined)).toBeUndefined();
+  });
+});
+
+describe("segmented sets", () => {
+  /**
+   * A hold-and-pulse protocol, as people actually write one: the shape of the
+   * set is fixed and only its numbers move, so it's four prescriptions of one
+   * set each — weight going up (which the routine doesn't state, you pick it)
+   * and the rep leg coming down 12 → 10 → 8 → 6.
+   */
+  const REP_LEGS = [12, 10, 8, 6];
+
+  function holdAndPulseDay(): TrainingDay {
+    return {
+      dayNumber: 1,
+      label: "Glutes",
+      isRest: false,
+      warmupRefs: [],
+      exercises: [
+        {
+          exerciseId: "machine-hip-abduction",
+          orAlternatives: [],
+          kind: "resistance",
+          isFinisher: false,
+          prescriptions: REP_LEGS.map((reps) => ({
+            sets: 1,
+            restSeconds: 60,
+            segments: [
+              { kind: "hold" as const, seconds: 10 },
+              { kind: "pulses" as const, count: 12 },
+              { kind: "reps" as const, count: reps, pulsePerRep: true },
+              { kind: "hold" as const, seconds: 10 },
+              { kind: "pulses" as const, count: 12 },
+            ],
+          })),
+        },
+      ],
+    };
+  }
+
+  it("makes each leg of the set its own step", () => {
+    const steps = buildSteps(holdAndPulseDay(), F);
+    const work = steps.filter((s) => s.type === "work");
+    // Four sets of five legs. The rest steps sit between them, and the last
+    // one is trimmed as always.
+    expect(work).toHaveLength(20);
+    expect(steps.filter((s) => s.type === "rest")).toHaveLength(3);
+  });
+
+  it("keeps counting sets, not legs", () => {
+    const steps = buildSteps(holdAndPulseDay(), F);
+    const work = steps.filter((s) => s.type === "work");
+    // This is the assertion the whole design hangs on: five steps share one
+    // setNumber, so "set 2 of 4" stays true through the middle of a set and
+    // `loggedSetsForStep` matches all five legs to the same logged entries.
+    expect(work.map((s) => s.setNumber)).toEqual([
+      1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+    ]);
+    expect(new Set(work.map((s) => s.setsInExercise))).toEqual(new Set([4]));
+  });
+
+  it("offers logging once per set, on the last leg", () => {
+    const steps = buildSteps(holdAndPulseDay(), F);
+    const loggable = steps
+      .map((step, index) => ({ step, index }))
+      .filter(({ step }) => isLoggableStep(step));
+    // One per set, and it's the fifth leg each time — you log what the whole
+    // sequence took, not five entries for one set.
+    expect(loggable).toHaveLength(4);
+    for (const { step } of loggable) {
+      expect(step.type === "work" && step.segment?.index).toBe(5);
+    }
+  });
+
+  it("auto-starts a hold inside a set, unlike other work steps", () => {
+    const steps = buildSteps(holdAndPulseDay(), F);
+    const work = steps.filter((s) => s.type === "work");
+    // Legs 1 and 4 are the holds; you're already loaded and in position, so
+    // making you tap Start is a tap you can't spare mid-set.
+    expect(autoStartSecondsFor(work[0])).toBe(10);
+    expect(autoStartSecondsFor(work[3])).toBe(10);
+    // The pulse and rep legs are counted, not timed.
+    expect(autoStartSecondsFor(work[1])).toBeUndefined();
+    expect(autoStartSecondsFor(work[2])).toBeUndefined();
+  });
+
+  it("carries the rep leg's own count down the ramp", () => {
+    const steps = buildSteps(holdAndPulseDay(), F);
+    const repLegs = steps.filter(
+      (s) => s.type === "work" && s.segment?.detail.kind === "reps",
+    );
+    expect(repLegs.map((s) => s.type === "work" && s.reps)).toEqual(REP_LEGS);
+  });
+
+  it("describes a leg by what it is, not as bare reps", () => {
+    const steps = buildSteps(holdAndPulseDay(), F);
+    const work = steps.filter((s) => s.type === "work");
+    // Pulses and reps are both counts; only the wording separates them, which
+    // is the whole reason a segment describes itself.
+    expect(describeStep(work[0] as WorkStep, F)).toBe("10s hold");
+    expect(describeStep(work[1] as WorkStep, F)).toBe("12 pulses");
+    expect(describeStep(work[2] as WorkStep, F)).toBe("12 reps, pulse each");
   });
 });

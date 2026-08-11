@@ -31,6 +31,8 @@ const repRange = numberOrRange;
 export const setModifiersSchema = z.object({
   /** Assisted reps past failure. */
   forcedReps: z.boolean().optional(),
+  /** Strip weight and keep going, without racking. */
+  dropSet: z.boolean().optional(),
   /** Emphasised or assisted eccentrics. */
   negatives: z.boolean().optional(),
   /** Partial-range reps, typically once full reps fail. */
@@ -62,24 +64,73 @@ export const poseCueSchema = z.object({
 export type PoseCue = z.infer<typeof poseCueSchema>;
 
 /**
+ * One leg of a set that is run as a sequence rather than as plain reps.
+ *
+ * Some protocols make one "set" a fixed run of different things — a hold, then
+ * pulses, then full reps, then another hold. `modifiers` can't express that:
+ * it says *how* a set is run, not what it's made of, and `ladder` is a
+ * per-rep structure (one rep is three partial reps) rather than a per-set one.
+ *
+ * Deliberately only three kinds. Anything else — tempo, rest-pause, cluster —
+ * is a new member here when a routine actually prescribes one, the same rule
+ * `setModifiersSchema` follows.
+ */
+export const setSegmentSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("reps"),
+    count: repRange,
+    /** Each rep ends in a small pulse at the contracted position. */
+    pulsePerRep: z.boolean().optional(),
+  }),
+  /** Short partial reps at the contracted position, counted not timed. */
+  z.object({ kind: z.literal("pulses"), count: repRange }),
+  /** An isometric hold, in seconds — the player gives it a real countdown. */
+  z.object({ kind: z.literal("hold"), seconds: z.number().int().positive() }),
+]);
+export type SetSegment = z.infer<typeof setSegmentSchema>;
+
+/**
  * One prescription for an exercise. Most exercises have exactly one; a
  * ramp/pyramid structure (e.g. 2 sets @ 10-12 reps/90s rest, then 2 more sets
  * @ 8-12 reps/120s rest) is represented as multiple prescriptions in order.
+ *
+ * That also covers a ramp whose *shape* stays fixed while its numbers move —
+ * four sets adding weight and dropping the rep segment each time is four
+ * prescriptions of `sets: 1`, not new structure.
  */
-export const prescriptionSchema = z.object({
-  sets: z.number().int().positive(),
-  /** Omitted for pure-duration items (a stretch hold, a cardio block). */
-  reps: repRange.optional(),
-  /** Stretch hold, cardio duration, dead hang — a duration instead of reps. */
-  durationSeconds: numberOrRange.optional(),
-  restSeconds: z.number().int().nonnegative().optional(),
-  /** Posing/flex hold closing a finisher set. */
-  pose: poseCueSchema.optional(),
-  /** Reps/duration figure is per side (e.g. single-arm rows). */
-  perSide: z.boolean().optional(),
-  /** Intensity techniques for these sets. Absent means straight sets. */
-  modifiers: setModifiersSchema.optional(),
-});
+export const prescriptionSchema = z
+  .object({
+    sets: z.number().int().positive(),
+    /** Omitted for pure-duration items (a stretch hold, a cardio block). */
+    reps: repRange.optional(),
+    /** Stretch hold, cardio duration, dead hang — a duration instead of reps. */
+    durationSeconds: numberOrRange.optional(),
+    /**
+     * The set is a sequence, described leg by leg. Two or more, because a
+     * one-segment sequence is a plain prescription written the long way.
+     */
+    segments: z.array(setSegmentSchema).min(2).optional(),
+    restSeconds: z.number().int().nonnegative().optional(),
+    /** Posing/flex hold closing a finisher set. */
+    pose: poseCueSchema.optional(),
+    /** Reps/duration figure is per side (e.g. single-arm rows). */
+    perSide: z.boolean().optional(),
+    /** Intensity techniques for these sets. Absent means straight sets. */
+    modifiers: setModifiersSchema.optional(),
+  })
+  // A set is described one way or the other. Carrying both would leave every
+  // reader — the player, the day list, the summary estimate — to guess which
+  // one wins, and they'd guess differently.
+  .refine(
+    (p) =>
+      p.segments === undefined ||
+      (p.reps === undefined && p.durationSeconds === undefined),
+    {
+      message:
+        "A prescription describes its set either as reps/duration or as segments, not both",
+      path: ["segments"],
+    },
+  );
 export type Prescription = z.infer<typeof prescriptionSchema>;
 
 export const exerciseEntrySchema = z.object({

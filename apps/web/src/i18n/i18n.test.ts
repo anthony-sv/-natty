@@ -196,6 +196,7 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "nutrition.tab.plan",
       "nutrition.tab.macros",
       "nutrition.tdee",
+      "modifier.dropSet",
       "volume.sets",
       "volume.setsAxis",
       "split.cardio",

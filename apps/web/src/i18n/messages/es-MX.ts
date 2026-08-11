@@ -70,7 +70,16 @@ export const esMX: Record<keyof typeof en, string> = {
   "modifier.negatives": "Negativas",
   "modifier.partials": "Parciales",
   "modifier.staticHolds": "Isométricos",
+  "modifier.dropSet": "Drop set",
   "modifier.ladder": "Escalera: {positions}",
+
+  // ── Sets por partes ──────────────────────────────────────────────────────
+  "segment.hold": "{seconds}s de aguante",
+  "segment.pulses": "{count} pulsos",
+  "segment.repsPulsed": "{count} reps, con pulso cada una",
+  "segment.label": "Parte {index} de {total}",
+  "segment.next": "sigue: {what}",
+  "segment.sequence": "Este set: {sequence}",
 
   // ── Index ────────────────────────────────────────────────────────────────
   "index.title": "!natty",

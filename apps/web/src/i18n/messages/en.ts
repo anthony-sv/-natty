@@ -69,7 +69,16 @@ export const en = {
   "modifier.negatives": "Negatives",
   "modifier.partials": "Partials",
   "modifier.staticHolds": "Static holds",
+  "modifier.dropSet": "Drop set",
   "modifier.ladder": "Ladder: {positions}",
+
+  // ── Segmented sets ───────────────────────────────────────────────────────
+  "segment.hold": "{seconds}s hold",
+  "segment.pulses": "{count} pulses",
+  "segment.repsPulsed": "{count} reps, pulse each",
+  "segment.label": "Part {index} of {total}",
+  "segment.next": "next: {what}",
+  "segment.sequence": "This set: {sequence}",
 
   // ── Index ────────────────────────────────────────────────────────────────
   "index.title": "!natty",

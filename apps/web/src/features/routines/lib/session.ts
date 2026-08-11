@@ -2,6 +2,7 @@ import type {
   ExerciseEntry,
   PoseCue,
   SetModifiers,
+  SetSegment,
   TrainingDay,
 } from "@/data/routines";
 import {
@@ -9,6 +10,7 @@ import {
   formatAlternatives,
   formatDuration,
   formatRange,
+  formatSegment,
   type Formatting,
 } from "./format";
 
@@ -42,6 +44,22 @@ export interface WorkStep {
   modifiers?: SetModifiers;
   /** "or Hack squat" — equally acceptable substitutes, if any. */
   alternatives?: string;
+  /**
+   * This step is one leg of a set that runs as a sequence.
+   *
+   * Present only on segmented sets. Every segment of one set carries the *same*
+   * `setNumber`, so "set 2 of 4" keeps counting sets rather than suddenly
+   * counting segments, and `StepRef` still matches all of a set's segments to
+   * the same logged entries.
+   */
+  segment?: {
+    /** 1-based within the set. */
+    index: number;
+    total: number;
+    detail: SetSegment;
+    /** Only the last leg offers logging — see `buildSteps`. */
+    isLast: boolean;
+  };
 }
 
 /**
@@ -103,9 +121,9 @@ export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
     for (const p of exercise.prescriptions) {
       for (let i = 0; i < p.sets; i++) {
         setNumber++;
-        steps.push({
+
+        const base = {
           type: "work",
-          id: `${exerciseIndex}-${setNumber}-work`,
           exerciseIndex,
           exerciseId: exercise.exerciseId,
           exerciseName: exerciseDisplayName(exercise, f),
@@ -113,17 +131,47 @@ export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
           isFinisher: exercise.isFinisher,
           setNumber,
           setsInExercise,
-          reps: p.reps,
-          durationSeconds:
-            p.durationSeconds === undefined
-              ? undefined
-              : countdownSeconds(p.durationSeconds),
           perSide: p.perSide,
-          pose: p.pose,
           notes: exercise.notes,
           modifiers: p.modifiers,
           alternatives: formatAlternatives(exercise, f),
-        });
+        } as const;
+
+        if (p.segments !== undefined) {
+          // A segmented set becomes one work step per leg. They're work steps
+          // rather than a new type because a hold is already expressible —
+          // `durationSeconds` on a work step is what runs cardio's countdown —
+          // and a new type would mean a new branch in every consumer.
+          p.segments.forEach((detail, segmentIndex) => {
+            const isLast = segmentIndex === p.segments!.length - 1;
+            steps.push({
+              ...base,
+              id: `${exerciseIndex}-${setNumber}-seg${segmentIndex + 1}`,
+              reps: detail.kind === "reps" ? detail.count : undefined,
+              durationSeconds:
+                detail.kind === "hold" ? detail.seconds : undefined,
+              // The pose closes the whole set, not each leg of it.
+              pose: isLast ? p.pose : undefined,
+              segment: {
+                index: segmentIndex + 1,
+                total: p.segments!.length,
+                detail,
+                isLast,
+              },
+            });
+          });
+        } else {
+          steps.push({
+            ...base,
+            id: `${exerciseIndex}-${setNumber}-work`,
+            reps: p.reps,
+            durationSeconds:
+              p.durationSeconds === undefined
+                ? undefined
+                : countdownSeconds(p.durationSeconds),
+            pose: p.pose,
+          });
+        }
 
         // The hold belongs between the set and its rest: you finish the reps,
         // hold the pose, then rest. A pose with no `holdSeconds` is a cue to
@@ -175,6 +223,11 @@ export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
  * "set 1 of 2", so repeating it would read as "1×10-15".
  */
 export function describeStep(step: WorkStep, f: Formatting): string {
+  // A segment describes itself more precisely than "12 reps" would — pulses and
+  // reps are both counts, and only the wording separates them.
+  if (step.segment !== undefined) {
+    return formatSegment(step.segment.detail, f);
+  }
   if (step.reps !== undefined) {
     const range = formatRange(step.reps);
     return step.perSide
@@ -191,9 +244,37 @@ export function describeStep(step: WorkStep, f: Formatting): string {
  * Seconds to auto-start when arriving at `step`, or undefined to wait for an
  * explicit Start. Rest and pose holds begin the moment you tap done — a cardio
  * block doesn't, since you have to get on the machine first.
+ *
+ * A hold *inside* a set is the one work step that auto-starts, and it's the
+ * exact opposite case from cardio: you're already loaded and in position, so
+ * making you tap Start after tapping Done is a tap you can't spare mid-set.
  */
 export function autoStartSecondsFor(step: SessionStep | undefined): number | undefined {
-  return step?.type === "rest" || step?.type === "pose" ? step.seconds : undefined;
+  if (step?.type === "rest" || step?.type === "pose") return step.seconds;
+  if (
+    step?.type === "work" &&
+    step.segment?.detail.kind === "hold" &&
+    step.durationSeconds !== undefined
+  ) {
+    return step.durationSeconds;
+  }
+  return undefined;
+}
+
+/**
+ * Whether this step is where a set gets logged.
+ *
+ * Every leg of a segmented set is a work step, but the set is one thing you
+ * did — offering a log control on all five would read as five separate
+ * opportunities and produce five entries for one set. Log at the end, when you
+ * know what the whole sequence actually took.
+ */
+export function isLoggableStep(step: SessionStep): boolean {
+  return (
+    step.type === "work" &&
+    step.kind !== "cardio" &&
+    (step.segment === undefined || step.segment.isLast)
+  );
 }
 
 /** Total work sets in the day, for a "12 sets" style summary. */

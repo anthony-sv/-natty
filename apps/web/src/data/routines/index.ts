@@ -27,6 +27,7 @@ export type {
   Prescription,
   PoseCue,
   SetModifiers,
+  SetSegment,
 } from "./schema";
 export { warmupSections, getWarmupSection } from "./warmups";
 export type { WarmupSection, WarmupMove } from "./schema";
