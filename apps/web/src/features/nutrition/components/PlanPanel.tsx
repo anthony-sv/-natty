@@ -35,6 +35,7 @@ import {
   type SwapChoices,
 } from "../macros";
 import { MacroSplit } from "./MacroSplit";
+import { BUILT_IN_FOODS } from "../food-source";
 import { MealCard } from "./MealCard";
 
 /** The plan, for whichever day you're looking at. */
@@ -48,7 +49,9 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
   const [day, setDay] = useState<Weekday>(today);
   const [choices, setChoices] = useState<SwapChoices>({});
 
-  const meals = resolveDay(plan, day, choices);
+  // The compiled-in table for now; the pantry merges its own over it.
+  const foods = BUILT_IN_FOODS;
+  const meals = resolveDay(plan, day, foods, choices);
   const macros = dayTotals(meals);
   const kcal = kcalOf(macros);
 
@@ -138,6 +141,7 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
 
       {meals.map((meal) => (
         <MealCard
+          foods={foods}
           key={meal.name}
           meal={meal}
           dayKcal={kcal}

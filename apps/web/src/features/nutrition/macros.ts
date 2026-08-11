@@ -1,4 +1,3 @@
-import { getFood } from "@/data/diets";
 import type {
   DietPlan,
   Food,
@@ -9,9 +8,25 @@ import type {
 } from "@/data/diets";
 
 /**
- * Macro arithmetic, kept free of React and of the plan data so it tests
+ * Macro arithmetic, kept free of React and of the food data so it tests
  * directly — the same split `pr.ts` and `ffmi.ts` follow.
+ *
+ * It used to import `getFood` and reach for the compiled-in table. It can't
+ * any more: foods and recipes you write yourself arrive at runtime, so the
+ * lookup is injected, exactly the way `volume.ts` takes an `ExerciseAnatomy`.
  */
+
+/**
+ * Where a `foodId` resolves.
+ *
+ * **Returns undefined rather than throwing**, unlike `getFood`. A plan that
+ * references a food you since deleted should render with a visible gap, not a
+ * white screen — and the built-in `getFood` still throws where it should, at
+ * authoring time in `data/diets/authoring.ts`.
+ */
+export interface FoodSource {
+  get: (foodId: string) => Food | undefined;
+}
 
 /**
  * Atwater factors. Fat carries more than twice what the other two do, which is
@@ -60,12 +75,17 @@ export function macrosForAmount(food: Food, amount: number): Macros {
   };
 }
 
-export function macrosForItem(item: MealItem): Macros {
-  return macrosForAmount(getFood(item.foodId), item.amount);
+/** Zero for an id nothing resolves, so one missing food can't take a page down. */
+export function macrosForItem(item: MealItem, foods: FoodSource): Macros {
+  const food = foods.get(item.foodId);
+  return food === undefined ? ZERO : macrosForAmount(food, item.amount);
 }
 
-export function totalFor(items: MealItem[]): Macros {
-  return items.reduce((total, item) => addMacros(total, macrosForItem(item)), ZERO);
+export function totalFor(items: MealItem[], foods: FoodSource): Macros {
+  return items.reduce(
+    (total, item) => addMacros(total, macrosForItem(item, foods)),
+    ZERO,
+  );
 }
 
 /**
@@ -107,6 +127,7 @@ export interface ResolvedMeal {
 export function resolveDay(
   plan: DietPlan,
   day: Weekday,
+  foods: FoodSource,
   choices: SwapChoices = {},
 ): ResolvedMeal[] {
   const resolved: ResolvedMeal[] = [];
@@ -120,7 +141,7 @@ export function resolveDay(
       variant.options.length - 1,
     );
     const items = variant.options[optionIndex]!.items;
-    const macros = totalFor(items);
+    const macros = totalFor(items, foods);
     resolved.push({
       name: meal.name,
       note: meal.note,

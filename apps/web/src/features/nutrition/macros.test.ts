@@ -6,6 +6,7 @@ import {
   deficitPerDay,
   kcalOf,
   macrosForAmount,
+  macrosForItem,
   percentSplit,
   proteinPerKg,
   resolveDay,
@@ -14,7 +15,8 @@ import {
   weekdayOf,
   weeklyRateKg,
 } from "./macros";
-import { diets } from "@/data/diets";
+import { diets, getFood } from "@/data/diets";
+import { BUILT_IN_FOODS as FOODS } from "./food-source";
 import type { DietPlan, Food, MealVariant } from "@/data/diets";
 
 const perHundred: Food = {
@@ -78,7 +80,28 @@ describe("totalFor and addMacros", () => {
   });
 
   it("has nothing to add for an empty meal", () => {
-    expect(totalFor([])).toEqual({ protein: 0, fat: 0, carbs: 0 });
+    expect(totalFor([], FOODS)).toEqual({ protein: 0, fat: 0, carbs: 0 });
+  });
+});
+
+describe("an id nothing resolves", () => {
+  // The one behaviour the injection changed. `getFood` threw, which is right
+  // while authoring a built-in plan and wrong at runtime: a plan referencing a
+  // food you since deleted should render with a visible gap rather than taking
+  // the page down.
+  const item = { foodId: "food:deleted", amount: 200 };
+
+  it("contributes zero rather than throwing", () => {
+    expect(() => macrosForItem(item, FOODS)).not.toThrow();
+    expect(macrosForItem(item, FOODS)).toEqual({ protein: 0, fat: 0, carbs: 0 });
+  });
+
+  it("leaves the rest of the meal intact", () => {
+    const total = totalFor(
+      [item, { foodId: "whole-egg", amount: 2 }],
+      FOODS,
+    );
+    expect(total).toEqual(macrosForAmount(getFood("whole-egg"), 2));
   });
 });
 
@@ -176,22 +199,22 @@ describe("resolveDay", () => {
   const plan = diets[0]!;
 
   it("gives one entry per meal that applies", () => {
-    expect(resolveDay(plan, "tue")).toHaveLength(plan.meals.length);
+    expect(resolveDay(plan, "tue", FOODS)).toHaveLength(plan.meals.length);
   });
 
   it("picks the office lunch midweek and the home one at the weekend", () => {
-    const office = resolveDay(plan, "wed").find((meal) => meal.name === "Lunch");
-    const home = resolveDay(plan, "sat").find((meal) => meal.name === "Lunch");
+    const office = resolveDay(plan, "wed", FOODS).find((meal) => meal.name === "Lunch");
+    const home = resolveDay(plan, "sat", FOODS).find((meal) => meal.name === "Lunch");
 
     expect(office?.variant.label).toBe("Office days");
     expect(home?.variant.label).toBe("Home days");
   });
 
   it("applies a swap choice", () => {
-    const [first] = resolveDay(plan, "sat", { Lunch: 0 }).filter(
+    const [first] = resolveDay(plan, "sat", FOODS, { Lunch: 0 }).filter(
       (meal) => meal.name === "Lunch",
     );
-    const [second] = resolveDay(plan, "sat", { Lunch: 2 }).filter(
+    const [second] = resolveDay(plan, "sat", FOODS, { Lunch: 2 }).filter(
       (meal) => meal.name === "Lunch",
     );
 
@@ -200,7 +223,7 @@ describe("resolveDay", () => {
   });
 
   it("clamps a choice that's out of range instead of crashing", () => {
-    const lunch = resolveDay(plan, "sat", { Lunch: 99 }).find(
+    const lunch = resolveDay(plan, "sat", FOODS, { Lunch: 99 }).find(
       (meal) => meal.name === "Lunch",
     );
 
@@ -245,7 +268,7 @@ describe("every plan adds up to what it says it does", () => {
         for (let option = 0; option < optionCount; option++) {
           const label = variant?.options[option]?.label;
           it(`${day}${label ? ` · ${label}` : ""}`, () => {
-            const totals = dayTotals(resolveDay(plan, day, { Lunch: option }));
+            const totals = dayTotals(resolveDay(plan, day, FOODS, { Lunch: option }));
 
             expect(
               Math.abs(totals.protein - plan.targets.protein),
