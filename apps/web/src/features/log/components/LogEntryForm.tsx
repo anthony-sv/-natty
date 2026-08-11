@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { CalendarIcon } from "lucide-react";
 import { z } from "zod";
@@ -32,9 +32,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
-import { exercises } from "@/data/exercises";
-import { matchesAllWords } from "@/lib/search";
-import { useNames, type Names } from "@/i18n/names";
+import {
+  filterExerciseOption,
+  useExerciseOptions,
+  type ExerciseOption,
+} from "@/features/library/use-exercise-options";
 import { useDateFormat, useT, type Translate } from "@/i18n/use-t";
 import { logSet } from "../collection";
 import { formatSet } from "../pr";
@@ -73,53 +75,12 @@ const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
   year: "numeric",
 };
 
-interface ExerciseOption {
-  id: string;
-  name: string;
-  /** Everything this lift answers to, for the filter below. */
-  search: string;
-}
-
-/**
- * Exercise options, sorted by display name so the combobox reads
- * alphabetically.
- *
- * Built per locale rather than at module scope: the names are what you read,
- * and the sort has to follow them — an alphabetical list of English names is
- * not alphabetical in Spanish. `localeCompare` gets the locale for the same
- * reason (ñ sorts after n, not after z).
- *
- * The aliases stay as authored, since they're the spellings you'd type rather
- * than anything shown.
- */
-function buildOptions(names: Names, locale: string): ExerciseOption[] {
-  return [...exercises]
-    .map((e) => ({
-      id: e.id,
-      name: names.exercise(e.id),
-      search: [names.exercise(e.id), e.name, ...e.aliases].join(" "),
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name, locale));
-}
-
-/**
- * The Combobox filters on its label by default, which is the same blind spot
- * the records table had: 113 curated names, and none of the spellings you'd
- * actually type. This searches the aliases too, through the house matcher — so
- * "pec deck", "flat db press" and "bench incline" all land.
- */
-function filterOption(item: ExerciseOption, query: string): boolean {
-  return matchesAllWords(item.search, query);
-}
-
 export function LogEntryForm() {
   const t = useT();
-  const names = useNames();
   const dateFormat = useDateFormat(DATE_OPTIONS);
-  const options = useMemo(
-    () => buildOptions(names, t.locale),
-    [names, t.locale],
-  );
+  // Built-ins and your own, sorted for the reader's locale — see
+  // `useExerciseOptions`, which every picker in the app shares.
+  const options = useExerciseOptions();
   const [justLogged, setJustLogged] = useState<string | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
 
@@ -193,7 +154,7 @@ export function LogEntryForm() {
             <Combobox
               items={options}
               itemToStringLabel={(item: ExerciseOption) => item.name}
-              filter={filterOption}
+              filter={filterExerciseOption}
               value={options.find((o) => o.id === field.state.value) ?? null}
               onValueChange={(item: ExerciseOption | null) =>
                 field.handleChange(item?.id ?? "")

@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { useStore } from "@tanstack/react-store";
+import { useLiveQuery } from "@tanstack/react-db";
 import { getExercise, getMovement } from "@/data/exercises";
+import { userExercises } from "@/features/library/collection";
 import { getPose } from "@/data/poses";
 import { getFood } from "@/data/diets/foods";
 import * as esMX from "./catalog/es-MX";
@@ -113,13 +115,26 @@ export function namesFor(locale: Locale): Names {
 }
 
 /**
- * The same, bound to the active locale.
+ * The same, bound to the active locale, and aware of your own exercises.
  *
- * Memoised on the locale rather than rebuilt each render: several callers put
- * this in a `useMemo` dependency list, and a fresh object every render would
- * rebuild a day's steps whenever anything else on the page changed.
+ * A custom exercise is authored in whatever language you wrote it in and is
+ * **not** a translation target — so it layers over `namesFor` rather than going
+ * through a catalog, and `i18n.test.ts` neither walks it nor should. Without
+ * this every custom lift renders as `user:9f3c…` in the records table, the
+ * heatmap's day sheet and the player.
+ *
+ * Memoised on the locale and the user rows: several callers put this in a
+ * `useMemo` dependency list, and a fresh object every render would rebuild a
+ * day's steps whenever anything else on the page changed.
  */
 export function useNames(): Names {
   const locale = useStore(localeStore, (s) => s);
-  return useMemo(() => namesFor(locale), [locale]);
+  const { data } = useLiveQuery((q) => q.from({ e: userExercises }));
+
+  return useMemo(() => {
+    const base = namesFor(locale);
+    const own = new Map((data ?? []).map((e) => [e.id, e.name]));
+    if (own.size === 0) return base;
+    return { ...base, exercise: (id) => own.get(id) ?? base.exercise(id) };
+  }, [locale, data]);
 }

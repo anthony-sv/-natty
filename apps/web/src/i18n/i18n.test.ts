@@ -197,6 +197,13 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "nutrition.tab.macros",
       "nutrition.tdee",
       "modifier.dropSet",
+      // Gym loanwords: "pullover" and "curl" are what the movements are called
+      // in Spanish too, and "cardio" is already on this list twice over.
+      "pattern.pullover",
+      "pattern.elbow-flexion",
+      "pattern.cardio",
+      "library.setsLogged.one",
+      "library.setsLogged.other",
       "volume.sets",
       "volume.setsAxis",
       "split.cardio",
