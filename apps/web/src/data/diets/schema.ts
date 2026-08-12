@@ -107,18 +107,39 @@ export const supplementSchema = z.object({
 });
 export type Supplement = z.infer<typeof supplementSchema>;
 
+/**
+ * A macro goal, one macro at a time.
+ *
+ * Deliberately **not** `macrosSchema.optional()`, which is all-or-nothing.
+ * "180g of protein and I don't care about the rest" is a real way to eat, and
+ * the validation only checks what you actually stated.
+ */
+export const macroTargetsSchema = z.object({
+  protein: z.number().nonnegative().optional(),
+  fat: z.number().nonnegative().optional(),
+  carbs: z.number().nonnegative().optional(),
+});
+export type MacroTargets = z.infer<typeof macroTargetsSchema>;
+
 export const dietPlanSchema = z.object({
   slug: z.string(),
   name: z.string(),
   goal: z.enum(["cutting", "bulking", "maintenance"]),
-  /** Total daily energy expenditure the plan was written against. */
-  tdeeKcal: z.number().positive(),
-  targetKcal: z.number().positive(),
+  /**
+   * Total daily energy expenditure the plan was written against.
+   *
+   * Optional, like `targetKcal` and every macro target: a plan you write to
+   * record what you eat shouldn't demand two numbers you may not know. The
+   * transcribed plans state all of them; a plan of your own may state none.
+   */
+  tdeeKcal: z.number().positive().optional(),
+  /** Omitted means "whatever the macro targets come to" — see `effectiveTargetKcal`. */
+  targetKcal: z.number().positive().optional(),
   /**
    * The macro split the plan states. Kept alongside the meals so
    * `diets.test.ts` can check the meals actually add up to it.
    */
-  targets: macrosSchema,
+  targets: macroTargetsSchema.default({}),
   meals: z.array(mealSchema).min(1),
   supplements: z.array(supplementSchema).default([]),
   notes: z.array(z.string()).default([]),

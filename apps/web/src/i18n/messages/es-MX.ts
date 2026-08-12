@@ -383,7 +383,10 @@ export const esMX: Record<keyof typeof en, string> = {
   "dietBuilder.goal.bulking": "Volumen",
   "dietBuilder.goal.maintenance": "Mantenimiento",
   "dietBuilder.tdee": "Calor\u00edas de mantenimiento",
-  "dietBuilder.tdeeHint": "Lo que quemas al d\u00eda. La pesta\u00f1a de Calculadoras lo estima.",
+  "dietBuilder.tdeeHint":
+    "Opcional. Lo que quemas al d\u00eda \u2014 si tu peso lleva un par de semanas estable, lo que estabas comiendo es tu mantenimiento. Si no, m\u00e1s o menos 30\u201333 kcal por kg de peso corporal.",
+  "dietBuilder.targetHint":
+    "Opcional. Lo que de verdad vas a comer. D\u00e9jalo en blanco y sale de tus objetivos de macros.",
   "dietBuilder.target": "Objetivo diario",
   "dietBuilder.targets": "Objetivos de macros",
   "dietBuilder.targetsHint":
@@ -830,10 +833,11 @@ export const esMX: Record<keyof typeof en, string> = {
   "nutrition.day": "Día",
   "nutrition.today": "hoy",
   "nutrition.dailyTargets": "Metas diarias",
-  "nutrition.targetsBody":
-    "{protein}g de proteína · {carbs}g de carbohidratos · {fat}g de grasa. El anillo muestra a cuánto suman de verdad las comidas de abajo.",
-  "nutrition.targetsBodyPerKg":
-    "{protein}g de proteína · {carbs}g de carbohidratos · {fat}g de grasa — {perKg}g de proteína por kg según tu último pesaje. El anillo muestra a cuánto suman de verdad las comidas de abajo.",
+  "nutrition.perKg": "{perKg}g de proteína por kg según tu último pesaje",
+  "nutrition.ringNote": "El anillo muestra a cuánto suman de verdad las comidas de abajo.",
+  "nutrition.noTargets":
+    "Este plan no fija una meta. El anillo muestra a cuánto suman las comidas de abajo.",
+  "nutrition.fromMacros": "de tus macros",
   "nutrition.hydrationBody":
     "Una coca sin azúcar cuenta para el total, pero no uno a uno — las alternativas están enlistadas, no calculadas.",
   "nutrition.kcalPerDay": "kcal/día",

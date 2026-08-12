@@ -1,4 +1,4 @@
-import type { DietPlan, Macros, Meal, MealItem } from "@/data/diets";
+import type { DietPlan, MacroTargets, Meal, MealItem } from "@/data/diets";
 
 /**
  * The plan builder's working copy.
@@ -55,9 +55,11 @@ function positive(value: string): number | undefined {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-function nonNegative(value: string): number {
+/** Undefined for a blank field, so "not stated" survives as not stated. */
+function optionalNonNegative(value: string): number | undefined {
+  if (value.trim() === "") return undefined;
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
 }
 
 /**
@@ -73,14 +75,16 @@ export function toDietPlan(
 ): DietPlan | undefined {
   if (draft.name.trim() === "") return undefined;
 
+  // All optional. A plan that just records what you eat shouldn't demand a
+  // maintenance figure you may not know, and blank stays blank rather than
+  // becoming a zero that reads as a stated goal of nothing.
   const tdeeKcal = positive(draft.tdeeKcal);
   const targetKcal = positive(draft.targetKcal);
-  if (tdeeKcal === undefined || targetKcal === undefined) return undefined;
 
-  const targets: Macros = {
-    protein: nonNegative(draft.targets.protein),
-    carbs: nonNegative(draft.targets.carbs),
-    fat: nonNegative(draft.targets.fat),
+  const targets: MacroTargets = {
+    protein: optionalNonNegative(draft.targets.protein),
+    carbs: optionalNonNegative(draft.targets.carbs),
+    fat: optionalNonNegative(draft.targets.fat),
   };
 
   const meals: Meal[] = draft.meals
@@ -131,12 +135,14 @@ export function toDraftPlan(plan: DietPlan): DraftPlan {
   return {
     name: plan.name,
     goal: plan.goal,
-    tdeeKcal: String(plan.tdeeKcal),
-    targetKcal: String(plan.targetKcal),
+    // Blank stays blank on the way back in, so an unstated figure doesn't
+    // become the string "undefined" in the field.
+    tdeeKcal: plan.tdeeKcal !== undefined ? String(plan.tdeeKcal) : "",
+    targetKcal: plan.targetKcal !== undefined ? String(plan.targetKcal) : "",
     targets: {
-      protein: String(plan.targets.protein),
-      carbs: String(plan.targets.carbs),
-      fat: String(plan.targets.fat),
+      protein: plan.targets.protein !== undefined ? String(plan.targets.protein) : "",
+      carbs: plan.targets.carbs !== undefined ? String(plan.targets.carbs) : "",
+      fat: plan.targets.fat !== undefined ? String(plan.targets.fat) : "",
     },
     meals: plan.meals.map((meal) => ({
       name: meal.name,

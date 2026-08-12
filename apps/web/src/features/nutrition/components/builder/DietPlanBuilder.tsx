@@ -149,6 +149,7 @@ export function DietPlanBuilder({
               id="plan-tdee"
               type="number"
               min="1"
+              placeholder={t("common.optional")}
               value={draft.tdeeKcal}
               onChange={(e) => update({ tdeeKcal: e.target.value })}
             />
@@ -160,11 +161,18 @@ export function DietPlanBuilder({
               id="plan-target"
               type="number"
               min="1"
+              placeholder={t("common.optional")}
               value={draft.targetKcal}
               onChange={(e) => update({ targetKcal: e.target.value })}
             />
           </Field>
         </div>
+
+        {/* These were written as `FieldDescription`s and never mounted, which
+            is why the two calorie fields sat on screen with no explanation of
+            where their numbers come from. */}
+        <FieldDescription>{t("dietBuilder.tdeeHint")}</FieldDescription>
+        <FieldDescription>{t("dietBuilder.targetHint")}</FieldDescription>
 
         <Field>
           <FieldLabel>{t("dietBuilder.targets")}</FieldLabel>
@@ -185,6 +193,7 @@ export function DietPlanBuilder({
                   type="number"
                   min="0"
                   className="w-28"
+                  placeholder={t("common.optional")}
                   value={draft.targets[key]}
                   onChange={(e) =>
                     update({ targets: { ...draft.targets, [key]: e.target.value } })

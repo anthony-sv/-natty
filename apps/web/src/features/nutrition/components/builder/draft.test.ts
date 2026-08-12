@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { dietPlanSchema, diets } from "@/data/diets";
 import { BUILT_IN_FOODS } from "../../food-source";
-import { dayTotals, resolveDay } from "../../macros";
+import {
+  dayTotals,
+  deficitPerDay,
+  effectiveTargetKcal,
+  resolveDay,
+  weeklyRateKg,
+} from "../../macros";
 import {
   emptyPlan,
   hasWeekdayVariants,
@@ -48,10 +54,58 @@ describe("producing a plan", () => {
     expect(dietPlanSchema.safeParse(plan).success).toBe(true);
   });
 
-  it("refuses a draft with no name or no calorie numbers", () => {
+  it("needs a name and at least one meal, and nothing else", () => {
     expect(toDietPlan({ ...sampleDraft(), name: "  " }, "s")).toBeUndefined();
-    expect(toDietPlan({ ...sampleDraft(), targetKcal: "" }, "s")).toBeUndefined();
+    // An empty plan has no meals, so there's nothing to describe yet.
     expect(toDietPlan(emptyPlan(), "s")).toBeUndefined();
+  });
+
+  it("accepts a plan that states no calories and no targets", () => {
+    // The point of making these optional: writing down what you eat shouldn't
+    // require inventing a maintenance figure you don't know.
+    const plan = toDietPlan(
+      {
+        ...sampleDraft(),
+        tdeeKcal: "",
+        targetKcal: "",
+        targets: { protein: "", carbs: "", fat: "" },
+      },
+      "s",
+    );
+    expect(dietPlanSchema.safeParse(plan).success).toBe(true);
+    expect(plan!.tdeeKcal).toBeUndefined();
+    expect(plan!.targetKcal).toBeUndefined();
+    expect(plan!.targets).toEqual({});
+    // With nothing stated there is nothing to derive either.
+    expect(effectiveTargetKcal(plan!)).toBeUndefined();
+  });
+
+  it("keeps a partial target, and derives the calories from it", () => {
+    // "180g of protein and I don't care about the rest" is a real goal, which
+    // is why `targets` is per-macro optional rather than all-or-nothing.
+    const plan = toDietPlan(
+      {
+        ...sampleDraft(),
+        targetKcal: "",
+        targets: { protein: "180", carbs: "", fat: "" },
+      },
+      "s",
+    )!;
+    expect(plan.targets).toEqual({ protein: 180 });
+    // 180 × 4, and flagged so the page can say it wasn't typed.
+    expect(effectiveTargetKcal(plan)).toEqual({ kcal: 720, derived: true });
+  });
+
+  it("prefers a stated calorie target over the derived one", () => {
+    const plan = toDietPlan(sampleDraft(), "s")!;
+    expect(effectiveTargetKcal(plan)).toEqual({ kcal: 2200, derived: false });
+  });
+
+  it("has no deficit to report without a maintenance figure", () => {
+    const plan = toDietPlan({ ...sampleDraft(), tdeeKcal: "" }, "s")!;
+    // Zero would be a claim; undefined is what hides the tile.
+    expect(deficitPerDay(plan)).toBeUndefined();
+    expect(weeklyRateKg(plan)).toBeUndefined();
   });
 
   it("writes one variant per meal, applying every day", () => {

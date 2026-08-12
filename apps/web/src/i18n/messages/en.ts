@@ -383,7 +383,10 @@ export const en = {
   "dietBuilder.goal.bulking": "Bulking",
   "dietBuilder.goal.maintenance": "Maintenance",
   "dietBuilder.tdee": "Maintenance calories",
-  "dietBuilder.tdeeHint": "What you burn in a day. The Calculators tab estimates it.",
+  "dietBuilder.tdeeHint":
+    "Optional. What you burn in a day — if your weight has held steady for a couple of weeks, whatever you were eating is your maintenance. Failing that, roughly 30–33 kcal per kg of bodyweight.",
+  "dietBuilder.targetHint":
+    "Optional. What you'll actually eat. Leave it blank and it's worked out from your macro targets.",
   "dietBuilder.target": "Daily target",
   "dietBuilder.targets": "Macro targets",
   "dietBuilder.targetsHint":
@@ -824,10 +827,11 @@ export const en = {
   "nutrition.day": "Day",
   "nutrition.today": "today",
   "nutrition.dailyTargets": "Daily targets",
-  "nutrition.targetsBody":
-    "{protein}g protein · {carbs}g carbs · {fat}g fat. The ring shows what the meals below actually add to.",
-  "nutrition.targetsBodyPerKg":
-    "{protein}g protein · {carbs}g carbs · {fat}g fat — {perKg}g of protein per kg at your last weigh-in. The ring shows what the meals below actually add to.",
+  "nutrition.perKg": "{perKg}g of protein per kg at your last weigh-in",
+  "nutrition.ringNote": "The ring shows what the meals below actually add to.",
+  "nutrition.noTargets":
+    "This plan doesn't state a target. The ring shows what the meals below add to.",
+  "nutrition.fromMacros": "from your macros",
   "nutrition.hydrationBody":
     "A zero-sugar coke counts toward the total, but not one for one — the alternatives are listed rather than calculated.",
   "nutrition.kcalPerDay": "kcal/day",

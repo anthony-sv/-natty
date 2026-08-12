@@ -1,6 +1,7 @@
 import type {
   DietPlan,
   Food,
+  MacroTargets,
   Macros,
   MealItem,
   MealVariant,
@@ -179,9 +180,50 @@ export function percentSplit(macros: Macros): {
   };
 }
 
-/** Positive on a deficit, negative on a surplus. */
-export function deficitPerDay(plan: DietPlan): number {
-  return plan.tdeeKcal - plan.targetKcal;
+/**
+ * The plan's calorie target, stated or implied.
+ *
+ * A plan that gives macro targets has already given a calorie target — 180P,
+ * 200C and 70F *is* 2,150 kcal, and there is no way for the two to disagree if
+ * one is computed from the other. `derived` is carried so the page can say
+ * where the number came from rather than presenting a guess as a statement.
+ *
+ * Undefined when the plan states neither, which is a plan with no goal at all.
+ */
+export function effectiveTargetKcal(
+  plan: DietPlan,
+): { kcal: number; derived: boolean } | undefined {
+  if (plan.targetKcal !== undefined) {
+    return { kcal: plan.targetKcal, derived: false };
+  }
+  const stated = macrosFromTargets(plan.targets);
+  return stated === undefined
+    ? undefined
+    : { kcal: kcalOf(stated), derived: true };
+}
+
+/** The targets as a full `Macros`, or undefined if none were stated at all. */
+export function macrosFromTargets(targets: MacroTargets): Macros | undefined {
+  const { protein, carbs, fat } = targets;
+  if (protein === undefined && carbs === undefined && fat === undefined) {
+    return undefined;
+  }
+  // A macro left blank contributes nothing rather than blocking the sum: the
+  // point is what you *did* state.
+  return { protein: protein ?? 0, carbs: carbs ?? 0, fat: fat ?? 0 };
+}
+
+/**
+ * Positive on a deficit, negative on a surplus.
+ *
+ * Undefined unless the plan has both a maintenance figure and a target, since
+ * a deficit is the gap between them and a missing half makes it unanswerable.
+ * Rendering 0 instead would be a claim; rendering nothing isn't.
+ */
+export function deficitPerDay(plan: DietPlan): number | undefined {
+  const target = effectiveTargetKcal(plan);
+  if (plan.tdeeKcal === undefined || target === undefined) return undefined;
+  return plan.tdeeKcal - target.kcal;
 }
 
 /**
@@ -194,8 +236,9 @@ export function deficitPerDay(plan: DietPlan): number {
  */
 export const KCAL_PER_KG_FAT = 7700;
 
-export function weeklyRateKg(plan: DietPlan): number {
-  return (deficitPerDay(plan) * 7) / KCAL_PER_KG_FAT;
+export function weeklyRateKg(plan: DietPlan): number | undefined {
+  const deficit = deficitPerDay(plan);
+  return deficit === undefined ? undefined : (deficit * 7) / KCAL_PER_KG_FAT;
 }
 
 /** Protein per kilo of body weight, the number that decides if a cut is safe. */

@@ -270,17 +270,27 @@ describe("every plan adds up to what it says it does", () => {
           it(`${day}${label ? ` · ${label}` : ""}`, () => {
             const totals = dayTotals(resolveDay(plan, day, FOODS, { Lunch: option }));
 
+            // Targets are optional on the schema now, because a plan you write
+            // yourself may state none. Every *transcribed* plan states all of
+            // them, and asserting that here is the point: if one ever stopped,
+            // the checks below would silently pass against undefined.
+            const { protein, carbs, fat } = plan.targets;
+            expect(protein).toBeDefined();
+            expect(carbs).toBeDefined();
+            expect(fat).toBeDefined();
+            expect(plan.targetKcal).toBeDefined();
+
+            expect(Math.abs(totals.protein - protein!)).toBeLessThanOrEqual(
+              GRAM_TOLERANCE,
+            );
+            expect(Math.abs(totals.carbs - carbs!)).toBeLessThanOrEqual(
+              GRAM_TOLERANCE,
+            );
+            expect(Math.abs(totals.fat - fat!)).toBeLessThanOrEqual(
+              GRAM_TOLERANCE,
+            );
             expect(
-              Math.abs(totals.protein - plan.targets.protein),
-            ).toBeLessThanOrEqual(GRAM_TOLERANCE);
-            expect(
-              Math.abs(totals.carbs - plan.targets.carbs),
-            ).toBeLessThanOrEqual(GRAM_TOLERANCE);
-            expect(
-              Math.abs(totals.fat - plan.targets.fat),
-            ).toBeLessThanOrEqual(GRAM_TOLERANCE);
-            expect(
-              Math.abs(kcalOf(totals) - plan.targetKcal),
+              Math.abs(kcalOf(totals) - plan.targetKcal!),
             ).toBeLessThanOrEqual(KCAL_TOLERANCE);
           });
         }

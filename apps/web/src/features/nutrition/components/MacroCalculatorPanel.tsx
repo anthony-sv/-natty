@@ -10,7 +10,15 @@ import {
 } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import type { DietPlan } from "@/data/diets";
-import { KCAL_PER_GRAM, KCAL_PER_GRAM_FIBRE, kcalOf, percentSplit } from "../macros";
+import {
+  KCAL_PER_GRAM,
+  KCAL_PER_GRAM_FIBRE,
+  ZERO,
+  effectiveTargetKcal,
+  kcalOf,
+  macrosFromTargets,
+  percentSplit,
+} from "../macros";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 import { MacroSplit } from "./MacroSplit";
@@ -35,19 +43,24 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
   const t = useT();
   const names = useNames();
   const planName = names.dietPlan(plan.slug, plan.name);
-  const [macros, setMacros] = useState({
-    protein: plan.targets.protein,
-    carbs: plan.targets.carbs,
-    fat: plan.targets.fat,
-  });
+
+  // The plan's targets as a full `Macros`, since the sliders need a number for
+  // each. A plan that states none opens at zero — the point of this tab is to
+  // build a split, and zero is the honest place to start from.
+  const seed = macrosFromTargets(plan.targets) ?? ZERO;
+  const [macros, setMacros] = useState(seed);
   const [fibre, setFibre] = useState(25);
 
   const total = kcalOf(macros);
   const split = percentSplit(macros);
   const isPlan =
-    macros.protein === plan.targets.protein &&
-    macros.carbs === plan.targets.carbs &&
-    macros.fat === plan.targets.fat;
+    macros.protein === seed.protein &&
+    macros.carbs === seed.carbs &&
+    macros.fat === seed.fat;
+
+  // Stated or implied by the macro targets; undefined for a plan with no goal,
+  // which is what hides the comparison below rather than comparing against 0.
+  const target = effectiveTargetKcal(plan);
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,13 +79,7 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  setMacros({
-                    protein: plan.targets.protein,
-                    carbs: plan.targets.carbs,
-                    fat: plan.targets.fat,
-                  })
-                }
+                onClick={() => setMacros(seed)}
               >
                 <RotateCcwIcon data-icon="inline-start" />{" "}
                 {t("nutrition.resetToPlan")}
@@ -165,23 +172,25 @@ export function MacroCalculatorPanel({ plan }: { plan: DietPlan }) {
               kcal: Math.round(total).toLocaleString(t.locale),
             })}
           </CardTitle>
-          <CardDescription>
-            {total > plan.targetKcal
-              ? t("nutrition.above", {
-                  kcal: Math.round(total - plan.targetKcal).toLocaleString(
-                    t.locale,
-                  ),
-                  plan: planName,
-                })
-              : total < plan.targetKcal
-                ? t("nutrition.below", {
-                    kcal: Math.round(plan.targetKcal - total).toLocaleString(
-                      t.locale,
-                    ),
+          {/* Only when there's something to compare against. A plan with no
+              goal would otherwise read as "1,240 kcal above" a target of zero. */}
+          {target ? (
+            <CardDescription>
+              {total > target.kcal
+                ? t("nutrition.above", {
+                    kcal: Math.round(total - target.kcal).toLocaleString(t.locale),
                     plan: planName,
                   })
-                : t("nutrition.exactly", { plan: planName })}
-          </CardDescription>
+                : total < target.kcal
+                  ? t("nutrition.below", {
+                      kcal: Math.round(target.kcal - total).toLocaleString(
+                        t.locale,
+                      ),
+                      plan: planName,
+                    })
+                  : t("nutrition.exactly", { plan: planName })}
+            </CardDescription>
+          ) : null}
         </CardHeader>
         <CardContent>
           <MacroSplit macros={macros} />

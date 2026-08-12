@@ -14,9 +14,11 @@ export {
   dietPlanSchema,
   foodSchema,
   foodStateSchema,
+  macroTargetsSchema,
   macrosSchema,
   mealItemSchema,
 } from "./schema";
+export type { MacroTargets } from "./schema";
 export { hydration } from "./hydration";
 export type {
   DietPlan,
