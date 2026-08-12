@@ -63,8 +63,23 @@ export interface DraftPhase {
    * `prescriptionSchema`'s own either/or. Without it the builder could only
    * write reps, so writing a twenty-minute cardio block came out as "3 sets of
    * 8-12 reps" of walking.
+   *
+   * **In `durationUnit`, not in seconds**, because it's what you typed and the
+   * house rule is that draft numbers stay as typed — converting on every
+   * keystroke turns a half-entered "7." into 7 and fights you. The model gets
+   * seconds; `toPrescription` does the multiplication once, on save.
    */
-  durationSeconds?: string;
+  duration?: string;
+  /**
+   * Which unit `duration` is in.
+   *
+   * Both are needed and neither wins: a twenty-minute steady-state block in
+   * seconds is 1200, and a thirty-second HIIT interval in minutes is 0.5.
+   * Whichever you force, half the cardio anyone writes reads badly.
+   */
+  durationUnit: "s" | "min";
+  /** Easy, moderate or hard — the other half of a cardio prescription. */
+  intensity: "" | "low" | "moderate" | "high";
   /** Ramp-up sets: not logged, not counted as working sets. */
   isWarmup: boolean;
   /** Present means the set runs as a sequence; `reps` is ignored then. */
@@ -94,6 +109,8 @@ export function emptyPhase(): DraftPhase {
     repsFrom: "8",
     repsTo: "12",
     restSeconds: "90",
+    durationUnit: "min",
+    intensity: "",
     isWarmup: false,
     modifiers: {
       forcedReps: false,
@@ -151,6 +168,9 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
   // Written only when true, so a routine that prescribes no warmups round-trips
   // to exactly what it was — `draft.test.ts` pins that.
   const warmup = phase.isWarmup ? { isWarmup: true } : undefined;
+  // Same rule: "" means you didn't say, which is different from "moderate".
+  const intensity =
+    phase.intensity === "" ? undefined : { intensity: phase.intensity };
 
   if (phase.segments !== undefined) {
     const segments = phase.segments
@@ -166,10 +186,24 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
   // Timed and repped are exclusive, the same either/or `prescriptionSchema`
   // enforces — carrying both would leave the player, the day list and the
   // estimate each guessing which one wins.
-  if (phase.durationSeconds !== undefined) {
-    const durationSeconds = num(phase.durationSeconds);
-    if (durationSeconds === undefined) return undefined;
-    return { sets, durationSeconds, restSeconds, ...withModifiers, ...warmup };
+  if (phase.duration !== undefined) {
+    // Minutes are converted here and only here: the draft keeps what you
+    // typed, the model keeps seconds. Rounded because 7.5 minutes is 450
+    // seconds and 7.51 shouldn't be 450.6.
+    const typed = Number(phase.duration);
+    if (!Number.isFinite(typed) || typed <= 0) return undefined;
+    const durationSeconds = Math.round(
+      phase.durationUnit === "min" ? typed * 60 : typed,
+    );
+    if (durationSeconds <= 0) return undefined;
+    return {
+      sets,
+      durationSeconds,
+      restSeconds,
+      ...intensity,
+      ...withModifiers,
+      ...warmup,
+    };
   }
 
   const from = num(phase.repsFrom);
@@ -250,6 +284,23 @@ export function toRoutine(
   };
 }
 
+/**
+ * Read a stored duration back into the editor in the unit it reads best in.
+ *
+ * Whole minutes come back as minutes — a 1200-second block is "20 min", not
+ * "1200 s" — and anything else stays in seconds, so a 45-second stretch hold
+ * doesn't become "0.75 min". A phase with no duration gets neither field,
+ * which is what marks it as repped rather than timed.
+ */
+function durationFields(
+  seconds: number | undefined,
+): { duration?: string; durationUnit: DraftPhase["durationUnit"] } {
+  if (seconds === undefined) return { durationUnit: "min" };
+  return seconds >= 60 && seconds % 60 === 0
+    ? { duration: String(seconds / 60), durationUnit: "min" }
+    : { duration: String(seconds), durationUnit: "s" };
+}
+
 /** Load an existing routine back into the editor, including a built-in to copy. */
 export function toDraft(routine: Routine): DraftRoutine {
   return {
@@ -275,14 +326,14 @@ export function toDraft(routine: Routine): DraftRoutine {
           // A range is authored for some cardio blocks ("20-30 min"); the
           // editor takes one number, so the upper bound stands for it — the
           // same choice `countdownSeconds` makes when running one.
-          durationSeconds:
+          ...durationFields(
             p.durationSeconds === undefined
               ? undefined
-              : String(
-                  Array.isArray(p.durationSeconds)
-                    ? p.durationSeconds[1]
-                    : p.durationSeconds,
-                ),
+              : Array.isArray(p.durationSeconds)
+                ? p.durationSeconds[1]
+                : p.durationSeconds,
+          ),
+          intensity: p.intensity ?? "",
           restSeconds: p.restSeconds !== undefined ? String(p.restSeconds) : "",
           segments: p.segments?.map((segment) => ({
             kind: segment.kind,

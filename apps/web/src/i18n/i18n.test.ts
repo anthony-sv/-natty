@@ -218,8 +218,8 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "history.setsOnDay.other",
       // Two placeholders and a bracket — there is nothing in it to translate.
       "measure.siteSide",
-      // A placeholder, an approximation sign and "min", which is "min" in both.
-      "builder.durationHint",
+      // The unit abbreviation, which is "min" in Spanish too.
+      "builder.minutes",
     ]);
 
     const unexplained = Object.keys(en).filter(

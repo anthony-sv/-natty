@@ -466,12 +466,17 @@ function ExerciseEditor({
       {/* Substitutes, in your own order of preference. Ids rather than free
           text, because the player offers them as a swap and logs against
           whichever you actually did — a substitute you can't log against is a
-          note to yourself. */}
-      <AlternativesEditor
-        exerciseId={exercise.exerciseId}
-        value={exercise.orAlternatives}
-        onChange={(orAlternatives) => onChange({ orAlternatives })}
-      />
+          note to yourself.
+
+          Not offered for cardio: the library holds one conditioning entry, so
+          the picker would open on a list with nothing in it. */}
+      {exercise.kind === "cardio" ? null : (
+        <AlternativesEditor
+          exerciseId={exercise.exerciseId}
+          value={exercise.orAlternatives}
+          onChange={(orAlternatives) => onChange({ orAlternatives })}
+        />
+      )}
 
       <PhaseEditor
         phases={exercise.phases}
@@ -494,9 +499,17 @@ function ExerciseEditor({
  */
 function timed(phases: DraftPhase[]): DraftPhase[] {
   return phases.map((phase) =>
-    phase.durationSeconds !== undefined
+    phase.duration !== undefined
       ? phase
-      : { ...phase, durationSeconds: "1200", segments: undefined },
+      : {
+          ...phase,
+          duration: "20",
+          durationUnit: "min",
+          segments: undefined,
+          // One block, not three. A cardio phase is "twenty minutes", and the
+          // resistance default of three sets turned that into an hour of it.
+          sets: "1",
+        },
   );
 }
 

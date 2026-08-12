@@ -38,6 +38,13 @@ export function PrescriptionBadges({
           >
             {formatPrescription(p, f)}
           </Badge>
+          {/* Half the prescription on a cardio block — twenty easy minutes
+              and twenty hard ones are different sessions. */}
+          {p.intensity ? (
+            <Badge variant="outline">
+              {t(`intensity.${p.intensity}` as never)}
+            </Badge>
+          ) : null}
           {p.modifiers
             ? formatModifiers(p.modifiers, f).map((label) => (
                 <Badge key={label} variant="destructive">

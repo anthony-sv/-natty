@@ -179,7 +179,9 @@ describe("producing a routine", () => {
         orAlternatives: [],
         kind: "cardio",
         isFinisher: false,
-        phases: [{ ...emptyPhase(), sets: "1", durationSeconds: "1200" }],
+        phases: [
+          { ...emptyPhase(), sets: "1", duration: "20", durationUnit: "min" },
+        ],
       },
     ];
 
@@ -190,7 +192,12 @@ describe("producing a routine", () => {
     expect(p.reps).toBeUndefined();
   });
 
-  it("reads a timed phase back into the editor", () => {
+  /**
+   * Both units have to work: a 20-minute steady block in seconds is 1200, and
+   * a 30-second HIIT interval in minutes is 0.5. Whichever you force, half the
+   * cardio anyone writes reads badly.
+   */
+  it("takes seconds when that's the unit you picked", () => {
     const draft = emptyDraft();
     draft.name = "x";
     draft.days[0].exercises = [
@@ -199,13 +206,106 @@ describe("producing a routine", () => {
         orAlternatives: [],
         kind: "cardio",
         isFinisher: false,
-        phases: [{ ...emptyPhase(), sets: "1", durationSeconds: "900" }],
+        phases: [
+          { ...emptyPhase(), sets: "8", duration: "30", durationUnit: "s" },
+        ],
       },
     ];
 
-    const routine = toRoutine(draft, "s")!;
-    const back = toDraft(routine);
-    expect(back.days[0].exercises[0].phases[0].durationSeconds).toBe("900");
+    const p = toRoutine(draft, "s")!.weeks[0].days[0].exercises[0].prescriptions[0];
+    expect(p.durationSeconds).toBe(30);
+    expect(p.sets).toBe(8);
+  });
+
+  it("rounds a fractional minute to whole seconds", () => {
+    const draft = emptyDraft();
+    draft.name = "x";
+    draft.days[0].exercises = [
+      {
+        exerciseId: "barbell-hip-thrust",
+        orAlternatives: [],
+        kind: "cardio",
+        isFinisher: false,
+        phases: [
+          { ...emptyPhase(), sets: "1", duration: "7.5", durationUnit: "min" },
+        ],
+      },
+    ];
+
+    expect(
+      toRoutine(draft, "s")!.weeks[0].days[0].exercises[0].prescriptions[0]
+        .durationSeconds,
+    ).toBe(450);
+  });
+
+  /**
+   * Whole minutes come back as minutes, anything else as seconds — so a
+   * 45-second stretch hold doesn't reload as "0.75 min".
+   */
+  it("reads a duration back in the unit it reads best in", () => {
+    const build = (seconds: number) => ({
+      dayNumber: 1,
+      label: "d",
+      isRest: false,
+      warmupRefs: [],
+      exercises: [
+        {
+          exerciseId: "barbell-hip-thrust",
+          orAlternatives: [],
+          kind: "cardio" as const,
+          isFinisher: false,
+          prescriptions: [{ sets: 1, durationSeconds: seconds }],
+        },
+      ],
+    });
+
+    const asMinutes = toDraft({
+      slug: "s",
+      name: "n",
+      weeks: [{ weekNumber: 1, days: [build(1200)] }],
+    });
+    const asSeconds = toDraft({
+      slug: "s",
+      name: "n",
+      weeks: [{ weekNumber: 1, days: [build(45)] }],
+    });
+
+    const phase = (d: DraftRoutine) => d.days[0].exercises[0].phases[0];
+    expect(phase(asMinutes).duration).toBe("20");
+    expect(phase(asMinutes).durationUnit).toBe("min");
+    expect(phase(asSeconds).duration).toBe("45");
+    expect(phase(asSeconds).durationUnit).toBe("s");
+  });
+
+  it("carries the intensity, and says nothing when you didn't", () => {
+    const withIntensity = emptyDraft();
+    withIntensity.name = "x";
+    withIntensity.days[0].exercises = [
+      {
+        exerciseId: "barbell-hip-thrust",
+        orAlternatives: [],
+        kind: "cardio",
+        isFinisher: false,
+        phases: [
+          {
+            ...emptyPhase(),
+            sets: "1",
+            duration: "20",
+            durationUnit: "min",
+            intensity: "low",
+          },
+        ],
+      },
+    ];
+
+    const p = (draft: DraftRoutine) =>
+      toRoutine(draft, "s")!.weeks[0].days[0].exercises[0].prescriptions[0];
+    expect(p(withIntensity).intensity).toBe("low");
+
+    const blank = structuredClone(withIntensity);
+    blank.days[0].exercises[0].phases[0].intensity = "";
+    // "" means you didn't say, which is different from "moderate".
+    expect(p(blank).intensity).toBeUndefined();
   });
 
   it("carries the substitutes you picked", () => {

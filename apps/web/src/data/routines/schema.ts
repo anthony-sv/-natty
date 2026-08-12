@@ -115,6 +115,21 @@ export const prescriptionSchema = z
     /** Stretch hold, cardio duration, dead hang — a duration instead of reps. */
     durationSeconds: numberOrRange.optional(),
     /**
+     * How hard to go, for the work where that's the prescription rather than a
+     * load or a rep count.
+     *
+     * Cardio's whole dose is time × effort: twenty easy minutes and twenty
+     * hard ones are different sessions, and nothing else here could say which
+     * one was meant. `setModifiersSchema` is the wrong home — those are
+     * lifting techniques (forced reps, a drop set), and none of them mean
+     * anything on a bike.
+     *
+     * Three steps, not a percentage of max heart rate or a watt figure:
+     * nobody writing a program types those, and a scale you'd have to look up
+     * is a scale you'd leave blank.
+     */
+    intensity: z.enum(["low", "moderate", "high"]).optional(),
+    /**
      * The set is a sequence, described leg by leg. Two or more, because a
      * one-segment sequence is a plain prescription written the long way.
      */

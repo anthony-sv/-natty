@@ -262,8 +262,16 @@ export const en = {
   "builder.removeAlternative": "Remove {name}",
   "builder.cardioHint":
     "Cardio is a duration, not reps. Add a second block for intervals — four rounds of three minutes is four sets, or two blocks at different lengths.",
-  "builder.duration": "How long (s)",
-  "builder.durationHint": "≈ {minutes} min",
+  // No unit in the label — the picker beside the box carries it now.
+  "builder.duration": "How long",
+  "builder.durationUnit": "Minutes or seconds",
+  "builder.minutes": "min",
+  "builder.seconds": "sec",
+  "builder.intensity": "How hard",
+  "builder.intensity.none": "Not stated",
+  "intensity.low": "Easy",
+  "intensity.moderate": "Moderate",
+  "intensity.high": "Hard",
   "builder.setStyle.timed": "Timed",
   "builder.sets": "Sets",
   "builder.reps": "Reps",

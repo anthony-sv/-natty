@@ -528,6 +528,7 @@ function WorkStepBody({
         step.isWarmup ||
         step.isFinisher ||
         step.kind === "cardio" ||
+        step.intensity ||
         step.modifiers ? (
           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
             {/* So a glance at the card says you're off-plan today, and which
@@ -545,6 +546,13 @@ function WorkStepBody({
             {step.isFinisher ? <Badge>{t("common.finisher")}</Badge> : null}
             {step.kind === "cardio" ? (
               <Badge variant="outline">{t("common.cardio")}</Badge>
+            ) : null}
+            {/* On the card because it's what you act on: the clock says how
+                long, this says how hard. */}
+            {step.intensity ? (
+              <Badge variant="secondary">
+                {t(`intensity.${step.intensity}` as never)}
+              </Badge>
             ) : null}
             {step.modifiers
               ? formatModifiers(step.modifiers, f).map((label) => (

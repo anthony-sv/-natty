@@ -53,6 +53,8 @@ export interface WorkStep {
   notes?: string;
   /** Intensity techniques for this set, from its own prescription phase. */
   modifiers?: SetModifiers;
+  /** How hard to go, on the work that prescribes effort rather than load. */
+  intensity?: "low" | "moderate" | "high";
   /** "or Hack squat" — equally acceptable substitutes, rendered for reading. */
   alternatives?: string;
   /**
@@ -159,6 +161,7 @@ export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
           perSide: p.perSide,
           notes: exercise.notes,
           modifiers: p.modifiers,
+          intensity: p.intensity,
           alternatives: formatAlternatives(exercise, f),
           alternativeIds: exercise.orAlternatives,
         } as const;

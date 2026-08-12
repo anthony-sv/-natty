@@ -57,11 +57,23 @@ export function PhaseEditor({
     { value: "segments", label: t("builder.setStyle.segments") },
   ];
 
+  const units = [
+    { value: "min", label: t("builder.minutes") },
+    { value: "s", label: t("builder.seconds") },
+  ];
+
+  const intensities = [
+    { value: "", label: t("builder.intensity.none") },
+    { value: "low", label: t("intensity.low") },
+    { value: "moderate", label: t("intensity.moderate") },
+    { value: "high", label: t("intensity.high") },
+  ];
+
   /** Which of the three shapes a phase is currently in. */
   const styleOf = (phase: DraftPhase) =>
     phase.segments !== undefined
       ? "segments"
-      : phase.durationSeconds !== undefined
+      : phase.duration !== undefined
         ? "timed"
         : "plain";
 
@@ -109,7 +121,8 @@ export function PhaseEditor({
                         : undefined,
                     // Twenty minutes: the length of a cardio block someone is
                     // most likely writing when they reach for this.
-                    durationSeconds: value === "timed" ? "1200" : undefined,
+                    duration: value === "timed" ? "20" : undefined,
+                    durationUnit: "min",
                   })
                 }
               >
@@ -126,30 +139,74 @@ export function PhaseEditor({
               </Select>
             </div>
 
-            {phase.durationSeconds !== undefined ? (
+            {phase.duration !== undefined ? (
               <div className="flex flex-col gap-1">
                 <Label className="text-xs">{t("builder.duration")}</Label>
                 <div className="flex items-center gap-1">
                   <Input
                     type="number"
-                    min="1"
-                    className="w-24"
-                    value={phase.durationSeconds}
-                    onChange={(e) =>
-                      update(index, { durationSeconds: e.target.value })
-                    }
+                    min="0"
+                    step={phase.durationUnit === "min" ? "0.5" : "5"}
+                    className="w-20"
+                    value={phase.duration}
+                    onChange={(e) => update(index, { duration: e.target.value })}
                   />
-                  {/* In seconds, because that's what the model stores and what
-                      the player counts down — but a 20-minute block is 1200 of
-                      them, so the minutes are spelled out beside it. */}
-                  <span className="text-xs text-muted-foreground">
-                    {t("builder.durationHint", {
-                      minutes: (Number(phase.durationSeconds) / 60).toFixed(
-                        Number(phase.durationSeconds) % 60 === 0 ? 0 : 1,
-                      ),
-                    })}
-                  </span>
+                  {/* Both units, because a 20-minute steady block and a
+                      30-second HIIT interval are both cardio and neither reads
+                      sanely in the other's unit. */}
+                  <Select
+                    items={units}
+                    value={phase.durationUnit}
+                    onValueChange={(value) =>
+                      update(index, {
+                        durationUnit: value as DraftPhase["durationUnit"],
+                      })
+                    }
+                  >
+                    <SelectTrigger
+                      aria-label={t("builder.durationUnit")}
+                      className="w-20 shrink-0"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {units.map((unit) => (
+                        <SelectItem key={unit.value} value={unit.value}>
+                          {unit.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
+              </div>
+            ) : null}
+
+            {/* Cardio's other half: twenty easy minutes and twenty hard ones
+                are different sessions, and nothing else on this form could say
+                which was meant. */}
+            {isCardio ? (
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">{t("builder.intensity")}</Label>
+                <Select
+                  items={intensities}
+                  value={phase.intensity}
+                  onValueChange={(value) =>
+                    update(index, {
+                      intensity: value as DraftPhase["intensity"],
+                    })
+                  }
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {intensities.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             ) : null}
 
@@ -287,7 +344,17 @@ export function PhaseEditor({
           variant="outline"
           size="sm"
           className="self-start"
-          onClick={() => onChange([...phases, emptyPhase()])}
+          // A second cardio block is an interval, so it starts timed. A repped
+          // one would render with its duration field hidden and no way to fill
+          // it in — a phase you couldn't complete.
+          onClick={() =>
+            onChange([
+              ...phases,
+              isCardio
+                ? { ...emptyPhase(), sets: "1", duration: "1", durationUnit: "min" }
+                : emptyPhase(),
+            ])
+          }
         >
           <PlusIcon data-icon="inline-start" />
           {t("builder.addPhase")}
