@@ -6,6 +6,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { DataPanel } from "@/features/backup/components/DataPanel";
 import { BodyPanel } from "@/features/body/components/BodyPanel";
 import { LibraryPanel } from "@/features/library/components/LibraryPanel";
 import { RecordsPanel } from "@/features/log/components/RecordsPanel";
@@ -13,7 +14,7 @@ import { HistoryPanel } from "@/features/log/components/HistoryPanel";
 import { VolumePanel } from "@/features/log/components/VolumePanel";
 import { useT } from "@/i18n/use-t";
 
-const TABS = ["records", "volume", "history", "library", "body"] as const;
+const TABS = ["records", "volume", "history", "library", "body", "data"] as const;
 type Tab = (typeof TABS)[number];
 
 export const Route = createFileRoute("/progress")({
@@ -59,6 +60,7 @@ function ProgressPage() {
           <TabsTrigger value="history">{t("history.tab")}</TabsTrigger>
           <TabsTrigger value="library">{t("library.tab")}</TabsTrigger>
           <TabsTrigger value="body">{t("progress.tab.body")}</TabsTrigger>
+          <TabsTrigger value="data">{t("data.tab")}</TabsTrigger>
         </TabsList>
         <TabsContent value="records">
           {tab === "records" ? <RecordsPanel /> : null}
@@ -74,6 +76,9 @@ function ProgressPage() {
         </TabsContent>
         <TabsContent value="body">
           {tab === "body" ? <BodyPanel /> : null}
+        </TabsContent>
+        <TabsContent value="data">
+          {tab === "data" ? <DataPanel /> : null}
         </TabsContent>
       </Tabs>
     </Page>

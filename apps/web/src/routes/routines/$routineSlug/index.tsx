@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronRightIcon, PencilLineIcon } from "lucide-react";
+import { ChevronRightIcon, PencilLineIcon, Share2Icon } from "lucide-react";
 import { Page } from "@/components/page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,9 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { backupFilename } from "@/features/backup/backup";
+import { downloadBackup, exportRoutine } from "@/features/backup/use-backup";
+import { toast } from "@/components/ui/toast";
 import { useRoutine } from "@/features/routines/use-routines";
 import {
   exerciseDisplayName,
@@ -122,6 +125,20 @@ function RoutineBody({
               >
                 <PencilLineIcon data-icon="inline-start" />
                 {t("builder.edit")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const now = Date.now();
+                  const backup = exportRoutine(routine.slug, now);
+                  if (backup === undefined) return;
+                  downloadBackup(backup, backupFilename(now, "routine"));
+                  toast.add({ title: t("data.shared"), type: "success" });
+                }}
+              >
+                <Share2Icon data-icon="inline-start" />
+                {t("data.share")}
               </Button>
             </>
           ) : null}

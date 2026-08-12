@@ -442,6 +442,42 @@ export const en = {
   "dietBuilder.noMeals": "No meals yet. Add one to start.",
   "dietBuilder.nothingIn": "Nothing in this one yet.",
 
+  // ── Export and import ────────────────────────────────────────────────────
+  "data.tab": "Data",
+  "data.title": "Back up and share",
+  "data.body":
+    "Everything lives in this browser. Export a file you can keep, restore it on another device, or hand someone a single routine, plan or recipe.",
+  "data.export": "Export everything",
+  "data.import": "Import a file",
+  "data.localOnly":
+    "The file is saved to this device and read from it. Nothing is uploaded anywhere.",
+  "data.exported": "Backup downloaded",
+  "data.notJson": "That file isn't JSON",
+  "data.notOurs": "That doesn't look like a natty file",
+  "data.wrongVersion": "That file is version {version}, which this build doesn't read",
+  "data.invalid": "That file didn't validate \u2014 {detail}",
+  "data.empty": "There's nothing in it",
+  "data.cancel": "Cancel",
+  "data.restoreTitle": "Restore everything?",
+  "data.restoreBody":
+    "This replaces what's in the browser now with what's in the file. Your current data is overwritten, so export it first if you want to keep it.",
+  "data.restoreAction": "Replace everything",
+  "data.restored": "Restored",
+  "data.mergeTitle": "Add this to yours?",
+  "data.mergeBody":
+    "Nothing you have is touched. What's in the file arrives alongside it, with new ids so it can't overwrite anything \u2014 importing twice gives you two copies.",
+  "data.mergeAction": "Add it",
+  "data.merged": "Added",
+  "data.kind.sets": "Logged sets",
+  "data.kind.bodyEntries": "Weigh-ins",
+  "data.kind.exercises": "Your exercises",
+  "data.kind.routines": "Your routines",
+  "data.kind.foods": "Your foods",
+  "data.kind.recipes": "Your recipes",
+  "data.kind.diets": "Your diet plans",
+  "data.share": "Share",
+  "data.shared": "File downloaded",
+
   "split.push": "Push",
   "split.pull": "Pull",
   "split.legs": "Legs",

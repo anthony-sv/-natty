@@ -10,7 +10,7 @@ const STORAGE_KEY = "natty.profile.v1";
  * `session-store.ts` — a single always-present record with a handful of fields
  * doesn't want a queryable collection.
  */
-const profileSchema = z.object({
+export const profileSchema = z.object({
   /** Centimetres. Required for FFMI, which is mass over height squared. */
   heightCm: z.number().positive().optional(),
   /**

@@ -5,6 +5,7 @@ import {
   PencilLineIcon,
   PlusIcon,
   RotateCcwIcon,
+  Share2Icon,
   Trash2Icon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,8 @@ import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
+import { backupFilename } from "@/features/backup/backup";
+import { downloadBackup, exportRecipe } from "@/features/backup/use-backup";
 import { kcalOf } from "@/features/nutrition/macros";
 import { useT } from "@/i18n/use-t";
 import {
@@ -137,6 +140,13 @@ export function PantryPanel() {
                         .filter(Boolean)
                         .join(" · ")}
                       badge={t("pantry.recipe")}
+                      onShare={() => {
+                        const now = Date.now();
+                        const backup = exportRecipe(recipe.id, now);
+                        if (backup === undefined) return;
+                        downloadBackup(backup, backupFilename(now, "recipe"));
+                        toast.add({ title: t("data.shared"), type: "success" });
+                      }}
                       onEdit={() => setEditingRecipe(recipe)}
                       onArchive={() => {
                         archiveRecipe(recipe.id);
@@ -300,6 +310,7 @@ function Row({
   badge,
   isArchived,
   canDelete,
+  onShare,
   onEdit,
   onArchive,
   onRestore,
@@ -310,6 +321,8 @@ function Row({
   badge: string;
   isArchived: boolean;
   canDelete: boolean;
+  /** Recipes only — a single food is rarely worth handing someone a file. */
+  onShare?: () => void;
   onEdit: () => void;
   onArchive: () => void;
   onRestore: () => void;
@@ -329,6 +342,18 @@ function Row({
         </span>
         <span className="truncate text-xs text-muted-foreground">{detail}</span>
       </div>
+
+      {onShare ? (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0 text-muted-foreground"
+          aria-label={t("data.share")}
+          onClick={onShare}
+        >
+          <Share2Icon />
+        </Button>
+      ) : null}
 
       <Button
         variant="ghost"

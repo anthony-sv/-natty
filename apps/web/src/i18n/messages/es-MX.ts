@@ -440,6 +440,42 @@ export const esMX: Record<keyof typeof en, string> = {
   "dietBuilder.noMeals": "Todav\u00eda no hay comidas. Agrega una para empezar.",
   "dietBuilder.nothingIn": "Todav\u00eda no hay nada en esta.",
 
+  // ── Exportar e importar ──────────────────────────────────────────────────
+  "data.tab": "Datos",
+  "data.title": "Respalda y comparte",
+  "data.body":
+    "Todo vive en este navegador. Exporta un archivo que puedas guardar, restauralo en otro dispositivo, o p\u00e1sale a alguien una sola rutina, plan o receta.",
+  "data.export": "Exportar todo",
+  "data.import": "Importar un archivo",
+  "data.localOnly":
+    "El archivo se guarda en este dispositivo y se lee de aqu\u00ed. No se sube a ning\u00fan lado.",
+  "data.exported": "Respaldo descargado",
+  "data.notJson": "Ese archivo no es JSON",
+  "data.notOurs": "Eso no parece un archivo de natty",
+  "data.wrongVersion": "Ese archivo es versi\u00f3n {version}, y esta build no la lee",
+  "data.invalid": "Ese archivo no pas\u00f3 la validaci\u00f3n \u2014 {detail}",
+  "data.empty": "No trae nada",
+  "data.cancel": "Cancelar",
+  "data.restoreTitle": "\u00bfRestaurar todo?",
+  "data.restoreBody":
+    "Esto reemplaza lo que hay en el navegador con lo que trae el archivo. Tus datos actuales se sobrescriben, as\u00ed que exp\u00f3rtalos primero si los quieres conservar.",
+  "data.restoreAction": "Reemplazar todo",
+  "data.restored": "Restaurado",
+  "data.mergeTitle": "\u00bfAgregar esto a lo tuyo?",
+  "data.mergeBody":
+    "Nada de lo tuyo se toca. Lo del archivo llega aparte, con ids nuevos para que no pueda sobrescribir nada \u2014 importar dos veces te deja dos copias.",
+  "data.mergeAction": "Agregarlo",
+  "data.merged": "Agregado",
+  "data.kind.sets": "Sets registrados",
+  "data.kind.bodyEntries": "Pesajes",
+  "data.kind.exercises": "Tus ejercicios",
+  "data.kind.routines": "Tus rutinas",
+  "data.kind.foods": "Tus alimentos",
+  "data.kind.recipes": "Tus recetas",
+  "data.kind.diets": "Tus planes de dieta",
+  "data.share": "Compartir",
+  "data.shared": "Archivo descargado",
+
   "split.push": "Empuje",
   "split.pull": "Jal\u00f3n",
   "split.legs": "Pierna",

@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { PencilLineIcon, PlusIcon } from "lucide-react";
+import { PencilLineIcon, PlusIcon, Share2Icon } from "lucide-react";
 import { Page } from "@/components/page";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/toast";
+import { backupFilename } from "@/features/backup/backup";
+import { downloadBackup, exportDiet } from "@/features/backup/use-backup";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
@@ -122,6 +125,22 @@ function NutritionPage() {
             >
               <PencilLineIcon data-icon="inline-start" />
               {t("dietBuilder.edit")}
+            </Button>
+          ) : null}
+
+          {isCustom ? (
+            <Button
+              variant="outline"
+              onClick={() => {
+                const now = Date.now();
+                const backup = exportDiet(plan.slug, now);
+                if (backup === undefined) return;
+                downloadBackup(backup, backupFilename(now, "diet"));
+                toast.add({ title: t("data.shared"), type: "success" });
+              }}
+            >
+              <Share2Icon data-icon="inline-start" />
+              {t("data.share")}
             </Button>
           ) : null}
 
