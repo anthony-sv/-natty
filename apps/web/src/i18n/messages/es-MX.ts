@@ -463,7 +463,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "data.tab": "Datos",
   "data.title": "Respalda y comparte",
   "data.body":
-    "Todo vive en este navegador. Exporta un archivo que puedas guardar, restauralo en otro dispositivo, o p\u00e1sale a alguien una sola rutina, plan o receta.",
+    "Todo vive en este navegador. Exporta un archivo que puedas guardar, restáuralo en otro dispositivo, o p\u00e1sale a alguien una sola rutina, plan o receta.",
   "data.export": "Exportar todo",
   "data.import": "Importar un archivo",
   "data.localOnly":
