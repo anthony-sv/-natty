@@ -1020,6 +1020,29 @@ const raw: z.input<typeof exerciseSchema>[] = [
     facets: { implement: "machine", posture: "seated" },
   },
 
+  // ── Core ───────────────────────────────────────────────────────────────
+  {
+    id: "machine-ab-crunch",
+    name: "Machine ab crunch",
+    movementId: "ab-crunch",
+    aliases: ["Ab crunch machine", "Ab machine", "Cable crunch machine"],
+    facets: { implement: "machine", posture: "seated" },
+  },
+  {
+    id: "decline-reverse-crunch",
+    name: "Decline reverse crunch",
+    movementId: "ab-crunch",
+    aliases: ["Reverse crunch", "Reverse ab crunch", "Decline reverse ab crunch"],
+    facets: { implement: "bodyweight", posture: "decline" },
+  },
+  {
+    id: "hanging-leg-raise",
+    name: "Hanging leg raise",
+    movementId: "ab-crunch",
+    aliases: ["Hanging leg raises", "Leg raises", "Hanging knee raise"],
+    facets: { implement: "bodyweight", posture: "standing" },
+  },
+
   // ── Conditioning ───────────────────────────────────────────────────────
   {
     id: "liss-cardio",

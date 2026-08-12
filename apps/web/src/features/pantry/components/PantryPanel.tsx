@@ -5,6 +5,7 @@ import {
   PencilLineIcon,
   PlusIcon,
   RotateCcwIcon,
+  Share2Icon,
   Trash2Icon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,8 @@ import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
+import { backupFilename } from "@/features/backup/backup";
+import { downloadBackup, exportRecipe } from "@/features/backup/use-backup";
 import { kcalOf } from "@/features/nutrition/macros";
 import { useT } from "@/i18n/use-t";
 import {
@@ -137,6 +140,18 @@ export function PantryPanel() {
                         .filter(Boolean)
                         .join(" · ")}
                       badge={t("pantry.recipe")}
+                      onShare={() => {
+                        void (async () => {
+                          const now = Date.now();
+                          const backup = await exportRecipe(recipe.id, now);
+                          if (backup === undefined) return;
+                          downloadBackup(backup, backupFilename(now, "recipe"));
+                          toast.add({
+                            title: t("data.shared"),
+                            type: "success",
+                          });
+                        })();
+                      }}
                       onEdit={() => setEditingRecipe(recipe)}
                       onArchive={() => {
                         archiveRecipe(recipe.id);
@@ -300,6 +315,7 @@ function Row({
   badge,
   isArchived,
   canDelete,
+  onShare,
   onEdit,
   onArchive,
   onRestore,
@@ -310,6 +326,8 @@ function Row({
   badge: string;
   isArchived: boolean;
   canDelete: boolean;
+  /** Recipes only — a single food is rarely worth handing someone a file. */
+  onShare?: () => void;
   onEdit: () => void;
   onArchive: () => void;
   onRestore: () => void;
@@ -329,6 +347,22 @@ function Row({
         </span>
         <span className="truncate text-xs text-muted-foreground">{detail}</span>
       </div>
+
+      {/* Labelled, unlike the edit and archive icons beside it, to match the
+          Share button on a routine and on a plan. Sharing is the one action
+          here that produces a file and hands it to someone else — an unlabelled
+          icon made the same act look like a different feature in each place. */}
+      {onShare ? (
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0"
+          onClick={onShare}
+        >
+          <Share2Icon data-icon="inline-start" />
+          {t("data.share")}
+        </Button>
+      ) : null}
 
       <Button
         variant="ghost"

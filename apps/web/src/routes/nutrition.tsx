@@ -1,8 +1,11 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { PencilLineIcon, PlusIcon } from "lucide-react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { PencilLineIcon, PlusIcon, Share2Icon } from "lucide-react";
 import { Page } from "@/components/page";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/components/ui/toast";
+import { backupFilename } from "@/features/backup/backup";
+import { downloadBackup, exportDiet } from "@/features/backup/use-backup";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
@@ -17,9 +20,13 @@ import { diets } from "@/data/diets";
 import { MacroCalculatorPanel } from "@/features/nutrition/components/MacroCalculatorPanel";
 import { PlanPanel } from "@/features/nutrition/components/PlanPanel";
 import { useDiets } from "@/features/nutrition/use-diets";
+import { TodayPanel } from "@/features/intake/components/TodayPanel";
 import { PantryPanel } from "@/features/pantry/components/PantryPanel";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
+
+const TABS = ["today", "plan", "macros", "pantry"] as const;
+type Tab = (typeof TABS)[number];
 
 export const Route = createFileRoute("/nutrition")({
   // `?plan=` is how the builder lands you on the plan you just saved, and it
@@ -31,8 +38,10 @@ export const Route = createFileRoute("/nutrition")({
   // to this page stops typechecking.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { plan?: string } =>
-    typeof search.plan === "string" ? { plan: search.plan } : {},
+  ): { plan?: string; tab?: Tab } => ({
+    ...(typeof search.plan === "string" ? { plan: search.plan } : {}),
+    ...(TABS.includes(search.tab as Tab) ? { tab: search.tab as Tab } : {}),
+  }),
   component: NutritionPage,
 });
 
@@ -45,8 +54,18 @@ export const Route = createFileRoute("/nutrition")({
  */
 function NutritionPage() {
   const search = Route.useSearch();
+  const navigate = useNavigate();
   const [slug, setSlug] = useState(search.plan ?? diets[0]!.slug);
-  const [tab, setTab] = useState("plan");
+  // In the URL, so a panel is linkable and survives a refresh. `replace` keeps
+  // tab switches out of the back button.
+  const tab = search.tab ?? "today";
+  const setTab = (next: string) =>
+    void navigate({
+      to: "/nutrition",
+      // The plan selection rides along, or switching tabs would drop it.
+      search: { plan: search.plan, tab: next as Tab },
+      replace: true,
+    });
   const t = useT();
   const names = useNames();
 
@@ -110,6 +129,24 @@ function NutritionPage() {
             </Button>
           ) : null}
 
+          {isCustom ? (
+            <Button
+              variant="outline"
+              onClick={() => {
+                void (async () => {
+                  const now = Date.now();
+                  const backup = await exportDiet(plan.slug, now);
+                  if (backup === undefined) return;
+                  downloadBackup(backup, backupFilename(now, "diet"));
+                  toast.add({ title: t("data.shared"), type: "success" });
+                })();
+              }}
+            >
+              <Share2Icon data-icon="inline-start" />
+              {t("data.share")}
+            </Button>
+          ) : null}
+
           <Button nativeButton={false} render={<Link to="/nutrition/new" />}>
             <PlusIcon data-icon="inline-start" />
             {t("dietBuilder.new")}
@@ -122,10 +159,14 @@ function NutritionPage() {
           so it would stay open across a tab switch. */}
       <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
         <TabsList>
+          <TabsTrigger value="today">{t("intake.tab")}</TabsTrigger>
           <TabsTrigger value="plan">{t("nutrition.tab.plan")}</TabsTrigger>
           <TabsTrigger value="macros">{t("nutrition.tab.macros")}</TabsTrigger>
           <TabsTrigger value="pantry">{t("pantry.tab")}</TabsTrigger>
         </TabsList>
+        <TabsContent value="today">
+          {tab === "today" ? <TodayPanel key={plan.slug} plan={plan} /> : null}
+        </TabsContent>
         <TabsContent value="plan">
           {/* Keyed so switching plans resets the day and swap choices rather
               than carrying a selection onto a plan that may not have it. */}

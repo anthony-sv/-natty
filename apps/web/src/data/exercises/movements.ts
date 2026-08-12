@@ -351,6 +351,18 @@ const raw: z.input<typeof movementSchema>[] = [
     secondaryMuscles: [],
   },
 
+  // ── Core ───────────────────────────────────────────────────────────────
+  // The last muscle the gaps card reported as `never-direct`. Nothing in the
+  // library made abs primary until this — every ab contraction came as a
+  // by-product of squatting and pressing.
+  {
+    id: "ab-crunch",
+    name: "Ab crunch",
+    pattern: "spinal-flexion",
+    primaryMuscles: ["abs"],
+    secondaryMuscles: [],
+  },
+
   // ── Conditioning ───────────────────────────────────────────────────────
   {
     id: "steady-state-cardio",

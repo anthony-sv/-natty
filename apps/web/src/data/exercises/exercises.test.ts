@@ -130,15 +130,19 @@ describe("routine coverage", () => {
     // - `straight-bar-pushdown` is reached only as the other half of "Cable
     //   cambered bar pushdowns/ straight bar", i.e. via orAlternatives rather
     //   than as an entry's own exerciseId.
-    // - The hip movements are prescribed by no built-in program at all. The
-    //   source docs train glutes and adductors only as a by-product, so these
-    //   exist to be reachable from a routine you write yourself.
+    // - The hip and core movements are prescribed by no built-in program at
+    //   all. The source docs train glutes, adductors and abs only as a
+    //   by-product, so these exist to be reachable from a routine you write
+    //   yourself.
     expect(unused).toEqual([
       "banded-hip-abduction",
       "barbell-glute-bridge",
       "barbell-hip-thrust",
       "cable-glute-kickback",
       "cable-hip-abduction",
+      "decline-reverse-crunch",
+      "hanging-leg-raise",
+      "machine-ab-crunch",
       "machine-hip-abduction",
       "machine-hip-adduction",
       "machine-hip-thrust",

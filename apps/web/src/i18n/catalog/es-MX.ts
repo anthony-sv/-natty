@@ -162,6 +162,11 @@ export const exerciseNames: Record<string, string> = {
   "banded-hip-abduction": "Abducción de cadera con banda",
   "machine-hip-adduction": "Máquina de aductores sentado",
 
+  // Core
+  "machine-ab-crunch": "Crunch en máquina",
+  "decline-reverse-crunch": "Crunch inverso en banco declinado",
+  "hanging-leg-raise": "Elevación de piernas colgado",
+
   // Cardio
   "liss-cardio": "Cardio continuo de baja intensidad",
 };
@@ -214,6 +219,7 @@ export const movementNames: Record<string, string> = {
   "glute-kickback": "Patada de glúteo",
   "hip-abduction": "Abducción de cadera",
   "hip-adduction": "Aducción de cadera",
+  "ab-crunch": "Crunch abdominal",
   "steady-state-cardio": "Cardio continuo",
 };
 

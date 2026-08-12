@@ -15,13 +15,21 @@ import type { LoggedSet } from "./schema";
  * exercises.
  */
 
-export type TrainingSplit = "push" | "pull" | "legs" | "cardio";
+/**
+ * `core` is a fourth resistance bucket, not a fold-in.
+ *
+ * Direct ab work is genuinely none of push, pull or legs, and putting a
+ * hanging leg raise in "legs" would quietly stop the legs number meaning what
+ * it says. It arrived with the first exercises that make abs primary — before
+ * those, nothing in the library could have counted toward it.
+ */
+export type TrainingSplit = "push" | "pull" | "legs" | "core" | "cardio";
 
 /**
- * The three that make up a lifting week.
+ * The four that make up a lifting week.
  *
  * Its own type rather than a filtered array, so the chart and the tiles that
- * only ever render these three can't be handed `"cardio"` — that's a real
+ * only ever render resistance work can't be handed `"cardio"` — that's a real
  * measurement, but it isn't resistance volume and doesn't belong in the same
  * stack.
  */
@@ -62,6 +70,7 @@ export const SPLIT_FOR_PATTERN: Record<MovementPattern, TrainingSplit> = {
   shrug: "pull",
   "elbow-flexion": "pull",
   "spinal-extension": "pull",
+  "spinal-flexion": "core",
 
   squat: "legs",
   hinge: "legs",
@@ -80,6 +89,7 @@ export const RESISTANCE_SPLITS: readonly ResistanceSplit[] = [
   "push",
   "pull",
   "legs",
+  "core",
 ];
 
 /**
@@ -121,6 +131,7 @@ const emptySplit = (): Record<TrainingSplit, number> => ({
   push: 0,
   pull: 0,
   legs: 0,
+  core: 0,
   cardio: 0,
 });
 
@@ -198,7 +209,13 @@ export function weeklyVolume(
         isPartial: weekStart === currentWeekStart,
         muscles,
         split,
-        totalSets: split.push + split.pull + split.legs,
+        // Summed over `RESISTANCE_SPLITS` rather than named one by one, so a
+        // fifth bucket can't be added to the type and silently left out of the
+        // total — which is exactly what happened when `core` arrived.
+        totalSets: RESISTANCE_SPLITS.reduce(
+          (total, bucket) => total + split[bucket],
+          0,
+        ),
       };
     });
 }

@@ -98,6 +98,7 @@ export function VolumePanel() {
               push: totals.split.push,
               pull: totals.split.pull,
               legs: totals.split.legs,
+              core: totals.split.core,
             })}
           </CardDescription>
         </CardHeader>

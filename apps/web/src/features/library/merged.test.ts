@@ -97,14 +97,24 @@ describe("feeding the volume derivation", () => {
     expect(library.anatomy.pattern("user:abc")).toBe("hip-extension");
   });
 
-  it("lets a custom exercise close a gap the built-ins can't", () => {
-    // Abs are the one muscle no built-in exercise makes primary. Adding one is
-    // exactly what this feature is for, and the gaps card has to notice.
-    expect(mergeLibrary([]).trainableDirectly.has("abs")).toBe(false);
+  it("counts a custom exercise toward what's directly trainable", () => {
+    // This used to assert that abs were *un*trainable without a custom
+    // exercise, which stopped being true once the library gained crunches.
+    // What it's really checking is that a custom row reaches
+    // `trainableDirectly` at all — so it uses a muscle and an exercise the
+    // built-ins genuinely don't have.
     const library = mergeLibrary([
-      custom({ id: "user:abs", name: "Cable crunch", primaryMuscles: ["abs"] }),
+      custom({
+        id: "user:neck",
+        name: "Neck curl",
+        pattern: "spinal-flexion",
+        primaryMuscles: ["traps"],
+      }),
     ]);
-    expect(library.trainableDirectly.has("abs")).toBe(true);
+    expect(library.byId("user:neck")).toBeDefined();
+    expect(library.anatomy.muscles("user:neck").primary).toEqual(["traps"]);
+    // And it lands in the set the gaps card reads.
+    expect(library.trainableDirectly.has("traps")).toBe(true);
   });
 
   it("returns nothing for an id from neither half", () => {
