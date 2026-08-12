@@ -89,9 +89,54 @@ describe("summariseDay", () => {
     expect(summary).toEqual({
       exercises: 0,
       workingSets: 0,
+      warmupSets: 0,
       finishers: 0,
       estimatedSeconds: 0,
     });
+  });
+
+  /**
+   * "18 sets" has to keep meaning eighteen sets that count. A day whose number
+   * jumped because you wrote your ramp-ups down would stop being comparable to
+   * last week's, which is the only thing the figure is for.
+   */
+  it("keeps warmups out of the working-set count", () => {
+    const summary = summariseDay(
+      day([
+        exercise({
+          prescriptions: [
+            { sets: 2, reps: 10, restSeconds: 60, isWarmup: true },
+            { sets: 3, reps: [8, 12], restSeconds: 120 },
+          ],
+        }),
+      ]),
+      F,
+    );
+
+    expect(summary.workingSets).toBe(3);
+    expect(summary.warmupSets).toBe(2);
+  });
+
+  it("still charges for the time a warmup takes", () => {
+    const withWarmup = summariseDay(
+      day([
+        exercise({
+          prescriptions: [
+            { sets: 2, reps: 10, restSeconds: 60, isWarmup: true },
+            { sets: 3, reps: [8, 12], restSeconds: 120 },
+          ],
+        }),
+      ]),
+      F,
+    );
+    const without = summariseDay(
+      day([exercise({ prescriptions: [{ sets: 3, reps: [8, 12], restSeconds: 120 }] })]),
+      F,
+    );
+
+    // Not counted, but they happen — an estimate that skipped them would send
+    // you home early.
+    expect(withWarmup.estimatedSeconds).toBeGreaterThan(without.estimatedSeconds);
   });
 });
 

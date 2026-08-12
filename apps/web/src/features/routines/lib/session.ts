@@ -30,9 +30,20 @@ export interface WorkStep {
   exerciseName: string;
   kind: ExerciseEntry["kind"];
   isFinisher: boolean;
-  /** 1-based, counted across *all* of the exercise's prescriptions. */
+  /**
+   * 1-based, counted across the exercise's prescriptions — **warmups and
+   * working sets counted separately**, so a warmup reads "warmup 1 of 2" and
+   * the first real set is still "set 1 of 4". Numbering them together would
+   * make every routine that adds a warmup look like it grew two sets.
+   */
   setNumber: number;
   setsInExercise: number;
+  /**
+   * A ramp-up set, not a working one. Not loggable, and excluded from the day's
+   * working-set count — but it still takes time and still draws a dot, because
+   * you do actually perform it.
+   */
+  isWarmup: boolean;
   reps?: number | [number, number];
   /** Present for cardio/holds — the step runs its own countdown. */
   durationSeconds?: number;
@@ -42,8 +53,16 @@ export interface WorkStep {
   notes?: string;
   /** Intensity techniques for this set, from its own prescription phase. */
   modifiers?: SetModifiers;
-  /** "or Hack squat" — equally acceptable substitutes, if any. */
+  /** "or Hack squat" — equally acceptable substitutes, rendered for reading. */
   alternatives?: string;
+  /**
+   * The same substitutes as ids, so the player can offer them as a swap.
+   *
+   * Separate from `alternatives` because that one is a sentence and this one is
+   * data — deriving ids back out of a rendered, translated string is the kind
+   * of thing that works until someone's exercise name contains the word "or".
+   */
+  alternativeIds: string[];
   /**
    * This step is one leg of a set that runs as a sequence.
    *
@@ -91,10 +110,10 @@ function countdownSeconds(value: number | [number, number]): number {
 }
 
 function workLabel(step: WorkStep, { t }: Formatting): string {
-  return `${step.exerciseName} — ${t("routines.setOf", {
-    number: step.setNumber,
-    total: step.setsInExercise,
-  })}`;
+  return `${step.exerciseName} — ${t(
+    step.isWarmup ? "routines.warmupSetOf" : "routines.setOf",
+    { number: step.setNumber, total: step.setsInExercise },
+  )}`;
 }
 
 /**
@@ -112,15 +131,20 @@ export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
   const steps: SessionStep[] = [];
 
   day.exercises.forEach((exercise, exerciseIndex) => {
-    const setsInExercise = exercise.prescriptions.reduce(
-      (total, p) => total + p.sets,
-      0,
-    );
-    let setNumber = 0;
+    // Two totals, two counters: a warmup is "warmup 1 of 2" and the working
+    // sets still run 1..n. Sharing one counter would renumber every set of
+    // every routine that gained a warmup.
+    const totals = { warmup: 0, work: 0 };
+    for (const p of exercise.prescriptions) {
+      totals[p.isWarmup === true ? "warmup" : "work"] += p.sets;
+    }
+    const counters = { warmup: 0, work: 0 };
 
     for (const p of exercise.prescriptions) {
+      const bucket = p.isWarmup === true ? "warmup" : "work";
       for (let i = 0; i < p.sets; i++) {
-        setNumber++;
+        counters[bucket]++;
+        const setNumber = counters[bucket];
 
         const base = {
           type: "work",
@@ -130,11 +154,13 @@ export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
           kind: exercise.kind,
           isFinisher: exercise.isFinisher,
           setNumber,
-          setsInExercise,
+          setsInExercise: totals[bucket],
+          isWarmup: bucket === "warmup",
           perSide: p.perSide,
           notes: exercise.notes,
           modifiers: p.modifiers,
           alternatives: formatAlternatives(exercise, f),
+          alternativeIds: exercise.orAlternatives,
         } as const;
 
         if (p.segments !== undefined) {
@@ -146,7 +172,10 @@ export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
             const isLast = segmentIndex === p.segments!.length - 1;
             steps.push({
               ...base,
-              id: `${exerciseIndex}-${setNumber}-seg${segmentIndex + 1}`,
+              // The bucket is in the id because the two counters both start at
+              // 1 — without it a warmup's first set and a working first set
+              // would share a key, and React would reuse one for the other.
+              id: `${exerciseIndex}-${bucket}${setNumber}-seg${segmentIndex + 1}`,
               reps: detail.kind === "reps" ? detail.count : undefined,
               durationSeconds:
                 detail.kind === "hold" ? detail.seconds : undefined,
@@ -163,7 +192,7 @@ export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
         } else {
           steps.push({
             ...base,
-            id: `${exerciseIndex}-${setNumber}-work`,
+            id: `${exerciseIndex}-${bucket}${setNumber}-work`,
             reps: p.reps,
             durationSeconds:
               p.durationSeconds === undefined
@@ -179,7 +208,7 @@ export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
         if (p.pose?.holdSeconds !== undefined) {
           steps.push({
             type: "pose",
-            id: `${exerciseIndex}-${setNumber}-pose`,
+            id: `${exerciseIndex}-${bucket}${setNumber}-pose`,
             exerciseIndex,
             seconds: p.pose.holdSeconds,
             pose: p.pose,
@@ -189,7 +218,7 @@ export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
         if (p.restSeconds !== undefined && p.restSeconds > 0) {
           steps.push({
             type: "rest",
-            id: `${exerciseIndex}-${setNumber}-rest`,
+            id: `${exerciseIndex}-${bucket}${setNumber}-rest`,
             seconds: p.restSeconds,
             exerciseIndex,
             nextLabel: "",
@@ -268,11 +297,19 @@ export function autoStartSecondsFor(step: SessionStep | undefined): number | und
  * did — offering a log control on all five would read as five separate
  * opportunities and produce five entries for one set. Log at the end, when you
  * know what the whole sequence actually took.
+ *
+ * **Warmups are never logged, and that is the whole reason `LoggedSet` needed
+ * no change.** Two ramp-up sets at half your working weight are not a record,
+ * are not volume, and are not a data point about anything — they're how you
+ * get ready. Storing them and then teaching the PR frontier, the volume
+ * buckets and the heatmap to each exclude them would be three places to get it
+ * wrong; not storing them is none.
  */
 export function isLoggableStep(step: SessionStep): boolean {
   return (
     step.type === "work" &&
     step.kind !== "cardio" &&
+    !step.isWarmup &&
     (step.segment === undefined || step.segment.isLast)
   );
 }

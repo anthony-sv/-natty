@@ -36,6 +36,14 @@ export interface DraftDay {
 
 export interface DraftExercise {
   exerciseId: string;
+  /**
+   * Lifts you'd equally accept, in your own order of preference.
+   *
+   * Ids rather than free text, so the player can offer them as a swap and log
+   * against whichever you actually did — a substitute you can't log against is
+   * a note to yourself, not a feature.
+   */
+  orAlternatives: string[];
   kind: ExerciseEntry["kind"];
   isFinisher: boolean;
   phases: DraftPhase[];
@@ -47,6 +55,8 @@ export interface DraftPhase {
   /** Blank for a single number rather than a range. */
   repsTo: string;
   restSeconds: string;
+  /** Ramp-up sets: not logged, not counted as working sets. */
+  isWarmup: boolean;
   /** Present means the set runs as a sequence; `reps` is ignored then. */
   segments?: DraftSegment[];
   modifiers: {
@@ -73,6 +83,7 @@ export function emptyPhase(): DraftPhase {
     repsFrom: "8",
     repsTo: "12",
     restSeconds: "90",
+    isWarmup: false,
     modifiers: {
       forcedReps: false,
       negatives: false,
@@ -125,6 +136,9 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
   );
   const withModifiers =
     Object.keys(modifiers).length > 0 ? { modifiers } : undefined;
+  // Written only when true, so a routine that prescribes no warmups round-trips
+  // to exactly what it was — `draft.test.ts` pins that.
+  const warmup = phase.isWarmup ? { isWarmup: true } : undefined;
 
   if (phase.segments !== undefined) {
     const segments = phase.segments
@@ -134,7 +148,7 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
     // keeps the failure a "this phase is incomplete" rather than a parse error
     // pointing at an index nobody can see.
     if (segments.length < 2) return undefined;
-    return { sets, segments, restSeconds, ...withModifiers };
+    return { sets, segments, restSeconds, ...withModifiers, ...warmup };
   }
 
   const from = num(phase.repsFrom);
@@ -142,7 +156,7 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
   const to = num(phase.repsTo);
   const reps = to !== undefined && to > from ? ([from, to] as [number, number]) : from;
 
-  return { sets, reps, restSeconds, ...withModifiers };
+  return { sets, reps, restSeconds, ...withModifiers, ...warmup };
 }
 
 /**
@@ -172,7 +186,16 @@ export function toRoutine(
             }
             const entry: ExerciseEntry = {
               exerciseId: exercise.exerciseId,
-              orAlternatives: [],
+              // Anything that ended up empty or duplicated is dropped rather
+              // than saved: an alternative pointing at the exercise itself
+              // would render as "or <the same lift>".
+              orAlternatives: [
+                ...new Set(
+                  exercise.orAlternatives.filter(
+                    (id) => id !== "" && id !== exercise.exerciseId,
+                  ),
+                ),
+              ],
               kind: exercise.kind,
               isFinisher: exercise.isFinisher,
               prescriptions,
@@ -216,10 +239,12 @@ export function toDraft(routine: Routine): DraftRoutine {
       isRest: day.isRest,
       exercises: day.exercises.map((exercise) => ({
         exerciseId: exercise.exerciseId,
+        orAlternatives: exercise.orAlternatives,
         kind: exercise.kind,
         isFinisher: exercise.isFinisher,
         phases: exercise.prescriptions.map((p) => ({
           sets: String(p.sets),
+          isWarmup: p.isWarmup === true,
           repsFrom: Array.isArray(p.reps)
             ? String(p.reps[0])
             : p.reps !== undefined

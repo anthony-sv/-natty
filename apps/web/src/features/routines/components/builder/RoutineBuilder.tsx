@@ -274,6 +274,7 @@ function DayEditor({
                   ...day.exercises,
                   {
                     exerciseId: "",
+                    orAlternatives: [],
                     kind: "resistance",
                     isFinisher: false,
                     phases: [emptyPhase()],
@@ -436,10 +437,103 @@ function ExerciseEditor({
         </Button>
       </div>
 
+      {/* Substitutes, in your own order of preference. Ids rather than free
+          text, because the player offers them as a swap and logs against
+          whichever you actually did — a substitute you can't log against is a
+          note to yourself. */}
+      <AlternativesEditor
+        exerciseId={exercise.exerciseId}
+        value={exercise.orAlternatives}
+        onChange={(orAlternatives) => onChange({ orAlternatives })}
+      />
+
       <PhaseEditor
         phases={exercise.phases}
         onChange={(phases) => onChange({ phases })}
       />
+    </div>
+  );
+}
+
+function AlternativesEditor({
+  exerciseId,
+  value,
+  onChange,
+}: {
+  exerciseId: string;
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const t = useT();
+  const names = useNames();
+  const options = useExerciseOptions();
+  const groups = useGroupedExerciseOptions(options);
+
+  // The lift itself, and anything already listed — offering either would only
+  // produce a row reading "or <the same lift>".
+  const taken = new Set([exerciseId, ...value]);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Label className="text-xs">{t("builder.alternatives")}</Label>
+
+      {value.length > 0 ? (
+        <ul className="flex flex-wrap gap-1.5">
+          {value.map((id) => (
+            <li key={id}>
+              <Badge variant="secondary" className="gap-1 pr-1">
+                {names.exercise(id)}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={t("builder.removeAlternative", {
+                    name: names.exercise(id),
+                  })}
+                  onClick={() => onChange(value.filter((entry) => entry !== id))}
+                >
+                  <XIcon />
+                </Button>
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <Combobox
+        items={groups}
+        filter={filterExerciseOption}
+        // Held at null rather than showing the last pick: this control adds to
+        // a list, so a selection is an action, not a state.
+        value={null}
+        onValueChange={(option: ExerciseOption | null) => {
+          if (option !== null && !taken.has(option.id)) {
+            onChange([...value, option.id]);
+          }
+        }}
+        itemToStringLabel={(option: ExerciseOption) => option.name}
+      >
+        <ComboboxInput placeholder={t("builder.addAlternative")} />
+        <ComboboxContent>
+          <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
+          <ComboboxList>
+            {(group: ExerciseOptionGroup, index: number) => (
+              <ComboboxOptionGroup key={group.key} group={group} index={index}>
+                {(option) => (
+                  <ComboboxItem
+                    key={option.id}
+                    value={option}
+                    disabled={taken.has(option.id)}
+                  >
+                    {option.name}
+                  </ComboboxItem>
+                )}
+              </ComboboxOptionGroup>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+      <FieldDescription>{t("builder.alternativesHint")}</FieldDescription>
     </div>
   );
 }

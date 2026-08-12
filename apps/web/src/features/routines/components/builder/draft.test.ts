@@ -30,6 +30,7 @@ function holdAndPulseDraft(): DraftRoutine {
         exercises: [
           {
             exerciseId: "machine-hip-abduction",
+            orAlternatives: [],
             kind: "resistance",
             isFinisher: false,
             phases: [12, 10, 8, 6].map((reps) => ({
@@ -84,6 +85,7 @@ describe("producing a routine", () => {
     const draft = holdAndPulseDraft();
     draft.days[0].exercises.push({
       exerciseId: "",
+      orAlternatives: [],
       kind: "resistance",
       isFinisher: false,
       phases: [emptyPhase()],
@@ -112,6 +114,7 @@ describe("producing a routine", () => {
     draft.days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
+        orAlternatives: [],
         kind: "resistance",
         isFinisher: false,
         phases: [{ ...emptyPhase(), repsFrom: "5", repsTo: "" }],
@@ -126,6 +129,7 @@ describe("producing a routine", () => {
     draft.days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
+        orAlternatives: [],
         kind: "resistance",
         isFinisher: false,
         phases: [
@@ -135,6 +139,74 @@ describe("producing a routine", () => {
     ];
     const p = toRoutine(draft, "s")!.weeks[0].days[0].exercises[0].prescriptions[0];
     expect(p.modifiers).toEqual({ dropSet: true });
+  });
+
+  /**
+   * Written only when true, so a routine prescribing no warmups round-trips to
+   * exactly what it was rather than gaining `isWarmup: false` on every phase.
+   */
+  it("marks a warmup phase, and says nothing about the others", () => {
+    const draft = emptyDraft();
+    draft.name = "x";
+    draft.days[0].exercises = [
+      {
+        exerciseId: "barbell-hip-thrust",
+        orAlternatives: [],
+        kind: "resistance",
+        isFinisher: false,
+        phases: [
+          { ...emptyPhase(), sets: "2", isWarmup: true },
+          { ...emptyPhase(), sets: "3" },
+        ],
+      },
+    ];
+
+    const entry = toRoutine(draft, "s")!.weeks[0].days[0].exercises[0];
+    expect(entry.prescriptions[0].isWarmup).toBe(true);
+    expect(entry.prescriptions[1].isWarmup).toBeUndefined();
+  });
+
+  it("carries the substitutes you picked", () => {
+    const draft = emptyDraft();
+    draft.name = "x";
+    draft.days[0].exercises = [
+      {
+        exerciseId: "barbell-hip-thrust",
+        orAlternatives: ["smith-machine-hip-thrust", "machine-hip-abduction"],
+        kind: "resistance",
+        isFinisher: false,
+        phases: [emptyPhase()],
+      },
+    ];
+
+    expect(
+      toRoutine(draft, "s")!.weeks[0].days[0].exercises[0].orAlternatives,
+    ).toEqual(["smith-machine-hip-thrust", "machine-hip-abduction"]);
+  });
+
+  it("drops a substitute that is the exercise itself, or a duplicate", () => {
+    // Both would render as "or <the same lift>", and the second would give the
+    // player two identical entries in its swap list.
+    const draft = emptyDraft();
+    draft.name = "x";
+    draft.days[0].exercises = [
+      {
+        exerciseId: "barbell-hip-thrust",
+        orAlternatives: [
+          "barbell-hip-thrust",
+          "machine-hip-abduction",
+          "machine-hip-abduction",
+          "",
+        ],
+        kind: "resistance",
+        isFinisher: false,
+        phases: [emptyPhase()],
+      },
+    ];
+
+    expect(
+      toRoutine(draft, "s")!.weeks[0].days[0].exercises[0].orAlternatives,
+    ).toEqual(["machine-hip-abduction"]);
   });
 });
 
@@ -169,6 +241,7 @@ describe("round-tripping", () => {
     draft.days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
+        orAlternatives: [],
         kind: "resistance",
         isFinisher: false,
         phases: [emptyPhase(), { ...emptyPhase(), sets: "1", repsFrom: "6", repsTo: "" }],

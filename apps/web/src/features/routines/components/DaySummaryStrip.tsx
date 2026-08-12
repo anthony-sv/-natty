@@ -1,4 +1,10 @@
-import { ClockIcon, FlameIcon, LayersIcon, ListChecksIcon } from "lucide-react";
+import {
+  ClockIcon,
+  FlameIcon,
+  LayersIcon,
+  ListChecksIcon,
+  ThermometerIcon,
+} from "lucide-react";
 import type { TrainingDay } from "@/data/routines";
 import { useFormatting } from "@/i18n/use-formatting";
 import { useT } from "@/i18n/use-t";
@@ -31,6 +37,19 @@ export function DaySummaryStrip({ day }: { day: TrainingDay }) {
       label: t("routines.summary.roughTime"),
       value: formatEstimate(summary.estimatedSeconds),
     },
+    // Only when there are any — a "0 warmup sets" tile is a claim about a day
+    // that simply doesn't prescribe them, and the strip already omits the
+    // finisher tile on the same reasoning.
+    ...(summary.warmupSets > 0
+      ? [
+          {
+            // Not the flame — that one means finisher here.
+            icon: ThermometerIcon,
+            label: t.plural("routines.warmupSets", summary.warmupSets),
+            value: String(summary.warmupSets),
+          },
+        ]
+      : []),
     ...(summary.finishers > 0
       ? [
           {

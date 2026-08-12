@@ -244,6 +244,11 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.pickExercise": "Elige un ejercicio",
   "builder.createNamed": "Agregar \"{name}\" como ejercicio tuyo",
   "builder.exerciseKind": "Tipo",
+  "builder.alternatives": "O alguno de estos",
+  "builder.alternativesHint":
+    "Ejercicios que aceptarías igual. El reproductor los ofrece como cambio a media serie, y registra el que de verdad hiciste.",
+  "builder.addAlternative": "Agregar un sustituto...",
+  "builder.removeAlternative": "Quitar {name}",
   "builder.sets": "Sets",
   "builder.reps": "Reps",
   "builder.repsTo": "a",
@@ -500,6 +505,10 @@ export const esMX: Record<keyof typeof en, string> = {
     "El botón se queda en el mismo lugar en cada paso. Es a propósito — es el control que aprietas cuarenta veces por sesión.",
   "about.player.p3":
     "Puedes ir y regresar libremente. Terminar antes te pregunta primero, porque tira tu lugar en el día.",
+  "about.player.p4":
+    "Los sets de calentamiento se muestran y se cronometran, pero nunca se registran. Dos series de aproximación a la mitad del peso no son un récord ni son volumen, así que quedan fuera de ambos — y de la cuenta de sets del día.",
+  "about.player.p5":
+    "Si una rutina lista sustitutos, puedes cambiar a media sesión y la serie se registra contra el ejercicio que de verdad hiciste. El cambio dura solo esa sesión — que alguien esté en la máquina hoy no es una edición a tu programa.",
 
   "about.logging.title": "Registrar series y récords",
   "about.logging.body":
@@ -961,10 +970,17 @@ export const esMX: Record<keyof typeof en, string> = {
   "routines.summary.finishers.one": "Finisher",
   "routines.summary.finishers.other": "Finishers",
   "routines.setOf": "set {number} de {total}",
+  "routines.warmupSetOf": "calentamiento {number} de {total}",
+  "routines.warmupSet": "Calentamiento",
+  "routines.warmupSets.one": "Set de calentamiento",
+  "routines.warmupSets.other": "Sets de calentamiento",
 
   // ── The player ───────────────────────────────────────────────────────────
   "player.stepOf": "Paso {current} de {total} · faltan {left}",
   "player.exerciseOf": "Ejercicio {current} de {total}",
+  "player.swap": "Cambiar",
+  "player.swapTitle": "Estoy haciendo",
+  "player.swappedFrom": "en vez de {name}",
   "player.set": "Set",
   "player.setValue": "{number} de {total}",
   "player.target": "Meta",

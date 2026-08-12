@@ -1,6 +1,7 @@
 import { Fragment, useState } from "react";
 import { useStore } from "@tanstack/react-store";
 import {
+  ArrowLeftRightIcon,
   CheckIcon,
   ChevronLeftIcon,
   CircleStopIcon,
@@ -32,6 +33,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/toast";
@@ -58,10 +67,12 @@ import {
 } from "../lib/session";
 import { useCountdown, useElapsed } from "../lib/use-countdown";
 import {
+  effectiveExerciseId,
   endSession,
   goToStep,
   sessionStore,
   startTimer,
+  swapExercise,
   type SessionState,
 } from "../session-store";
 import { TimerRing } from "./TimerRing";
@@ -401,15 +412,33 @@ function WorkStepBody({
   // worth recording for it. A segmented set logs once, on its last leg — see
   // `isLoggableStep`.
   const isLoggable = isLoggableStep(step);
+
+  /**
+   * The lift you're actually doing, which is the routine's unless you swapped
+   * it for one of its alternatives.
+   *
+   * **Everything that touches the log uses this, not `step.exerciseId`.** That
+   * is the whole point of the swap: taking a dumbbell hip thrust because
+   * someone's on the machine should put the set on the dumbbell hip thrust's
+   * history, show the dumbbell hip thrust's PR, and leave the machine's record
+   * untouched. Logging a substitute against the lift you didn't do would
+   * quietly corrupt both.
+   */
+  const exerciseId = effectiveExerciseId(session, step.exerciseIndex, step.exerciseId);
+  const isSwapped = exerciseId !== step.exerciseId;
+  const exerciseName = isSwapped
+    ? f.names.exercise(exerciseId)
+    : step.exerciseName;
+
   // The "logged today" list still belongs on every leg: it's what fills the
   // stage, and hiding it for four of five steps would make the card jump.
   const showsLog = step.kind !== "cardio";
   const { sets, frontier, last, isLoading } = useExerciseLog(
-    showsLog ? step.exerciseId : undefined,
+    showsLog ? exerciseId : undefined,
   );
 
   const stepRef = {
-    exerciseId: step.exerciseId,
+    exerciseId,
     routineSlug: session.routineSlug,
     weekNumber: session.weekNumber,
     dayNumber: session.dayNumber,
@@ -422,7 +451,7 @@ function WorkStepBody({
   const loggedToday = sets
     .filter(
       (logged) =>
-        logged.exerciseId === step.exerciseId &&
+        logged.exerciseId === exerciseId &&
         logged.dayNumber === session.dayNumber &&
         logged.weekNumber === session.weekNumber &&
         logged.routineSlug === session.routineSlug,
@@ -481,11 +510,38 @@ function WorkStepBody({
             total: exerciseCount,
           })}
         </Eyebrow>
-        <h2 className="text-2xl font-semibold leading-tight tracking-tight">
-          {step.exerciseName}
-        </h2>
-        {step.isFinisher || step.kind === "cardio" || step.modifiers ? (
+        <div className="flex items-start gap-2">
+          <h2 className="min-w-0 flex-1 text-2xl font-semibold leading-tight tracking-tight">
+            {exerciseName}
+          </h2>
+          {/* Only when the routine actually named substitutes. A picker on
+              every exercise would offer a choice that isn't there. */}
+          {step.alternativeIds.length > 0 ? (
+            <SwapControl
+              step={step}
+              current={exerciseId}
+              isSwapped={isSwapped}
+            />
+          ) : null}
+        </div>
+        {isSwapped ||
+        step.isWarmup ||
+        step.isFinisher ||
+        step.kind === "cardio" ||
+        step.modifiers ? (
           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            {/* So a glance at the card says you're off-plan today, and which
+                lift the numbers below belong to. */}
+            {isSwapped ? (
+              <Badge variant="secondary">
+                {t("player.swappedFrom", { name: step.exerciseName })}
+              </Badge>
+            ) : null}
+            {/* First, because it changes what the whole card means: this set
+                isn't one you're trying to beat, and there's no log control. */}
+            {step.isWarmup ? (
+              <Badge variant="outline">{t("routines.warmupSet")}</Badge>
+            ) : null}
             {step.isFinisher ? <Badge>{t("common.finisher")}</Badge> : null}
             {step.kind === "cardio" ? (
               <Badge variant="outline">{t("common.cardio")}</Badge>
@@ -523,7 +579,9 @@ function WorkStepBody({
           items={[
             {
               icon: Repeat2Icon,
-              label: t("player.set"),
+              // The cell's label carries the distinction, so the value stays
+              // the two numbers you act on rather than growing a word.
+              label: step.isWarmup ? t("routines.warmupSet") : t("player.set"),
               value: t("player.setValue", {
                 number: step.setNumber,
                 total: step.setsInExercise,
@@ -631,12 +689,75 @@ function WorkStepBody({
             last={last}
             targetReps={step.reps}
             stepRef={stepRef}
-            exerciseName={step.exerciseName}
+            exerciseName={exerciseName}
             loggedHere={loggedHere}
           />
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Swap to one of this exercise's listed substitutes, mid-session.
+ *
+ * A menu rather than a Combobox: the choice is two or three named lifts the
+ * routine already picked, not a search over 113. The original is in the list
+ * and selecting it clears the swap, so getting back is the same gesture as
+ * leaving — no separate "undo" to find.
+ *
+ * The swap lasts the session and no longer. Someone being on the machine today
+ * is not an edit to the program, and silently rewriting the routine is how
+ * you'd find it changed next week without having asked for that.
+ */
+function SwapControl({
+  step,
+  current,
+  isSwapped,
+}: {
+  step: Extract<SessionStep, { type: "work" }>;
+  current: string;
+  isSwapped: boolean;
+}) {
+  const t = useT();
+  const { names } = useFormatting();
+  const choices = [step.exerciseId, ...step.alternativeIds];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant={isSwapped ? "secondary" : "outline"}
+            size="sm"
+            className="shrink-0"
+          >
+            <ArrowLeftRightIcon data-icon="inline-start" />
+            {t("player.swap")}
+          </Button>
+        }
+      />
+      {/* The content sizes to its anchor by default, and the anchor here is a
+          small button — which wraps every exercise name onto three lines. */}
+      <DropdownMenuContent align="end" className="w-auto min-w-56">
+        {/* The Group is required, not decoration: `DropdownMenuLabel` is Base
+            UI's `GroupLabel`, and one outside a Group throws. */}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{t("player.swapTitle")}</DropdownMenuLabel>
+          {choices.map((id) => (
+            <DropdownMenuCheckboxItem
+              key={id}
+              checked={id === current}
+              onCheckedChange={() =>
+                swapExercise(step.exerciseIndex, id, step.exerciseId)
+              }
+            >
+              {names.exercise(id)}
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -724,10 +845,10 @@ function PoseStepBody({
   const next = steps[session.stepIndex + 1];
   const nextLabel =
     next?.type === "work"
-      ? `${next.exerciseName} — ${t("routines.setOf", {
-          number: next.setNumber,
-          total: next.setsInExercise,
-        })}`
+      ? `${next.exerciseName} — ${t(
+          next.isWarmup ? "routines.warmupSetOf" : "routines.setOf",
+          { number: next.setNumber, total: next.setsInExercise },
+        )}`
       : undefined;
 
   return (

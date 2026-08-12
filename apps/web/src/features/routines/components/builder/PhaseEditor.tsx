@@ -130,6 +130,22 @@ export function PhaseEditor({
               />
             </div>
 
+            {/* On the phase, not the exercise: "two light sets, then three
+                working ones" is two phases, which is the same shape a ramp
+                already uses. */}
+            <div className="flex items-center gap-2 pb-2">
+              <Checkbox
+                id={`warmup-${index}`}
+                checked={phase.isWarmup}
+                onCheckedChange={(checked) =>
+                  update(index, { isWarmup: checked === true })
+                }
+              />
+              <Label htmlFor={`warmup-${index}`} className="text-xs font-normal">
+                {t("routines.warmupSet")}
+              </Label>
+            </div>
+
             {phases.length > 1 ? (
               <Button
                 type="button"

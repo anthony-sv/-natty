@@ -82,7 +82,13 @@ const GUIDE: Section[] = [
     icon: PlayIcon,
     titleKey: "about.player.title",
     bodyKey: "about.player.body",
-    points: ["about.player.p1", "about.player.p2", "about.player.p3"],
+    points: [
+      "about.player.p1",
+      "about.player.p2",
+      "about.player.p3",
+      "about.player.p4",
+      "about.player.p5",
+    ],
   },
   {
     id: "logging",

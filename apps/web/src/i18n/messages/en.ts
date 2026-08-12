@@ -244,6 +244,11 @@ export const en = {
   "builder.pickExercise": "Pick an exercise",
   "builder.createNamed": "Add \"{name}\" as your own exercise",
   "builder.exerciseKind": "Kind",
+  "builder.alternatives": "Or one of these",
+  "builder.alternativesHint":
+    "Lifts you'd equally accept. The player offers them as a swap mid-set, and logs against whichever you actually did.",
+  "builder.addAlternative": "Add a substitute...",
+  "builder.removeAlternative": "Remove {name}",
   "builder.sets": "Sets",
   "builder.reps": "Reps",
   "builder.repsTo": "to",
@@ -504,6 +509,10 @@ export const en = {
     "The button stays in the same place on every step. That's deliberate — it's the control you press forty times a session.",
   "about.player.p3":
     "You can step back and forward freely. Ending early asks first, because it throws away your place in the day.",
+  "about.player.p4":
+    "Warmup sets are shown and timed but never logged. Two ramp-ups at half your working weight aren't a record and aren't volume, so they stay out of both — and out of the day's set count.",
+  "about.player.p5":
+    "If a routine lists substitutes, you can swap mid-session and the set is logged against the lift you actually did. The swap lasts the session only — someone being on the machine today isn't an edit to your program.",
 
   "about.logging.title": "Logging sets and personal records",
   "about.logging.body":
@@ -961,10 +970,22 @@ export const en = {
   "routines.summary.finishers.one": "Finisher",
   "routines.summary.finishers.other": "Finishers",
   "routines.setOf": "set {number} of {total}",
+  "routines.warmupSetOf": "warmup {number} of {total}",
+  // Distinct from `routines.warmup`, which is the day's mobility block. This
+  // is a light set of the lift you're about to do properly.
+  "routines.warmupSet": "Warmup",
+  // The plural form alone: on the day strip the count is the tile's value, so
+  // interpolating it here would print it twice. Same shape as
+  // `routines.summary.finishers`.
+  "routines.warmupSets.one": "Warmup set",
+  "routines.warmupSets.other": "Warmup sets",
 
   // ── The player ───────────────────────────────────────────────────────────
   "player.stepOf": "Step {current} of {total} · {left} to go",
   "player.exerciseOf": "Exercise {current} of {total}",
+  "player.swap": "Swap",
+  "player.swapTitle": "Doing instead",
+  "player.swappedFrom": "instead of {name}",
   "player.set": "Set",
   "player.setValue": "{number} of {total}",
   "player.target": "Target",

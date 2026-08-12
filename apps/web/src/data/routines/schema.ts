@@ -115,6 +115,31 @@ export const prescriptionSchema = z
     pose: poseCueSchema.optional(),
     /** Reps/duration figure is per side (e.g. single-arm rows). */
     perSide: z.boolean().optional(),
+    /**
+     * Ramp-up sets before the working ones — two at half the load, one at
+     * ~70%, that sort of thing.
+     *
+     * A flag on the phase rather than a separate `warmupSets` array, because a
+     * phase *is* "a run of sets described one way", which is exactly what a
+     * warmup block is. It composes with everything already here: rest between
+     * them, a rep range, even a ramp written as several one-set phases.
+     *
+     * **Distinct from `TrainingDay.warmupRefs`**, which is the general
+     * mobility work that opens a session. This is the specific lift you're
+     * about to do, done light.
+     *
+     * A warmup set is never logged — see `isLoggableStep`. That's what keeps
+     * `LoggedSet` out of this entirely: no `isWarmup` on a stored set, so
+     * nothing downstream (the PR frontier, per-muscle volume, the heatmap) had
+     * to learn the difference or risk getting it wrong.
+     *
+     * Optional rather than `.default(false)`, like `perSide` beside it: a
+     * default puts the key on the *output* type, which would mean writing
+     * `isWarmup: false` on all seventy-odd authored prescriptions to say
+     * nothing. `buildSteps` normalises it to a plain boolean on the step, so
+     * the optionality stops at the model.
+     */
+    isWarmup: z.boolean().optional(),
     /** Intensity techniques for these sets. Absent means straight sets. */
     modifiers: setModifiersSchema.optional(),
   })
