@@ -411,6 +411,14 @@ export const esMX: Record<keyof typeof en, string> = {
   "dietBuilder.itemNote": "Nota",
   "dietBuilder.running": "Hasta ahora: {macros}",
   "dietBuilder.vsTarget": "{value} vs objetivo",
+  "dietBuilder.gapsTitle": "No llega a tus objetivos",
+  "dietBuilder.gapsBody":
+    "Guárdalo como borrador y regresa después — va a quedar marcado como sin terminar para que se note de un vistazo.",
+  "dietBuilder.keepEditing": "Seguir editando",
+  "dietBuilder.saveDraft": "Guardar como borrador",
+  "dietBuilder.draft": "Borrador",
+  "dietBuilder.draftBody":
+    "Este plan todavía no suma a sus objetivos. Edítalo y vuelve a guardar para quitar esto.",
   "dietBuilder.save": "Guardar plan",
   "dietBuilder.saving": "Guardando\u2026",
   "dietBuilder.saved": "Se guard\u00f3 {name}",

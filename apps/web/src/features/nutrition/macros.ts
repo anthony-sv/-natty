@@ -202,6 +202,46 @@ export function effectiveTargetKcal(
     : { kcal: kcalOf(stated), derived: true };
 }
 
+/**
+ * How far a day's meals land from the targets the plan states.
+ *
+ * Slack, because hitting a macro to the gram is neither possible nor the
+ * point. Looser than `macros.test.ts`'s 3.5 g, which checks *transcribed*
+ * numbers against their own document and should be tight.
+ */
+export const TARGET_TOLERANCE_G = 5;
+
+export interface TargetGap {
+  macro: keyof Macros;
+  target: number;
+  actual: number;
+  /** Negative when short of the target, positive when over it. */
+  delta: number;
+}
+
+/**
+ * Only the macros the plan actually names, and only the ones outside tolerance.
+ *
+ * An empty array means "nothing to warn about", which covers both a plan that
+ * hits its targets and a plan that states none — the caller can't tell those
+ * apart and doesn't need to.
+ */
+export function compareToTargets(
+  actual: Macros,
+  targets: MacroTargets,
+): TargetGap[] {
+  const gaps: TargetGap[] = [];
+  for (const macro of ["protein", "carbs", "fat"] as const) {
+    const target = targets[macro];
+    if (target === undefined) continue;
+    const delta = actual[macro] - target;
+    if (Math.abs(delta) > TARGET_TOLERANCE_G) {
+      gaps.push({ macro, target, actual: actual[macro], delta });
+    }
+  }
+  return gaps;
+}
+
 /** The targets as a full `Macros`, or undefined if none were stated at all. */
 export function macrosFromTargets(targets: MacroTargets): Macros | undefined {
   const { protein, carbs, fat } = targets;

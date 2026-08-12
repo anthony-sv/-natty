@@ -411,6 +411,14 @@ export const en = {
   "dietBuilder.itemNote": "Note",
   "dietBuilder.running": "So far: {macros}",
   "dietBuilder.vsTarget": "{value} vs target",
+  "dietBuilder.gapsTitle": "Doesn't hit your targets",
+  "dietBuilder.gapsBody":
+    "Save it as a draft and come back to it — it'll be marked unfinished so you can tell at a glance.",
+  "dietBuilder.keepEditing": "Keep editing",
+  "dietBuilder.saveDraft": "Save as draft",
+  "dietBuilder.draft": "Draft",
+  "dietBuilder.draftBody":
+    "This plan doesn't add up to its targets yet. Edit it and save again to clear this.",
   "dietBuilder.save": "Save plan",
   "dietBuilder.saving": "Saving\u2026",
   "dietBuilder.saved": "Saved {name}",

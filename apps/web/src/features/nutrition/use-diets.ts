@@ -10,11 +10,28 @@ import { userDiets } from "./collection";
  * without a reload — and yours come first, since a plan you wrote is the one
  * you actually follow.
  */
-export function useDiets(): { plans: DietPlan[]; isLoading: boolean } {
+export interface PlanEntry {
+  plan: DietPlan;
+  isCustom: boolean;
+  /** Saved knowing it misses its own targets. Built-ins are never drafts. */
+  isDraft: boolean;
+}
+
+export function useDiets(): { plans: PlanEntry[]; isLoading: boolean } {
   const { data, isLoading } = useLiveQuery((q) => q.from({ d: userDiets }));
 
   return useMemo(
-    () => ({ plans: [...(data ?? []), ...diets], isLoading }),
+    () => ({
+      plans: [
+        ...(data ?? []).map((plan) => ({
+          plan: plan as DietPlan,
+          isCustom: true,
+          isDraft: plan.isDraft,
+        })),
+        ...diets.map((plan) => ({ plan, isCustom: false, isDraft: false })),
+      ],
+      isLoading,
+    }),
     [data, isLoading],
   );
 }
@@ -30,15 +47,21 @@ export function useDietPlan(slug: string): {
   plan: DietPlan | undefined;
   isLoading: boolean;
   isCustom: boolean;
+  isDraft: boolean;
 } {
   const { data, isLoading } = useLiveQuery((q) => q.from({ d: userDiets }));
 
   return useMemo(() => {
     const builtIn = getDietBySlug(slug);
     if (builtIn !== undefined) {
-      return { plan: builtIn, isLoading: false, isCustom: false };
+      return { plan: builtIn, isLoading: false, isCustom: false, isDraft: false };
     }
     const own = (data ?? []).find((plan) => plan.slug === slug);
-    return { plan: own, isLoading, isCustom: own !== undefined };
+    return {
+      plan: own,
+      isLoading,
+      isCustom: own !== undefined,
+      isDraft: own?.isDraft ?? false,
+    };
   }, [slug, data, isLoading]);
 }

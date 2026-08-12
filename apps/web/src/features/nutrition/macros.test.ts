@@ -5,6 +5,8 @@ import {
   dayTotals,
   deficitPerDay,
   kcalOf,
+  TARGET_TOLERANCE_G,
+  compareToTargets,
   macrosForAmount,
   macrosForItem,
   percentSplit,
@@ -102,6 +104,49 @@ describe("an id nothing resolves", () => {
       FOODS,
     );
     expect(total).toEqual(macrosForAmount(getFood("whole-egg"), 2));
+  });
+});
+
+describe("compareToTargets", () => {
+  const hit = { protein: 180, carbs: 200, fat: 70 };
+
+  it("says nothing when the day lands on its targets", () => {
+    expect(compareToTargets(hit, hit)).toEqual([]);
+  });
+
+  it("allows a few grams of slack", () => {
+    // Hitting a macro to the gram isn't possible and isn't the point.
+    const close = { protein: 180 + TARGET_TOLERANCE_G, carbs: 200, fat: 70 };
+    expect(compareToTargets(close, hit)).toEqual([]);
+  });
+
+  it("reports a macro that misses, with the signed gap", () => {
+    const short = { protein: 12, carbs: 200, fat: 70 };
+    const gaps = compareToTargets(short, hit);
+    expect(gaps).toHaveLength(1);
+    expect(gaps[0]).toEqual({
+      macro: "protein",
+      target: 180,
+      actual: 12,
+      // Negative for short, so the UI can colour it without re-deriving.
+      delta: -168,
+    });
+  });
+
+  it("reports going over as well as under", () => {
+    const over = { protein: 180, carbs: 320, fat: 70 };
+    expect(compareToTargets(over, hit)[0]?.delta).toBe(120);
+  });
+
+  it("only checks the macros that were actually stated", () => {
+    // A protein-only goal shouldn't complain that carbs missed a target that
+    // was never set — that's the whole reason `targets` is per-macro optional.
+    const gaps = compareToTargets({ protein: 12, carbs: 0, fat: 0 }, { protein: 180 });
+    expect(gaps.map((gap) => gap.macro)).toEqual(["protein"]);
+  });
+
+  it("has nothing to say about a plan with no targets", () => {
+    expect(compareToTargets({ protein: 12, carbs: 1, fat: 10 }, {})).toEqual([]);
   });
 });
 

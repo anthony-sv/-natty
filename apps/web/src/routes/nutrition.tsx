@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PencilLineIcon, PlusIcon } from "lucide-react";
 import { Page } from "@/components/page";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
@@ -51,11 +52,15 @@ function NutritionPage() {
 
   // Yours first, then the built-ins — a plan you wrote is the one you follow.
   const { plans } = useDiets();
-  const plan = plans.find((p) => p.slug === slug) ?? plans[0]!;
-  const isCustom = !diets.some((builtIn) => builtIn.slug === plan.slug);
+  const entry = plans.find((p) => p.plan.slug === slug) ?? plans[0]!;
+  const { plan, isCustom, isDraft } = entry;
   const options = plans.map((p) => ({
-    value: p.slug,
-    label: names.dietPlan(p.slug, p.name),
+    value: p.plan.slug,
+    // The badge can't ride in a Select's value, so the word goes in the label
+    // — otherwise the closed trigger gives no hint that it's unfinished.
+    label:
+      names.dietPlan(p.plan.slug, p.plan.name) +
+      (p.isDraft ? ` — ${t("dietBuilder.draft")}` : ""),
   }));
 
   return (
@@ -74,7 +79,7 @@ function NutritionPage() {
             <Select
               items={options}
               value={plan.slug}
-              onValueChange={(value) => setSlug(value ?? plans[0]!.slug)}
+              onValueChange={(value) => setSlug(value ?? plans[0]!.plan.slug)}
             >
               <SelectTrigger id="diet-plan">
                 <SelectValue />
@@ -124,7 +129,19 @@ function NutritionPage() {
         <TabsContent value="plan">
           {/* Keyed so switching plans resets the day and swap choices rather
               than carrying a selection onto a plan that may not have it. */}
-          {tab === "plan" ? <PlanPanel key={plan.slug} plan={plan} /> : null}
+          {tab === "plan" ? (
+            <div className="flex flex-col gap-4">
+              {/* An unfinished plan should look unfinished. Without this a
+                  plan holding one egg reads exactly like a finished one. */}
+              {isDraft ? (
+                <p className="flex flex-wrap items-center gap-2 rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
+                  <Badge variant="secondary">{t("dietBuilder.draft")}</Badge>
+                  {t("dietBuilder.draftBody")}
+                </p>
+              ) : null}
+              <PlanPanel key={plan.slug} plan={plan} />
+            </div>
+          ) : null}
         </TabsContent>
         <TabsContent value="macros">
           {tab === "macros" ? (

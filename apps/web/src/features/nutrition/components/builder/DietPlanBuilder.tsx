@@ -1,6 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { PlusIcon, XIcon } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,7 +52,12 @@ import {
 } from "@/features/pantry/use-pantry";
 import { useT } from "@/i18n/use-t";
 import { createUserDiet, dietSlugFor, updateUserDiet } from "../../collection";
-import { kcalOf, totalFor } from "../../macros";
+import {
+  TARGET_TOLERANCE_G,
+  compareToTargets,
+  kcalOf,
+  totalFor,
+} from "../../macros";
 import {
   emptyMeal,
   toDietPlan,
@@ -62,19 +77,20 @@ export function DietPlanBuilder({
   const t = useT();
   const navigate = useNavigate();
   const [draft, setDraft] = useState(initial);
+  const [confirmGaps, setConfirmGaps] = useState(false);
   const pantry = usePantry();
 
   const plan = toDietPlan(draft, existingSlug ?? "preview");
   const canSave = plan !== undefined;
 
-  function save() {
+  function save(asDraft: boolean) {
     if (plan === undefined) return;
     const slug = existingSlug ?? dietSlugFor(draft.name);
     const toSave: DietPlan = { ...plan, slug };
 
     const transaction = existingSlug
-      ? updateUserDiet(existingSlug, toSave)
-      : createUserDiet(toSave).transaction;
+      ? updateUserDiet(existingSlug, toSave, asDraft)
+      : createUserDiet(toSave, asDraft).transaction;
 
     void toast.promise(transaction.isPersisted.promise, {
       loading: t("dietBuilder.saving"),
@@ -82,6 +98,12 @@ export function DietPlanBuilder({
       error: { title: t("dietBuilder.saveError"), type: "error" },
     });
     void navigate({ to: "/nutrition", search: { plan: slug } });
+  }
+
+  /** Off-target saves ask first; a plan that lands just saves. */
+  function attemptSave() {
+    if (gaps.length > 0) setConfirmGaps(true);
+    else save(false);
   }
 
   const update = (patch: Partial<DraftPlan>) =>
@@ -107,6 +129,12 @@ export function DietPlanBuilder({
         { protein: 0, carbs: 0, fat: 0 },
       )
     : undefined;
+
+  // What the day's first option of every meal comes to, against what the plan
+  // says it's aiming for. Empty when it lands, and also when no targets were
+  // stated — both mean "nothing to warn about".
+  const gaps =
+    plan && running ? compareToTargets(running, plan.targets) : [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -209,11 +237,41 @@ export function DietPlanBuilder({
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-lg font-semibold">{t("dietBuilder.meals")}</h2>
+          {/* Live, per macro, with the shortfall beside each — so the gap is
+              visible while you're still adding food rather than only in a
+              dialog at the end. */}
           {running ? (
-            <span className="text-sm tabular-nums text-muted-foreground">
-              {t("dietBuilder.running", {
-                macros: `P${running.protein.toFixed(0)} · C${running.carbs.toFixed(0)} · F${running.fat.toFixed(0)} · ${Math.round(kcalOf(running)).toLocaleString()} kcal`,
+            <span className="flex flex-wrap items-baseline gap-x-3 text-sm tabular-nums text-muted-foreground">
+              {(
+                [
+                  ["protein", "P"],
+                  ["carbs", "C"],
+                  ["fat", "F"],
+                ] as const
+              ).map(([macro, letter]) => {
+                const target = plan?.targets[macro];
+                const delta =
+                  target === undefined ? undefined : running[macro] - target;
+                return (
+                  <span key={macro}>
+                    {letter}
+                    {running[macro].toFixed(0)}
+                    {delta !== undefined &&
+                    Math.abs(delta) > TARGET_TOLERANCE_G ? (
+                      <span
+                        className={
+                          delta < 0 ? "text-destructive" : "text-foreground"
+                        }
+                      >
+                        {" "}
+                        {delta > 0 ? "+" : ""}
+                        {delta.toFixed(0)}
+                      </span>
+                    ) : null}
+                  </span>
+                );
               })}
+              <span>{Math.round(kcalOf(running)).toLocaleString()} kcal</span>
             </span>
           ) : null}
         </div>
@@ -255,13 +313,55 @@ export function DietPlanBuilder({
       </div>
 
       <div className="flex gap-2">
-        <Button disabled={!canSave} onClick={save}>
+        <Button disabled={!canSave} onClick={attemptSave}>
           {t("dietBuilder.save")}
         </Button>
         <Button variant="ghost" onClick={() => void navigate({ to: "/nutrition" })}>
           {t("dietBuilder.cancel")}
         </Button>
       </div>
+
+      {/* Not a blocker — an unfinished plan is a normal thing to have, and the
+          old behaviour of saving silently made one look finished. Saving from
+          here flags it as a draft so it's visibly unfinished afterwards. */}
+      <AlertDialog open={confirmGaps} onOpenChange={setConfirmGaps}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("dietBuilder.gapsTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("dietBuilder.gapsBody")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <ul className="flex flex-col gap-1 text-sm tabular-nums">
+            {gaps.map((gap) => (
+              <li key={gap.macro} className="flex justify-between gap-4">
+                <span>{t(`nutrition.${gap.macro}` as never)}</span>
+                <span className="text-muted-foreground">
+                  {gap.actual.toFixed(0)}g / {gap.target.toFixed(0)}g
+                  <span
+                    className={
+                      gap.delta < 0
+                        ? "ml-2 text-destructive"
+                        : "ml-2 text-foreground"
+                    }
+                  >
+                    {gap.delta > 0 ? "+" : ""}
+                    {gap.delta.toFixed(0)}g
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("dietBuilder.keepEditing")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => save(true)}>
+              {t("dietBuilder.saveDraft")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

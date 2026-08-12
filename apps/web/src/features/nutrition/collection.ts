@@ -16,6 +16,15 @@ import { dietPlanSchema, diets, type DietPlan } from "@/data/diets";
 export const userDietPlanSchema = dietPlanSchema.extend({
   createdAt: z.number(),
   updatedAt: z.number(),
+  /**
+   * Saved knowing it doesn't hit its own targets.
+   *
+   * On the *user* schema rather than `dietPlanSchema`, because a transcribed
+   * plan is never a draft — there'd be no way for one to become one. It exists
+   * so an unfinished plan looks unfinished: without it, a plan with one egg in
+   * it reads exactly like a plan you completed.
+   */
+  isDraft: z.boolean().default(false),
 });
 export type UserDietPlan = z.infer<typeof userDietPlanSchema>;
 
@@ -47,16 +56,18 @@ export function dietSlugFor(name: string): string {
   return slug;
 }
 
-export function createUserDiet(plan: DietPlan) {
+export function createUserDiet(plan: DietPlan, isDraft = false) {
   const now = Date.now();
-  const row: UserDietPlan = { ...plan, createdAt: now, updatedAt: now };
+  const row: UserDietPlan = { ...plan, createdAt: now, updatedAt: now, isDraft };
   return { plan: row, transaction: userDiets.insert(row) };
 }
 
-export function updateUserDiet(slug: string, plan: DietPlan) {
+export function updateUserDiet(slug: string, plan: DietPlan, isDraft = false) {
   return userDiets.update(slug, (draft) => {
     // The slug is the key and stays put, so renaming keeps the plan's identity.
-    Object.assign(draft, plan, { slug, updatedAt: Date.now() });
+    // `isDraft` is passed on every save rather than only set, so finishing a
+    // draft clears the badge without a separate action.
+    Object.assign(draft, plan, { slug, updatedAt: Date.now(), isDraft });
   });
 }
 
