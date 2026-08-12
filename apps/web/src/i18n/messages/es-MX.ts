@@ -260,6 +260,8 @@ export const esMX: Record<keyof typeof en, string> = {
     "Ejercicios que aceptarías igual. El reproductor los ofrece como cambio a media serie, y registra el que de verdad hiciste.",
   "builder.addAlternative": "Agregar un sustituto...",
   "builder.removeAlternative": "Quitar {name}",
+  "builder.cardioHint":
+    "El cardio es tiempo, no reps. Agrega un segundo bloque para intervalos — cuatro rondas de tres minutos son cuatro sets, o dos bloques de distinta duración.",
   "builder.duration": "Cuánto dura (s)",
   "builder.durationHint": "≈ {minutes} min",
   "builder.setStyle.timed": "Por tiempo",

@@ -18,6 +18,12 @@ export interface ExerciseOption {
    * muscles at all, and `userExerciseSchema` requires at least one.
    */
   primaryMuscle: MuscleId | undefined;
+  /**
+   * The library already knows this is conditioning, so the builder shouldn't
+   * ask — picking one sets the entry's `kind` and switches its phase to a
+   * duration. Reps, ramps and forced reps on a treadmill are all nonsense.
+   */
+  isCardio: boolean;
 }
 
 /**
@@ -48,6 +54,7 @@ export function useExerciseOptions(): ExerciseOption[] {
           ),
           isCustom: entry.isCustom,
           primaryMuscle: entry.primaryMuscles[0],
+          isCardio: entry.pattern === "cardio",
         }))
         .sort((a, b) => a.name.localeCompare(b.name, t.locale)),
     [selectable, names, t.locale],

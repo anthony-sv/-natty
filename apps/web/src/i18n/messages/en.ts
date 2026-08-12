@@ -260,6 +260,8 @@ export const en = {
     "Lifts you'd equally accept. The player offers them as a swap mid-set, and logs against whichever you actually did.",
   "builder.addAlternative": "Add a substitute...",
   "builder.removeAlternative": "Remove {name}",
+  "builder.cardioHint":
+    "Cardio is a duration, not reps. Add a second block for intervals — four rounds of three minutes is four sets, or two blocks at different lengths.",
   "builder.duration": "How long (s)",
   "builder.durationHint": "≈ {minutes} min",
   "builder.setStyle.timed": "Timed",

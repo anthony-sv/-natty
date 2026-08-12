@@ -10,7 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import type { ExerciseEntry } from "@/data/routines";
 import { useT } from "@/i18n/use-t";
+import { cn } from "@/lib/utils";
 import { emptyPhase, emptySegment, type DraftPhase } from "./draft";
 import { SegmentEditor } from "./SegmentEditor";
 
@@ -33,12 +35,21 @@ const MODIFIERS = [
  */
 export function PhaseEditor({
   phases,
+  kind,
   onChange,
 }: {
   phases: DraftPhase[];
+  /**
+   * What the entry is. Cardio is always timed, so its phases skip the shape
+   * picker, the rep boxes, the intensity techniques and the warmup box — none
+   * of which mean anything on a treadmill, and all of which the form used to
+   * offer anyway.
+   */
+  kind: ExerciseEntry["kind"];
   onChange: (next: DraftPhase[]) => void;
 }) {
   const t = useT();
+  const isCardio = kind === "cardio";
 
   const styles = [
     { value: "plain", label: t("builder.setStyle.plain") },
@@ -78,7 +89,7 @@ export function PhaseEditor({
               />
             </div>
 
-            <div className="flex flex-col gap-1">
+            <div className={cn("flex flex-col gap-1", isCardio && "hidden")}>
               <Label className="text-xs">{t("builder.setStyle")}</Label>
               <Select
                 items={styles}
@@ -142,7 +153,7 @@ export function PhaseEditor({
               </div>
             ) : null}
 
-            {styleOf(phase) === "plain" ? (
+            {styleOf(phase) === "plain" && !isCardio ? (
               <div className="flex flex-col gap-1">
                 <Label className="text-xs">{t("builder.reps")}</Label>
                 <div className="flex items-center gap-1">
@@ -182,7 +193,9 @@ export function PhaseEditor({
             {/* On the phase, not the exercise: "two light sets, then three
                 working ones" is two phases, which is the same shape a ramp
                 already uses. */}
-            <div className="flex items-center gap-2 pb-2">
+            <div
+              className={cn("flex items-center gap-2 pb-2", isCardio && "hidden")}
+            >
               <Checkbox
                 id={`warmup-${index}`}
                 checked={phase.isWarmup}
@@ -236,7 +249,7 @@ export function PhaseEditor({
             />
           ) : null}
 
-          <div className="flex flex-col gap-1.5">
+          <div className={cn("flex flex-col gap-1.5", isCardio && "hidden")}>
             <span className="text-xs text-muted-foreground">
               {t("builder.modifiers")}
             </span>
@@ -279,7 +292,9 @@ export function PhaseEditor({
           <PlusIcon data-icon="inline-start" />
           {t("builder.addPhase")}
         </Button>
-        <p className="text-xs text-muted-foreground">{t("builder.phaseHint")}</p>
+        <p className="text-xs text-muted-foreground">
+          {isCardio ? t("builder.cardioHint") : t("builder.phaseHint")}
+        </p>
       </div>
     </div>
   );

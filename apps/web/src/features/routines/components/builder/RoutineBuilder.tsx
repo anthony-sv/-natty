@@ -59,6 +59,7 @@ import {
   toRoutine,
   type DraftDay,
   type DraftExercise,
+  type DraftPhase,
   type DraftRoutine,
 } from "./draft";
 import { PhaseEditor } from "./PhaseEditor";
@@ -356,7 +357,14 @@ function ExerciseEditor({
             filter={filterExerciseOption}
             value={selected}
             onValueChange={(option: ExerciseOption | null) =>
-              onChange({ exerciseId: option?.id ?? "" })
+              // The library already knows conditioning from lifting, so picking
+              // one settles the kind rather than leaving you to notice the
+              // select still says "Main work" and the phase still asks for reps.
+              onChange(
+                option?.isCardio === true
+                  ? { exerciseId: option.id, kind: "cardio", phases: timed(exercise.phases) }
+                  : { exerciseId: option?.id ?? "" },
+              )
             }
             // Watched rather than left uncontrolled, so "no match" can offer to
             // create what you typed. The query lives on the root, not the input.
@@ -413,9 +421,18 @@ function ExerciseEditor({
           <Select
             items={kinds}
             value={exercise.kind}
-            onValueChange={(value) =>
-              onChange({ kind: value as ExerciseEntry["kind"] })
-            }
+            onValueChange={(value) => {
+              const kind = value as ExerciseEntry["kind"];
+              // Switching to cardio by hand does the same conversion picking a
+              // cardio exercise does — otherwise the form would still be
+              // asking for reps under a select that says Cardio, which is the
+              // exact state this is fixing.
+              onChange(
+                kind === "cardio"
+                  ? { kind, phases: timed(exercise.phases) }
+                  : { kind },
+              );
+            }}
           >
             <SelectTrigger className="w-32">
               <SelectValue />
@@ -458,9 +475,28 @@ function ExerciseEditor({
 
       <PhaseEditor
         phases={exercise.phases}
+        kind={exercise.kind}
         onChange={(phases) => onChange({ phases })}
       />
     </div>
+  );
+}
+
+/**
+ * Turn a set of phases into timed ones, keeping the sets and rest you'd
+ * already typed.
+ *
+ * A cardio block is a duration, and the model has said so since the beginning
+ * (`durationSeconds`) — the builder simply never switched to it, so picking
+ * "Low-intensity steady-state cardio" left you looking at "3 sets of 8-12
+ * reps" with a Forced reps checkbox underneath. Anything already timed is left
+ * alone so an existing routine's numbers survive a re-pick.
+ */
+function timed(phases: DraftPhase[]): DraftPhase[] {
+  return phases.map((phase) =>
+    phase.durationSeconds !== undefined
+      ? phase
+      : { ...phase, durationSeconds: "1200", segments: undefined },
   );
 }
 
