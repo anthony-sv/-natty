@@ -493,17 +493,25 @@ an exercise that hits several. `SPLIT_FOR_PATTERN` is total over
 no bucket. `spinal-extension` → `pull` is the one judgment call. Cardio is its
 own bucket and never counts as resistance volume.
 
+**There are four resistance buckets, not three.** `core` was added with the ab
+exercises, since `spinal-flexion` is neither a push, a pull nor a leg movement
+and forcing it into one would have made the chart lie. `RESISTANCE_SPLITS` is
+what `totalSets` sums — it used to add `push + pull + legs` by name, so the
+first set in a new bucket would have counted toward nothing.
+
 **`muscleGaps` separates three reasons**, which is the whole point: `never-direct`
 (no exercise in the library makes it primary), `indirect-only` (you've hit it,
 never on purpose) and `not-trained`. `forearms` is *not* `never-direct`, because
 `ez-bar-reverse-curl` carries a `muscleOverride`: directness is decided at the
 exercise level, not the movement's.
 
-Against the real library only **`abs`** now comes back `never-direct`. It used
-to be `glutes`, `abs` and `adductors` — and the hip movements were added
-*because* of that reading: a card naming a deficiency the app gave you no way to
-fix is a complaint, not a finding. A custom exercise can close the last one, and
-`merged.test.ts` covers exactly that.
+Against the real library **nothing** now comes back `never-direct`. It was
+`glutes`, `abs` and `adductors`, then `abs` alone — and both rounds of
+exercises were added *because* of that reading: a card naming a deficiency the
+app gave you no way to fix is a complaint, not a finding. `volume.test.ts`
+pins the list at empty, and it has been rewritten by exactly this fix twice,
+which is the test working. A custom exercise could close a future one, and
+`merged.test.ts` covers that.
 
 Bars are plain HTML, not a chart — a ranked horizontal bar with aligned labels
 needs no axis, and the `dataviz` skill says to build those in HTML. The 10–20
@@ -752,9 +760,9 @@ rather than whole bone mass. Don't rebuild it without a real bone-mass source.
 
 ## Nutrition (`src/data/diets/`, `src/features/nutrition/`)
 
-`/nutrition` is two tabs over a plan picker: **Plan**, the diet as a reference,
-and **Macros**, an interactive split. Nothing is logged — there's no intake
-collection, and adding one is a separate decision.
+`/nutrition` is four tabs over a plan picker: **Today**, what you actually ate;
+**Plan**, the diet as a reference; **Macros**, an interactive split; and
+**Pantry**, the foods and recipes you wrote.
 
 Plans are authored data in `src/data/diets/`, mirroring `src/data/routines/`
 down to the `authoring.ts` shorthands and the throw-on-unknown-id rule. Named
@@ -928,6 +936,101 @@ counted, so a fourth segment would count part of the day twice. It reads at
 **`ui/slider.tsx` renders one thumb per value and falls back to `[min, max]`
 for a non-array**, so `value={n}` silently draws two thumbs on top of each
 other. Always pass `value={[n]}`.
+
+### What you ate (`src/features/intake/`)
+
+The **Today** tab, and the first one — it's the one you open daily. One
+localStorage collection (`natty.intake.v1`), one flat row per thing eaten,
+bucketed by local calendar day like the heatmap and the weekly averages.
+
+**A ticked meal stores provenance, not its foods** — `{ planSlug, mealName,
+optionIndex }`. Same call as `LoggedSet.routineSlug`: freezing the resolved
+items would keep showing the old chicken portion after you edited the plan,
+and the plan is the document you'd expect to be the authority on its own
+meals. `resolveIntake` walks it at read time through `resolveDay` and the
+pantry, so the weekday variant is the one the *day* falls on rather than one
+the entry recorded. `intake.test.ts` pins that editing a plan changes what an
+already-logged meal resolves to, because that is the whole trade — and the
+trade is real: edit a plan and yesterday changes too. Right for a plan you
+follow, which is a recipe you cook rather than a receipt. Anything off-plan is
+an `item` entry, which *does* freeze what you typed.
+
+Meals are identified by **name**, since the plan model has no meal id — it's
+also how `SwapChoices` keys them. A renamed meal orphans its entry, which the
+panel keeps as a row at zero rather than dropping: the row is the only
+evidence you logged anything. A swap that was edited away falls back to the
+first option instead, because the meal is still the meal.
+
+`intake.ts` is pure and injected like `macros.ts`, and **`vsTargets` reuses
+`compareToTargets`** so the Today tab and the builder's save dialog cannot
+disagree about what "off target" means.
+
+An entry naming a *different* plan is ignored, which is what makes switching
+plans mid-week behave rather than counting one plan's day into the other.
+
+**Day navigation, not a heatmap.** A year grid answers "how consistent have I
+been", a training question; the food question is "what have I eaten today".
+Forward stops at today — this records what happened, and pre-planning is the
+Plan tab.
+
+**Nothing auto-logs.** Opening the tab writes nothing, the lesson `logSet`
+learned when advancing through a workout recorded sets nobody performed.
+Unticking removes with an Undo on the toast, like `deleteSet`. Toggling reads
+`allIntake()` and never the `useLiveQuery` snapshot — the same rule `setsFor`
+exists for, and deciding "is this already ticked" from a stale render logs a
+duplicate.
+
+## Export, import and sharing (`src/features/backup/`)
+
+Everything lives in eleven localStorage keys, and the half that would hurt
+most to lose — the exercises, routines, foods, recipes and plans you wrote —
+is data only you have.
+
+`backup.ts` is pure and tested: one envelope, `{ app: "natty", version,
+exportedAt, scope, data }`, parsed on read with the same Zod schemas the
+collections use, so a hand-edited file is rejected with what failed rather
+than landing in a collection. **`readBackup` never throws** — import is where
+a user hands the app an arbitrary file, so every failure comes back as a
+reason the UI can say out loud (`not-natty` | `wrong-version` | `invalid`).
+`version` is written now and checked on read so a future schema change can
+migrate rather than silently mis-parse.
+
+**Two scopes over one format, and they are different actions with different
+wording.** A full backup restores, which *replaces* and says so behind an
+`AlertDialog`; sharing one routine, plan or recipe *merges*, and nothing you
+have is touched. Importing a routine a friend sent must not wipe a year of
+logs, and the file looks the same either way — the distinction is carried by
+`scope` and by the dialog you get.
+
+**Imported items are re-keyed** (`rekey.ts`), and that isn't tidiness: a slug
+is provenance in `LoggedSet.routineSlug`, so adopting the exporter's would
+merge their history into yours. Fresh ids are followed **transitively** —
+into a recipe's ingredients, a plan's items, a routine's `exerciseId` and
+`orAlternatives`, and an intake entry's plan slug and food id — because a
+shared recipe still pointing at the exporter's foods resolves to nothing and
+reads as zero macros. **A restore does *not* re-key**: those ids are already
+yours and the logs reference them.
+
+**A share carries what the item needs.** A routine takes the custom exercises
+it names, a recipe takes its foods, a plan takes its recipes *and*
+transitively their foods — otherwise the thing arrives and renders blank.
+
+Import previews the file before writing anything. Nothing is uploaded
+anywhere: export is a download, import is a local file read, sharing means
+handing someone a file.
+
+## URL-addressable tabs
+
+`/progress` and `/nutrition` take `?tab=`, through the same `validateSearch`
+shape `/nutrition` uses for `?plan=` — **return the key only when present**, or
+every plain `<Link>` to the page stops typechecking. The value lives in the
+search param rather than `useState`, so a tab survives a refresh, is linkable,
+and can be reached from the command palette. `replace: true` keeps tab
+switches out of the back button.
+
+The palette lists every tab as its own entry, plus a **Create** group that
+deep-links to the owning tab — the panels already open their dialog from a
+button, so those are links rather than new UI.
 
 ## Plate loader (`src/features/plates/`)
 
