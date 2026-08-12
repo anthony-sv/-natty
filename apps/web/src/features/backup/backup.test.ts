@@ -5,6 +5,7 @@ import { userDietPlanSchema } from "@/features/nutrition/collection";
 import { userRoutineSchema } from "@/features/routines/collection";
 import {
   BACKUP_VERSION,
+  backupDataSchema,
   backupFilename,
   buildBackup,
   readBackup,
@@ -226,6 +227,112 @@ describe("sharing a built-in", () => {
     expect(backupFilename(AT, "exercise")).toMatch(
       /^natty-exercise-2026-08-\d\d\.json$/,
     );
+  });
+});
+
+/**
+ * TanStack DB attaches `$synced`, `$origin`, `$key` and `$collectionId` to every
+ * row `collection.values()` hands back, and all four rode into every exported
+ * file. None of it is secret — `$key` repeats the row's `id` — but a backup is
+ * a document people send each other, and its shape shouldn't be "our schema
+ * plus whatever the storage layer attached".
+ */
+describe("what an export actually writes", () => {
+  it("leaves the storage layer's bookkeeping behind", () => {
+    const dirty = {
+      ...emptyData(),
+      measurements: [
+        {
+          id: "m1",
+          measuredAt: AT,
+          site: "upperArm" as const,
+          value: 40,
+          unit: "cm" as const,
+          // What the collection really hands back.
+          $synced: true,
+          $origin: "remote",
+          $key: "m1",
+          $collectionId: "local-collection:natty.measurements.v1",
+        },
+      ],
+    } as unknown as BackupData;
+
+    const written = buildBackup(dirty, "full", AT);
+
+    expect(Object.keys(written.data.measurements[0])).toEqual([
+      "id",
+      "measuredAt",
+      "site",
+      "value",
+      "unit",
+    ]);
+  });
+
+  it("keeps every field that is actually ours", () => {
+    const row = {
+      id: "m1",
+      measuredAt: AT,
+      site: "thigh" as const,
+      side: "left" as const,
+      value: 60,
+      unit: "cm" as const,
+      notes: "morning, relaxed",
+    };
+
+    const written = buildBackup(
+      { ...emptyData(), measurements: [row] },
+      "full",
+      AT,
+    );
+
+    expect(written.data.measurements[0]).toEqual(row);
+  });
+
+  it("strips the profile too, without inventing one", () => {
+    expect(buildBackup(emptyData(), "full", AT).data.profile).toBeUndefined();
+  });
+
+  /**
+   * The strip is by `$` prefix rather than by naming the four fields, since the
+   * set is the library's to change. This is what makes that safe: if any schema
+   * of ours ever declared a `$`-prefixed field, the export would silently drop
+   * it, and nothing else in the suite would notice.
+   */
+  it("never strips a field one of our own schemas declares", () => {
+    /**
+     * Peel the wrappers off until an object schema falls out. The collections
+     * are `z.array(x).default([])`; `profile` is `x.optional()`.
+     */
+    const unwrap = (schema: unknown): Record<string, unknown> | undefined => {
+      let current = schema;
+      for (let depth = 0; depth < 5; depth++) {
+        const node = current as {
+          shape?: Record<string, unknown>;
+          def?: { type?: string; innerType?: unknown; element?: unknown };
+        };
+        if (node.shape !== undefined) return node.shape;
+        const next = node.def?.innerType ?? node.def?.element;
+        if (next === undefined) return undefined;
+        current = next;
+      }
+      return undefined;
+    };
+
+    const shapes = Object.entries(backupDataSchema.shape).map(
+      ([key, schema]) => [key, unwrap(schema)] as const,
+    );
+
+    // Fails loudly if the unwrapping ever stops working, rather than passing
+    // vacuously over schemas it couldn't read.
+    expect(shapes.every(([, shape]) => shape !== undefined)).toBe(true);
+    expect(shapes.length).toBe(Object.keys(backupDataSchema.shape).length);
+
+    const dollarFields = shapes.flatMap(([key, shape]) =>
+      Object.keys(shape ?? {})
+        .filter((field) => field.startsWith("$"))
+        .map((field) => `${key}.${field}`),
+    );
+    expect(dollarFields).toEqual([]);
   });
 });
 
