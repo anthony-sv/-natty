@@ -35,11 +35,14 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
 import type { ExerciseEntry, Routine } from "@/data/routines";
+import { ComboboxOptionGroup } from "@/components/combobox-option-group";
 import { createUserExercise } from "@/features/library/collection";
 import {
   filterExerciseOption,
   useExerciseOptions,
+  useGroupedExerciseOptions,
   type ExerciseOption,
+  type ExerciseOptionGroup,
 } from "@/features/library/use-exercise-options";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
@@ -300,6 +303,7 @@ function ExerciseEditor({
   const t = useT();
   const names = useNames();
   const options = useExerciseOptions();
+  const groups = useGroupedExerciseOptions(options);
   const [query, setQuery] = useState("");
 
   const selected = options.find((o) => o.id === exercise.exerciseId) ?? null;
@@ -338,7 +342,7 @@ function ExerciseEditor({
         <div className="flex min-w-56 flex-1 flex-col gap-1">
           <Label className="text-xs">{t("builder.pickExercise")}</Label>
           <Combobox
-            items={options}
+            items={groups}
             filter={filterExerciseOption}
             value={selected}
             onValueChange={(option: ExerciseOption | null) =>
@@ -367,15 +371,27 @@ function ExerciseEditor({
                 )}
               </ComboboxEmpty>
               <ComboboxList>
-                {(option: ExerciseOption) => (
-                  <ComboboxItem key={option.id} value={option}>
-                    <span className="flex items-center gap-2">
-                      {option.name}
-                      {option.isCustom ? (
-                        <Badge variant="secondary">{t("library.custom")}</Badge>
-                      ) : null}
-                    </span>
-                  </ComboboxItem>
+                {(group: ExerciseOptionGroup, index: number) => (
+                  <ComboboxOptionGroup
+                    key={group.key}
+                    group={group}
+                    index={index}
+                  >
+                    {(option) => (
+                      <ComboboxItem key={option.id} value={option}>
+                        <span className="flex items-center gap-2">
+                          {option.name}
+                          {/* The heading says which muscle, not whose — a lift
+                              you added still needs marking as yours. */}
+                          {option.isCustom ? (
+                            <Badge variant="secondary">
+                              {t("library.custom")}
+                            </Badge>
+                          ) : null}
+                        </span>
+                      </ComboboxItem>
+                    )}
+                  </ComboboxOptionGroup>
                 )}
               </ComboboxList>
             </ComboboxContent>

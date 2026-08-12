@@ -1,3 +1,5 @@
+import { getDietBySlug } from "@/data/diets";
+import { getRoutineBySlug } from "@/data/routines";
 import { bodyEntries } from "@/features/body/collection";
 import { userExercises } from "@/features/library/collection";
 import { intakeEntries } from "@/features/intake/collection";
@@ -89,13 +91,27 @@ export async function exportEverything(now: number): Promise<Backup> {
  *
  * Carrying them is what makes the share usable: a routine whose lifts the
  * recipient doesn't have would import with entries pointing at nothing.
+ *
+ * **Falls back to the built-in programs**, which is why the timestamps are
+ * stamped here rather than read. Sharing used to be offered only on a routine
+ * you wrote, purely because this looked in the collection and the compiled-in
+ * six aren't in it — a limit nobody chose, and one that reads as the feature
+ * being half-finished. A built-in references only built-in lifts, so the
+ * `exercises` filter below correctly yields nothing for one.
+ *
+ * The recipient gets it as a routine of their own, since `rekey` mints a fresh
+ * slug on import — a duplicate of something they may already have compiled in,
+ * but one they can edit, which is the point of being handed a copy.
  */
 export async function exportRoutine(
   slug: string,
   now: number,
 ): Promise<Backup | undefined> {
   await loadAll();
-  const routine = userRoutines.get(slug);
+  const own = userRoutines.get(slug);
+  const builtIn = getRoutineBySlug(slug);
+  const routine =
+    own ?? (builtIn && { ...builtIn, createdAt: now, updatedAt: now });
   if (routine === undefined) return undefined;
 
   const referenced = new Set(
@@ -138,13 +154,51 @@ export async function exportRecipe(
   );
 }
 
-/** One plan, plus the foods and recipes its meals point at. */
+/**
+ * One food of your own. Nothing travels with it — a food is a leaf.
+ *
+ * Worth its own scope because a food is the smallest thing that's genuinely
+ * yours: the macros off the back of a local product, typed once. Sending that
+ * used to mean wrapping it in a recipe you didn't want.
+ */
+export async function exportFood(
+  id: string,
+  now: number,
+): Promise<Backup | undefined> {
+  await loadAll();
+  const food = userFoods.get(id);
+  if (food === undefined) return undefined;
+  return buildBackup({ ...emptyData(), foods: [food] }, "food", now);
+}
+
+/** One custom exercise, likewise a leaf — it names its own muscles. */
+export async function exportExercise(
+  id: string,
+  now: number,
+): Promise<Backup | undefined> {
+  await loadAll();
+  const exercise = userExercises.get(id);
+  if (exercise === undefined) return undefined;
+  return buildBackup({ ...emptyData(), exercises: [exercise] }, "exercise", now);
+}
+
+/**
+ * One plan, plus the foods and recipes its meals point at.
+ *
+ * Built-ins fall back the same way routines do, and for the same reason.
+ * `isDraft` is stamped false rather than carried: a transcribed plan is never
+ * a draft, which is exactly why the flag lives on the user schema.
+ */
 export async function exportDiet(
   slug: string,
   now: number,
 ): Promise<Backup | undefined> {
   await loadAll();
-  const plan = userDiets.get(slug);
+  const own = userDiets.get(slug);
+  const builtIn = getDietBySlug(slug);
+  const plan =
+    own ??
+    (builtIn && { ...builtIn, createdAt: now, updatedAt: now, isDraft: false });
   if (plan === undefined) return undefined;
 
   const referenced = new Set(

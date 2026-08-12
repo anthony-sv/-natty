@@ -11,7 +11,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -44,11 +43,14 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import type { DietPlan, MealItem } from "@/data/diets";
+import { ComboboxOptionGroup } from "@/components/combobox-option-group";
 import {
   filterFoodOption,
   useFoodOptions,
+  useGroupedFoodOptions,
   usePantry,
   type FoodOption,
+  type FoodOptionGroup,
 } from "@/features/pantry/use-pantry";
 import { useT } from "@/i18n/use-t";
 import { createUserDiet, dietSlugFor, updateUserDiet } from "../../collection";
@@ -487,6 +489,7 @@ function ItemList({
 }) {
   const t = useT();
   const options = useFoodOptions();
+  const groups = useGroupedFoodOptions(options);
   const pantry = usePantry();
 
   const macros = totalFor(items, pantry);
@@ -508,7 +511,7 @@ function ItemList({
           >
             <div className="flex min-w-48 flex-1 flex-col gap-1">
               <Combobox
-                items={options}
+                items={groups}
                 filter={filterFoodOption}
                 value={selected}
                 onValueChange={(option: FoodOption | null) =>
@@ -524,19 +527,20 @@ function ItemList({
                 <ComboboxContent>
                   <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
                   <ComboboxList>
-                    {(option: FoodOption) => (
-                      <ComboboxItem key={option.id} value={option}>
-                        <span className="flex items-center gap-2">
-                          {option.name}
-                          {/* Which half it came from, since a recipe and an
-                              ingredient read the same otherwise. */}
-                          {option.kind === "recipe" ? (
-                            <Badge variant="outline">{t("pantry.recipe")}</Badge>
-                          ) : option.kind === "food" ? (
-                            <Badge variant="secondary">{t("pantry.yours")}</Badge>
-                          ) : null}
-                        </span>
-                      </ComboboxItem>
+                    {/* Which half it came from is now the heading's job, since
+                        a recipe and an ingredient read the same otherwise. */}
+                    {(group: FoodOptionGroup, index: number) => (
+                      <ComboboxOptionGroup
+                        key={group.key}
+                        group={group}
+                        index={index}
+                      >
+                        {(option) => (
+                          <ComboboxItem key={option.id} value={option}>
+                            {option.name}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxOptionGroup>
                     )}
                   </ComboboxList>
                 </ComboboxContent>

@@ -371,6 +371,9 @@ export const en = {
     "A recipe is a list of ingredients plus how you cooked it. It then drops into a meal like any other food.",
   "pantry.yours": "Yours",
   "pantry.recipe": "Recipe",
+  "pantry.group.recipes": "Your recipes",
+  "pantry.group.foods": "Your foods",
+  "pantry.group.builtIn": "Built-in foods",
   "pantry.ingredientCount.one": "{count} ingredient",
   "pantry.ingredientCount.other": "{count} ingredients",
 
@@ -574,7 +577,7 @@ export const en = {
 
   "about.sharing.title": "Backups and sharing",
   "about.sharing.body":
-    "Export everything as one file, or hand someone a single routine, plan or recipe.",
+    "Export everything as one file, or hand someone a single routine, plan, recipe, food or exercise — the ones that came with the app included.",
   "about.sharing.p1":
     "Restoring a full backup replaces what's in the browser. Importing a shared item adds to it and touches nothing you have.",
   "about.sharing.p2":

@@ -369,6 +369,9 @@ export const esMX: Record<keyof typeof en, string> = {
     "Una receta es una lista de ingredientes m\u00e1s c\u00f3mo la cocinaste. Despu\u00e9s entra a una comida como cualquier otro alimento.",
   "pantry.yours": "Tuyo",
   "pantry.recipe": "Receta",
+  "pantry.group.recipes": "Tus recetas",
+  "pantry.group.foods": "Tus alimentos",
+  "pantry.group.builtIn": "Alimentos incluidos",
   "pantry.ingredientCount.one": "{count} ingrediente",
   "pantry.ingredientCount.other": "{count} ingredientes",
 
@@ -572,7 +575,7 @@ export const esMX: Record<keyof typeof en, string> = {
 
   "about.sharing.title": "Respaldos y compartir",
   "about.sharing.body":
-    "Exporta todo en un archivo, o pásale a alguien una sola rutina, plan o receta.",
+    "Exporta todo en un archivo, o pásale a alguien una sola rutina, plan, receta, alimento o ejercicio — incluyendo los que vienen con la app.",
   "about.sharing.p1":
     "Restaurar un respaldo completo reemplaza lo que hay en el navegador. Importar algo compartido se suma y no toca nada de lo tuyo.",
   "about.sharing.p2":

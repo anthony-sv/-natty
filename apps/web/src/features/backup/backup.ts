@@ -54,8 +54,16 @@ export const backupSchema = z.object({
   app: z.literal("natty"),
   version: z.number().int().positive(),
   exportedAt: z.number(),
-  /** "everything" or the one thing you're sharing. */
-  scope: z.enum(["full", "routine", "diet", "recipe"]),
+  /**
+   * "everything" or the one thing you're sharing.
+   *
+   * Widening this list doesn't bump `version`: a file written by an older
+   * build still parses, which is the direction that matters. A *newer* file
+   * reaching an older build was always going to be refused, and it reports the
+   * honest reason — the scope isn't one it knows — rather than a version it
+   * would then try to migrate.
+   */
+  scope: z.enum(["full", "routine", "diet", "recipe", "food", "exercise"]),
   data: backupDataSchema,
 });
 export type Backup = z.infer<typeof backupSchema>;

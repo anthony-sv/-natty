@@ -126,24 +126,26 @@ function RoutineBody({
                 <PencilLineIcon data-icon="inline-start" />
                 {t("builder.edit")}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  void (async () => {
-                    const now = Date.now();
-                    const backup = await exportRoutine(routine.slug, now);
-                    if (backup === undefined) return;
-                    downloadBackup(backup, backupFilename(now, "routine"));
-                    toast.add({ title: t("data.shared"), type: "success" });
-                  })();
-                }}
-              >
-                <Share2Icon data-icon="inline-start" />
-                {t("data.share")}
-              </Button>
             </>
           ) : null}
+          {/* Outside the `isCustom` block: a built-in is as shareable as one
+              you wrote, and the recipient gets an editable copy either way. */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void (async () => {
+                const now = Date.now();
+                const backup = await exportRoutine(routine.slug, now);
+                if (backup === undefined) return;
+                downloadBackup(backup, backupFilename(now, "routine"));
+                toast.add({ title: t("data.shared"), type: "success" });
+              })();
+            }}
+          >
+            <Share2Icon data-icon="inline-start" />
+            {t("data.share")}
+          </Button>
           {routine.source ? <Badge variant="outline">{routine.source}</Badge> : null}
           {routine.style ? (
             <Badge variant="secondary">{f.names.text(routine.style)}</Badge>

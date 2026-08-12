@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useLiveQuery } from "@tanstack/react-db";
-import { ArchiveIcon, PencilLineIcon, PlusIcon, RotateCcwIcon, Trash2Icon } from "lucide-react";
+import {
+  ArchiveIcon,
+  PencilLineIcon,
+  PlusIcon,
+  RotateCcwIcon,
+  Share2Icon,
+  Trash2Icon,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +28,11 @@ import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
+import { backupFilename } from "@/features/backup/backup";
+import {
+  downloadBackup,
+  exportExercise,
+} from "@/features/backup/use-backup";
 import { useT } from "@/i18n/use-t";
 import { setsFor } from "@/features/log/collection";
 import {
@@ -162,6 +174,26 @@ function ExerciseRow({
             .join(" · ")}
         </span>
       </div>
+
+      {/* A lift is a leaf, like a food: it names its own muscles and pattern,
+          so nothing has to travel with it. */}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="shrink-0 text-muted-foreground"
+        aria-label={t("data.share")}
+        onClick={() => {
+          void (async () => {
+            const now = Date.now();
+            const backup = await exportExercise(exercise.id, now);
+            if (backup === undefined) return;
+            downloadBackup(backup, backupFilename(now, "exercise"));
+            toast.add({ title: t("data.shared"), type: "success" });
+          })();
+        }}
+      >
+        <Share2Icon />
+      </Button>
 
       <Button
         variant="ghost"

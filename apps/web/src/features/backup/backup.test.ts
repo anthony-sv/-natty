@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { diets } from "@/data/diets";
+import { routines } from "@/data/routines";
+import { userDietPlanSchema } from "@/features/nutrition/collection";
+import { userRoutineSchema } from "@/features/routines/collection";
 import {
   BACKUP_VERSION,
   backupFilename,
@@ -168,6 +172,59 @@ describe("the envelope", () => {
 
   it("writes the current version", () => {
     expect(buildBackup(emptyData(), "full", AT).version).toBe(BACKUP_VERSION);
+  });
+});
+
+/**
+ * Sharing was offered only on a routine or plan you'd written, because the
+ * export looked in the collection and the compiled-in ones aren't in it.
+ * `exportRoutine`/`exportDiet` now fall back to the built-in lists and stamp
+ * the two timestamps the user schemas add.
+ *
+ * Those functions touch collections, so they aren't unit-testable — but the
+ * one thing that could silently break is: a built-in has to *satisfy* the user
+ * schema once stamped. If `routineSchema` grows a field that
+ * `userRoutineSchema` narrows, sharing a built-in would write a file that
+ * `readBackup` then refuses, and nothing else would notice.
+ */
+describe("sharing a built-in", () => {
+  it("stamps every built-in routine into something a backup can carry", () => {
+    for (const routine of routines) {
+      const stamped = { ...routine, createdAt: AT, updatedAt: AT };
+      expect(() => userRoutineSchema.parse(stamped)).not.toThrow();
+    }
+  });
+
+  it("stamps every built-in plan into something a backup can carry", () => {
+    for (const plan of diets) {
+      const stamped = { ...plan, createdAt: AT, updatedAt: AT, isDraft: false };
+      expect(() => userDietPlanSchema.parse(stamped)).not.toThrow();
+    }
+  });
+
+  it("round-trips a built-in routine and re-keys it away from its own slug", () => {
+    const routine = { ...routines[0], createdAt: AT, updatedAt: AT };
+    const file = JSON.parse(
+      JSON.stringify(buildBackup({ ...emptyData(), routines: [routine] }, "routine", AT)),
+    ) as unknown;
+
+    const read = readBackup(file);
+    expect(read.ok).toBe(true);
+    if (!read.ok) return;
+
+    // A built-in's slug is provenance in `LoggedSet.routineSlug` on the
+    // recipient's machine too, so the copy must not adopt it — otherwise their
+    // history against the real built-in would merge into the shared copy.
+    const out = rekey(read.backup.data, counter());
+    expect(out.routines[0].slug).not.toBe(routines[0].slug);
+    expect(out.routines[0].name).toBe(routines[0].name);
+  });
+
+  it("names a lone food and a lone exercise by their own scope", () => {
+    expect(backupFilename(AT, "food")).toMatch(/^natty-food-2026-08-\d\d\.json$/);
+    expect(backupFilename(AT, "exercise")).toMatch(
+      /^natty-exercise-2026-08-\d\d\.json$/,
+    );
   });
 });
 

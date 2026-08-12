@@ -68,3 +68,38 @@ export function useFoodOptions(): FoodOption[] {
 export function filterFoodOption(item: FoodOption, query: string): boolean {
   return matchesAllWords(item.search, query);
 }
+
+export interface FoodOptionGroup {
+  key: FoodOption["kind"];
+  label: string;
+  items: FoodOption[];
+}
+
+/**
+ * Yours first, the compiled-in table last.
+ *
+ * A recipe, a food you wrote and a built-in read identically as rows, which is
+ * why every picker used to hang a badge off each one. A heading says the same
+ * thing once per section instead — so the badges came off.
+ *
+ * Ordered rather than derived: the built-in list is the long tail you scroll
+ * past, and what you wrote is what you opened the picker looking for. Takes the
+ * flat list because `RecipeForm` filters recipes out before grouping — recipes
+ * can't nest — and because resolving the Combobox's `value` needs a flat find.
+ */
+export function useGroupedFoodOptions(options: FoodOption[]): FoodOptionGroup[] {
+  const t = useT();
+
+  return useMemo(() => {
+    const order = [
+      ["recipe", "pantry.group.recipes"],
+      ["food", "pantry.group.foods"],
+      ["built-in", "pantry.group.builtIn"],
+    ] as const;
+
+    return order.flatMap(([kind, key]) => {
+      const items = options.filter((option) => option.kind === kind);
+      return items.length === 0 ? [] : [{ key: kind, label: t(key), items }];
+    });
+  }, [options, t]);
+}

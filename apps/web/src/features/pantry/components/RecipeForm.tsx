@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { PlusIcon, XIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ComboboxOptionGroup } from "@/components/combobox-option-group";
 import {
   Combobox,
   ComboboxContent,
@@ -35,8 +35,10 @@ import { cookingMethodSchema, FAT_ADDING_METHODS, type Recipe } from "../schema"
 import {
   filterFoodOption,
   useFoodOptions,
+  useGroupedFoodOptions,
   usePantry,
   type FoodOption,
+  type FoodOptionGroup,
 } from "../use-pantry";
 
 const METHODS = cookingMethodSchema.options;
@@ -311,14 +313,20 @@ function IngredientRow({
 }) {
   const t = useT();
   // Recipes are excluded: an ingredient can't be another recipe in v1.
-  const selectable = options.filter((option) => option.kind !== "recipe");
+  // Memoised because it feeds the grouping, which would otherwise rebuild —
+  // and hand the Combobox fresh `items` — on every keystroke in the amount box.
+  const selectable = useMemo(
+    () => options.filter((option) => option.kind !== "recipe"),
+    [options],
+  );
+  const groups = useGroupedFoodOptions(selectable);
   const selected = selectable.find((option) => option.id === item.foodId) ?? null;
 
   return (
     <div className="flex flex-wrap items-end gap-2 rounded-md border p-2">
       <div className="flex min-w-48 flex-1 flex-col gap-1">
         <Combobox
-          items={selectable}
+          items={groups}
           filter={filterFoodOption}
           value={selected}
           onValueChange={(option: FoodOption | null) =>
@@ -330,15 +338,18 @@ function IngredientRow({
           <ComboboxContent>
             <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
             <ComboboxList>
-              {(option: FoodOption) => (
-                <ComboboxItem key={option.id} value={option}>
-                  <span className="flex items-center gap-2">
-                    {option.name}
-                    {option.kind === "food" ? (
-                      <Badge variant="secondary">{t("pantry.yours")}</Badge>
-                    ) : null}
-                  </span>
-                </ComboboxItem>
+              {(group: FoodOptionGroup, index: number) => (
+                <ComboboxOptionGroup
+                  key={group.key}
+                  group={group}
+                  index={index}
+                >
+                  {(option) => (
+                    <ComboboxItem key={option.id} value={option}>
+                      {option.name}
+                    </ComboboxItem>
+                  )}
+                </ComboboxOptionGroup>
               )}
             </ComboboxList>
           </ComboboxContent>

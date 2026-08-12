@@ -129,23 +129,23 @@ function NutritionPage() {
             </Button>
           ) : null}
 
-          {isCustom ? (
-            <Button
-              variant="outline"
-              onClick={() => {
-                void (async () => {
-                  const now = Date.now();
-                  const backup = await exportDiet(plan.slug, now);
-                  if (backup === undefined) return;
-                  downloadBackup(backup, backupFilename(now, "diet"));
-                  toast.add({ title: t("data.shared"), type: "success" });
-                })();
-              }}
-            >
-              <Share2Icon data-icon="inline-start" />
-              {t("data.share")}
-            </Button>
-          ) : null}
+          {/* Not gated on `isCustom` — a transcribed plan is as shareable as
+              one you wrote, and it arrives as the recipient's own copy. */}
+          <Button
+            variant="outline"
+            onClick={() => {
+              void (async () => {
+                const now = Date.now();
+                const backup = await exportDiet(plan.slug, now);
+                if (backup === undefined) return;
+                downloadBackup(backup, backupFilename(now, "diet"));
+                toast.add({ title: t("data.shared"), type: "success" });
+              })();
+            }}
+          >
+            <Share2Icon data-icon="inline-start" />
+            {t("data.share")}
+          </Button>
 
           <Button nativeButton={false} render={<Link to="/nutrition/new" />}>
             <PlusIcon data-icon="inline-start" />

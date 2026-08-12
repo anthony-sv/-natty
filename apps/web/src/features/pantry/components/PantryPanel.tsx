@@ -29,7 +29,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
 import { backupFilename } from "@/features/backup/backup";
-import { downloadBackup, exportRecipe } from "@/features/backup/use-backup";
+import {
+  downloadBackup,
+  exportFood,
+  exportRecipe,
+} from "@/features/backup/use-backup";
 import { kcalOf } from "@/features/nutrition/macros";
 import { useT } from "@/i18n/use-t";
 import {
@@ -216,6 +220,21 @@ export function PantryPanel() {
                         .filter(Boolean)
                         .join(" · ")}
                       badge={t("pantry.yours")}
+                      // A food is a leaf: nothing travels with it, and typing
+                      // the macros off a local product once is exactly the
+                      // work worth handing to someone else.
+                      onShare={() => {
+                        void (async () => {
+                          const now = Date.now();
+                          const backup = await exportFood(food.id, now);
+                          if (backup === undefined) return;
+                          downloadBackup(backup, backupFilename(now, "food"));
+                          toast.add({
+                            title: t("data.shared"),
+                            type: "success",
+                          });
+                        })();
+                      }}
                       onEdit={() => setEditingFood(food)}
                       onArchive={() => {
                         archiveUserFood(food.id);
