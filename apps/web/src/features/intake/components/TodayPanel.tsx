@@ -98,7 +98,9 @@ export function TodayPanel({ plan }: { plan: DietPlan }) {
       {/* Day navigation rather than a heatmap. A year grid answers "how
           consistent have I been", which is a training question; the question
           about food is "what have I eaten today". */}
-      <div className="flex items-center justify-between gap-2">
+      {/* A compact cluster, not a full-width bar: stretched across a desktop
+          card the two arrows end up a screen apart from the date they move. */}
+      <div className="flex items-center justify-center gap-4">
         <Button
           variant="outline"
           size="icon"
@@ -108,7 +110,7 @@ export function TodayPanel({ plan }: { plan: DietPlan }) {
           <ChevronLeftIcon />
         </Button>
 
-        <div className="flex flex-col items-center">
+        <div className="flex w-48 flex-col items-center">
           <span className="font-medium">
             {offset === 0
               ? t("intake.today")
