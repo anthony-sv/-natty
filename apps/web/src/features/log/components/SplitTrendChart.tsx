@@ -53,16 +53,17 @@ export function SplitTrendChart({ weeks }: { weeks: WeekVolume[] }) {
   // One shared ceiling across all four panels. Per-panel scaling would draw a
   // 3-set core week the same height as a 20-set push week, which is the exact
   // comparison small multiples exist to make honest.
-  const maxSets = useMemo(
-    () =>
-      Math.max(
-        1,
-        ...weeks.flatMap((week) =>
-          RESISTANCE_SPLITS.map((split) => week.split[split]),
-        ),
+  const maxSets = useMemo(() => {
+    const peak = Math.max(
+      1,
+      ...weeks.flatMap((week) =>
+        RESISTANCE_SPLITS.map((split) => week.split[split]),
       ),
-    [weeks],
-  );
+    );
+    // Rounded up to a multiple of 5 here, once, rather than letting each chart
+    // apply its own `nice` — that would give every panel a different ceiling.
+    return Math.ceil(peak / 5) * 5;
+  }, [weeks]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -112,18 +113,23 @@ function SplitFacet({
             x: "week",
             y: "sets",
             // One colour throughout: the panel title says which split this is,
-            // so the fill is just ink. Body foreground rather than a palette
-            // slot, because nothing here is encoding identity.
-            fill: "var(--foreground)",
+            // so the fill is just ink rather than an identity. Slot 1 of the
+            // palette for all four — a single series needs no separation from
+            // anything, and full foreground reads as a wall of white on dark.
+            fill: "var(--split-push)",
             radius: 2,
           }),
         ],
         x: { scale: scaleBand },
         y: {
-          scale: scaleLinear,
-          // Shared, so the panels are comparable by eye.
-          domain: [0, maxSets],
-          nice: true,
+          // A configured scale **instance**, not the `scaleLinear` factory.
+          // The types say it outright — "a D3 scale factory infers its domain
+          // from materialized mark channels; a scale instance retains its
+          // configured domain" — so handing over the factory silently gave
+          // every panel its own ceiling, which is the one thing small
+          // multiples exist to prevent. `nice` is off for the same reason:
+          // it's applied per chart.
+          scale: scaleLinear().domain([0, maxSets]),
           grid: true,
         },
         theme,

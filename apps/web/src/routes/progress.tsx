@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Page } from "@/components/page";
 import {
   Tabs,
@@ -14,13 +13,27 @@ import { HistoryPanel } from "@/features/log/components/HistoryPanel";
 import { VolumePanel } from "@/features/log/components/VolumePanel";
 import { useT } from "@/i18n/use-t";
 
+const TABS = ["records", "volume", "history", "library", "body"] as const;
+type Tab = (typeof TABS)[number];
+
 export const Route = createFileRoute("/progress")({
+  // `?tab=` so a panel is linkable — the command palette jumps straight to one,
+  // and a refresh doesn't bounce you back to Records. The key is returned only
+  // when present, or every plain `<Link to="/progress">` stops typechecking.
+  validateSearch: (search: Record<string, unknown>): { tab?: Tab } =>
+    TABS.includes(search.tab as Tab) ? { tab: search.tab as Tab } : {},
   component: ProgressPage,
 });
 
 function ProgressPage() {
   const t = useT();
-  const [tab, setTab] = useState("records");
+  const navigate = useNavigate();
+  // The URL is the source of truth, not component state — that's what makes a
+  // tab linkable and survive a refresh. `replace` so tabbing around doesn't
+  // fill the back button with panel switches.
+  const { tab = "records" } = Route.useSearch();
+  const setTab = (next: string) =>
+    void navigate({ to: "/progress", search: { tab: next as Tab }, replace: true });
 
   return (
     <Page>

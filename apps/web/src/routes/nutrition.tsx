@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PencilLineIcon, PlusIcon } from "lucide-react";
 import { Page } from "@/components/page";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,9 @@ import { PantryPanel } from "@/features/pantry/components/PantryPanel";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 
+const TABS = ["plan", "macros", "pantry"] as const;
+type Tab = (typeof TABS)[number];
+
 export const Route = createFileRoute("/nutrition")({
   // `?plan=` is how the builder lands you on the plan you just saved, and it
   // makes a plan linkable. Optional and unvalidated beyond being a string —
@@ -31,8 +34,10 @@ export const Route = createFileRoute("/nutrition")({
   // to this page stops typechecking.
   validateSearch: (
     search: Record<string, unknown>,
-  ): { plan?: string } =>
-    typeof search.plan === "string" ? { plan: search.plan } : {},
+  ): { plan?: string; tab?: Tab } => ({
+    ...(typeof search.plan === "string" ? { plan: search.plan } : {}),
+    ...(TABS.includes(search.tab as Tab) ? { tab: search.tab as Tab } : {}),
+  }),
   component: NutritionPage,
 });
 
@@ -45,8 +50,18 @@ export const Route = createFileRoute("/nutrition")({
  */
 function NutritionPage() {
   const search = Route.useSearch();
+  const navigate = useNavigate();
   const [slug, setSlug] = useState(search.plan ?? diets[0]!.slug);
-  const [tab, setTab] = useState("plan");
+  // In the URL, so a panel is linkable and survives a refresh. `replace` keeps
+  // tab switches out of the back button.
+  const tab = search.tab ?? "plan";
+  const setTab = (next: string) =>
+    void navigate({
+      to: "/nutrition",
+      // The plan selection rides along, or switching tabs would drop it.
+      search: { plan: search.plan, tab: next as Tab },
+      replace: true,
+    });
   const t = useT();
   const names = useNames();
 
