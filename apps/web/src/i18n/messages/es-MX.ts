@@ -73,6 +73,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "modifier.partials": "Parciales",
   "modifier.staticHolds": "Isométricos",
   "modifier.dropSet": "Drop set",
+  "modifier.restPause": "Rest-pause",
   "modifier.ladder": "Escalera: {positions}",
 
   // ── Sets por partes ──────────────────────────────────────────────────────
@@ -224,7 +225,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.edit": "Editar",
   "builder.newTitle": "Escribe una rutina",
   "builder.newBody":
-    "Una semana de entrenamiento. Se repite \u2014 as\u00ed que un d\u00eda que haces cada lunes se escribe una sola vez.",
+    "Un ciclo de d\u00edas que se repite. Siete son una semana; pon ocho para push/pull/piernas/descanso dos veces, o tres para un PPL corrido \u2014 el ciclo son los d\u00edas que escribas, no los que trae una semana.",
   "builder.editTitle": "Editando {name}",
   "builder.name": "Nombre",
   "builder.nameRequired": "Ponle un nombre",
@@ -259,6 +260,9 @@ export const esMX: Record<keyof typeof en, string> = {
     "Ejercicios que aceptarías igual. El reproductor los ofrece como cambio a media serie, y registra el que de verdad hiciste.",
   "builder.addAlternative": "Agregar un sustituto...",
   "builder.removeAlternative": "Quitar {name}",
+  "builder.duration": "Cuánto dura (s)",
+  "builder.durationHint": "≈ {minutes} min",
+  "builder.setStyle.timed": "Por tiempo",
   "builder.sets": "Sets",
   "builder.reps": "Reps",
   "builder.repsTo": "a",
@@ -463,6 +467,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "dietBuilder.cancel": "Cancelar",
   "dietBuilder.delete": "Eliminar plan",
   "dietBuilder.deleted": "Se elimin\u00f3 {name}",
+  "dietBuilder.targetsDisagree":
+    "Estos macros dan {fromMacros} kcal, pero el objetivo diario de arriba dice {statedKcal} — una diferencia de {delta}. Cambia uno de los dos, o borra el objetivo diario y se calcula a partir de estos.",
   "dietBuilder.editingBuiltIn":
     "Este ven\u00eda con la app. Al guardar se queda tu versi\u00f3n y el original se oculta del selector \u2014 el original sigue ah\u00ed, as\u00ed que puedes regresarlo cuando quieras.",
   "dietBuilder.reset": "Regresar al original",

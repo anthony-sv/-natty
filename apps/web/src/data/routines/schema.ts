@@ -33,6 +33,15 @@ export const setModifiersSchema = z.object({
   forcedReps: z.boolean().optional(),
   /** Strip weight and keep going, without racking. */
   dropSet: z.boolean().optional(),
+  /**
+   * Take the set to failure, rack it for a breath or two, then squeeze out
+   * more reps at the same weight.
+   *
+   * Distinct from `dropSet`, which changes the load and doesn't stop, and from
+   * `forcedReps`, which needs a spotter. This one is the same weight and no
+   * help — just a pause.
+   */
+  restPause: z.boolean().optional(),
   /** Emphasised or assisted eccentrics. */
   negatives: z.boolean().optional(),
   /** Partial-range reps, typically once full reps fail. */

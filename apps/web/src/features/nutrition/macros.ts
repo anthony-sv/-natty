@@ -274,6 +274,43 @@ export function compareToTargets(
 }
 
 /** The targets as a full `Macros`, or undefined if none were stated at all. */
+/**
+ * Slack on a calorie figure, in kcal.
+ *
+ * Deliberately much looser than `TARGET_TOLERANCE_G`: a gram of protein is 4
+ * kcal, so the 5 g of per-macro slack is already ~20-45 kcal of rounding
+ * before anything is actually wrong. 50 catches "these two numbers describe
+ * different diets" without firing on arithmetic.
+ */
+export const TARGET_TOLERANCE_KCAL = 50;
+
+/**
+ * Whether a plan's own two statements of its calorie target agree.
+ *
+ * A plan can say both "2,040 kcal a day" and "175P / 200C / 70F" — and those
+ * macros come to 2,130. Nothing caught that: `compareToTargets` checks the
+ * *meals* against the macro targets and never checks the targets against each
+ * other, so a plan could contradict itself on its own front page and read as
+ * fine.
+ *
+ * Undefined when there's nothing to compare — no stated calorie target, or no
+ * macro targets at all. Returning a zero gap for those would be a claim they
+ * agree, which is different from having nothing to say.
+ */
+export function targetsSelfCheck(
+  plan: DietPlan,
+): { statedKcal: number; fromMacros: number; delta: number } | undefined {
+  if (plan.targetKcal === undefined) return undefined;
+  const stated = macrosFromTargets(plan.targets);
+  if (stated === undefined) return undefined;
+
+  const fromMacros = kcalOf(stated);
+  const delta = fromMacros - plan.targetKcal;
+  return Math.abs(delta) > TARGET_TOLERANCE_KCAL
+    ? { statedKcal: plan.targetKcal, fromMacros, delta }
+    : undefined;
+}
+
 export function macrosFromTargets(targets: MacroTargets): Macros | undefined {
   const { protein, carbs, fat } = targets;
   if (protein === undefined && carbs === undefined && fat === undefined) {

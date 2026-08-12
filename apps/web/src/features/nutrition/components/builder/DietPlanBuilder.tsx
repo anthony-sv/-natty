@@ -64,7 +64,10 @@ import {
 import {
   TARGET_TOLERANCE_G,
   compareToTargets,
+  effectiveTargetKcal,
   kcalOf,
+  targetsSelfCheck,
+  TARGET_TOLERANCE_KCAL,
   totalFor,
 } from "../../macros";
 import {
@@ -150,6 +153,16 @@ export function DietPlanBuilder({
   // stated — both mean "nothing to warn about".
   const gaps =
     plan && running ? compareToTargets(running, plan.targets) : [];
+
+  // Whether the plan's two statements of its own calorie target agree — the
+  // daily figure you typed, and what your macro targets multiply out to.
+  const selfCheck = plan ? targetsSelfCheck(plan) : undefined;
+
+  // The meals' calories against the target. Absent from this row entirely
+  // until now, so a day 79 kcal over read exactly like one that landed.
+  const targetKcal = plan ? effectiveTargetKcal(plan) : undefined;
+  const kcalDelta =
+    running && targetKcal ? kcalOf(running) - targetKcal.kcal : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -246,6 +259,18 @@ export function DietPlanBuilder({
             ))}
           </div>
           <FieldDescription>{t("dietBuilder.targetsHint")}</FieldDescription>
+          {/* Sits under the macro boxes rather than beside the totals, because
+              this is a contradiction between two things *you typed* — the
+              meals below have nothing to do with it and can't fix it. */}
+          {selfCheck ? (
+            <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-muted-foreground">
+              {t("dietBuilder.targetsDisagree", {
+                fromMacros: Math.round(selfCheck.fromMacros).toLocaleString(),
+                statedKcal: selfCheck.statedKcal.toLocaleString(),
+                delta: `${selfCheck.delta > 0 ? "+" : ""}${Math.round(selfCheck.delta).toLocaleString()}`,
+              })}
+            </p>
+          ) : null}
         </Field>
       </FieldGroup>
 
@@ -273,11 +298,10 @@ export function DietPlanBuilder({
                     {running[macro].toFixed(0)}
                     {delta !== undefined &&
                     Math.abs(delta) > TARGET_TOLERANCE_G ? (
-                      <span
-                        className={
-                          delta < 0 ? "text-destructive" : "text-foreground"
-                        }
-                      >
+                      // Both directions read as off-target. Only a shortfall
+                      // used to, so being 30g of fat *over* was drawn in
+                      // body ink and looked deliberate.
+                      <span className="text-destructive">
                         {" "}
                         {delta > 0 ? "+" : ""}
                         {delta.toFixed(0)}
@@ -286,7 +310,17 @@ export function DietPlanBuilder({
                   </span>
                 );
               })}
-              <span>{Math.round(kcalOf(running)).toLocaleString()} kcal</span>
+              <span>
+                {Math.round(kcalOf(running)).toLocaleString()} kcal
+                {kcalDelta !== undefined &&
+                Math.abs(kcalDelta) > TARGET_TOLERANCE_KCAL ? (
+                  <span className="text-destructive">
+                    {" "}
+                    {kcalDelta > 0 ? "+" : ""}
+                    {Math.round(kcalDelta).toLocaleString()}
+                  </span>
+                ) : null}
+              </span>
             </span>
           ) : null}
         </div>

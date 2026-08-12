@@ -55,6 +55,16 @@ export interface DraftPhase {
   /** Blank for a single number rather than a range. */
   repsTo: string;
   restSeconds: string;
+  /**
+   * How long the set runs, for the things you time rather than count — a
+   * cardio block, a stretch, a dead hang.
+   *
+   * Present means this phase is timed and `reps` is ignored, mirroring
+   * `prescriptionSchema`'s own either/or. Without it the builder could only
+   * write reps, so writing a twenty-minute cardio block came out as "3 sets of
+   * 8-12 reps" of walking.
+   */
+  durationSeconds?: string;
   /** Ramp-up sets: not logged, not counted as working sets. */
   isWarmup: boolean;
   /** Present means the set runs as a sequence; `reps` is ignored then. */
@@ -65,6 +75,7 @@ export interface DraftPhase {
     partials: boolean;
     staticHolds: boolean;
     dropSet: boolean;
+    restPause: boolean;
   };
 }
 
@@ -90,6 +101,7 @@ export function emptyPhase(): DraftPhase {
       partials: false,
       staticHolds: false,
       dropSet: false,
+      restPause: false,
     },
   };
 }
@@ -149,6 +161,15 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
     // pointing at an index nobody can see.
     if (segments.length < 2) return undefined;
     return { sets, segments, restSeconds, ...withModifiers, ...warmup };
+  }
+
+  // Timed and repped are exclusive, the same either/or `prescriptionSchema`
+  // enforces — carrying both would leave the player, the day list and the
+  // estimate each guessing which one wins.
+  if (phase.durationSeconds !== undefined) {
+    const durationSeconds = num(phase.durationSeconds);
+    if (durationSeconds === undefined) return undefined;
+    return { sets, durationSeconds, restSeconds, ...withModifiers, ...warmup };
   }
 
   const from = num(phase.repsFrom);
@@ -251,6 +272,17 @@ export function toDraft(routine: Routine): DraftRoutine {
               ? String(p.reps)
               : "",
           repsTo: Array.isArray(p.reps) ? String(p.reps[1]) : "",
+          // A range is authored for some cardio blocks ("20-30 min"); the
+          // editor takes one number, so the upper bound stands for it — the
+          // same choice `countdownSeconds` makes when running one.
+          durationSeconds:
+            p.durationSeconds === undefined
+              ? undefined
+              : String(
+                  Array.isArray(p.durationSeconds)
+                    ? p.durationSeconds[1]
+                    : p.durationSeconds,
+                ),
           restSeconds: p.restSeconds !== undefined ? String(p.restSeconds) : "",
           segments: p.segments?.map((segment) => ({
             kind: segment.kind,
@@ -264,6 +296,7 @@ export function toDraft(routine: Routine): DraftRoutine {
             partials: p.modifiers?.partials ?? false,
             staticHolds: p.modifiers?.staticHolds ?? false,
             dropSet: p.modifiers?.dropSet ?? false,
+            restPause: p.modifiers?.restPause ?? false,
           },
         })),
       })),

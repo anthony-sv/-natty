@@ -20,6 +20,7 @@ const MODIFIERS = [
   "partials",
   "staticHolds",
   "dropSet",
+  "restPause",
 ] as const;
 
 /**
@@ -41,11 +42,25 @@ export function PhaseEditor({
 
   const styles = [
     { value: "plain", label: t("builder.setStyle.plain") },
+    { value: "timed", label: t("builder.setStyle.timed") },
     { value: "segments", label: t("builder.setStyle.segments") },
   ];
 
+  /** Which of the three shapes a phase is currently in. */
+  const styleOf = (phase: DraftPhase) =>
+    phase.segments !== undefined
+      ? "segments"
+      : phase.durationSeconds !== undefined
+        ? "timed"
+        : "plain";
+
   const update = (index: number, patch: Partial<DraftPhase>) =>
     onChange(phases.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+
+  // One ramp-up block per exercise. Two would be two runs of light sets with
+  // working sets somewhere among them, which isn't a thing anyone does — and
+  // it makes "warmup 1 of 2" ambiguous about which block it means.
+  const hasWarmup = phases.some((phase) => phase.isWarmup);
 
   return (
     <div className="flex flex-col gap-3">
@@ -67,9 +82,13 @@ export function PhaseEditor({
               <Label className="text-xs">{t("builder.setStyle")}</Label>
               <Select
                 items={styles}
-                value={phase.segments === undefined ? "plain" : "segments"}
+                value={styleOf(phase)}
                 onValueChange={(value) =>
                   update(index, {
+                    // Exactly one of the three shapes is set at a time, which
+                    // is the same either/or `prescriptionSchema` enforces —
+                    // so switching always clears the other two.
+                    //
                     // Switching to a sequence seeds the shape people actually
                     // write — a hold and some pulses — rather than an empty
                     // list that immediately says it needs two parts.
@@ -77,6 +96,9 @@ export function PhaseEditor({
                       value === "segments"
                         ? [emptySegment("hold"), emptySegment("pulses")]
                         : undefined,
+                    // Twenty minutes: the length of a cardio block someone is
+                    // most likely writing when they reach for this.
+                    durationSeconds: value === "timed" ? "1200" : undefined,
                   })
                 }
               >
@@ -93,7 +115,34 @@ export function PhaseEditor({
               </Select>
             </div>
 
-            {phase.segments === undefined ? (
+            {phase.durationSeconds !== undefined ? (
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">{t("builder.duration")}</Label>
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min="1"
+                    className="w-24"
+                    value={phase.durationSeconds}
+                    onChange={(e) =>
+                      update(index, { durationSeconds: e.target.value })
+                    }
+                  />
+                  {/* In seconds, because that's what the model stores and what
+                      the player counts down — but a 20-minute block is 1200 of
+                      them, so the minutes are spelled out beside it. */}
+                  <span className="text-xs text-muted-foreground">
+                    {t("builder.durationHint", {
+                      minutes: (Number(phase.durationSeconds) / 60).toFixed(
+                        Number(phase.durationSeconds) % 60 === 0 ? 0 : 1,
+                      ),
+                    })}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+
+            {styleOf(phase) === "plain" ? (
               <div className="flex flex-col gap-1">
                 <Label className="text-xs">{t("builder.reps")}</Label>
                 <div className="flex items-center gap-1">
@@ -137,6 +186,10 @@ export function PhaseEditor({
               <Checkbox
                 id={`warmup-${index}`}
                 checked={phase.isWarmup}
+                // One warmup phase per exercise, and the others are locked
+                // rather than hidden — a disabled box says "not two of these",
+                // where a missing one would just look like a bug.
+                disabled={!phase.isWarmup && hasWarmup}
                 onCheckedChange={(checked) => {
                   const next = phases.map((p, i) =>
                     i === index ? { ...p, isWarmup: checked === true } : p,
@@ -153,7 +206,11 @@ export function PhaseEditor({
                   );
                 }}
               />
-              <Label htmlFor={`warmup-${index}`} className="text-xs font-normal">
+              <Label
+                htmlFor={`warmup-${index}`}
+                className="text-xs font-normal data-disabled:opacity-50"
+                data-disabled={!phase.isWarmup && hasWarmup ? "" : undefined}
+              >
                 {t("routines.warmupSet")}
               </Label>
             </div>

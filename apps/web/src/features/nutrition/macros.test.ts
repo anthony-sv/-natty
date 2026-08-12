@@ -13,6 +13,7 @@ import {
   percentSplit,
   proteinPerKg,
   resolveDay,
+  targetsSelfCheck,
   totalFor,
   variantForDay,
   weekdayOf,
@@ -253,6 +254,64 @@ describe("every built-in food says what kind of food it is", () => {
     for (const id of proteins) {
       expect(getFood(id).category).toBe("meat-fish");
     }
+  });
+});
+
+/**
+ * `compareToTargets` checks the *meals* against the macro targets. Nothing
+ * checked the targets against each other, so a plan could state "2,040 kcal"
+ * and macros that multiply out to 2,130 and read as perfectly fine on its own
+ * front page.
+ */
+describe("targetsSelfCheck", () => {
+  const plan = (targetKcal: number | undefined, targets: object) =>
+    ({ targetKcal, targets }) as DietPlan;
+
+  it("catches macros that don't come to the stated calorie target", () => {
+    // 175×4 + 200×4 + 70×9 = 2,130.
+    const result = targetsSelfCheck(
+      plan(2040, { protein: 175, carbs: 200, fat: 70 }),
+    );
+
+    expect(result?.fromMacros).toBe(2130);
+    expect(result?.statedKcal).toBe(2040);
+    expect(result?.delta).toBe(90);
+  });
+
+  it("stays quiet when they agree", () => {
+    expect(
+      targetsSelfCheck(plan(2130, { protein: 175, carbs: 200, fat: 70 })),
+    ).toBeUndefined();
+  });
+
+  it("tolerates rounding rather than firing on arithmetic", () => {
+    // 30 kcal apart: a gram of protein is already 4, so this is noise.
+    expect(
+      targetsSelfCheck(plan(2100, { protein: 175, carbs: 200, fat: 70 })),
+    ).toBeUndefined();
+  });
+
+  /**
+   * Nothing to compare is different from agreeing, and has to read as
+   * different — `effectiveTargetKcal` already derives the figure from the
+   * macros when no target is stated, so there's no contradiction possible.
+   */
+  it("has nothing to say without a stated calorie target", () => {
+    expect(
+      targetsSelfCheck(plan(undefined, { protein: 175, carbs: 200, fat: 70 })),
+    ).toBeUndefined();
+  });
+
+  it("has nothing to say without any macro targets", () => {
+    expect(targetsSelfCheck(plan(2040, {}))).toBeUndefined();
+  });
+
+  it("works off the macros actually stated, not the blanks", () => {
+    // "180g of protein and I don't care about the rest" is a real goal, and a
+    // partial target is a partial sum — 720 against 2,040 is a real gap.
+    const result = targetsSelfCheck(plan(2040, { protein: 180 }));
+
+    expect(result?.fromMacros).toBe(720);
   });
 });
 

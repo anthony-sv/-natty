@@ -193,6 +193,7 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "nutrition.tab.macros",
       "nutrition.tdee",
       "modifier.dropSet",
+      "modifier.restPause",
       // Gym loanwords: "pullover" and "curl" are what the movements are called
       // in Spanish too, and "cardio" is already on this list twice over.
       "pattern.pullover",
@@ -217,6 +218,8 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "history.setsOnDay.other",
       // Two placeholders and a bracket — there is nothing in it to translate.
       "measure.siteSide",
+      // A placeholder, an approximation sign and "min", which is "min" in both.
+      "builder.durationHint",
     ]);
 
     const unexplained = Object.keys(en).filter(

@@ -166,6 +166,48 @@ describe("producing a routine", () => {
     expect(entry.prescriptions[1].isWarmup).toBeUndefined();
   });
 
+  /**
+   * Without this the builder could only write reps, so a twenty-minute cardio
+   * block came out as "3 sets of 8-12 reps" of walking.
+   */
+  it("writes a timed phase as a duration, with no reps", () => {
+    const draft = emptyDraft();
+    draft.name = "x";
+    draft.days[0].exercises = [
+      {
+        exerciseId: "barbell-hip-thrust",
+        orAlternatives: [],
+        kind: "cardio",
+        isFinisher: false,
+        phases: [{ ...emptyPhase(), sets: "1", durationSeconds: "1200" }],
+      },
+    ];
+
+    const p = toRoutine(draft, "s")!.weeks[0].days[0].exercises[0].prescriptions[0];
+    expect(p.durationSeconds).toBe(1200);
+    // The schema's own `.refine` rejects both at once, so this isn't just
+    // tidiness — carrying reps too would fail the parse at the collection.
+    expect(p.reps).toBeUndefined();
+  });
+
+  it("reads a timed phase back into the editor", () => {
+    const draft = emptyDraft();
+    draft.name = "x";
+    draft.days[0].exercises = [
+      {
+        exerciseId: "barbell-hip-thrust",
+        orAlternatives: [],
+        kind: "cardio",
+        isFinisher: false,
+        phases: [{ ...emptyPhase(), sets: "1", durationSeconds: "900" }],
+      },
+    ];
+
+    const routine = toRoutine(draft, "s")!;
+    const back = toDraft(routine);
+    expect(back.days[0].exercises[0].phases[0].durationSeconds).toBe("900");
+  });
+
   it("carries the substitutes you picked", () => {
     const draft = emptyDraft();
     draft.name = "x";

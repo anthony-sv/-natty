@@ -72,6 +72,7 @@ export const en = {
   "modifier.partials": "Partials",
   "modifier.staticHolds": "Static holds",
   "modifier.dropSet": "Drop set",
+  "modifier.restPause": "Rest-pause",
   "modifier.ladder": "Ladder: {positions}",
 
   // ── Segmented sets ───────────────────────────────────────────────────────
@@ -224,7 +225,7 @@ export const en = {
   "builder.edit": "Edit",
   "builder.newTitle": "Write a routine",
   "builder.newBody":
-    "One week of training. It repeats \u2014 so a day you do every Monday is written once.",
+    "A cycle of days that repeats. Seven of them is a week; add eight for push/pull/legs/rest twice over, or three for a rolling PPL \u2014 the cycle is however many days you write, not however many are in a week.",
   "builder.editTitle": "Editing {name}",
   "builder.name": "Name",
   "builder.nameRequired": "Give it a name",
@@ -259,6 +260,9 @@ export const en = {
     "Lifts you'd equally accept. The player offers them as a swap mid-set, and logs against whichever you actually did.",
   "builder.addAlternative": "Add a substitute...",
   "builder.removeAlternative": "Remove {name}",
+  "builder.duration": "How long (s)",
+  "builder.durationHint": "≈ {minutes} min",
+  "builder.setStyle.timed": "Timed",
   "builder.sets": "Sets",
   "builder.reps": "Reps",
   "builder.repsTo": "to",
@@ -467,6 +471,8 @@ export const en = {
   "dietBuilder.cancel": "Cancel",
   "dietBuilder.delete": "Delete plan",
   "dietBuilder.deleted": "Deleted {name}",
+  "dietBuilder.targetsDisagree":
+    "These macros come to {fromMacros} kcal, but the daily target above says {statedKcal} — a difference of {delta}. Change one of them, or clear the daily target and it'll be worked out from these.",
   "dietBuilder.editingBuiltIn":
     "This one came with the app. Saving keeps your version and hides the original from the picker — the original stays put, so you can put it back any time.",
   "dietBuilder.reset": "Reset to the original",
