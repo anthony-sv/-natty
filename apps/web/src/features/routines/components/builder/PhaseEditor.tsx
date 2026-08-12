@@ -137,9 +137,21 @@ export function PhaseEditor({
               <Checkbox
                 id={`warmup-${index}`}
                 checked={phase.isWarmup}
-                onCheckedChange={(checked) =>
-                  update(index, { isWarmup: checked === true })
-                }
+                onCheckedChange={(checked) => {
+                  const next = phases.map((p, i) =>
+                    i === index ? { ...p, isWarmup: checked === true } : p,
+                  );
+                  // Ticking this on the only phase would leave an exercise
+                  // that is *entirely* warmup — no working sets at all, which
+                  // is never what anyone means and only shows up later as a
+                  // second row on the day page. Add the working phase here
+                  // instead of letting you discover the gap.
+                  onChange(
+                    checked === true && next.every((p) => p.isWarmup)
+                      ? [...next, emptyPhase()]
+                      : next,
+                  );
+                }}
               />
               <Label htmlFor={`warmup-${index}`} className="text-xs font-normal">
                 {t("routines.warmupSet")}

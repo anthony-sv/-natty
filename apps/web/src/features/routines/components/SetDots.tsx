@@ -62,9 +62,14 @@ export function SetDots({
           )}
         />
       ))}
-      <span className="pl-1 text-xs text-muted-foreground tabular-nums">
-        {working}
-      </span>
+      {/* Omitted rather than printed as 0 on an all-warmup exercise, which
+          read as a broken row. The hollow marks and the phase's own Warmup
+          chip already say what it is; a zero says something went wrong. */}
+      {working > 0 ? (
+        <span className="pl-1 text-xs text-muted-foreground tabular-nums">
+          {working}
+        </span>
+      ) : null}
     </span>
   );
 }
