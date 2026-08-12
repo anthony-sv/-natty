@@ -444,6 +444,155 @@ export const en = {
 
   // ── Export and import ────────────────────────────────────────────────────
   // ── What you ate ─────────────────────────────────────────────────────────
+  // ── The guide ───────────────────────────────────────────────────
+  "nav.about": "Guide",
+  "index.dest.about":
+    "How every part of the app works, and why it works that way.",
+  "about.title": "How this works",
+  "about.subtitle":
+    "Every feature, what it's for, and the handful of decisions behind it that aren't obvious from clicking around.",
+
+  "about.storage.title": "Where your data lives",
+  "about.storage.body":
+    "In this browser, on this device. There is no account and nothing is sent anywhere.",
+  "about.storage.p1":
+    "That makes it private by construction — but it also means clearing your browser data deletes it, and it doesn't follow you to your phone.",
+  "about.storage.p2":
+    "Export a backup now and again. The half you can't reconstruct is the exercises, routines, foods, recipes and plans you wrote.",
+  "about.storage.p3":
+    "The six training programs and the built-in foods are compiled into the app, so those are never at risk.",
+  "about.storage.link": "Back up your data",
+
+  "about.routines.title": "Programs and days",
+  "about.routines.body":
+    "Six transcribed programs plus anything you write. Each one is weeks of days, and each day is a list of exercises with sets, reps and rest.",
+  "about.routines.p1":
+    "A program row shows the training days of its first week, so you can tell a push/pull split from an arms specialisation without opening it.",
+  "about.routines.p2":
+    "Open a day to see the whole thing before you start: how many exercises, how many working sets, and a rough time.",
+  "about.routines.p3":
+    "The marks under each exercise are one per set, so a seven-set finisher visibly outweighs a three-set accessory.",
+  "about.routines.link": "Browse the programs",
+
+  "about.player.title": "Running a session",
+  "about.player.body":
+    "Start a day and the app walks you through it one step at a time — each work set, each rest, each pose hold.",
+  "about.player.p1":
+    "Rest timers start themselves when you tap Done; a cardio block waits for you to press Start, because you decide when you're on the machine.",
+  "about.player.p2":
+    "The button stays in the same place on every step. That's deliberate — it's the control you press forty times a session.",
+  "about.player.p3":
+    "You can step back and forward freely. Ending early asks first, because it throws away your place in the day.",
+
+  "about.logging.title": "Logging sets and personal records",
+  "about.logging.body":
+    "Log a set from the player, or backfill one later from the Records tab. Weight is optional — bodyweight work counts.",
+  "about.logging.p1":
+    "Nothing is logged unless you submit the form. Moving through a workout records nothing on its own.",
+  "about.logging.p2":
+    "A record isn't one number. It's the best weight at each rep count, dropping any row beaten on both — so 120x1, 110x3 and 90x8 can all stand as records at once.",
+  "about.logging.p3":
+    "Units are stored exactly as you enter them. A machine marked in pounds reads back in pounds; only comparisons convert.",
+  "about.logging.link": "See your records",
+
+  "about.exercises.title": "Exercises the library doesn't have",
+  "about.exercises.body":
+    "113 lifts ship with the app. Add your own and they work everywhere the built-in ones do — logging, records, volume, the split chart.",
+  "about.exercises.p1":
+    "You name the muscles it works and the movement pattern, rather than picking from a list of 42 movements. That's what lets the volume charts read it with no special case.",
+  "about.exercises.p2":
+    "Once you've logged against one it archives rather than deletes — deleting would leave those sets pointing at nothing.",
+  "about.exercises.link": "Your exercise library",
+
+  "about.builder.title": "Writing your own routine",
+  "about.builder.body":
+    "Build a program from scratch, or start from a copy of a built-in one and change what you don't like.",
+  "about.builder.p1":
+    "A routine you write is one week, which repeats. Copying a built-in takes its first week.",
+  "about.builder.p2":
+    "Sets can carry intensity techniques — drop sets, partials, negatives, forced reps — and can be built from parts, like a hold into pulses into reps.",
+  "about.builder.p3":
+    "Type a lift the picker doesn't know and it offers to create it there and then.",
+  "about.builder.link": "Write a routine",
+
+  "about.progress.title": "Progress",
+  "about.progress.body":
+    "Five views over the same log: what you've lifted, how much, when, and against what.",
+  "about.progress.p1":
+    "Records — every personal record, searchable and grouped by exercise. Fix or delete a mistyped set here and everything downstream corrects itself.",
+  "about.progress.p2":
+    "Volume — weekly sets per muscle, and a push/pull/legs/core split. Direct and indirect sets are counted separately rather than blended.",
+  "about.progress.p3":
+    "History — a year of training days as a grid, and your current streak. It counts back from today, so a broken streak reads zero.",
+  "about.progress.p4":
+    "Body — weigh-ins, body fat and FFMI against the population bands. Set your height on that tab or the numbers can't be computed.",
+  "about.progress.link": "Open progress",
+
+  "about.nutrition.title": "Nutrition",
+  "about.nutrition.body":
+    "A plan describes what to eat; the Today tab records whether you did.",
+  "about.nutrition.p1":
+    "Today — tick meals off the plan as you eat them, and add anything off-plan. Nothing is logged until you tick it.",
+  "about.nutrition.p2":
+    "A ticked meal remembers which meal and which swap, not a copy of its foods — so correcting the plan corrects what you logged, including days already past.",
+  "about.nutrition.p3":
+    "Plan — the diet as a reference, per weekday, with swap options and hydration worked out from your body weight.",
+  "about.nutrition.p4":
+    "Macros — drag the split and watch the grams and calories move, then send the result back as your plan's targets.",
+  "about.nutrition.link": "Open nutrition",
+
+  "about.pantry.title": "Your foods and recipes",
+  "about.pantry.body":
+    "Add ingredients the built-in list doesn't have, and cook them into recipes you can drop into a meal like any other food.",
+  "about.pantry.p1":
+    "A recipe is portioned either into servings or by the weight of the finished dish. Weigh it cooked — it weighs less than its ingredients, and nothing here guesses by how much.",
+  "about.pantry.p2":
+    "Raw and cooked are different foods, never a conversion. A gram of cooked chicken holds a third more protein than a gram of raw.",
+  "about.pantry.p3":
+    "The cooking method carries no macros of its own. Fat you cook in is an ingredient line with an amount you typed.",
+  "about.pantry.link": "Open your pantry",
+
+  "about.calculators.title": "Calculators",
+  "about.calculators.body":
+    "Three tabs of arithmetic. Nothing here reads or writes your log, beyond filling one field from your latest weigh-in.",
+  "about.calculators.p1":
+    "One-rep max — five published formulas at once, because they disagree by 5kg or more at high reps and a single number would hide that. It works backwards too: the load for a set of eight.",
+  "about.calculators.p2":
+    "RPE — what a set at a given weight, reps and RPE implies. Off-chart input returns nothing rather than extrapolating past where the published table stops.",
+  "about.calculators.p3":
+    "Natural potential — an empirical model of peak lean mass from your height, wrist and ankle. It's a fit to a population, not a ceiling.",
+  "about.calculators.link": "Open the calculators",
+
+  "about.plates.title": "Plate loader",
+  "about.plates.body":
+    "A target weight in, the plates per side out — or plates in, the total out. Its own page, because you open it standing at the rack.",
+  "about.plates.p1":
+    "It doesn't just grab the heaviest plate that fits. Tell it your gym is out of 10s and it finds a combination that still hits the number, where the obvious approach would come up short.",
+  "about.plates.p2":
+    "Inventory is counted in pairs, since a single plate can't be loaded evenly. Set a size to zero and it plans around it.",
+  "about.plates.link": "Open the plate loader",
+
+  "about.sharing.title": "Backups and sharing",
+  "about.sharing.body":
+    "Export everything as one file, or hand someone a single routine, plan or recipe.",
+  "about.sharing.p1":
+    "Restoring a full backup replaces what's in the browser. Importing a shared item adds to it and touches nothing you have.",
+  "about.sharing.p2":
+    "A shared item arrives with new ids, so importing the same file twice gives you two copies rather than overwriting. It also brings what it needs — a routine carries its custom exercises, a plan carries its recipes.",
+  "about.sharing.p3":
+    "Nothing is uploaded. Export is a download, import is a file read, and sharing means sending someone the file yourself.",
+  "about.sharing.link": "Back up or import",
+
+  "about.gettingAround.title": "Getting around",
+  "about.gettingAround.body":
+    "A few things that save time once you know they're there.",
+  "about.gettingAround.p1":
+    "Ctrl+K searches every page, tab and program, and jumps straight to creating a routine, plan, food or recipe.",
+  "about.gettingAround.p2":
+    "Tabs live in the address bar, so a view can be bookmarked, shared as a link, and survives a refresh.",
+  "about.gettingAround.p3":
+    "Language and dark mode are at the bottom of the sidebar. Both stick.",
+
   "intake.tab": "Today",
   "intake.today": "Today",
   "intake.yesterday": "Yesterday",

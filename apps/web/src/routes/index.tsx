@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
+  BookOpenIcon,
   CalculatorIcon,
   ChevronRightIcon,
   CircleDotIcon,
@@ -78,6 +79,12 @@ const DESTINATIONS: Array<{
     icon: CircleDotIcon,
     titleKey: "nav.plates",
     descriptionKey: "index.dest.plates",
+  },
+  {
+    to: "/about",
+    icon: BookOpenIcon,
+    titleKey: "nav.about",
+    descriptionKey: "index.dest.about",
   },
 ];
 

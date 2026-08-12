@@ -442,6 +442,155 @@ export const esMX: Record<keyof typeof en, string> = {
 
   // ── Exportar e importar ──────────────────────────────────────────────────
   // ── Lo que comiste ───────────────────────────────────────────────────────
+  // ── La guía ────────────────────────────────────────────────────
+  "nav.about": "Guía",
+  "index.dest.about":
+    "Cómo funciona cada parte de la app, y por qué funciona así.",
+  "about.title": "Cómo funciona esto",
+  "about.subtitle":
+    "Cada función, para qué sirve, y las pocas decisiones detrás que no son obvias con solo darle clic.",
+
+  "about.storage.title": "Dónde viven tus datos",
+  "about.storage.body":
+    "En este navegador, en este dispositivo. No hay cuenta y no se manda nada a ningún lado.",
+  "about.storage.p1":
+    "Eso lo hace privado por construcción — pero también significa que borrar los datos del navegador los elimina, y que no te siguen al celular.",
+  "about.storage.p2":
+    "Exporta un respaldo de vez en cuando. Lo que no puedes reconstruir son los ejercicios, rutinas, alimentos, recetas y planes que escribiste.",
+  "about.storage.p3":
+    "Los seis programas y los alimentos de la lista base vienen dentro de la app, así que esos nunca corren riesgo.",
+  "about.storage.link": "Respalda tus datos",
+
+  "about.routines.title": "Programas y días",
+  "about.routines.body":
+    "Seis programas transcritos más lo que tú escribas. Cada uno son semanas de días, y cada día es una lista de ejercicios con series, reps y descanso.",
+  "about.routines.p1":
+    "Cada renglón muestra los días de entrenamiento de su primera semana, para distinguir un push/pull de una especialización de brazo sin abrirlo.",
+  "about.routines.p2":
+    "Abre un día para verlo completo antes de empezar: cuántos ejercicios, cuántas series efectivas y un tiempo aproximado.",
+  "about.routines.p3":
+    "Las marcas debajo de cada ejercicio son una por serie, así que un finisher de siete series pesa visiblemente más que un accesorio de tres.",
+  "about.routines.link": "Ver los programas",
+
+  "about.player.title": "Hacer una sesión",
+  "about.player.body":
+    "Inicia un día y la app te lleva paso por paso — cada serie, cada descanso, cada pose.",
+  "about.player.p1":
+    "Los descansos arrancan solos cuando marcas Listo; un bloque de cardio espera a que le des Iniciar, porque tú decides cuándo estás en la máquina.",
+  "about.player.p2":
+    "El botón se queda en el mismo lugar en cada paso. Es a propósito — es el control que aprietas cuarenta veces por sesión.",
+  "about.player.p3":
+    "Puedes ir y regresar libremente. Terminar antes te pregunta primero, porque tira tu lugar en el día.",
+
+  "about.logging.title": "Registrar series y récords",
+  "about.logging.body":
+    "Registra una serie desde el reproductor, o captúrala después desde la pestaña de Récords. El peso es opcional — el trabajo con peso corporal cuenta.",
+  "about.logging.p1":
+    "No se registra nada si no envías el formulario. Avanzar por el entrenamiento no guarda nada por su cuenta.",
+  "about.logging.p2":
+    "Un récord no es un solo número. Es el mejor peso en cada cantidad de reps, quitando cualquier renglón que pierda por los dos lados — así 120x1, 110x3 y 90x8 pueden ser récords al mismo tiempo.",
+  "about.logging.p3":
+    "Las unidades se guardan tal como las escribes. Una máquina marcada en libras se lee en libras; solo las comparaciones convierten.",
+  "about.logging.link": "Ver tus récords",
+
+  "about.exercises.title": "Ejercicios que no están en la lista",
+  "about.exercises.body":
+    "La app trae 113 ejercicios. Agrega los tuyos y funcionan en todo lo que los de la lista base — registro, récords, volumen, la gráfica del split.",
+  "about.exercises.p1":
+    "Tú dices qué músculos trabaja y qué patrón de movimiento es, en vez de escoger entre 42 movimientos. Eso es lo que deja que las gráficas de volumen lo lean sin ningún caso especial.",
+  "about.exercises.p2":
+    "Una vez que registraste algo contra uno, se archiva en lugar de borrarse — borrarlo dejaría esas series apuntando a nada.",
+  "about.exercises.link": "Tu biblioteca de ejercicios",
+
+  "about.builder.title": "Escribir tu propia rutina",
+  "about.builder.body":
+    "Arma un programa desde cero, o parte de una copia de uno de los que ya vienen y cambia lo que no te guste.",
+  "about.builder.p1":
+    "Una rutina tuya es una semana, que se repite. Copiar uno de los que vienen toma su primera semana.",
+  "about.builder.p2":
+    "Las series pueden traer técnicas de intensidad — drop sets, parciales, negativas, repeticiones forzadas — y pueden armarse por partes, como un hold que entra a pulsos y luego a reps.",
+  "about.builder.p3":
+    "Escribe un ejercicio que el buscador no conozca y te ofrece crearlo ahí mismo.",
+  "about.builder.link": "Escribir una rutina",
+
+  "about.progress.title": "Progreso",
+  "about.progress.body":
+    "Cinco vistas sobre el mismo registro: qué levantaste, cuánto, cuándo y contra qué.",
+  "about.progress.p1":
+    "Récords — todos tus récords, buscables y agrupados por ejercicio. Corrige o borra aquí una serie mal escrita y todo lo demás se corrige solo.",
+  "about.progress.p2":
+    "Volumen — series semanales por músculo, y un split de push/pull/pierna/core. Las series directas e indirectas se cuentan aparte en vez de mezclarse.",
+  "about.progress.p3":
+    "Historial — un año de días de entrenamiento en cuadrícula, y tu racha actual. Cuenta hacia atrás desde hoy, así que una racha rota marca cero.",
+  "about.progress.p4":
+    "Cuerpo — pesajes, grasa corporal y FFMI contra las bandas de referencia. Pon tu estatura en esa pestaña o los números no se pueden calcular.",
+  "about.progress.link": "Abrir progreso",
+
+  "about.nutrition.title": "Nutrición",
+  "about.nutrition.body":
+    "Un plan describe qué comer; la pestaña Hoy registra si lo hiciste.",
+  "about.nutrition.p1":
+    "Hoy — marca las comidas del plan conforme te las comes, y agrega lo que esté fuera del plan. No se registra nada hasta que lo marcas.",
+  "about.nutrition.p2":
+    "Una comida marcada recuerda cuál comida y cuál opción, no una copia de sus alimentos — así que corregir el plan corrige lo que registraste, incluso en días que ya pasaron.",
+  "about.nutrition.p3":
+    "Plan — la dieta como referencia, por día de la semana, con opciones de intercambio e hidratación calculada desde tu peso.",
+  "about.nutrition.p4":
+    "Macros — mueve el reparto y mira cómo cambian los gramos y las calorías, luego manda el resultado como los objetivos de tu plan.",
+  "about.nutrition.link": "Abrir nutrición",
+
+  "about.pantry.title": "Tus alimentos y recetas",
+  "about.pantry.body":
+    "Agrega ingredientes que no estén en la lista base, y cocínalos en recetas que puedes meter a una comida como cualquier otro alimento.",
+  "about.pantry.p1":
+    "Una receta se porciona en raciones o por el peso del platillo terminado. Pésalo ya cocido — pesa menos que sus ingredientes, y aquí nada adivina cuánto menos.",
+  "about.pantry.p2":
+    "Crudo y cocido son alimentos distintos, nunca una conversión. Un gramo de pollo cocido trae un tercio más de proteína que uno crudo.",
+  "about.pantry.p3":
+    "El método de cocción no trae macros propios. La grasa en la que cocinas es un renglón de ingrediente con una cantidad que tú escribes.",
+  "about.pantry.link": "Abrir tu despensa",
+
+  "about.calculators.title": "Calculadoras",
+  "about.calculators.body":
+    "Tres pestañas de aritmética. Nada de aquí lee ni escribe tu registro, más allá de llenar un campo con tu último pesaje.",
+  "about.calculators.p1":
+    "Máximo de una repetición — cinco fórmulas publicadas a la vez, porque difieren 5kg o más en reps altas y un solo número lo escondería. También va al revés: el peso para una serie de ocho.",
+  "about.calculators.p2":
+    "RPE — qué implica una serie con cierto peso, reps y RPE. Los valores fuera de tabla no devuelven nada en vez de extrapolar más allá de donde la tabla publicada se detiene.",
+  "about.calculators.p3":
+    "Potencial natural — un modelo empírico de masa magra máxima a partir de tu estatura, muñeca y tobillo. Es un ajuste a una población, no un techo.",
+  "about.calculators.link": "Abrir las calculadoras",
+
+  "about.plates.title": "Cargador de discos",
+  "about.plates.body":
+    "Metes un peso objetivo y salen los discos por lado — o metes discos y sale el total. Tiene su propia página porque la abres parado frente al rack.",
+  "about.plates.p1":
+    "No solo agarra el disco más pesado que quepa. Dile que tu gym no tiene discos de 10 y encuentra una combinación que sí llega al número, donde lo obvio se quedaría corto.",
+  "about.plates.p2":
+    "El inventario se cuenta en pares, porque un disco suelto no se carga parejo. Pon una medida en cero y lo planea sin ella.",
+  "about.plates.link": "Abrir el cargador de discos",
+
+  "about.sharing.title": "Respaldos y compartir",
+  "about.sharing.body":
+    "Exporta todo en un archivo, o pásale a alguien una sola rutina, plan o receta.",
+  "about.sharing.p1":
+    "Restaurar un respaldo completo reemplaza lo que hay en el navegador. Importar algo compartido se suma y no toca nada de lo tuyo.",
+  "about.sharing.p2":
+    "Lo compartido llega con ids nuevos, así que importar el mismo archivo dos veces te deja dos copias en vez de sobrescribir. También trae lo que necesita — una rutina lleva sus ejercicios propios, un plan lleva sus recetas.",
+  "about.sharing.p3":
+    "No se sube nada. Exportar es una descarga, importar es leer un archivo, y compartir es que tú le mandes el archivo a alguien.",
+  "about.sharing.link": "Respaldar o importar",
+
+  "about.gettingAround.title": "Moverte por la app",
+  "about.gettingAround.body":
+    "Unas cuantas cosas que ahorran tiempo cuando sabes que están ahí.",
+  "about.gettingAround.p1":
+    "Ctrl+K busca en cada página, pestaña y programa, y salta directo a crear una rutina, plan, alimento o receta.",
+  "about.gettingAround.p2":
+    "Las pestañas viven en la barra de direcciones, así que una vista se puede guardar, compartir como liga y sobrevive a recargar.",
+  "about.gettingAround.p3":
+    "El idioma y el modo oscuro están al fondo de la barra lateral. Los dos se quedan.",
+
   "intake.tab": "Hoy",
   "intake.today": "Hoy",
   "intake.yesterday": "Ayer",

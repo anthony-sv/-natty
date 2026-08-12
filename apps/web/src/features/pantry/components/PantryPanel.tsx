@@ -348,15 +348,19 @@ function Row({
         <span className="truncate text-xs text-muted-foreground">{detail}</span>
       </div>
 
+      {/* Labelled, unlike the edit and archive icons beside it, to match the
+          Share button on a routine and on a plan. Sharing is the one action
+          here that produces a file and hands it to someone else — an unlabelled
+          icon made the same act look like a different feature in each place. */}
       {onShare ? (
         <Button
-          variant="ghost"
-          size="icon-sm"
-          className="shrink-0 text-muted-foreground"
-          aria-label={t("data.share")}
+          variant="outline"
+          size="sm"
+          className="shrink-0"
           onClick={onShare}
         >
-          <Share2Icon />
+          <Share2Icon data-icon="inline-start" />
+          {t("data.share")}
         </Button>
       ) : null}
 

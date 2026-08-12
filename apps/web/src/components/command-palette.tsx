@@ -131,6 +131,9 @@ export function CommandPalette() {
           <CommandItem onSelect={() => go("/plates")}>
             {t("nav.plates")}
           </CommandItem>
+          <CommandItem onSelect={() => go("/about")}>
+            {t("nav.about")}
+          </CommandItem>
         </CommandGroup>
         <CommandSeparator />
         {/* Everything that makes something. These were unreachable from search

@@ -1085,6 +1085,24 @@ with coins.
 Discs are tapped to add and remove rather than right-clicked: a context menu is
 undiscoverable on the phone you're actually holding at the rack.
 
+## The guide (`/about`)
+
+One card per feature: what it is, two or three things worth knowing that
+aren't obvious from using it, and a link to go try it. A page rather than
+tooltips scattered through the UI, because most of what's worth saying here is
+a *decision* — why a PR is a frontier rather than a single number, why a ticked
+meal follows the plan when you edit it — and a decision needs a sentence, not a
+hover.
+
+`GUIDE` is a table of sections, so **adding a section when a feature lands is
+the standing rule**, exactly as it is for the index's destination cards. A
+guide covering two thirds of the app is worse than none: it reads as a complete
+list, so the third it omits looks like it doesn't exist.
+
+Every string is a message key, which means `i18n.test.ts` catches a gap in
+either language at build time. The jump nav is plain `#` anchors — thirteen
+cards is a lot of scrolling to reach one answer.
+
 ## Internationalization (`src/i18n/`)
 
 English and **es-MX**, hand-rolled rather than i18next — that would be ~40KB and
