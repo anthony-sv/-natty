@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Trash2Icon } from "lucide-react";
+import { RotateCcwIcon, Trash2Icon } from "lucide-react";
 import { Page } from "@/components/page";
 import {
   AlertDialog,
@@ -38,17 +38,19 @@ export const Route = createFileRoute("/routines/$routineSlug/edit")({
 
 function EditRoutine() {
   const { routineSlug } = Route.useParams();
-  const { routine, isLoading, isCustom } = useRoutine(routineSlug);
+  const { routine, isLoading, isCustom, isOverridden } = useRoutine(routineSlug);
   const t = useT();
   const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (isLoading) return null;
 
-  // Built-ins are transcribed source material and editing one in place would
-  // silently rewrite everyone's reference copy — "start from a copy" on
-  // /routines/new is the supported way to change one.
-  if (routine === undefined || !isCustom) {
+  // A built-in is editable now: saving writes your version at the same slug,
+  // which replaces it in every list. Nothing is lost — the shipped program is
+  // compiled in and untouched, so the button below offers it back.
+  const isBuiltIn = !isCustom || isOverridden;
+
+  if (routine === undefined) {
     return (
       <Page>
         <Empty>
@@ -91,11 +93,39 @@ function EditRoutine() {
         <h1 className="text-2xl font-semibold">
           {t("builder.editTitle", { name: routine.name })}
         </h1>
-        <Button variant="outline" onClick={() => setConfirmDelete(true)}>
-          <Trash2Icon data-icon="inline-start" />
-          {t("builder.delete")}
-        </Button>
+        {/* Resetting and deleting are the same gesture on different things:
+            one gives you the shipped program back, the other throws away a
+            routine that only ever existed here. Never both. */}
+        {isBuiltIn ? (
+          isOverridden ? (
+            <Button variant="outline" onClick={() => setConfirmDelete(true)}>
+              <RotateCcwIcon data-icon="inline-start" />
+              {t("builder.reset")}
+            </Button>
+          ) : null
+        ) : (
+          <Button variant="outline" onClick={() => setConfirmDelete(true)}>
+            <Trash2Icon data-icon="inline-start" />
+            {t("builder.delete")}
+          </Button>
+        )}
       </div>
+
+      {isBuiltIn && !isOverridden ? (
+        <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
+          {t("builder.editingBuiltIn")}
+        </p>
+      ) : null}
+
+      {/* The builder writes one week that repeats; the transcribed programs run
+          eight distinct ones. Saving therefore keeps week 1 and drops the rest,
+          which is a big enough thing to happen that it has to be said before
+          you press the button rather than discovered after. */}
+      {routine.weeks.length > 1 ? (
+        <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-muted-foreground">
+          {t("builder.editingCollapsesWeeks", { weeks: routine.weeks.length })}
+        </p>
+      ) : null}
 
       <RoutineBuilder initial={toDraft(routine)} existingSlug={routineSlug} />
 
@@ -105,9 +135,11 @@ function EditRoutine() {
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("builder.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {isOverridden ? t("builder.resetTitle") : t("builder.deleteTitle")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("builder.deleteBody")}
+              {isOverridden ? t("builder.resetBody") : t("builder.deleteBody")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -116,7 +148,9 @@ function EditRoutine() {
               onClick={() => {
                 const { routine: removed } = deleteUserRoutine(routineSlug);
                 toast.add({
-                  title: t("builder.deleted", { name: routine.name }),
+                  title: isOverridden
+                    ? t("builder.reset.done", { name: routine.name })
+                    : t("builder.deleted", { name: routine.name }),
                   type: "info",
                   actionProps: {
                     children: t("history.undo"),
@@ -125,10 +159,16 @@ function EditRoutine() {
                     },
                   },
                 });
-                void navigate({ to: "/routines" });
+                // A reset leaves the built-in at this url, so stay on it;
+                // a delete leaves nothing here at all.
+                void navigate(
+                  isOverridden
+                    ? { to: "/routines/$routineSlug", params: { routineSlug } }
+                    : { to: "/routines" },
+                );
               }}
             >
-              {t("builder.delete")}
+              {isOverridden ? t("builder.reset") : t("builder.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

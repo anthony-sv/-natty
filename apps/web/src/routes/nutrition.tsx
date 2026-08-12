@@ -113,21 +113,22 @@ function NutritionPage() {
             </Select>
           </Field>
 
-          {isCustom ? (
-            <Button
-              variant="outline"
-              nativeButton={false}
-              render={
-                <Link
-                  to="/nutrition/$planSlug/edit"
-                  params={{ planSlug: plan.slug }}
-                />
-              }
-            >
-              <PencilLineIcon data-icon="inline-start" />
-              {t("dietBuilder.edit")}
-            </Button>
-          ) : null}
+          {/* Every plan is editable, built-in or not: saving a built-in writes
+              your version at its slug and it replaces the shipped one in this
+              picker, which stays compiled in and recoverable. */}
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={
+              <Link
+                to="/nutrition/$planSlug/edit"
+                params={{ planSlug: plan.slug }}
+              />
+            }
+          >
+            <PencilLineIcon data-icon="inline-start" />
+            {t("dietBuilder.edit")}
+          </Button>
 
           {/* Not gated on `isCustom` — a transcribed plan is as shareable as
               one you wrote, and it arrives as the recipient's own copy. */}

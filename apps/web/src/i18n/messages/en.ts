@@ -244,6 +244,16 @@ export const en = {
   "builder.pickExercise": "Pick an exercise",
   "builder.createNamed": "Add \"{name}\" as your own exercise",
   "builder.exerciseKind": "Kind",
+  "builder.edited": "Edited",
+  "builder.editingBuiltIn":
+    "This one came with the app. Saving keeps your version and hides the original from the list — the original stays put, so you can put it back any time.",
+  "builder.editingCollapsesWeeks":
+    "This program has {weeks} different weeks, and the builder writes one week that repeats. Saving keeps week 1 and drops the rest. Reset puts them back.",
+  "builder.reset": "Reset to the original",
+  "builder.resetTitle": "Put the original back?",
+  "builder.resetBody":
+    "Your changes to this program are dropped and the version that came with the app returns. Nothing you've logged is affected.",
+  "builder.reset.done": "{name} is back to the original",
   "builder.alternatives": "Or one of these",
   "builder.alternativesHint":
     "Lifts you'd equally accept. The player offers them as a swap mid-set, and logs against whichever you actually did.",
@@ -457,6 +467,13 @@ export const en = {
   "dietBuilder.cancel": "Cancel",
   "dietBuilder.delete": "Delete plan",
   "dietBuilder.deleted": "Deleted {name}",
+  "dietBuilder.editingBuiltIn":
+    "This one came with the app. Saving keeps your version and hides the original from the picker — the original stays put, so you can put it back any time.",
+  "dietBuilder.reset": "Reset to the original",
+  "dietBuilder.resetTitle": "Put the original back?",
+  "dietBuilder.resetBody":
+    "Your changes to this plan are dropped and the version that came with the app returns. Meals you've already ticked off aren't affected.",
+  "dietBuilder.reset.done": "{name} is back to the original",
   "dietBuilder.deleteTitle": "Delete this plan?",
   "dietBuilder.deleteBody": "Nothing else is affected \u2014 no intake is logged against a plan.",
   "dietBuilder.duplicate": "Start from a copy",
@@ -538,7 +555,7 @@ export const en = {
   "about.builder.body":
     "Build a program from scratch, or start from a copy of a built-in one and change what you don't like.",
   "about.builder.p1":
-    "A routine you write is one week, which repeats. Copying a built-in takes its first week.",
+    "A routine you write is one week, which repeats. You can edit the ones that came with the app too — your version replaces it in the list, and \"Reset to the original\" hands the shipped one back. Editing a program with several distinct weeks keeps week 1 and drops the rest, and says so first.",
   "about.builder.p2":
     "Sets can carry intensity techniques — drop sets, partials, negatives, forced reps — and can be built from parts, like a hold into pulses into reps.",
   "about.builder.p3":

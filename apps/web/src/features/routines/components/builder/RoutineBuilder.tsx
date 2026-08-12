@@ -48,6 +48,8 @@ import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 import {
   createUserRoutine,
+  isBuiltInSlug,
+  saveBuiltInOverride,
   slugFor,
   updateUserRoutine,
 } from "../../collection";
@@ -96,9 +98,16 @@ export function RoutineBuilder({
     const slug = existingSlug ?? slugFor(draft.name);
     const toSave: Routine = { ...routine, slug };
 
-    const transaction = existingSlug
-      ? updateUserRoutine(existingSlug, toSave)
-      : createUserRoutine(toSave).transaction;
+    // Editing a built-in writes your version at *its* slug, which is what
+    // makes it replace the shipped one in every list rather than sit beside
+    // it. `updateUserRoutine` can't do that job — there's no row to update the
+    // first time you edit one.
+    const transaction =
+      existingSlug === undefined
+        ? createUserRoutine(toSave).transaction
+        : isBuiltInSlug(existingSlug)
+          ? saveBuiltInOverride(toSave)
+          : updateUserRoutine(existingSlug, toSave);
 
     void toast.promise(transaction.isPersisted.promise, {
       loading: t("builder.saving"),

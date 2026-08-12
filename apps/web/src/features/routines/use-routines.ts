@@ -12,18 +12,36 @@ import { userRoutines } from "./collection";
  * would need invalidating from every mutation, which is the kind of bookkeeping
  * that gets forgotten in exactly one place.
  */
+/**
+ * A user routine saved at a *built-in's* slug replaces it everywhere.
+ *
+ * That's what makes the built-ins editable without cluttering the list: an
+ * edit stores your version at the same slug, and the compiled-in original
+ * drops out of every list and picker rather than sitting beside it under
+ * nearly the same name. The file is still there, so "reset to the original" is
+ * just deleting your override.
+ *
+ * Exported because `useRoutine` has to agree with this — two places deciding
+ * which version wins is two places to disagree.
+ */
+export function overrides(userRoutines: Routine[]): Set<string> {
+  const mine = new Set(userRoutines.map((routine) => routine.slug));
+  return new Set(routines.map((r) => r.slug).filter((slug) => mine.has(slug)));
+}
+
 export function useRoutines(): { routines: Routine[]; isLoading: boolean } {
   const { data, isLoading } = useLiveQuery((q) => q.from({ r: userRoutines }));
 
-  return useMemo(
-    () => ({
+  return useMemo(() => {
+    const mine = data ?? [];
+    const replaced = overrides(mine);
+    return {
       // Yours first: the built-ins are reference material you read once, and
       // the one you wrote is the one you open every session.
-      routines: [...(data ?? []), ...routines],
+      routines: [...mine, ...routines.filter((r) => !replaced.has(r.slug))],
       isLoading,
-    }),
-    [data, isLoading],
-  );
+    };
+  }, [data, isLoading]);
 }
 
 /**
@@ -41,15 +59,39 @@ export function useRoutine(slug: string): {
   /** True while the answer is still unknown — not the same as "not found". */
   isLoading: boolean;
   isCustom: boolean;
+  /**
+   * This slug names a built-in that you've edited, so `routine` is your
+   * version and the shipped one is recoverable by deleting it.
+   */
+  isOverridden: boolean;
 } {
   const { data, isLoading } = useLiveQuery((q) => q.from({ r: userRoutines }));
 
   return useMemo(() => {
-    const builtIn = getRoutineBySlug(slug);
-    if (builtIn !== undefined) {
-      return { routine: builtIn, isLoading: false, isCustom: false };
-    }
+    // **Yours is checked first**, which is the whole override mechanism. The
+    // built-in used to win, so an edit saved at its slug would have been
+    // written and then never shown.
     const own = (data ?? []).find((routine) => routine.slug === slug);
-    return { routine: own, isLoading, isCustom: own !== undefined };
+    const builtIn = getRoutineBySlug(slug);
+
+    if (own !== undefined) {
+      return {
+        routine: own,
+        isLoading: false,
+        isCustom: true,
+        isOverridden: builtIn !== undefined,
+      };
+    }
+    if (builtIn !== undefined) {
+      return {
+        routine: builtIn,
+        isLoading: false,
+        isCustom: false,
+        isOverridden: false,
+      };
+    }
+    // Not yours and not built-in: genuinely missing, but only once the
+    // collection has actually loaded.
+    return { routine: undefined, isLoading, isCustom: false, isOverridden: false };
   }, [slug, data, isLoading]);
 }

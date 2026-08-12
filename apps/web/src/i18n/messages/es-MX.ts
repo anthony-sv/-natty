@@ -244,6 +244,16 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.pickExercise": "Elige un ejercicio",
   "builder.createNamed": "Agregar \"{name}\" como ejercicio tuyo",
   "builder.exerciseKind": "Tipo",
+  "builder.edited": "Editada",
+  "builder.editingBuiltIn":
+    "Esta venía con la app. Al guardar se queda tu versión y la original se oculta de la lista — la original sigue ahí, así que puedes regresarla cuando quieras.",
+  "builder.editingCollapsesWeeks":
+    "Este programa tiene {weeks} semanas distintas, y el editor escribe una semana que se repite. Al guardar se queda la semana 1 y se pierden las demás. Regresar a la original las devuelve.",
+  "builder.reset": "Regresar a la original",
+  "builder.resetTitle": "¿Regresar la original?",
+  "builder.resetBody":
+    "Se descartan tus cambios a este programa y vuelve la versión que venía con la app. Nada de lo que registraste se ve afectado.",
+  "builder.reset.done": "{name} volvió a la original",
   "builder.alternatives": "O alguno de estos",
   "builder.alternativesHint":
     "Ejercicios que aceptarías igual. El reproductor los ofrece como cambio a media serie, y registra el que de verdad hiciste.",
@@ -453,6 +463,13 @@ export const esMX: Record<keyof typeof en, string> = {
   "dietBuilder.cancel": "Cancelar",
   "dietBuilder.delete": "Eliminar plan",
   "dietBuilder.deleted": "Se elimin\u00f3 {name}",
+  "dietBuilder.editingBuiltIn":
+    "Este ven\u00eda con la app. Al guardar se queda tu versi\u00f3n y el original se oculta del selector \u2014 el original sigue ah\u00ed, as\u00ed que puedes regresarlo cuando quieras.",
+  "dietBuilder.reset": "Regresar al original",
+  "dietBuilder.resetTitle": "\u00bfRegresar el original?",
+  "dietBuilder.resetBody":
+    "Se descartan tus cambios a este plan y vuelve la versi\u00f3n que ven\u00eda con la app. Las comidas que ya marcaste no se ven afectadas.",
+  "dietBuilder.reset.done": "{name} volvi\u00f3 al original",
   "dietBuilder.deleteTitle": "\u00bfEliminar este plan?",
   "dietBuilder.deleteBody": "No afecta nada m\u00e1s \u2014 no se registra consumo contra un plan.",
   "dietBuilder.duplicate": "Empezar desde una copia",
@@ -534,7 +551,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "about.builder.body":
     "Arma un programa desde cero, o parte de una copia de uno de los que ya vienen y cambia lo que no te guste.",
   "about.builder.p1":
-    "Una rutina tuya es una semana, que se repite. Copiar uno de los que vienen toma su primera semana.",
+    "Una rutina tuya es una semana, que se repite. También puedes editar las que vienen con la app — tu versión la reemplaza en la lista, y \"Regresar a la original\" te devuelve la que venía. Editar un programa con varias semanas distintas se queda con la semana 1 y pierde las demás, y te lo avisa antes.",
   "about.builder.p2":
     "Las series pueden traer técnicas de intensidad — drop sets, parciales, negativas, repeticiones forzadas — y pueden armarse por partes, como un hold que entra a pulsos y luego a reps.",
   "about.builder.p3":

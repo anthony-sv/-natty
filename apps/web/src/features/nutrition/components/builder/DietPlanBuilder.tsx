@@ -54,7 +54,13 @@ import {
   type FoodOptionGroup,
 } from "@/features/pantry/use-pantry";
 import { useT } from "@/i18n/use-t";
-import { createUserDiet, dietSlugFor, updateUserDiet } from "../../collection";
+import {
+  createUserDiet,
+  dietSlugFor,
+  isBuiltInDietSlug,
+  saveBuiltInDietOverride,
+  updateUserDiet,
+} from "../../collection";
 import {
   TARGET_TOLERANCE_G,
   compareToTargets,
@@ -91,9 +97,15 @@ export function DietPlanBuilder({
     const slug = existingSlug ?? dietSlugFor(draft.name);
     const toSave: DietPlan = { ...plan, slug };
 
-    const transaction = existingSlug
-      ? updateUserDiet(existingSlug, toSave, asDraft)
-      : createUserDiet(toSave, asDraft).transaction;
+    // Editing a built-in saves your version at its slug, so it replaces the
+    // shipped plan in the picker — see `saveBuiltInDietOverride`. There's no
+    // row to update the first time, which is why `updateUserDiet` can't do it.
+    const transaction =
+      existingSlug === undefined
+        ? createUserDiet(toSave, asDraft).transaction
+        : isBuiltInDietSlug(existingSlug)
+          ? saveBuiltInDietOverride(toSave, asDraft)
+          : updateUserDiet(existingSlug, toSave, asDraft);
 
     void toast.promise(transaction.isPersisted.promise, {
       loading: t("dietBuilder.saving"),
