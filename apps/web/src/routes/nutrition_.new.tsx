@@ -27,14 +27,50 @@ import {
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 
+/** A macro seeded from the Macros tab, or undefined. */
+function macroParam(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? value
+    : undefined;
+}
+
 export const Route = createFileRoute("/nutrition_/new")({
+  // Optional macro seeds, so the Macros tab can hand a split straight to the
+  // builder. Keys are returned only when present, for the reason /nutrition
+  // records: always returning them makes the search object required and every
+  // plain `<Link to="/nutrition/new">` stops typechecking.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { protein?: number; carbs?: number; fat?: number } => {
+    const seeded = {
+      protein: macroParam(search.protein),
+      carbs: macroParam(search.carbs),
+      fat: macroParam(search.fat),
+    };
+    return Object.fromEntries(
+      Object.entries(seeded).filter(([, value]) => value !== undefined),
+    );
+  },
   component: NewDietPlan,
 });
 
 function NewDietPlan() {
   const t = useT();
   const names = useNames();
-  const [draft, setDraft] = useState<DraftPlan>(emptyPlan);
+  const search = Route.useSearch();
+  // Seeded from the Macros tab when it sent a split across, so the numbers you
+  // just dialled in are already in the fields.
+  const [draft, setDraft] = useState<DraftPlan>(() => {
+    const base = emptyPlan();
+    return {
+      ...base,
+      targets: {
+        protein: search.protein !== undefined ? String(search.protein) : "",
+        carbs: search.carbs !== undefined ? String(search.carbs) : "",
+        fat: search.fat !== undefined ? String(search.fat) : "",
+      },
+    };
+  });
   const [seed, setSeed] = useState(0);
   const [copiedVariants, setCopiedVariants] = useState(false);
 

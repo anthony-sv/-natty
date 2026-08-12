@@ -100,9 +100,12 @@ export const en = {
   "index.resume.action": "Resume",
   "index.resume.discard": "Discard",
   "index.resume.discarded": "Workout discarded",
-  "index.dest.routines": "Programs, week by week. Open a day to start the player.",
-  "index.dest.progress": "Records per exercise, weigh-ins, FFMI and trend charts.",
-  "index.dest.nutrition": "The diet plan, meal by meal, and a macro calculator.",
+  "index.dest.routines":
+    "Programs week by week, or write your own. Open a day to start the player.",
+  "index.dest.progress":
+    "Records, volume per muscle, a year of training days, and your own exercises.",
+  "index.dest.nutrition":
+    "Diet plans meal by meal, your own foods and recipes, and a macro calculator.",
   "index.dest.calculators": "One-rep max, RPE and RIR, and natural potential.",
   "index.dest.plates": "What to hang on each end, from the plates your gym has.",
 
@@ -840,6 +843,9 @@ export const en = {
   "nutrition.noTargets":
     "This plan doesn't state a target. The ring shows what the meals below add to.",
   "nutrition.fromMacros": "from your macros",
+  "nutrition.useAsTargets": "Use as my targets",
+  "nutrition.startPlanWith": "Start a plan with these",
+  "nutrition.targetsSaved": "Targets updated",
   "nutrition.hydrationBody": "Worked out from your last weigh-in, {weight}.",
   "nutrition.hydrationNoWeight": "No weigh-in yet",
   "nutrition.hydrationLogWeight":

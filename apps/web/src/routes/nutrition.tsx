@@ -145,7 +145,12 @@ function NutritionPage() {
         </TabsContent>
         <TabsContent value="macros">
           {tab === "macros" ? (
-            <MacroCalculatorPanel key={plan.slug} plan={plan} />
+            <MacroCalculatorPanel
+              key={plan.slug}
+              plan={plan}
+              isCustom={isCustom}
+              isDraft={isDraft}
+            />
           ) : null}
         </TabsContent>
         <TabsContent value="pantry">

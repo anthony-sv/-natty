@@ -102,10 +102,11 @@ export const esMX: Record<keyof typeof en, string> = {
   "index.resume.discard": "Descartar",
   "index.resume.discarded": "Entrenamiento descartado",
   "index.dest.routines":
-    "Programas, semana por semana. Abre un día para empezar.",
+    "Programas semana por semana, o escribe el tuyo. Abre un día para empezar.",
   "index.dest.progress":
-    "Récords por ejercicio, pesajes, FFMI y gráficas de tendencia.",
-  "index.dest.nutrition": "El plan de dieta, comida por comida, y una calculadora de macros.",
+    "Récords, volumen por músculo, un año de días entrenados y tus propios ejercicios.",
+  "index.dest.nutrition":
+    "Planes de dieta comida por comida, tus propios alimentos y recetas, y una calculadora de macros.",
   "index.dest.calculators": "Máximo de una rep, RPE y RIR, y potencial natural.",
   "index.dest.plates": "Qué colgar en cada extremo, con los discos que tiene tu gym.",
 
@@ -846,6 +847,9 @@ export const esMX: Record<keyof typeof en, string> = {
   "nutrition.noTargets":
     "Este plan no fija una meta. El anillo muestra a cuánto suman las comidas de abajo.",
   "nutrition.fromMacros": "de tus macros",
+  "nutrition.useAsTargets": "Usar como mis objetivos",
+  "nutrition.startPlanWith": "Empezar un plan con esto",
+  "nutrition.targetsSaved": "Objetivos actualizados",
   "nutrition.hydrationBody": "Calculado con tu último pesaje, {weight}.",
   "nutrition.hydrationNoWeight": "Todavía no hay pesaje",
   "nutrition.hydrationLogWeight":
