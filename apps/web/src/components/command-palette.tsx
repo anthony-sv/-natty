@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { useHotkey } from "@tanstack/react-hotkeys";
 import { useStore } from "@tanstack/react-store";
 import { MoonIcon, SunIcon } from "lucide-react";
@@ -13,7 +12,7 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command";
-import { routinesQueryOptions } from "@/features/routines/queries";
+import { useRoutines } from "@/features/routines/use-routines";
 import { useActiveSession } from "@/features/routines/lib/use-active-session";
 import { themeStore, toggleTheme } from "@/features/theme/theme-store";
 import { useNames } from "@/i18n/names";
@@ -35,7 +34,8 @@ export function CommandPalette() {
   // route has fetched routines (e.g. opened from "/"), so it needs its own
   // pending state instead of suspending. Same cache as the route loaders —
   // instant if /routines was already visited, fetched on demand otherwise.
-  const { data: routines, isPending } = useQuery(routinesQueryOptions());
+  // Built-ins plus your own — a routine you wrote should be searchable.
+  const { routines, isLoading: isPending } = useRoutines();
   const active = useActiveSession();
   const theme = useStore(themeStore, (s) => s);
   const t = useT();

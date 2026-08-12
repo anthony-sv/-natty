@@ -156,12 +156,21 @@ export const foods: Food[] = RAW.map((food) => foodSchema.parse(food));
 
 const byId = new Map(foods.map((food) => [food.id, food]));
 
+/** A built-in food by id, or undefined. For anywhere a miss isn't fatal. */
+export function findFood(id: string): Food | undefined {
+  return byId.get(id);
+}
+
 /**
  * A food by id, or a throw.
  *
  * Same reasoning as `idFor` in the routines authoring helpers: a typo should
  * fail at import rather than render a blank row or silently drop macros out of
  * a day total.
+ *
+ * **Authoring only.** At runtime a food id can legitimately be one you wrote
+ * yourself, which this table has never heard of — use `findFood`, or the
+ * injected `FoodSource` in `features/nutrition/macros.ts`.
  */
 export function getFood(id: string): Food {
   const food = byId.get(id);

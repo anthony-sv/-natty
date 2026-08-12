@@ -15,10 +15,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { getFood } from "@/data/diets";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
-import { macrosForItem } from "../macros";
+import { macrosForItem, type FoodSource } from "../macros";
 import type { ResolvedMeal } from "../macros";
 
 /**
@@ -30,11 +29,14 @@ import type { ResolvedMeal } from "../macros";
 export function MealCard({
   meal,
   dayKcal,
+  foods,
   onChooseOption,
 }: {
   meal: ResolvedMeal;
   /** The day's total, so the header can show this meal's share of it. */
   dayKcal: number;
+  /** Injected rather than imported, so a meal can hold a food you wrote. */
+  foods: FoodSource;
   onChooseOption: (index: number) => void;
 }) {
   const t = useT();
@@ -121,20 +123,23 @@ export function MealCard({
           </TableHeader>
           <TableBody>
             {meal.items.map((item, index) => {
-              const food = getFood(item.foodId);
-              const macros = macrosForItem(item);
+              // Undefined for a food that no longer resolves — the row still
+              // renders, with its name falling back to the id, rather than
+              // taking the page down.
+              const food = foods.get(item.foodId);
+              const macros = macrosForItem(item, foods);
               return (
                 <TableRow key={`${item.foodId}-${index}`}>
                   <TableCell className="align-top font-medium tabular-nums">
                     {item.amount}
-                    {food.unit === "unit" ? "" : ` ${food.unit}`}
+                    {food === undefined || food.unit === "unit" ? "" : ` ${food.unit}`}
                   </TableCell>
                   <TableCell className="align-top whitespace-normal">
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span>{names.food(item.foodId)}</span>
                       {/* The single most important word on the row: 343g raw
                           and 150g cooked are different instructions. */}
-                      {food.state ? (
+                      {food?.state ? (
                         <Badge
                           variant={food.state === "raw" ? "destructive" : "outline"}
                           className="uppercase"
@@ -145,9 +150,9 @@ export function MealCard({
                         </Badge>
                       ) : null}
                     </span>
-                    {(item.note ?? food.unitNote) !== undefined ? (
+                    {(item.note ?? food?.unitNote) !== undefined ? (
                       <span className="block text-xs text-muted-foreground">
-                        {names.text(item.note ?? food.unitNote)}
+                        {names.text(item.note ?? food?.unitNote)}
                       </span>
                     ) : null}
                   </TableCell>

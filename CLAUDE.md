@@ -767,6 +767,13 @@ transcribed**: `/progress` owns that data and it doesn't belong in the repo.
 - **Items reference a food; macros are computed.** `foods.ts` holds per-100g
   (or per-unit) values and a plan says "211g of carne asada". Storing macros on
   the item would repeat them across four swap options of the same lunch.
+- **A `foodId` is resolved through an injected `FoodSource`, not `getFood`.**
+  `macros.ts` used to import it; it can't, now that foods and recipes you write
+  arrive at runtime. `getFood` still throws and is still right to — but only in
+  `data/diets/authoring.ts`, where a typo should fail the build. Everywhere
+  else an unresolvable id contributes **zero rather than throwing**, so a plan
+  referencing a food you deleted renders with a gap instead of a white screen.
+  `findFood` is the non-throwing built-in lookup, and `names.food` uses it.
 - **Every total is derived, never stored.** The docs state meal and day
   subtotals; here those are the *assertion* the test checks, not the source.
 - **Raw and cooked are different foods, not a flag on one.** A gram of cooked
@@ -780,9 +787,20 @@ transcribed**: `/progress` owns that data and it doesn't belong in the repo.
 - **Day variants** (`days: ["tue","wed","thu"]`) are what make office and home
   days different meals rather than a footnote. A variant with no `days` applies
   to every day and is the fallback.
-- **Hydration is a standing protocol** in its own file, not a plan field — it
-  scales with body weight and training, not with the calorie target, and only
-  the earliest doc bothers to restate it.
+- **Hydration is derived from your bodyweight, not a plan field** — it scales
+  with body weight and training, not with the calorie target. See
+  *Hydration* below; the transcribed table it replaced is gone.
+- **Every target is optional, per macro.** `tdeeKcal`, `targetKcal` and each of
+  `targets.protein/carbs/fat` can be absent, because a plan you write to record
+  what you eat shouldn't demand numbers you don't know. `targets` is a
+  **partial** shape rather than `macrosSchema.optional()` — "180g of protein
+  and I don't care about the rest" is a real goal.
+- **A blank calorie target is derived, not zero.** `effectiveTargetKcal` returns
+  the macro targets' own kcal with `derived: true`, so the two can never
+  disagree and the tile can say where the figure came from. `deficitPerDay` and
+  `weeklyRateKg` return **undefined** when the plan doesn't state enough — and
+  each stat tile is then *omitted*, because "Deficit 0 kcal/day" is a claim and
+  a missing tile isn't.
 
 ### The test that matters
 
@@ -793,9 +811,102 @@ is the only thing pinning the four swap proteins — the docs give their weights
 and a day total but never their macros, so those were solved for by subtracting
 the rest of the meal. Each one reconciles across two independent plan versions.
 
+It is also what proves the `FoodSource` injection changed nothing: threading
+the source through was the only edit it needed, and every total still lands.
+
 Tolerances are looser than they look because **the v4 source contradicts
 itself**: its header says P220 and its own totals table says P222, and the
 meals really do add to the second. Anything tighter fails on the document.
+
+### Hydration (`features/nutrition/hydration.ts`)
+
+`(weightKg × 40) + 500 + (trainingHours × 750)`, in millilitres. The 500 is
+creatine, taken **daily**, so it sits outside the training term and a rest day
+carries it too. Training hours default to 1 and the card says so — a two-hour
+session is another 750 ml.
+
+This replaced `data/diets/hydration.ts`, six transcribed litre figures that
+decoded to exactly 50 ml/kg for one 83 kg person and were simply wrong for
+anyone else. **The formula gives different numbers on purpose**: 3.82 L rest
+and 4.57 L training at 83 kg against the doc's 4.15 and 4.65.
+`hydration.test.ts` pins that comparison so the gap reads as a decision rather
+than a transcription bug.
+
+The 600 ml zero-coke swap is kept and **is** one-for-one — 4.15 → 3.55 → 2.95
+is exactly −0.6 a step. The old card's copy claimed otherwise while printing
+numbers that contradicted it.
+
+**No weigh-in, no number**: an `Empty` pointing at `/progress`, never the
+author's litres. Falling back to the old table would defeat the whole change.
+It reads the latest weigh-in via `useBodyEntries` + `toKilograms`, which
+`PlanPanel` already imported for `proteinPerKg`.
+
+### Validating a plan you wrote
+
+`compareToTargets` reports only the macros the plan names, and only those
+outside `TARGET_TOLERANCE_G` (5 g — looser than `macros.test.ts`'s 3.5 g, which
+checks transcribed numbers against their own document). An empty result covers
+both "it lands" and "no targets stated"; the caller can't tell those apart and
+doesn't need to.
+
+Saving off-target asks first: **Keep editing** or **Save as draft**. A draft is
+not a lesser save — the plan is complete, valid and usable, and `isDraft` only
+makes it *look* unfinished, in the picker and as a banner. Without it the
+choice was between refusing to save work in progress and silently pretending it
+was finished.
+
+`isDraft` lives on `userDietPlanSchema`, not `dietPlanSchema` — a transcribed
+plan is never a draft. It's passed on **every** save rather than only set, so
+finishing a draft clears it with no separate action. `useDiets` returns entries
+(`{ plan, isCustom, isDraft }`) because the flag can't survive as a bare
+`DietPlan`.
+
+### Your own foods, recipes and plans (`src/features/pantry/`)
+
+**A recipe resolves to a `Food`, and that is the whole design.** `MealItem` is
+`{ foodId, amount }`, so a recipe id in `foodId` renders, sums and swaps exactly
+like an ingredient — nothing in the meal, variant or option model changed to
+hold one, and `macrosForItem` never learns recipes exist. `recipeAsFood` in
+`pantry.ts` is pure and does it in a dozen lines.
+
+**Two portionings, because a cooked dish weighs less than its ingredients.**
+`servings` makes it a per-*unit* food (one unit is one serving); `weight` makes
+it a per-100g food, which is the only way "250 g of my chili" means anything.
+That cooked weight is **measured, never derived** — water leaves during cooking
+and how much depends on the method, which is the same reason `foodState` is a
+flag and not a conversion.
+
+**The cooking method carries no macros.** It records how to cook the thing; fat
+you cook in is an ingredient line with an amount you typed. A per-method
+absorption factor would invent exactly the precision the raw/cooked rule
+already refuses to invent. The form nudges you to add the line and leaves the
+number alone.
+
+**Recipes can't nest (v1).** `mergePantry` builds `ingredientSource` from a
+*separate map* that recipes are never added to, which is what makes cycles
+impossible without a cycle check. Building one map and adding recipes to it as
+you go looks equivalent and isn't — a recipe would resolve as an ingredient of
+any recipe written after it, silently. A test pins this.
+
+Ids are prefixed `food:` and `recipe:`; both share one namespace in
+`names.food`, because both live in `MealItem.foodId` downstream. Neither is a
+translation target — authored in your own language, like custom exercises — so
+`i18n.test.ts` doesn't walk them. The **cooking methods are** translated.
+
+Archive rather than delete once something references it, the same rule custom
+exercises follow. A food a recipe uses archives; a recipe always archives,
+since a plan may reference it and the panel can't see plans.
+
+`userDietPlanSchema` is `dietPlanSchema.extend`, so a plan you wrote **is** a
+`DietPlan` and every existing renderer works on it. The builder writes **swap
+options but no weekday variants** — one variant with no `days`, which is
+already schema-valid, so the simplification is in the builder rather than the
+model. Copying a built-in collapses each meal to its first variant and says so
+before you save. `supplements`/`notes` are written empty on purpose.
+
+`/nutrition` takes an optional `?plan=`. **`validateSearch` must return the key
+only when present** — always returning `{ plan: undefined }` makes the search
+object required and every plain `<Link to="/nutrition">` stops typechecking.
 
 ### Charts
 

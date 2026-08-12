@@ -1,7 +1,7 @@
-import { getFood } from "@/data/diets";
 import type {
   DietPlan,
   Food,
+  MacroTargets,
   Macros,
   MealItem,
   MealVariant,
@@ -9,9 +9,25 @@ import type {
 } from "@/data/diets";
 
 /**
- * Macro arithmetic, kept free of React and of the plan data so it tests
+ * Macro arithmetic, kept free of React and of the food data so it tests
  * directly — the same split `pr.ts` and `ffmi.ts` follow.
+ *
+ * It used to import `getFood` and reach for the compiled-in table. It can't
+ * any more: foods and recipes you write yourself arrive at runtime, so the
+ * lookup is injected, exactly the way `volume.ts` takes an `ExerciseAnatomy`.
  */
+
+/**
+ * Where a `foodId` resolves.
+ *
+ * **Returns undefined rather than throwing**, unlike `getFood`. A plan that
+ * references a food you since deleted should render with a visible gap, not a
+ * white screen — and the built-in `getFood` still throws where it should, at
+ * authoring time in `data/diets/authoring.ts`.
+ */
+export interface FoodSource {
+  get: (foodId: string) => Food | undefined;
+}
 
 /**
  * Atwater factors. Fat carries more than twice what the other two do, which is
@@ -60,12 +76,17 @@ export function macrosForAmount(food: Food, amount: number): Macros {
   };
 }
 
-export function macrosForItem(item: MealItem): Macros {
-  return macrosForAmount(getFood(item.foodId), item.amount);
+/** Zero for an id nothing resolves, so one missing food can't take a page down. */
+export function macrosForItem(item: MealItem, foods: FoodSource): Macros {
+  const food = foods.get(item.foodId);
+  return food === undefined ? ZERO : macrosForAmount(food, item.amount);
 }
 
-export function totalFor(items: MealItem[]): Macros {
-  return items.reduce((total, item) => addMacros(total, macrosForItem(item)), ZERO);
+export function totalFor(items: MealItem[], foods: FoodSource): Macros {
+  return items.reduce(
+    (total, item) => addMacros(total, macrosForItem(item, foods)),
+    ZERO,
+  );
 }
 
 /**
@@ -107,6 +128,7 @@ export interface ResolvedMeal {
 export function resolveDay(
   plan: DietPlan,
   day: Weekday,
+  foods: FoodSource,
   choices: SwapChoices = {},
 ): ResolvedMeal[] {
   const resolved: ResolvedMeal[] = [];
@@ -120,7 +142,7 @@ export function resolveDay(
       variant.options.length - 1,
     );
     const items = variant.options[optionIndex]!.items;
-    const macros = totalFor(items);
+    const macros = totalFor(items, foods);
     resolved.push({
       name: meal.name,
       note: meal.note,
@@ -158,9 +180,90 @@ export function percentSplit(macros: Macros): {
   };
 }
 
-/** Positive on a deficit, negative on a surplus. */
-export function deficitPerDay(plan: DietPlan): number {
-  return plan.tdeeKcal - plan.targetKcal;
+/**
+ * The plan's calorie target, stated or implied.
+ *
+ * A plan that gives macro targets has already given a calorie target — 180P,
+ * 200C and 70F *is* 2,150 kcal, and there is no way for the two to disagree if
+ * one is computed from the other. `derived` is carried so the page can say
+ * where the number came from rather than presenting a guess as a statement.
+ *
+ * Undefined when the plan states neither, which is a plan with no goal at all.
+ */
+export function effectiveTargetKcal(
+  plan: DietPlan,
+): { kcal: number; derived: boolean } | undefined {
+  if (plan.targetKcal !== undefined) {
+    return { kcal: plan.targetKcal, derived: false };
+  }
+  const stated = macrosFromTargets(plan.targets);
+  return stated === undefined
+    ? undefined
+    : { kcal: kcalOf(stated), derived: true };
+}
+
+/**
+ * How far a day's meals land from the targets the plan states.
+ *
+ * Slack, because hitting a macro to the gram is neither possible nor the
+ * point. Looser than `macros.test.ts`'s 3.5 g, which checks *transcribed*
+ * numbers against their own document and should be tight.
+ */
+export const TARGET_TOLERANCE_G = 5;
+
+export interface TargetGap {
+  macro: keyof Macros;
+  target: number;
+  actual: number;
+  /** Negative when short of the target, positive when over it. */
+  delta: number;
+}
+
+/**
+ * Only the macros the plan actually names, and only the ones outside tolerance.
+ *
+ * An empty array means "nothing to warn about", which covers both a plan that
+ * hits its targets and a plan that states none — the caller can't tell those
+ * apart and doesn't need to.
+ */
+export function compareToTargets(
+  actual: Macros,
+  targets: MacroTargets,
+): TargetGap[] {
+  const gaps: TargetGap[] = [];
+  for (const macro of ["protein", "carbs", "fat"] as const) {
+    const target = targets[macro];
+    if (target === undefined) continue;
+    const delta = actual[macro] - target;
+    if (Math.abs(delta) > TARGET_TOLERANCE_G) {
+      gaps.push({ macro, target, actual: actual[macro], delta });
+    }
+  }
+  return gaps;
+}
+
+/** The targets as a full `Macros`, or undefined if none were stated at all. */
+export function macrosFromTargets(targets: MacroTargets): Macros | undefined {
+  const { protein, carbs, fat } = targets;
+  if (protein === undefined && carbs === undefined && fat === undefined) {
+    return undefined;
+  }
+  // A macro left blank contributes nothing rather than blocking the sum: the
+  // point is what you *did* state.
+  return { protein: protein ?? 0, carbs: carbs ?? 0, fat: fat ?? 0 };
+}
+
+/**
+ * Positive on a deficit, negative on a surplus.
+ *
+ * Undefined unless the plan has both a maintenance figure and a target, since
+ * a deficit is the gap between them and a missing half makes it unanswerable.
+ * Rendering 0 instead would be a claim; rendering nothing isn't.
+ */
+export function deficitPerDay(plan: DietPlan): number | undefined {
+  const target = effectiveTargetKcal(plan);
+  if (plan.tdeeKcal === undefined || target === undefined) return undefined;
+  return plan.tdeeKcal - target.kcal;
 }
 
 /**
@@ -173,8 +276,9 @@ export function deficitPerDay(plan: DietPlan): number {
  */
 export const KCAL_PER_KG_FAT = 7700;
 
-export function weeklyRateKg(plan: DietPlan): number {
-  return (deficitPerDay(plan) * 7) / KCAL_PER_KG_FAT;
+export function weeklyRateKg(plan: DietPlan): number | undefined {
+  const deficit = deficitPerDay(plan);
+  return deficit === undefined ? undefined : (deficit * 7) / KCAL_PER_KG_FAT;
 }
 
 /** Protein per kilo of body weight, the number that decides if a cut is safe. */

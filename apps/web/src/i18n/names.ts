@@ -3,8 +3,9 @@ import { useStore } from "@tanstack/react-store";
 import { useLiveQuery } from "@tanstack/react-db";
 import { getExercise, getMovement } from "@/data/exercises";
 import { userExercises } from "@/features/library/collection";
+import { userFoods, userRecipes } from "@/features/pantry/collection";
 import { getPose } from "@/data/poses";
-import { getFood } from "@/data/diets/foods";
+import { findFood } from "@/data/diets/foods";
 import * as esMX from "./catalog/es-MX";
 import { localeStore, type Locale } from "./locale-store";
 
@@ -99,9 +100,12 @@ export function namesFor(locale: Locale): Names {
 
     pose: (poseId) => catalog.poseNames[poseId] ?? getPose(poseId)?.name ?? poseId,
 
-    // `getFood` throws on an unknown id by design — a typo should fail at
-    // import rather than render a blank row — so there's nothing to guard here.
-    food: (foodId) => catalog.foodNames[foodId] ?? getFood(foodId).name,
+    // `getFood` throws on an unknown id, which is right at authoring time and
+    // wrong here: a food you wrote yourself is unknown to the compiled-in
+    // table, and a name lookup crashing the page is a worse failure than a
+    // visible id. Falls through like `exercise` does; `useNames` layers your
+    // own food and recipe names over this.
+    food: (foodId) => catalog.foodNames[foodId] ?? findFood(foodId)?.name ?? foodId,
 
     bar: (barId, fallback) => catalog.barNames[barId] ?? fallback,
 
@@ -131,10 +135,24 @@ export function useNames(): Names {
   const locale = useStore(localeStore, (s) => s);
   const { data } = useLiveQuery((q) => q.from({ e: userExercises }));
 
+  const { data: ownFoods } = useLiveQuery((q) => q.from({ f: userFoods }));
+  const { data: ownRecipes } = useLiveQuery((q) => q.from({ r: userRecipes }));
+
   return useMemo(() => {
     const base = namesFor(locale);
-    const own = new Map((data ?? []).map((e) => [e.id, e.name]));
-    if (own.size === 0) return base;
-    return { ...base, exercise: (id) => own.get(id) ?? base.exercise(id) };
-  }, [locale, data]);
+    const exercises = new Map((data ?? []).map((e) => [e.id, e.name]));
+    // Foods and recipes share one namespace here because they share one
+    // downstream: `MealItem.foodId` holds either.
+    const foods = new Map<string, string>([
+      ...(ownFoods ?? []).map((f) => [f.id, f.name] as const),
+      ...(ownRecipes ?? []).map((r) => [r.id, r.name] as const),
+    ]);
+
+    if (exercises.size === 0 && foods.size === 0) return base;
+    return {
+      ...base,
+      exercise: (id) => exercises.get(id) ?? base.exercise(id),
+      food: (id) => foods.get(id) ?? base.food(id),
+    };
+  }, [locale, data, ownFoods, ownRecipes]);
 }

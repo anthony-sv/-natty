@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { exercises, movements } from "@/data/exercises";
 import { poses } from "@/data/poses";
 import { foods } from "@/data/diets/foods";
-import { diets, hydration } from "@/data/diets";
+import { diets } from "@/data/diets";
 import { routines } from "@/data/routines";
 import { muscleSchema } from "@/data/exercises";
 import { SPLIT_FOR_PATTERN } from "@/features/log/volume";
@@ -72,10 +72,6 @@ function sourceStrings(): Map<string, string> {
         }
       }
     }
-  }
-
-  for (const level of [...hydration.restDay, ...hydration.trainingDay]) {
-    add(level.note, "hydration");
   }
 
   // The per-unit note on a food ("~30g each"), which renders on any item that
@@ -209,6 +205,8 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "builder.sets",
       "builder.reps",
       "builder.segmentKind.reps",
+      // A placeholder and the kcal symbol; there is nothing in it to translate.
+      "pantry.kcal",
       "volume.sets",
       "volume.setsAxis",
       "split.cardio",

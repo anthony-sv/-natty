@@ -33,13 +33,13 @@ import { useAllRecords } from "@/features/log/queries";
 import type { WeightUnit } from "@/lib/units";
 import { useNames } from "@/i18n/names";
 import { useT, type MessageKey } from "@/i18n/use-t";
-import { routinesQueryOptions } from "@/features/routines/queries";
 import { endSession } from "@/features/routines/session-store";
 import { useActiveSession } from "@/features/routines/lib/use-active-session";
 
 export const Route = createFileRoute("/")({
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(routinesQueryOptions()),
+  // No loader. The resume card resolves through `useRoutines`, a live query
+  // that has to include routines you wrote — which a compiled-in-only fetch
+  // could never do.
   component: Index,
 });
 
