@@ -141,11 +141,16 @@ export function PantryPanel() {
                         .join(" · ")}
                       badge={t("pantry.recipe")}
                       onShare={() => {
-                        const now = Date.now();
-                        const backup = exportRecipe(recipe.id, now);
-                        if (backup === undefined) return;
-                        downloadBackup(backup, backupFilename(now, "recipe"));
-                        toast.add({ title: t("data.shared"), type: "success" });
+                        void (async () => {
+                          const now = Date.now();
+                          const backup = await exportRecipe(recipe.id, now);
+                          if (backup === undefined) return;
+                          downloadBackup(backup, backupFilename(now, "recipe"));
+                          toast.add({
+                            title: t("data.shared"),
+                            type: "success",
+                          });
+                        })();
                       }}
                       onEdit={() => setEditingRecipe(recipe)}
                       onArchive={() => {

@@ -16,8 +16,39 @@ import { rekey, type IdSource } from "./rekey";
  * `backup.ts` so the format stays pure and directly testable.
  */
 
+/** Every collection the backup covers, in one list so nothing is forgotten. */
+const ALL_COLLECTIONS = [
+  loggedSets,
+  bodyEntries,
+  userExercises,
+  userRoutines,
+  userFoods,
+  userRecipes,
+  userDiets,
+  intakeEntries,
+];
+
+/**
+ * Wake every collection before reading or writing one.
+ *
+ * **Collections load lazily** — nothing syncs until something subscribes — so
+ * a collection no mounted component happens to query reads back *empty*.
+ * Exporting from the Data tab without this wrote a backup with `sets: 0` while
+ * localStorage held a year of them, because only the command palette's
+ * routines and diets were warm. Silent, and exactly the failure a backup
+ * exists to prevent.
+ *
+ * A restore has the same problem from the other side: it clears by walking
+ * `collection.keys()`, and an unloaded collection has none, so "replace
+ * everything" would quietly merge instead.
+ */
+async function loadAll(): Promise<void> {
+  await Promise.all(ALL_COLLECTIONS.map((collection) => collection.preload()));
+}
+
 /** Read synchronously, not from a live query — an export is a point in time. */
-export function currentData(): BackupData {
+export async function currentData(): Promise<BackupData> {
+  await loadAll();
   return {
     sets: [...loggedSets.values()],
     bodyEntries: [...bodyEntries.values()],
@@ -49,8 +80,8 @@ export const liveIds: IdSource = {
   id: (prefix) => `${prefix}:${crypto.randomUUID()}`,
 };
 
-export function exportEverything(now: number): Backup {
-  return buildBackup(currentData(), "full", now);
+export async function exportEverything(now: number): Promise<Backup> {
+  return buildBackup(await currentData(), "full", now);
 }
 
 /**
@@ -59,7 +90,11 @@ export function exportEverything(now: number): Backup {
  * Carrying them is what makes the share usable: a routine whose lifts the
  * recipient doesn't have would import with entries pointing at nothing.
  */
-export function exportRoutine(slug: string, now: number): Backup | undefined {
+export async function exportRoutine(
+  slug: string,
+  now: number,
+): Promise<Backup | undefined> {
+  await loadAll();
   const routine = userRoutines.get(slug);
   if (routine === undefined) return undefined;
 
@@ -83,7 +118,11 @@ export function exportRoutine(slug: string, now: number): Backup | undefined {
 }
 
 /** One recipe, plus any of your own foods it's built from. */
-export function exportRecipe(id: string, now: number): Backup | undefined {
+export async function exportRecipe(
+  id: string,
+  now: number,
+): Promise<Backup | undefined> {
+  await loadAll();
   const recipe = userRecipes.get(id);
   if (recipe === undefined) return undefined;
 
@@ -100,7 +139,11 @@ export function exportRecipe(id: string, now: number): Backup | undefined {
 }
 
 /** One plan, plus the foods and recipes its meals point at. */
-export function exportDiet(slug: string, now: number): Backup | undefined {
+export async function exportDiet(
+  slug: string,
+  now: number,
+): Promise<Backup | undefined> {
+  await loadAll();
   const plan = userDiets.get(slug);
   if (plan === undefined) return undefined;
 
@@ -137,7 +180,11 @@ export function exportDiet(slug: string, now: number): Backup | undefined {
  * you have is touched, and every imported id is fresh so a shared routine
  * can't adopt a slug your logged sets already point at.
  */
-export function importAdditive(data: BackupData, ids: IdSource = liveIds): void {
+export async function importAdditive(
+  data: BackupData,
+  ids: IdSource = liveIds,
+): Promise<void> {
+  await loadAll();
   const fresh = rekey(data, ids);
   for (const food of fresh.foods) userFoods.insert(food);
   for (const exercise of fresh.exercises) userExercises.insert(exercise);
@@ -154,17 +201,9 @@ export function importAdditive(data: BackupData, ids: IdSource = liveIds): void 
  * sets' provenance already names, so changing them would orphan the history
  * this exists to protect.
  */
-export function restoreEverything(data: BackupData): void {
-  for (const collection of [
-    loggedSets,
-    bodyEntries,
-    userExercises,
-    userRoutines,
-    userFoods,
-    userRecipes,
-    userDiets,
-    intakeEntries,
-  ]) {
+export async function restoreEverything(data: BackupData): Promise<void> {
+  await loadAll();
+  for (const collection of ALL_COLLECTIONS) {
     for (const key of [...collection.keys()]) collection.delete(key);
   }
 

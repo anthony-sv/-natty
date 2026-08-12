@@ -42,9 +42,11 @@ export function DataPanel() {
   // file, because one of the two paths replaces everything you have.
   const [pending, setPending] = useState<Backup | undefined>();
 
-  function onExport() {
+  async function onExport() {
     const now = Date.now();
-    const backup = exportEverything(now);
+    // Awaited because the collections load lazily — reading them cold writes a
+    // backup with nothing in it.
+    const backup = await exportEverything(now);
     downloadBackup(backup, backupFilename(now, "full"));
     toast.add({ title: t("data.exported"), type: "success" });
   }
@@ -89,7 +91,7 @@ export function DataPanel() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-2">
-            <Button onClick={onExport}>
+            <Button onClick={() => void onExport()}>
               <DownloadIcon data-icon="inline-start" />
               {t("data.export")}
             </Button>
@@ -147,12 +149,15 @@ export function DataPanel() {
             <AlertDialogAction
               onClick={() => {
                 if (pending === undefined) return;
-                if (isRestore) restoreEverything(pending.data);
-                else importAdditive(pending.data);
-                toast.add({
-                  title: isRestore ? t("data.restored") : t("data.merged"),
-                  type: "success",
-                });
+                const data = pending.data;
+                void (async () => {
+                  if (isRestore) await restoreEverything(data);
+                  else await importAdditive(data);
+                  toast.add({
+                    title: isRestore ? t("data.restored") : t("data.merged"),
+                    type: "success",
+                  });
+                })();
                 setPending(undefined);
               }}
             >

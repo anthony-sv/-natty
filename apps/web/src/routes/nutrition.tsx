@@ -133,11 +133,13 @@ function NutritionPage() {
             <Button
               variant="outline"
               onClick={() => {
-                const now = Date.now();
-                const backup = exportDiet(plan.slug, now);
-                if (backup === undefined) return;
-                downloadBackup(backup, backupFilename(now, "diet"));
-                toast.add({ title: t("data.shared"), type: "success" });
+                void (async () => {
+                  const now = Date.now();
+                  const backup = await exportDiet(plan.slug, now);
+                  if (backup === undefined) return;
+                  downloadBackup(backup, backupFilename(now, "diet"));
+                  toast.add({ title: t("data.shared"), type: "success" });
+                })();
               }}
             >
               <Share2Icon data-icon="inline-start" />

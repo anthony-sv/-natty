@@ -1015,6 +1015,17 @@ yours and the logs reference them.
 it names, a recipe takes its foods, a plan takes its recipes *and*
 transitively their foods — otherwise the thing arrives and renders blank.
 
+**Every read and write goes through `loadAll()` first, and that is not
+optional.** Collections load lazily — nothing syncs until something
+subscribes — so a collection no mounted component happens to query reads back
+*empty*. Exporting from the Data tab wrote a backup with `sets: 0` while
+localStorage held 74 of them, because only the command palette's routines and
+diets were warm. Silent, and precisely the failure a backup exists to
+prevent. A restore has the same problem from the other side: it clears by
+walking `collection.keys()`, and an unloaded collection has none, so "replace
+everything" would quietly merge. This is what makes every export and import
+function `async`.
+
 Import previews the file before writing anything. Nothing is uploaded
 anywhere: export is a download, import is a local file read, sharing means
 handing someone a file.

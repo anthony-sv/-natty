@@ -130,11 +130,13 @@ function RoutineBody({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const now = Date.now();
-                  const backup = exportRoutine(routine.slug, now);
-                  if (backup === undefined) return;
-                  downloadBackup(backup, backupFilename(now, "routine"));
-                  toast.add({ title: t("data.shared"), type: "success" });
+                  void (async () => {
+                    const now = Date.now();
+                    const backup = await exportRoutine(routine.slug, now);
+                    if (backup === undefined) return;
+                    downloadBackup(backup, backupFilename(now, "routine"));
+                    toast.add({ title: t("data.shared"), type: "success" });
+                  })();
                 }}
               >
                 <Share2Icon data-icon="inline-start" />
