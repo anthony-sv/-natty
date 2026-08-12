@@ -767,6 +767,13 @@ transcribed**: `/progress` owns that data and it doesn't belong in the repo.
 - **Items reference a food; macros are computed.** `foods.ts` holds per-100g
   (or per-unit) values and a plan says "211g of carne asada". Storing macros on
   the item would repeat them across four swap options of the same lunch.
+- **A `foodId` is resolved through an injected `FoodSource`, not `getFood`.**
+  `macros.ts` used to import it; it can't, now that foods and recipes you write
+  arrive at runtime. `getFood` still throws and is still right to — but only in
+  `data/diets/authoring.ts`, where a typo should fail the build. Everywhere
+  else an unresolvable id contributes **zero rather than throwing**, so a plan
+  referencing a food you deleted renders with a gap instead of a white screen.
+  `findFood` is the non-throwing built-in lookup, and `names.food` uses it.
 - **Every total is derived, never stored.** The docs state meal and day
   subtotals; here those are the *assertion* the test checks, not the source.
 - **Raw and cooked are different foods, not a flag on one.** A gram of cooked
@@ -793,9 +800,59 @@ is the only thing pinning the four swap proteins — the docs give their weights
 and a day total but never their macros, so those were solved for by subtracting
 the rest of the meal. Each one reconciles across two independent plan versions.
 
+It is also what proves the `FoodSource` injection changed nothing: threading
+the source through was the only edit it needed, and every total still lands.
+
 Tolerances are looser than they look because **the v4 source contradicts
 itself**: its header says P220 and its own totals table says P222, and the
 meals really do add to the second. Anything tighter fails on the document.
+
+### Your own foods, recipes and plans (`src/features/pantry/`)
+
+**A recipe resolves to a `Food`, and that is the whole design.** `MealItem` is
+`{ foodId, amount }`, so a recipe id in `foodId` renders, sums and swaps exactly
+like an ingredient — nothing in the meal, variant or option model changed to
+hold one, and `macrosForItem` never learns recipes exist. `recipeAsFood` in
+`pantry.ts` is pure and does it in a dozen lines.
+
+**Two portionings, because a cooked dish weighs less than its ingredients.**
+`servings` makes it a per-*unit* food (one unit is one serving); `weight` makes
+it a per-100g food, which is the only way "250 g of my chili" means anything.
+That cooked weight is **measured, never derived** — water leaves during cooking
+and how much depends on the method, which is the same reason `foodState` is a
+flag and not a conversion.
+
+**The cooking method carries no macros.** It records how to cook the thing; fat
+you cook in is an ingredient line with an amount you typed. A per-method
+absorption factor would invent exactly the precision the raw/cooked rule
+already refuses to invent. The form nudges you to add the line and leaves the
+number alone.
+
+**Recipes can't nest (v1).** `mergePantry` builds `ingredientSource` from a
+*separate map* that recipes are never added to, which is what makes cycles
+impossible without a cycle check. Building one map and adding recipes to it as
+you go looks equivalent and isn't — a recipe would resolve as an ingredient of
+any recipe written after it, silently. A test pins this.
+
+Ids are prefixed `food:` and `recipe:`; both share one namespace in
+`names.food`, because both live in `MealItem.foodId` downstream. Neither is a
+translation target — authored in your own language, like custom exercises — so
+`i18n.test.ts` doesn't walk them. The **cooking methods are** translated.
+
+Archive rather than delete once something references it, the same rule custom
+exercises follow. A food a recipe uses archives; a recipe always archives,
+since a plan may reference it and the panel can't see plans.
+
+`userDietPlanSchema` is `dietPlanSchema.extend`, so a plan you wrote **is** a
+`DietPlan` and every existing renderer works on it. The builder writes **swap
+options but no weekday variants** — one variant with no `days`, which is
+already schema-valid, so the simplification is in the builder rather than the
+model. Copying a built-in collapses each meal to its first variant and says so
+before you save. `supplements`/`notes` are written empty on purpose.
+
+`/nutrition` takes an optional `?plan=`. **`validateSearch` must return the key
+only when present** — always returning `{ plan: undefined }` makes the search
+object required and every plain `<Link to="/nutrition">` stops typechecking.
 
 ### Charts
 
