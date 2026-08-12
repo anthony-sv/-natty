@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { loggedSetSchema } from "@/features/log/schema";
 import { bodyEntrySchema } from "@/features/body/schema";
+import { measurementSchema } from "@/features/measurements/schema";
 import { userExerciseSchema } from "@/features/library/schema";
 import { userRoutineSchema } from "@/features/routines/collection";
 import { recipeSchema, userFoodSchema } from "@/features/pantry/schema";
@@ -39,6 +40,7 @@ export const BACKUP_VERSION = 1;
 export const backupDataSchema = z.object({
   sets: z.array(loggedSetSchema).default([]),
   bodyEntries: z.array(bodyEntrySchema).default([]),
+  measurements: z.array(measurementSchema).default([]),
   exercises: z.array(userExerciseSchema).default([]),
   routines: z.array(userRoutineSchema).default([]),
   foods: z.array(userFoodSchema).default([]),
@@ -121,6 +123,7 @@ export function summarise(data: BackupData): { key: keyof BackupData; count: num
     [
       ["sets", data.sets.length],
       ["bodyEntries", data.bodyEntries.length],
+      ["measurements", data.measurements.length],
       ["exercises", data.exercises.length],
       ["routines", data.routines.length],
       ["foods", data.foods.length],

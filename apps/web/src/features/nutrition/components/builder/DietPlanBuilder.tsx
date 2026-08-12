@@ -41,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
 import type { DietPlan, MealItem } from "@/data/diets";
 import { ComboboxOptionGroup } from "@/components/combobox-option-group";
@@ -527,8 +528,6 @@ function ItemList({
                 <ComboboxContent>
                   <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
                   <ComboboxList>
-                    {/* Which half it came from is now the heading's job, since
-                        a recipe and an ingredient read the same otherwise. */}
                     {(group: FoodOptionGroup, index: number) => (
                       <ComboboxOptionGroup
                         key={group.key}
@@ -537,7 +536,17 @@ function ItemList({
                       >
                         {(option) => (
                           <ComboboxItem key={option.id} value={option}>
-                            {option.name}
+                            <span className="flex items-center gap-2">
+                              {option.name}
+                              {/* A dish you cooked reads the same as an
+                                  ingredient otherwise, and the heading now
+                                  says what kind of food it is instead. */}
+                              {option.kind === "recipe" ? (
+                                <Badge variant="outline">
+                                  {t("pantry.recipe")}
+                                </Badge>
+                              ) : null}
+                            </span>
                           </ComboboxItem>
                         )}
                       </ComboboxOptionGroup>

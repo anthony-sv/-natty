@@ -19,6 +19,7 @@ function emptyData(): BackupData {
   return {
     sets: [],
     bodyEntries: [],
+    measurements: [],
     exercises: [],
     routines: [],
     foods: [],
@@ -360,6 +361,17 @@ describe("re-keying an import", () => {
     expect(entry.exerciseId).toBe(out.exercises[0]!.id);
     // Alternatives point at exercises too and would dangle otherwise.
     expect(entry.orAlternatives).toEqual([out.exercises[0]!.id]);
+  });
+
+  it("leaves a girth alone — it references nothing and nothing references it", () => {
+    const data: BackupData = {
+      ...emptyData(),
+      measurements: [
+        { id: "m1", measuredAt: AT, site: "upperArm", value: 40, unit: "cm" },
+      ],
+    };
+
+    expect(rekey(data, counter()).measurements).toEqual(data.measurements);
   });
 
   it("leaves logged sets and weigh-ins untouched", () => {

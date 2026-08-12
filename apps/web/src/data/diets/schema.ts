@@ -27,6 +27,36 @@ export type Macros = z.infer<typeof macrosSchema>;
 export const foodStateSchema = z.enum(["raw", "cooked"]);
 export type FoodState = z.infer<typeof foodStateSchema>;
 
+/**
+ * What kind of food this is, the way a shopping list is organised.
+ *
+ * **Purely a browsing aid — nothing computes from it.** Macros come from
+ * `macros`, and a category that disagreed with them would change no number.
+ * That's what makes it safe to leave optional: a food with no category still
+ * groups, by whichever macro dominates it (`dominantMacro`), so the picker
+ * never has an "Other" bucket that fills up with everything you added.
+ *
+ * Coarse on purpose, like `muscleSchema`. The point is a heading you can scan
+ * past, not a taxonomy — splitting fish from meat would put one entry under
+ * each and help nobody.
+ */
+export const foodCategorySchema = z.enum([
+  "vegetables",
+  "fruits",
+  "grains",
+  "tubers",
+  "legumes",
+  // Eggs sit with dairy, as they do in most food-group tables. Alone they'd be
+  // a heading over two rows.
+  "dairy-eggs",
+  "meat-fish",
+  /** Oils, nuts, nut butters, and the fatty fruits that read as fats. */
+  "fats",
+  "sweets",
+  "supplements",
+]);
+export type FoodCategory = z.infer<typeof foodCategorySchema>;
+
 export const foodSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -38,6 +68,8 @@ export const foodSchema = z.object({
   macros: macrosSchema,
   /** Raw and cooked are different foods: the same gram holds different macros. */
   state: foodStateSchema.optional(),
+  /** Groups the picker. Optional — see `foodCategorySchema`. */
+  category: foodCategorySchema.optional(),
   /** "~50g each", "1 scoop" — what the unit means in the real world. */
   unitNote: z.string().optional(),
 });

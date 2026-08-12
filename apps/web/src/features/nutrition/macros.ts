@@ -181,6 +181,37 @@ export function percentSplit(macros: Macros): {
 }
 
 /**
+ * Which macro a food is mostly made of, by calories.
+ *
+ * The food picker's fallback heading for anything with no `category` — your
+ * own foods, and every recipe. Derived rather than stored, so a food you add
+ * lands under a useful heading without being asked a question, and correcting
+ * its macros moves it.
+ *
+ * **Share of calories, not of grams**, for the reason `percentSplit` gives:
+ * by weight, fat looks like a third of what it contributes.
+ *
+ * The half-the-calories bar is what stops this claiming more than it knows.
+ * Greek yogurt is 45% protein and 37% carbs — calling that "protein-rich"
+ * would be a judgement the numbers don't support, so it reads as mixed. A food
+ * with no calories at all is mixed too, rather than dividing by nothing.
+ */
+export function dominantMacro(
+  macros: Macros,
+): "protein" | "carbs" | "fat" | "mixed" {
+  const total = kcalOf(macros);
+  if (total <= 0) return "mixed";
+
+  const shares = [
+    ["protein", macros.protein * KCAL_PER_GRAM.protein] as const,
+    ["carbs", macros.carbs * KCAL_PER_GRAM.carbs] as const,
+    ["fat", macros.fat * KCAL_PER_GRAM.fat] as const,
+  ];
+  const [name, kcal] = shares.reduce((best, row) => (row[1] > best[1] ? row : best));
+  return kcal / total >= 0.5 ? name : "mixed";
+}
+
+/**
  * The plan's calorie target, stated or implied.
  *
  * A plan that gives macro targets has already given a calorie target — 180P,

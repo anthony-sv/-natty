@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { foodStateSchema, macrosSchema, mealItemSchema } from "@/data/diets";
+import {
+  foodCategorySchema,
+  foodStateSchema,
+  macrosSchema,
+  mealItemSchema,
+} from "@/data/diets";
 
 /**
  * A food you added yourself.
@@ -22,6 +27,13 @@ export const userFoodSchema = z.object({
   /** Per 100 for `g`/`ml`, per one of the thing for `unit`. */
   macros: macrosSchema,
   state: foodStateSchema.optional(),
+  /**
+   * Groups the picker, and optional here for a reason the built-in table
+   * doesn't have: nobody should be made to answer "what kind of food is this"
+   * to write down a protein bar. Left blank, it groups by whichever macro
+   * dominates instead.
+   */
+  category: foodCategorySchema.optional(),
   /** "~50g each", "1 scoop" — what a unit means in the real world. */
   unitNote: z.string().optional(),
   archivedAt: z.number().optional(),

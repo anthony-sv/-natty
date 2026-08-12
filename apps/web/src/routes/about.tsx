@@ -10,6 +10,7 @@ import {
   KeyboardIcon,
   ListIcon,
   PlayIcon,
+  RulerIcon,
   ShoppingBasketIcon,
   TrendingUpIcon,
   TrophyIcon,
@@ -125,6 +126,20 @@ const GUIDE: Section[] = [
     ],
     to: "/progress",
     linkKey: "about.progress.link",
+  },
+  {
+    id: "measurements",
+    icon: RulerIcon,
+    titleKey: "about.measurements.title",
+    bodyKey: "about.measurements.body",
+    points: [
+      "about.measurements.p1",
+      "about.measurements.p2",
+      "about.measurements.p3",
+    ],
+    to: "/progress",
+    search: { tab: "measurements" },
+    linkKey: "about.measurements.link",
   },
   {
     id: "nutrition",

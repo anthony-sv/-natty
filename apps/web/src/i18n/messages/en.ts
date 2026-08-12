@@ -371,9 +371,27 @@ export const en = {
     "A recipe is a list of ingredients plus how you cooked it. It then drops into a meal like any other food.",
   "pantry.yours": "Yours",
   "pantry.recipe": "Recipe",
-  "pantry.group.recipes": "Your recipes",
-  "pantry.group.foods": "Your foods",
-  "pantry.group.builtIn": "Built-in foods",
+  "pantry.category": "Kind of food",
+  "pantry.categoryHint":
+    "Groups it in the picker. Leave it blank and it groups by whichever macro it's mostly made of.",
+  "pantry.category.none": "Work it out from the macros",
+
+  // ── Food picker headings ─────────────────────────────────────────────────
+  // The authored families, then the four the macros fall back to.
+  "foodGroup.vegetables": "Vegetables",
+  "foodGroup.fruits": "Fruit",
+  "foodGroup.grains": "Cereals and grains",
+  "foodGroup.tubers": "Potatoes and tubers",
+  "foodGroup.legumes": "Beans and legumes",
+  "foodGroup.dairy-eggs": "Dairy and eggs",
+  "foodGroup.meat-fish": "Meat and fish",
+  "foodGroup.fats": "Fats and oils",
+  "foodGroup.sweets": "Sweets and snacks",
+  "foodGroup.supplements": "Supplements",
+  "foodGroup.protein": "Mostly protein",
+  "foodGroup.carbs": "Mostly carbs",
+  "foodGroup.fat": "Mostly fat",
+  "foodGroup.mixed": "Mixed",
   "pantry.ingredientCount.one": "{count} ingredient",
   "pantry.ingredientCount.other": "{count} ingredients",
 
@@ -575,6 +593,17 @@ export const en = {
     "Inventory is counted in pairs, since a single plate can't be loaded evenly. Set a size to zero and it plans around it.",
   "about.plates.link": "Open the plate loader",
 
+  "about.measurements.title": "Measurements",
+  "about.measurements.body":
+    "Girths over time — arms, waist and legs to begin with, and anything else you want to add.",
+  "about.measurements.p1":
+    "Each site gets its own chart rather than all of them sharing one. A neck and a chest on one axis would flatten the neck to a line, and the change you're looking for is a centimetre.",
+  "about.measurements.p2":
+    "Left and right are recorded separately only if you ask for it, and then they're two lines on one chart — comparing them is the whole reason to have written down a side.",
+  "about.measurements.p3":
+    "Six of the sites are the ones the natural-potential calculator predicts, so what you measure and what it estimates are directly comparable.",
+  "about.measurements.link": "Take a measurement",
+
   "about.sharing.title": "Backups and sharing",
   "about.sharing.body":
     "Export everything as one file, or hand someone a single routine, plan, recipe, food or exercise — the ones that came with the app included.",
@@ -639,8 +668,51 @@ export const en = {
     "Nothing you have is touched. What's in the file arrives alongside it, with new ids so it can't overwrite anything \u2014 importing twice gives you two copies.",
   "data.mergeAction": "Add it",
   "data.merged": "Added",
+  // ── Girth measurements ───────────────────────────────────────────────────
+  "measure.tab": "Measurements",
+  "measure.title": "Take your measurements",
+  "measure.body":
+    "The scale says which direction you're going. A tape says where it went — two people at the same weight can have completely different arms.",
+  "measure.unit": "Measured in",
+  "measure.trackSides": "Left and right separately",
+  "measure.tracking": "Sites to keep on the form",
+  "measure.showAll": "Measure something else",
+  "measure.showTracked": "Just my usual ones",
+  "measure.save": "Save",
+  "measure.saved.one": "{count} measurement saved",
+  "measure.saved.other": "{count} measurements saved",
+  "measure.delete": "Delete",
+  "measure.deleted": "Measurement deleted",
+  "measure.change": "{delta} {unit} since you started",
+  "measure.trend": "Over time",
+  "measure.history": "Every reading",
+  "measure.siteSide": "{site} ({side})",
+  "measure.empty.title": "Nothing measured yet",
+  "measure.empty.body":
+    "Fill in whatever you measured above. One reading is a starting point; the trend shows up from the second.",
+  "measure.chart.axis": "Girth ({unit})",
+  "measure.chart.aria": "{site} over time, in {unit}",
+  "measure.chart.latest": "Now {value} {unit}",
+  "measure.chart.latestSide": "{side}, now {value} {unit}",
+  "measure.chart.notEnough.title": "Not enough to draw yet",
+  "measure.chart.notEnough.body":
+    "A site needs two readings before there's a line between them.",
+
+  "measure.side.left": "Left",
+  "measure.side.right": "Right",
+  "measure.site.neck": "Neck",
+  "measure.site.shoulders": "Shoulders",
+  "measure.site.chest": "Chest",
+  "measure.site.upperArm": "Upper arm",
+  "measure.site.forearm": "Forearm",
+  "measure.site.waist": "Waist",
+  "measure.site.hips": "Hips",
+  "measure.site.thigh": "Thigh",
+  "measure.site.calf": "Calf",
+
   "data.kind.sets": "Logged sets",
   "data.kind.bodyEntries": "Weigh-ins",
+  "data.kind.measurements": "Measurements",
   "data.kind.exercises": "Your exercises",
   "data.kind.routines": "Your routines",
   "data.kind.foods": "Your foods",

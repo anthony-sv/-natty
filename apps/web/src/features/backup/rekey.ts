@@ -140,9 +140,10 @@ export function rekey(data: BackupData, source: IdSource): BackupData {
     recipes,
     routines,
     diets,
-    // Logged sets and weigh-ins are never part of a share, and on a restore
-    // they must keep the ids their provenance already points at.
+    // Logged sets, weigh-ins and girths are never part of a share, and on a
+    // restore they must keep the ids their provenance already points at.
     sets: data.sets,
     bodyEntries: data.bodyEntries,
+    measurements: data.measurements,
   };
 }

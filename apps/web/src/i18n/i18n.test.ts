@@ -215,6 +215,8 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "split.core",
       "history.setsOnDay.one",
       "history.setsOnDay.other",
+      // Two placeholders and a bracket — there is nothing in it to translate.
+      "measure.siteSide",
     ]);
 
     const unexplained = Object.keys(en).filter(

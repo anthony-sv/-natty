@@ -3,6 +3,7 @@ import { getRoutineBySlug } from "@/data/routines";
 import { bodyEntries } from "@/features/body/collection";
 import { userExercises } from "@/features/library/collection";
 import { intakeEntries } from "@/features/intake/collection";
+import { measurements } from "@/features/measurements/collection";
 import { loggedSets } from "@/features/log/collection";
 import { userDiets, dietSlugFor } from "@/features/nutrition/collection";
 import { userFoods, userRecipes } from "@/features/pantry/collection";
@@ -22,6 +23,7 @@ import { rekey, type IdSource } from "./rekey";
 const ALL_COLLECTIONS = [
   loggedSets,
   bodyEntries,
+  measurements,
   userExercises,
   userRoutines,
   userFoods,
@@ -54,6 +56,7 @@ export async function currentData(): Promise<BackupData> {
   return {
     sets: [...loggedSets.values()],
     bodyEntries: [...bodyEntries.values()],
+    measurements: [...measurements.values()],
     exercises: [...userExercises.values()],
     routines: [...userRoutines.values()],
     foods: [...userFoods.values()],
@@ -67,6 +70,7 @@ export async function currentData(): Promise<BackupData> {
 const emptyData = (): BackupData => ({
   sets: [],
   bodyEntries: [],
+  measurements: [],
   exercises: [],
   routines: [],
   foods: [],
@@ -263,6 +267,7 @@ export async function restoreEverything(data: BackupData): Promise<void> {
 
   for (const set of data.sets) loggedSets.insert(set);
   for (const entry of data.bodyEntries) bodyEntries.insert(entry);
+  for (const row of data.measurements) measurements.insert(row);
   for (const exercise of data.exercises) userExercises.insert(exercise);
   for (const routine of data.routines) userRoutines.insert(routine);
   for (const food of data.foods) userFoods.insert(food);

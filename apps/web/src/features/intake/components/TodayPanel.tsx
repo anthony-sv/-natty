@@ -347,7 +347,14 @@ function AddExtra({ day }: { day: number }) {
                 >
                   {(option) => (
                     <ComboboxItem key={option.id} value={option}>
-                      {option.name}
+                      <span className="flex items-center gap-2">
+                        {option.name}
+                        {/* The heading says what kind of food it is, not that
+                            it's a dish you cooked rather than an ingredient. */}
+                        {option.kind === "recipe" ? (
+                          <Badge variant="outline">{t("pantry.recipe")}</Badge>
+                        ) : null}
+                      </span>
                     </ComboboxItem>
                   )}
                 </ComboboxOptionGroup>
