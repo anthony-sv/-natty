@@ -442,6 +442,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "split.pull": "Jal\u00f3n",
   "split.legs": "Pierna",
   "split.cardio": "Cardio",
+  "split.core": "Core",
+  "volume.splitFacetAria": "Sets de {split} por semana",
 
   "muscle.chest": "Pecho",
   "muscle.upper-chest": "Pecho superior",

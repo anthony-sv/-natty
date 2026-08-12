@@ -145,7 +145,7 @@ describe("weeklyVolume", () => {
       NOW,
     );
 
-    expect(week.split).toEqual({ push: 1, pull: 1, legs: 1, cardio: 1 });
+    expect(week.split).toEqual({ push: 1, pull: 1, legs: 1, core: 0, cardio: 1 });
     // Cardio is counted but isn't resistance volume.
     expect(week.totalSets).toBe(3);
   });
@@ -194,7 +194,7 @@ describe("totalsFor", () => {
     );
 
     expect(totalsFor(weeks)).toEqual({
-      split: { push: 2, pull: 0, legs: 1, cardio: 0 },
+      split: { push: 2, pull: 0, legs: 1, core: 0, cardio: 0 },
       totalSets: 3,
     });
   });
@@ -260,20 +260,26 @@ describe("against the real exercise library", () => {
     exercises.flatMap((exercise) => musclesForExercise(exercise).primaryMuscles),
   );
 
-  it("cannot train abs directly", () => {
-    // The finding the gaps card exists to report: a muscle with no exercise in
-    // the whole library that makes it the point of the set.
+  it("can train every muscle it models directly", () => {
+    // This assertion has now driven three separate library fixes, which is the
+    // whole reason it walks the real data rather than a fixture. It read
+    // ["abs", "adductors", "glutes"], then ["abs"] once the hip movements
+    // landed, and is empty now that crunches and leg raises do.
     //
-    // This used to read ["abs", "adductors", "glutes"]. The hip movements —
-    // thrusts, bridges, kickbacks, abduction and adduction — are what took the
-    // other two off the list, and they were added *because* this reported them:
-    // a gaps card naming a deficiency the app gives you no way to fix is a
-    // complaint, not a finding. Abs are still on it, and the fix is the same
-    // shape whenever someone wants it.
+    // Each time, the gaps card was naming a deficiency the app gave you no way
+    // to fix — a complaint rather than a finding. Empty is the end state: every
+    // muscle in `muscleSchema` has at least one exercise that makes it the
+    // point of the set. A new muscle added without one fails right here.
     const undirectable = muscleSchema.options.filter(
       (muscle) => !trainableDirectly.has(muscle),
     );
-    expect([...undirectable].sort()).toEqual(["abs"]);
+    expect([...undirectable].sort()).toEqual([]);
+  });
+
+  it("makes abs directly trainable", () => {
+    // Named separately so removing the ab work fails by name rather than
+    // silently folding back into the list above.
+    expect(trainableDirectly.has("abs")).toBe(true);
   });
 
   it("makes glutes and adductors directly trainable", () => {

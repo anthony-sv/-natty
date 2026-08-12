@@ -210,6 +210,8 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "volume.sets",
       "volume.setsAxis",
       "split.cardio",
+      // "Core" is the word a Mexican gym uses too.
+      "split.core",
       "history.setsOnDay.one",
       "history.setsOnDay.other",
     ]);

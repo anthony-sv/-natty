@@ -59,6 +59,11 @@ export const movementPatternSchema = z.enum([
   "hip-adduction",
   "calf-raise",
   "spinal-extension",
+  // Crunches, reverse crunches and hanging leg raises. One pattern, not two:
+  // a leg raise is hip flexion mechanically, but separating it would leave a
+  // pattern with one exercise in it and no substitution value, which is the
+  // opposite of what a pattern is for.
+  "spinal-flexion",
   "cardio",
 ]);
 export type MovementPattern = z.infer<typeof movementPatternSchema>;

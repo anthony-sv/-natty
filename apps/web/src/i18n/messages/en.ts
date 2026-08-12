@@ -444,6 +444,8 @@ export const en = {
   "split.pull": "Pull",
   "split.legs": "Legs",
   "split.cardio": "Cardio",
+  "split.core": "Core",
+  "volume.splitFacetAria": "{split} sets per week",
 
   "muscle.chest": "Chest",
   "muscle.upper-chest": "Upper chest",
