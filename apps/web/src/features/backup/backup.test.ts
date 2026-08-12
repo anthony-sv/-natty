@@ -20,6 +20,7 @@ function emptyData(): BackupData {
     foods: [],
     recipes: [],
     diets: [],
+    intake: [],
   };
 }
 
@@ -207,6 +208,42 @@ describe("re-keying an import", () => {
     // both machines.
     const out = rekey(sharedData(), counter());
     expect(out.recipes[0]!.ingredients[1]!.foodId).toBe("whole-egg");
+  });
+
+  it("follows a plan slug and a food into the intake that references them", () => {
+    // Intake rides along on a merged full backup. Without this the day you
+    // logged points at the plan slug it had on the other machine.
+    const data: BackupData = {
+      ...sharedData(),
+      intake: [
+        {
+          id: "i1",
+          day: 0,
+          source: {
+            kind: "meal",
+            planSlug: "their-cut",
+            mealName: "Lunch",
+            optionIndex: 0,
+          },
+          loggedAt: 1,
+        },
+        {
+          id: "i2",
+          day: 0,
+          source: { kind: "item", foodId: "food:theirs", amount: 100 },
+          loggedAt: 2,
+        },
+      ],
+    };
+    const out = rekey(data, counter());
+
+    expect(out.intake[0]!.source).toMatchObject({
+      planSlug: out.diets[0]!.slug,
+    });
+    expect(out.intake[1]!.source).toMatchObject({ foodId: out.foods[0]!.id });
+    // Fresh row ids too, so importing the same file twice is two days of
+    // intake rather than one silently overwritten.
+    expect(out.intake.map((e) => e.id)).not.toContain("i1");
   });
 
   it("follows both foods and recipes into a plan's items", () => {

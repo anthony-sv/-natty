@@ -5,6 +5,7 @@ import { userExerciseSchema } from "@/features/library/schema";
 import { userRoutineSchema } from "@/features/routines/collection";
 import { recipeSchema, userFoodSchema } from "@/features/pantry/schema";
 import { userDietPlanSchema } from "@/features/nutrition/collection";
+import { intakeEntrySchema } from "@/features/intake/schema";
 import { profileSchema } from "@/features/profile/profile-store";
 
 /**
@@ -43,6 +44,7 @@ export const backupDataSchema = z.object({
   foods: z.array(userFoodSchema).default([]),
   recipes: z.array(recipeSchema).default([]),
   diets: z.array(userDietPlanSchema).default([]),
+  intake: z.array(intakeEntrySchema).default([]),
   profile: profileSchema.optional(),
 });
 export type BackupData = z.infer<typeof backupDataSchema>;
@@ -116,6 +118,7 @@ export function summarise(data: BackupData): { key: keyof BackupData; count: num
       ["foods", data.foods.length],
       ["recipes", data.recipes.length],
       ["diets", data.diets.length],
+      ["intake", data.intake.length],
     ] as const
   )
     .filter(([, count]) => count > 0)

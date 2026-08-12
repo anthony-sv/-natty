@@ -90,9 +90,13 @@ export function rekey(data: BackupData, source: IdSource): BackupData {
     })),
   }));
 
-  const diets = data.diets.map((plan) => ({
+  const dietSlugs = new Map<string, string>();
+  const diets = data.diets.map((plan) => {
+    const slug = source.dietSlug(plan.name);
+    dietSlugs.set(plan.slug, slug);
+    return {
     ...plan,
-    slug: source.dietSlug(plan.name),
+    slug,
     meals: plan.meals.map((meal) => ({
       ...meal,
       variants: meal.variants.map((variant) => ({
@@ -106,10 +110,31 @@ export function rekey(data: BackupData, source: IdSource): BackupData {
         })),
       })),
     })),
+    };
+  });
+
+  /**
+   * An intake entry names a plan and a food, so both have to follow.
+   *
+   * It rides along on a merged *full* backup — no share carries intake — and
+   * without this the day you logged would point at the plan slug it had on the
+   * other machine and resolve to nothing.
+   */
+  const intake = data.intake.map((entry) => ({
+    ...entry,
+    id: source.id("intake"),
+    source:
+      entry.source.kind === "meal"
+        ? {
+            ...entry.source,
+            planSlug: dietSlugs.get(entry.source.planSlug) ?? entry.source.planSlug,
+          }
+        : { ...entry.source, foodId: remapFoodId(entry.source.foodId) },
   }));
 
   return {
     ...data,
+    intake,
     foods,
     exercises,
     recipes,

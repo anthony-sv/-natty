@@ -207,6 +207,7 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "builder.segmentKind.reps",
       // A placeholder and the kcal symbol; there is nothing in it to translate.
       "pantry.kcal",
+      "intake.noTarget",
       "volume.sets",
       "volume.setsAxis",
       "split.cardio",

@@ -441,6 +441,25 @@ export const esMX: Record<keyof typeof en, string> = {
   "dietBuilder.nothingIn": "Todav\u00eda no hay nada en esta.",
 
   // ── Exportar e importar ──────────────────────────────────────────────────
+  // ── Lo que comiste ───────────────────────────────────────────────────────
+  "intake.tab": "Hoy",
+  "intake.today": "Hoy",
+  "intake.yesterday": "Ayer",
+  "intake.previousDay": "Día anterior",
+  "intake.nextDay": "Día siguiente",
+  "intake.eaten": "Comido",
+  "intake.ofTarget": "{kcal} de {target} kcal",
+  "intake.noTarget": "{kcal} kcal",
+  "intake.planMeals": "Del plan",
+  "intake.planMealsBody":
+    "Marca una comida cuando ya te la comiste. No se registra nada hasta que lo hagas.",
+  "intake.extras": "Cualquier otra cosa",
+  "intake.extrasBody": "Lo que comiste que el plan no menciona.",
+  "intake.add": "Agregar",
+  "intake.remove": "Quitar",
+  "intake.removed": "Quitado",
+  "intake.gone": "Ya no está en tu despensa",
+
   "data.tab": "Datos",
   "data.title": "Respalda y comparte",
   "data.body":
@@ -473,6 +492,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "data.kind.foods": "Tus alimentos",
   "data.kind.recipes": "Tus recetas",
   "data.kind.diets": "Tus planes de dieta",
+  "data.kind.intake": "Comidas registradas",
   "data.share": "Compartir",
   "data.shared": "Archivo descargado",
 

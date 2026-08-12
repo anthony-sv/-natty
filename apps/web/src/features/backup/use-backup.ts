@@ -1,5 +1,6 @@
 import { bodyEntries } from "@/features/body/collection";
 import { userExercises } from "@/features/library/collection";
+import { intakeEntries } from "@/features/intake/collection";
 import { loggedSets } from "@/features/log/collection";
 import { userDiets, dietSlugFor } from "@/features/nutrition/collection";
 import { userFoods, userRecipes } from "@/features/pantry/collection";
@@ -25,6 +26,7 @@ export function currentData(): BackupData {
     foods: [...userFoods.values()],
     recipes: [...userRecipes.values()],
     diets: [...userDiets.values()],
+    intake: [...intakeEntries.values()],
     profile: profileStore.state,
   };
 }
@@ -37,6 +39,7 @@ const emptyData = (): BackupData => ({
   foods: [],
   recipes: [],
   diets: [],
+  intake: [],
 });
 
 /** The real id generator. Uuid-backed, so two imports never collide. */
@@ -141,6 +144,7 @@ export function importAdditive(data: BackupData, ids: IdSource = liveIds): void 
   for (const recipe of fresh.recipes) userRecipes.insert(recipe);
   for (const routine of fresh.routines) userRoutines.insert(routine);
   for (const plan of fresh.diets) userDiets.insert(plan);
+  for (const entry of fresh.intake) intakeEntries.insert(entry);
 }
 
 /**
@@ -159,6 +163,7 @@ export function restoreEverything(data: BackupData): void {
     userFoods,
     userRecipes,
     userDiets,
+    intakeEntries,
   ]) {
     for (const key of [...collection.keys()]) collection.delete(key);
   }
@@ -170,6 +175,7 @@ export function restoreEverything(data: BackupData): void {
   for (const food of data.foods) userFoods.insert(food);
   for (const recipe of data.recipes) userRecipes.insert(recipe);
   for (const plan of data.diets) userDiets.insert(plan);
+  for (const entry of data.intake) intakeEntries.insert(entry);
   if (data.profile) profileStore.setState(() => data.profile!);
 }
 

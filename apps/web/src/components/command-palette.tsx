@@ -34,6 +34,7 @@ const PROGRESS_TABS = [
 ] as const;
 
 const NUTRITION_TABS = [
+  ["today", "intake.tab"],
   ["plan", "nutrition.tab.plan"],
   ["macros", "nutrition.tab.macros"],
   ["pantry", "pantry.tab"],

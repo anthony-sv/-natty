@@ -443,6 +443,25 @@ export const en = {
   "dietBuilder.nothingIn": "Nothing in this one yet.",
 
   // ── Export and import ────────────────────────────────────────────────────
+  // ── What you ate ─────────────────────────────────────────────────────────
+  "intake.tab": "Today",
+  "intake.today": "Today",
+  "intake.yesterday": "Yesterday",
+  "intake.previousDay": "Previous day",
+  "intake.nextDay": "Next day",
+  "intake.eaten": "Eaten",
+  "intake.ofTarget": "{kcal} of {target} kcal",
+  "intake.noTarget": "{kcal} kcal",
+  "intake.planMeals": "From the plan",
+  "intake.planMealsBody":
+    "Tick a meal once you've eaten it. Nothing is recorded until you do.",
+  "intake.extras": "Anything else",
+  "intake.extrasBody": "Whatever you ate that the plan doesn't name.",
+  "intake.add": "Add",
+  "intake.remove": "Remove",
+  "intake.removed": "Removed",
+  "intake.gone": "No longer in your pantry",
+
   "data.tab": "Data",
   "data.title": "Back up and share",
   "data.body":
@@ -475,6 +494,7 @@ export const en = {
   "data.kind.foods": "Your foods",
   "data.kind.recipes": "Your recipes",
   "data.kind.diets": "Your diet plans",
+  "data.kind.intake": "Meals eaten",
   "data.share": "Share",
   "data.shared": "File downloaded",
 

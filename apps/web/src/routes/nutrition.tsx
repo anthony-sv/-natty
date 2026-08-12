@@ -20,11 +20,12 @@ import { diets } from "@/data/diets";
 import { MacroCalculatorPanel } from "@/features/nutrition/components/MacroCalculatorPanel";
 import { PlanPanel } from "@/features/nutrition/components/PlanPanel";
 import { useDiets } from "@/features/nutrition/use-diets";
+import { TodayPanel } from "@/features/intake/components/TodayPanel";
 import { PantryPanel } from "@/features/pantry/components/PantryPanel";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 
-const TABS = ["plan", "macros", "pantry"] as const;
+const TABS = ["today", "plan", "macros", "pantry"] as const;
 type Tab = (typeof TABS)[number];
 
 export const Route = createFileRoute("/nutrition")({
@@ -57,7 +58,7 @@ function NutritionPage() {
   const [slug, setSlug] = useState(search.plan ?? diets[0]!.slug);
   // In the URL, so a panel is linkable and survives a refresh. `replace` keeps
   // tab switches out of the back button.
-  const tab = search.tab ?? "plan";
+  const tab = search.tab ?? "today";
   const setTab = (next: string) =>
     void navigate({
       to: "/nutrition",
@@ -156,10 +157,14 @@ function NutritionPage() {
           so it would stay open across a tab switch. */}
       <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
         <TabsList>
+          <TabsTrigger value="today">{t("intake.tab")}</TabsTrigger>
           <TabsTrigger value="plan">{t("nutrition.tab.plan")}</TabsTrigger>
           <TabsTrigger value="macros">{t("nutrition.tab.macros")}</TabsTrigger>
           <TabsTrigger value="pantry">{t("pantry.tab")}</TabsTrigger>
         </TabsList>
+        <TabsContent value="today">
+          {tab === "today" ? <TodayPanel key={plan.slug} plan={plan} /> : null}
+        </TabsContent>
         <TabsContent value="plan">
           {/* Keyed so switching plans resets the day and swap choices rather
               than carrying a selection onto a plan that may not have it. */}
