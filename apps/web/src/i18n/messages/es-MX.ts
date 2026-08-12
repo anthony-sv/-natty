@@ -838,8 +838,13 @@ export const esMX: Record<keyof typeof en, string> = {
   "nutrition.noTargets":
     "Este plan no fija una meta. El anillo muestra a cuánto suman las comidas de abajo.",
   "nutrition.fromMacros": "de tus macros",
-  "nutrition.hydrationBody":
-    "Una coca sin azúcar cuenta para el total, pero no uno a uno — las alternativas están enlistadas, no calculadas.",
+  "nutrition.hydrationBody": "Calculado con tu último pesaje, {weight}.",
+  "nutrition.hydrationNoWeight": "Todavía no hay pesaje",
+  "nutrition.hydrationLogWeight":
+    "Registra tu peso y aquí sale cuánta agua tomar.",
+  "nutrition.hydrationHours": "asume {hours} hora de entrenamiento",
+  "nutrition.hydrationFormula":
+    "{perKg}ml por kg, más {creatine}ml por la creatina, más {perHour}ml por cada hora de entrenamiento. Es una regla general — el calor y lo que sudes lo mueven bastante.",
   "nutrition.kcalPerDay": "kcal/día",
   "nutrition.kgPerWeek": "kg/semana",
   "nutrition.tdee": "TDEE",

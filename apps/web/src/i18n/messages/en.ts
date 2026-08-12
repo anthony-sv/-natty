@@ -832,8 +832,13 @@ export const en = {
   "nutrition.noTargets":
     "This plan doesn't state a target. The ring shows what the meals below add to.",
   "nutrition.fromMacros": "from your macros",
-  "nutrition.hydrationBody":
-    "A zero-sugar coke counts toward the total, but not one for one — the alternatives are listed rather than calculated.",
+  "nutrition.hydrationBody": "Worked out from your last weigh-in, {weight}.",
+  "nutrition.hydrationNoWeight": "No weigh-in yet",
+  "nutrition.hydrationLogWeight":
+    "Log your weight and this works out how much water to drink.",
+  "nutrition.hydrationHours": "assumes {hours} hour of training",
+  "nutrition.hydrationFormula":
+    "{perKg}ml per kg, plus {creatine}ml for creatine, plus {perHour}ml per hour of training. A rule of thumb — heat and how much you sweat move it a lot.",
   "nutrition.kcalPerDay": "kcal/day",
   "nutrition.kgPerWeek": "kg/week",
   "nutrition.tdee": "TDEE",

@@ -19,13 +19,10 @@ export {
   mealItemSchema,
 } from "./schema";
 export type { MacroTargets } from "./schema";
-export { hydration } from "./hydration";
 export type {
   DietPlan,
   Food,
   FoodState,
-  Hydration,
-  HydrationOption,
   Macros,
   Meal,
   MealItem,

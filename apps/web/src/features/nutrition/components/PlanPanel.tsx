@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   DropletsIcon,
   FlameIcon,
@@ -15,8 +16,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { hydration } from "@/data/diets";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 import { useWeekdayLabels } from "@/i18n/use-weekdays";
@@ -35,6 +36,15 @@ import {
   weeklyRateKg,
   type SwapChoices,
 } from "../macros";
+import {
+  CREATINE_ML,
+  DEFAULT_TRAINING_HOURS,
+  ML_PER_KG,
+  ML_PER_TRAINING_HOUR,
+  formatLitres,
+  hydrationOptions,
+  type HydrationRow,
+} from "../hydration";
 import { MacroSplit } from "./MacroSplit";
 import { usePantry } from "@/features/pantry/use-pantry";
 import { MealCard } from "./MealCard";
@@ -65,6 +75,11 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
   const deficit = deficitPerDay(plan);
   const rate = weeklyRateKg(plan);
   const target = effectiveTargetKcal(plan);
+
+  // Derived from your latest weigh-in, which the panel already reads for
+  // `proteinPerKg` — so this needed no new plumbing.
+  const water =
+    bodyWeightKg !== undefined ? hydrationOptions(bodyWeightKg) : undefined;
 
   // Only the macros the plan names, each as its own phrase — built here rather
   // than as one message with three holes, because a plan may fill any subset.
@@ -220,17 +235,49 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
             <DropletsIcon className="size-4 text-muted-foreground" />{" "}
             {t("nutrition.hydration")}
           </CardTitle>
-          <CardDescription>{t("nutrition.hydrationBody")}</CardDescription>
+          <CardDescription>
+            {bodyWeightKg !== undefined
+              ? t("nutrition.hydrationBody", {
+                  weight: `${bodyWeightKg.toFixed(1)} kg`,
+                })
+              : null}
+          </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 sm:grid-cols-2">
-          <HydrationColumn
-            title={t("nutrition.restDay")}
-            options={hydration.restDay}
-          />
-          <HydrationColumn
-            title={t("nutrition.trainingDay")}
-            options={hydration.trainingDay}
-          />
+        <CardContent>
+          {/* No weigh-in, no number. The whole point of deriving this is that
+              it's yours — showing the author's litres to someone who hasn't
+              logged a weight would be the exact thing this replaced. */}
+          {water === undefined ? (
+            <Empty>
+              <EmptyTitle>{t("nutrition.hydrationNoWeight")}</EmptyTitle>
+              <EmptyDescription>
+                <Link to="/progress">{t("nutrition.hydrationLogWeight")}</Link>
+              </EmptyDescription>
+            </Empty>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="grid gap-6 sm:grid-cols-2">
+                <HydrationColumn
+                  title={t("nutrition.restDay")}
+                  rows={water.restDay}
+                />
+                <HydrationColumn
+                  title={t("nutrition.trainingDay")}
+                  rows={water.trainingDay}
+                  note={t("nutrition.hydrationHours", {
+                    hours: DEFAULT_TRAINING_HOURS,
+                  })}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t("nutrition.hydrationFormula", {
+                  perKg: ML_PER_KG,
+                  creatine: CREATINE_ML,
+                  perHour: ML_PER_TRAINING_HOUR,
+                })}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -254,33 +301,32 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
 
 function HydrationColumn({
   title,
-  options,
+  rows,
+  note,
 }: {
   title: string;
-  options: typeof hydration.restDay;
+  rows: HydrationRow[];
+  /** "assumes 1 hour of training" — only the training column carries one. */
+  note?: string;
 }) {
   const t = useT();
-  const names = useNames();
 
   return (
     <div className="flex flex-col gap-2">
       <span className="text-sm font-medium">{title}</span>
-      {options.map((option) => (
-        <div
-          key={`${option.litres}-${option.zeroCokes}`}
-          className="flex items-baseline gap-2"
-        >
+      {rows.map((row) => (
+        <div key={row.zeroCokes} className="flex items-baseline gap-2">
           <span className="text-lg font-semibold tabular-nums">
-            {option.litres}L
+            {formatLitres(row.litres)}
           </span>
           <span className="text-sm text-muted-foreground">
-            {option.zeroCokes === 0
+            {row.zeroCokes === 0
               ? t("nutrition.waterOnly")
-              : t.plural("nutrition.zeroCokes", option.zeroCokes)}
-            {option.note ? `, ${names.text(option.note)}` : ""}
+              : t.plural("nutrition.zeroCokes", row.zeroCokes)}
           </span>
         </div>
       ))}
+      {note ? <span className="text-xs text-muted-foreground">{note}</span> : null}
     </div>
   );
 }

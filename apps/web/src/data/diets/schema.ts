@@ -145,22 +145,3 @@ export const dietPlanSchema = z.object({
   notes: z.array(z.string()).default([]),
 });
 export type DietPlan = z.infer<typeof dietPlanSchema>;
-
-/**
- * Water targets, which the source docs give per day type rather than per plan.
- *
- * A "zero coke" counts toward the total but not fully — the docs list the
- * alternatives explicitly rather than giving a formula, so this does too.
- */
-export const hydrationOptionSchema = z.object({
-  litres: z.number().positive(),
-  zeroCokes: z.number().int().nonnegative().default(0),
-  note: z.string().optional(),
-});
-export type HydrationOption = z.infer<typeof hydrationOptionSchema>;
-
-export const hydrationSchema = z.object({
-  restDay: z.array(hydrationOptionSchema).min(1),
-  trainingDay: z.array(hydrationOptionSchema).min(1),
-});
-export type Hydration = z.infer<typeof hydrationSchema>;
