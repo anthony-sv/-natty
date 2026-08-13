@@ -67,6 +67,8 @@ const ROUTES = [
   ["plates", "/plates"],
   ["plates-add", "/plates", "Sumar discos"],
   ["about", "/about"],
+  ["privacy", "/privacy"],
+  ["terms", "/terms"],
 ];
 
 /**

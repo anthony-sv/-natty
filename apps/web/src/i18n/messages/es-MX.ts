@@ -1470,4 +1470,99 @@ export const esMX: Record<keyof typeof en, string> = {
   "nutrition.trainingDay": "Día de entrenamiento",
   "nutrition.raw": "Crudo",
   "nutrition.cooked": "Cocido",
+
+  // ── Privacidad y términos ────────────────────────────────────────────────
+  "legal.updated": "Última actualización: {date}",
+
+  "privacy.title": "Privacidad",
+  "privacy.subtitle": "Qué sabe esta app de ti, a dónde va y cómo recuperarlo.",
+  "privacy.summary.title": "La versión corta",
+  "privacy.summary.p1":
+    "Sin cuenta, nada de lo que registras sale de tu dispositivo. Con cuenta, tus datos de entrenamiento se guardan para que te sigan a tus otros dispositivos — y esa es la única razón por la que se guardan.",
+  "privacy.summary.p2":
+    "Nada se vende, se renta ni se comparte con nadie. No hay publicidad, y no se le entregan tus datos a ningún tercero para perfilarte.",
+
+  "privacy.local.title": "Sin cuenta",
+  "privacy.local.p1":
+    "Todo — tus sets, pesajes, medidas, comidas y lo que escribas — vive en el almacenamiento del navegador, en el dispositivo que estés usando. Nunca se manda a ningún lado.",
+  "privacy.local.p2":
+    "Eso también significa que borrar los datos del navegador lo elimina, y que no te sigue al celular. En Progreso → Datos puedes exportarlo todo a un archivo que se queda contigo.",
+
+  "privacy.account.title": "Con cuenta",
+  "privacy.account.p1":
+    "Iniciar sesión guarda tu correo electrónico. Si entras con Google, la app también recibe el nombre y la foto de perfil de tu cuenta de Google — nada más, y nunca tu contraseña.",
+  "privacy.account.p2":
+    "Tu cuenta guarda entonces lo que decidas sincronizar: el nombre visible y el usuario que elijas, tu perfil (estatura, sexo y las medidas de muñeca y tobillo que usan las calculadoras), y lo que registras — sets, pesajes, medidas y comidas — junto con los ejercicios, rutinas, alimentos, recetas y planes que escribas tú.",
+  "privacy.account.p3":
+    "Nada se sube solo. Los datos que ya tiene este dispositivo pasan a tu cuenta únicamente cuando presionas el botón de subir en la página de cuenta, y al cerrar sesión la copia de este dispositivo se queda tal cual estaba.",
+
+  "privacy.where.title": "Dónde se guarda",
+  "privacy.where.p1":
+    "Los datos de la cuenta viven en una base de datos Postgres operada por Supabase, en la región donde se creó el proyecto. La app la sirve Vercel. Ambos son procesadores aquí: guardan los datos para que la app funcione, no para fines propios.",
+  "privacy.where.p2":
+    "Cada lectura y cada escritura se limitan a la cuenta que las pidió, verificado en el servidor contra una sesión revalidada y no contra lo que diga el navegador.",
+
+  "privacy.analytics.title": "Analítica",
+  "privacy.analytics.p1":
+    "Las visitas se cuentan con Vercel Web Analytics y Speed Insights, que no usan cookies ni construyen un perfil entre sitios.",
+  "privacy.analytics.p2":
+    "Las páginas se reportan por su patrón de ruta y nunca por su dirección real — un programa que escribiste se cuenta como una página de programa, nunca por su nombre. Es a propósito: los nombres que tú escribiste son lo único que de otro modo saldría del dispositivo, así que la app los quita antes de mandar nada.",
+
+  "privacy.cookies.title": "Cookies",
+  "privacy.cookies.p1":
+    "Una sola: la que mantiene tu sesión iniciada. No hay cookies de publicidad ni de rastreo, y cerrar sesión la borra.",
+
+  "privacy.control.title": "Tus datos, y cómo sacarlos",
+  "privacy.control.p1":
+    "En Progreso → Datos puedes exportar todo a un solo archivo cuando quieras, con o sin sesión. Es JSON simple, legible sin esta app, e importarlo en cualquier lado te deja exactamente donde estabas.",
+  "privacy.control.p2":
+    "Cada registro se puede editar o borrar donde aparece, y borrar es inmediato, no una solicitud que se tramita.",
+  "privacy.control.p3":
+    "Para que se elimine tu cuenta y todo lo que contiene, escribe al correo de abajo y se hará. Cerrar sesión por sí solo no borra nada — solo deja de sincronizar.",
+
+  "privacy.contact.title": "Contacto",
+  "privacy.contact.p1":
+    "Esta app la hace una sola persona. Dudas sobre cualquiera de estos puntos, o una solicitud de eliminación, van a anthonysteiner96@gmail.com.",
+
+  "terms.title": "Términos",
+  "terms.subtitle": "Qué es esta app y qué no es.",
+  "terms.what.title": "Qué es esto",
+  "terms.what.p1":
+    "Un registro de entrenamiento: un lugar para anotar qué levantaste, cuánto pesaste y qué comiste, y ver la suma. Es un proyecto personal, se ofrece tal cual y es de uso gratuito.",
+
+  "terms.health.title": "Esto no es consejo médico",
+  "terms.health.p1":
+    "Nada de lo que hay aquí es consejo médico, nutricional ni clínico, y nada de esto es un diagnóstico. La app es una calculadora y una libreta: aplica fórmulas publicadas a números que tú escribiste, y nunca te ha examinado.",
+  "terms.health.p2":
+    "Las metas de calorías y macros, las cifras de hidratación, la dosis de creatina, el FFMI, las estimaciones de una repetición máxima y el modelo de potencial natural son todas fórmulas de población general. Pueden estar equivocadas para ti en particular, y no toman en cuenta ninguna condición, medicamento o lesión que tengas.",
+  "terms.health.p3":
+    "Consulta a un médico o a un nutriólogo antes de cambiar cómo comes o entrenas, sobre todo si estás embarazada, tienes alguna condición médica o tomas algo. Si algo duele, párale.",
+
+  "terms.estimates.title": "Los números son estimaciones",
+  "terms.estimates.p1":
+    "Donde las fórmulas no coinciden, la app te lo enseña en vez de esconderlo detrás de una sola cifra segura de sí misma — cinco estimaciones de una repetición máxima en vez de una, un rango en vez de una calificación.",
+  "terms.estimates.p2":
+    "Todo lo que se deriva de lo que registraste vale lo que valga lo que registraste. La app no puede distinguir un peso mal escrito de uno real.",
+
+  "terms.account.title": "Tu cuenta",
+  "terms.account.p1":
+    "Una cuenta es para una persona. Guárdate el acceso: quien pueda abrir tu correo o tu cuenta de Google puede llegar a tus datos.",
+  "terms.account.p2":
+    "Los usuarios se asignan por orden de llegada, y elegir uno que suplante a alguien más no está permitido.",
+
+  "terms.content.title": "Lo que escribes sigue siendo tuyo",
+  "terms.content.p1":
+    "Los ejercicios, rutinas, alimentos, recetas y planes que escribas son tuyos. No se reclama ninguna propiedad sobre ellos, y no se usan para nada más que hacer funcionar la app para ti.",
+  "terms.content.p2":
+    "Compartir uno genera un archivo que entregas tú. Nada se publica, y no hay ningún lugar en esta app donde alguien más pueda ver tus datos.",
+
+  "terms.availability.title": "Disponibilidad",
+  "terms.availability.p1":
+    "Esto es un proyecto personal, no un servicio con garantía de disponibilidad. Puede cambiar, fallar o dejar de existir, y no se promete nada al respecto.",
+  "terms.availability.p2":
+    "Que es la verdadera razón de que exista la exportación: guarda una copia de lo que extrañarías. Hasta donde la ley lo permita, usas la app bajo tu propio riesgo y no se acepta responsabilidad por ninguna pérdida derivada de ello.",
+
+  "terms.changes.title": "Cambios",
+  "terms.changes.p1":
+    "Estos términos y el aviso de privacidad pueden cambiar conforme cambie la app. La fecha de arriba es la última vez que lo hicieron.",
 };
