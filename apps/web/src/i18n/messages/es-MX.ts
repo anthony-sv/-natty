@@ -104,6 +104,39 @@ export const esMX: Record<keyof typeof en, string> = {
   "index.resume.action": "Retomar",
   "index.resume.discard": "Descartar",
   "index.resume.discarded": "Entrenamiento descartado",
+  "home.training": "Entrenamiento",
+  "home.training.empty":
+    "Todavía no hay sets. Abre un programa y empieza un día — la app te va llevando.",
+  "home.streakDays.one": "Racha de {count} día",
+  "home.streakDays.other": "Racha de {count} días",
+  "home.setsThisWeek.one": "{count} set esta semana",
+  "home.setsThisWeek.other": "{count} sets esta semana",
+  "home.recordsHeld.one": "{count} récord",
+  "home.recordsHeld.other": "{count} récords",
+
+  "home.body": "Cuerpo",
+  "home.body.empty":
+    "Todavía no hay pesajes. Uno toma un segundo y lo demás sale solo.",
+  "home.weekAverage": "Prom. semanal {weight} · {delta} vs la anterior",
+  "home.bodyFat": "{percent}% de grasa",
+  "home.noBodyFat": "Sin medición de grasa",
+  "home.ffmi": "FFMI {value}",
+  "home.needHeight": "Pon tu estatura para el FFMI",
+
+  "home.measurements": "Medidas",
+  "home.measurements.empty":
+    "Todavía no hay medidas. Una cinta dice lo que la báscula no.",
+  "home.sinceStart": "{delta} {unit} desde que empezaste",
+  "home.siteValue": "{site} {value}",
+
+  "home.food": "La comida de hoy",
+  "home.food.empty": "Hoy no has registrado nada.",
+  "home.food.emptyMeals.one": "{count} comida por marcar hoy.",
+  "home.food.emptyMeals.other": "{count} comidas por marcar hoy.",
+  "home.kcalOfTarget": "{eaten} / {target} kcal",
+  "home.mealsTicked": "{ticked} de {total} comidas marcadas",
+  "home.macrosSoFar": "P{protein} · C{carbs} · G{fat}",
+
   "index.dest.routines":
     "Programas semana por semana, o escribe el tuyo. Abre un día para empezar.",
   "index.dest.progress":

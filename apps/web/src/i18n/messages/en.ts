@@ -103,6 +103,39 @@ export const en = {
   "index.resume.action": "Resume",
   "index.resume.discard": "Discard",
   "index.resume.discarded": "Workout discarded",
+  // ── The home cards ───────────────────────────────────────────────────────
+  "home.training": "Training",
+  "home.training.empty":
+    "No sets logged yet. Open a program and start a day — the app walks you through it.",
+  "home.streakDays.one": "{count} day streak",
+  "home.streakDays.other": "{count} day streak",
+  "home.setsThisWeek.one": "{count} set this week",
+  "home.setsThisWeek.other": "{count} sets this week",
+  "home.recordsHeld.one": "{count} record",
+  "home.recordsHeld.other": "{count} records",
+
+  "home.body": "Body",
+  "home.body.empty": "No weigh-ins yet. One takes a second and the rest follows.",
+  "home.weekAverage": "Week avg {weight} · {delta} vs last",
+  "home.bodyFat": "{percent}% body fat",
+  "home.noBodyFat": "No body fat reading",
+  "home.ffmi": "FFMI {value}",
+  "home.needHeight": "Set your height for FFMI",
+
+  "home.measurements": "Measurements",
+  "home.measurements.empty":
+    "Nothing measured yet. A tape says what the scale can't.",
+  "home.sinceStart": "{delta} {unit} since you started",
+  "home.siteValue": "{site} {value}",
+
+  "home.food": "Today's food",
+  "home.food.empty": "Nothing logged today.",
+  "home.food.emptyMeals.one": "{count} meal to tick off today.",
+  "home.food.emptyMeals.other": "{count} meals to tick off today.",
+  "home.kcalOfTarget": "{eaten} / {target} kcal",
+  "home.mealsTicked": "{ticked} of {total} meals ticked",
+  "home.macrosSoFar": "P{protein} · C{carbs} · F{fat}",
+
   "index.dest.routines":
     "Programs week by week, or write your own. Open a day to start the player.",
   "index.dest.progress":

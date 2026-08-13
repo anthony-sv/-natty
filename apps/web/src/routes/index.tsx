@@ -1,9 +1,7 @@
-import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BookOpenIcon,
   CalculatorIcon,
-  ChevronRightIcon,
   CircleDotIcon,
   ListIcon,
   PlayIcon,
@@ -19,19 +17,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Item,
-  ItemContent,
-  ItemDescription,
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/toast";
-import { useBodyEntries } from "@/features/body/collection";
-import { weeklyAverages, weekOverWeek } from "@/features/body/weekly";
-import { useAllRecords } from "@/features/log/queries";
-import type { WeightUnit } from "@/lib/units";
+import { HomeCards } from "@/features/home/components/HomeCards";
 import { useNames } from "@/i18n/names";
 import { useT, type MessageKey } from "@/i18n/use-t";
 import { endSession } from "@/features/routines/session-store";
@@ -44,48 +32,20 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const DESTINATIONS: Array<{
-  to: string;
-  icon: typeof ListIcon;
-  titleKey: MessageKey;
-  descriptionKey: MessageKey;
-}> = [
-  {
-    to: "/routines",
-    icon: ListIcon,
-    titleKey: "nav.routines",
-    descriptionKey: "index.dest.routines",
-  },
-  {
-    to: "/progress",
-    icon: TrendingUpIcon,
-    titleKey: "nav.progress",
-    descriptionKey: "index.dest.progress",
-  },
-  {
-    to: "/nutrition",
-    icon: UtensilsIcon,
-    titleKey: "nav.nutrition",
-    descriptionKey: "index.dest.nutrition",
-  },
-  {
-    to: "/calculator",
-    icon: CalculatorIcon,
-    titleKey: "nav.calculators",
-    descriptionKey: "index.dest.calculators",
-  },
-  {
-    to: "/plates",
-    icon: CircleDotIcon,
-    titleKey: "nav.plates",
-    descriptionKey: "index.dest.plates",
-  },
-  {
-    to: "/about",
-    icon: BookOpenIcon,
-    titleKey: "nav.about",
-    descriptionKey: "index.dest.about",
-  },
+/**
+ * Places with nothing to report, so nothing to put on a card.
+ *
+ * A plate loader has no state — it's a tool you open at the rack. Giving these
+ * the same card as training or body would be a card whose whole content is a
+ * sentence describing the route, which is what the page used to be made of.
+ */
+const TOOLS: Array<{ to: string; icon: typeof ListIcon; titleKey: MessageKey }> = [
+  { to: "/routines", icon: ListIcon, titleKey: "nav.routines" },
+  { to: "/nutrition", icon: UtensilsIcon, titleKey: "nav.nutrition" },
+  { to: "/progress", icon: TrendingUpIcon, titleKey: "nav.progress" },
+  { to: "/plates", icon: CircleDotIcon, titleKey: "nav.plates" },
+  { to: "/calculator", icon: CalculatorIcon, titleKey: "nav.calculators" },
+  { to: "/about", icon: BookOpenIcon, titleKey: "nav.about" },
 ];
 
 function Index() {
@@ -101,103 +61,26 @@ function Index() {
 
       {active ? <ResumeCard /> : <StartCard />}
 
-      <Stats />
+      <HomeCards />
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        {DESTINATIONS.map((destination) => (
-          <Item
-            key={destination.to}
+      {/* Every route still reachable in one press, but as a row of chips
+          rather than six cards of prose. The cards above already carry the
+          three that have anything to say. */}
+      <div className="flex flex-wrap gap-2">
+        {TOOLS.map((tool) => (
+          <Button
+            key={tool.to}
             variant="outline"
-            render={<Link to={destination.to} />}
+            size="sm"
+            nativeButton={false}
+            render={<Link to={tool.to} />}
           >
-            <ItemMedia variant="icon">
-              <destination.icon />
-            </ItemMedia>
-            <ItemContent>
-              <ItemTitle>{t(destination.titleKey)}</ItemTitle>
-              <ItemDescription>{t(destination.descriptionKey)}</ItemDescription>
-            </ItemContent>
-            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground" />
-          </Item>
+            <tool.icon data-icon="inline-start" />
+            {t(tool.titleKey)}
+          </Button>
         ))}
       </div>
     </Page>
-  );
-}
-
-/**
- * What the app knows about you so far.
- *
- * Deliberately absent until there's something to report — a row of zeroes on a
- * first run is noise, and it's the one screen where the app has nothing to say.
- */
-function Stats() {
-  const { rows, loggedSetCount } = useAllRecords();
-  const { entries, latest } = useBodyEntries();
-  const t = useT();
-
-  // Read once on mount rather than during render, per `react-hooks/purity`.
-  const [now] = useState(() => Date.now());
-  const unit: WeightUnit = latest?.unit ?? "kg";
-  const change = useMemo(
-    () => weekOverWeek(weeklyAverages(entries, unit, now)),
-    [entries, unit, now],
-  );
-
-  if (loggedSetCount === 0 && entries.length === 0) return null;
-
-  const exercisesTrained = new Set(rows.map((row) => row.exerciseId)).size;
-
-  return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      <Stat label={t("index.stats.setsLogged")} value={String(loggedSetCount)} />
-      <Stat
-        label={t("index.stats.exercisesTrained")}
-        value={String(exercisesTrained)}
-      />
-      <Stat label={t("index.stats.recordsHeld")} value={String(rows.length)} />
-      <Stat
-        label={t("index.stats.latestWeighIn")}
-        value={latest ? `${latest.weight} ${latest.unit}` : "—"}
-        // The tile that matters most is the average, not the morning: a single
-        // weigh-in is mostly water. It rides as a hint rather than a fifth tile
-        // so the four-column grid stays whole.
-        hint={
-          change === undefined
-            ? undefined
-            : change.deltaWeight === undefined
-              ? t("index.stats.weekAverage", {
-                  weight: `${change.latest.weight.toFixed(1)} ${unit}`,
-                })
-              : t("index.stats.weekAverageDelta", {
-                  weight: `${change.latest.weight.toFixed(1)} ${unit}`,
-                  delta: `${change.deltaWeight > 0 ? "+" : change.deltaWeight < 0 ? "−" : ""}${Math.abs(change.deltaWeight).toFixed(1)}`,
-                })
-        }
-      />
-    </div>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <div className="flex flex-col gap-0.5 rounded-lg border px-3 py-2">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="text-xl font-semibold tabular-nums">{value}</span>
-      {hint ? (
-        <span className="text-xs text-muted-foreground tabular-nums">
-          {hint}
-        </span>
-      ) : null}
-    </div>
   );
 }
 

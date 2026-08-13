@@ -225,6 +225,11 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "trends.macros",
       "trends.axisKcal",
       "trends.kcalOff",
+      // An acronym and two strings that are nothing but placeholders and a
+      // unit — the same reason `body.stat.ffmi` is already up there.
+      "home.ffmi",
+      "home.siteValue",
+      "home.kcalOfTarget",
     ]);
 
     const unexplained = Object.keys(en).filter(
