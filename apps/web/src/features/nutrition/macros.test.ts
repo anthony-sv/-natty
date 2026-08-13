@@ -4,6 +4,7 @@ import {
   addMacros,
   dayTotals,
   deficitPerDay,
+  dominantMacro,
   kcalOf,
   TARGET_TOLERANCE_G,
   compareToTargets,
@@ -12,12 +13,13 @@ import {
   percentSplit,
   proteinPerKg,
   resolveDay,
+  targetsSelfCheck,
   totalFor,
   variantForDay,
   weekdayOf,
   weeklyRateKg,
 } from "./macros";
-import { diets, getFood } from "@/data/diets";
+import { diets, foods, getFood } from "@/data/diets";
 import { BUILT_IN_FOODS as FOODS } from "./food-source";
 import type { DietPlan, Food, MealVariant } from "@/data/diets";
 
@@ -197,6 +199,119 @@ describe("percentSplit", () => {
       fat: 0,
       carbs: 0,
     });
+  });
+});
+
+describe("dominantMacro", () => {
+  it("reads by calories, not by grams", () => {
+    // Ten grams of each. By weight nothing dominates; by energy, fat is 53%.
+    expect(dominantMacro({ protein: 10, carbs: 10, fat: 10 })).toBe("fat");
+  });
+
+  it("names the macro a food is really made of", () => {
+    expect(dominantMacro(getFood("chicken-breast-cooked").macros)).toBe("protein");
+    expect(dominantMacro(getFood("white-rice-cooked").macros)).toBe("carbs");
+    expect(dominantMacro(getFood("avocado").macros)).toBe("fat");
+    expect(dominantMacro(getFood("peanut-butter").macros)).toBe("fat");
+  });
+
+  it("refuses to call a genuinely mixed food anything else", () => {
+    // Greek yogurt is 45% protein and 37% carbs by energy. Calling that
+    // "mostly protein" would be a claim the numbers don't support — the
+    // half-the-calories bar is exactly what stops it.
+    const yogurt = getFood("greek-yogurt").macros;
+    expect(percentSplit(yogurt).protein).toBeLessThan(50);
+    expect(dominantMacro(yogurt)).toBe("mixed");
+  });
+
+  it("declines to divide by nothing", () => {
+    expect(dominantMacro({ protein: 0, carbs: 0, fat: 0 })).toBe("mixed");
+  });
+});
+
+/**
+ * The picker groups a food by its authored family, falling back to
+ * `dominantMacro` when it has none. That fallback is for foods *you* write —
+ * a built-in landing in it means someone added a food and forgot the family,
+ * and the only symptom would be a heading quietly in the wrong half of the
+ * list.
+ */
+describe("every built-in food says what kind of food it is", () => {
+  it("carries a category", () => {
+    const missing = foods.filter((food) => food.category === undefined);
+
+    expect(missing.map((food) => food.id)).toEqual([]);
+  });
+
+  it("files the swap proteins together", () => {
+    const proteins = [
+      "chicken-breast-raw",
+      "carne-asada-raw",
+      "pork-loin-raw",
+      "turkey-breast-raw",
+    ];
+
+    for (const id of proteins) {
+      expect(getFood(id).category).toBe("meat-fish");
+    }
+  });
+});
+
+/**
+ * `compareToTargets` checks the *meals* against the macro targets. Nothing
+ * checked the targets against each other, so a plan could state "2,040 kcal"
+ * and macros that multiply out to 2,130 and read as perfectly fine on its own
+ * front page.
+ */
+describe("targetsSelfCheck", () => {
+  const plan = (targetKcal: number | undefined, targets: object) =>
+    ({ targetKcal, targets }) as DietPlan;
+
+  it("catches macros that don't come to the stated calorie target", () => {
+    // 175×4 + 200×4 + 70×9 = 2,130.
+    const result = targetsSelfCheck(
+      plan(2040, { protein: 175, carbs: 200, fat: 70 }),
+    );
+
+    expect(result?.fromMacros).toBe(2130);
+    expect(result?.statedKcal).toBe(2040);
+    expect(result?.delta).toBe(90);
+  });
+
+  it("stays quiet when they agree", () => {
+    expect(
+      targetsSelfCheck(plan(2130, { protein: 175, carbs: 200, fat: 70 })),
+    ).toBeUndefined();
+  });
+
+  it("tolerates rounding rather than firing on arithmetic", () => {
+    // 30 kcal apart: a gram of protein is already 4, so this is noise.
+    expect(
+      targetsSelfCheck(plan(2100, { protein: 175, carbs: 200, fat: 70 })),
+    ).toBeUndefined();
+  });
+
+  /**
+   * Nothing to compare is different from agreeing, and has to read as
+   * different — `effectiveTargetKcal` already derives the figure from the
+   * macros when no target is stated, so there's no contradiction possible.
+   */
+  it("has nothing to say without a stated calorie target", () => {
+    expect(
+      targetsSelfCheck(plan(undefined, { protein: 175, carbs: 200, fat: 70 })),
+    ).toBeUndefined();
+  });
+
+  it("has nothing to say without any macro targets", () => {
+    expect(targetsSelfCheck(plan(2040, {}))).toBeUndefined();
+  });
+
+  it("works off the macros actually stated, not the blanks", () => {
+    // "180g of protein and I don't care about the rest" is a real goal, and a
+    // partial target is a partial sum — 720 against 2,040 is a real gap.
+    const result = targetsSelfCheck(plan(2040, { protein: 180 }));
+
+    expect(result?.fromMacros).toBe(720);
   });
 });
 

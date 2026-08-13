@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { PlusIcon, XIcon } from "lucide-react";
+import { CopyIcon, FilePlusIcon, PlusIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,29 +32,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
 import type { ExerciseEntry, Routine } from "@/data/routines";
+import { ComboboxOptionGroup } from "@/components/combobox-option-group";
 import { createUserExercise } from "@/features/library/collection";
 import {
   filterExerciseOption,
   useExerciseOptions,
+  useGroupedExerciseOptions,
   type ExerciseOption,
+  type ExerciseOptionGroup,
 } from "@/features/library/use-exercise-options";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 import {
   createUserRoutine,
+  isBuiltInSlug,
+  saveBuiltInOverride,
   slugFor,
   updateUserRoutine,
 } from "../../collection";
 import {
+  duplicateWeek,
   emptyDay,
   emptyPhase,
+  emptyWeek,
   toRoutine,
   type DraftDay,
   type DraftExercise,
+  type DraftPhase,
   type DraftRoutine,
+  type DraftWeek,
 } from "./draft";
 import { PhaseEditor } from "./PhaseEditor";
 
@@ -93,9 +111,16 @@ export function RoutineBuilder({
     const slug = existingSlug ?? slugFor(draft.name);
     const toSave: Routine = { ...routine, slug };
 
-    const transaction = existingSlug
-      ? updateUserRoutine(existingSlug, toSave)
-      : createUserRoutine(toSave).transaction;
+    // Editing a built-in writes your version at *its* slug, which is what
+    // makes it replace the shipped one in every list rather than sit beside
+    // it. `updateUserRoutine` can't do that job — there's no row to update the
+    // first time you edit one.
+    const transaction =
+      existingSlug === undefined
+        ? createUserRoutine(toSave).transaction
+        : isBuiltInSlug(existingSlug)
+          ? saveBuiltInOverride(toSave)
+          : updateUserRoutine(existingSlug, toSave);
 
     void toast.promise(transaction.isPersisted.promise, {
       loading: t("builder.saving"),
@@ -111,13 +136,26 @@ export function RoutineBuilder({
   const update = (patch: Partial<DraftRoutine>) =>
     setDraft((current) => ({ ...current, ...patch }));
 
-  const updateDay = (index: number, patch: Partial<DraftDay>) =>
+  /**
+   * Which week is on screen. Clamped on render rather than adjusted on delete,
+   * because removing the last week would otherwise leave this pointing past
+   * the end of the array.
+   */
+  const [weekIndex, setWeekIndex] = useState(0);
+  const activeWeek = Math.min(weekIndex, draft.weeks.length - 1);
+  const days = draft.weeks[activeWeek]?.days ?? [];
+
+  /** Replace the days of the week being edited, leaving the others alone. */
+  const updateDays = (next: DraftDay[]) =>
     setDraft((current) => ({
       ...current,
-      days: current.days.map((day, i) =>
-        i === index ? { ...day, ...patch } : day,
+      weeks: current.weeks.map((week, i) =>
+        i === activeWeek ? { ...week, days: next } : week,
       ),
     }));
+
+  const updateDay = (index: number, patch: Partial<DraftDay>) =>
+    updateDays(days.map((day, i) => (i === index ? { ...day, ...patch } : day)));
 
   return (
     <div className="flex flex-col gap-6">
@@ -142,22 +180,42 @@ export function RoutineBuilder({
         </Field>
       </FieldGroup>
 
-      <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">{t("builder.days")}</h2>
+      {/* The switcher only exists once there's a second week, so a routine
+          that repeats one cycle — which is most of them — looks exactly as it
+          did before any of this. */}
+      <WeekBar
+        weeks={draft.weeks}
+        active={activeWeek}
+        onSelect={setWeekIndex}
+        onAdd={(week) => {
+          update({ weeks: [...draft.weeks, week] });
+          setWeekIndex(draft.weeks.length);
+        }}
+        onRemove={() =>
+          update({ weeks: draft.weeks.filter((_, i) => i !== activeWeek) })
+        }
+      />
 
-        {draft.days.length === 0 ? (
+      <div className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold">
+          {draft.weeks.length > 1
+            ? t("builder.daysInWeek", { week: activeWeek + 1 })
+            : t("builder.days")}
+        </h2>
+
+        {days.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("builder.noDays")}</p>
         ) : null}
 
-        {draft.days.map((day, index) => (
+        {days.map((day, index) => (
           <DayEditor
-            key={index}
+            // Keyed by week too: without it, switching weeks reuses each
+            // DayEditor's subtree for a different week's day.
+            key={`${activeWeek}-${index}`}
             day={day}
             index={index}
             onChange={(patch) => updateDay(index, patch)}
-            onRemove={() =>
-              update({ days: draft.days.filter((_, i) => i !== index) })
-            }
+            onRemove={() => updateDays(days.filter((_, i) => i !== index))}
           />
         ))}
 
@@ -165,7 +223,7 @@ export function RoutineBuilder({
           type="button"
           variant="outline"
           className="self-start"
-          onClick={() => update({ days: [...draft.days, emptyDay()] })}
+          onClick={() => updateDays([...days, emptyDay()])}
         >
           <PlusIcon data-icon="inline-start" />
           {t("builder.addDay")}
@@ -180,6 +238,118 @@ export function RoutineBuilder({
           {t("builder.cancel")}
         </Button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Pick a week, add one, or throw one away.
+ *
+ * Hidden entirely at one week, which is the case for most routines and every
+ * one the builder could write until now — a switcher over a single tab is
+ * furniture. "Add a week" then appears as a plain button, so the feature is
+ * discoverable without being in the way.
+ */
+function WeekBar({
+  weeks,
+  active,
+  onSelect,
+  onAdd,
+  onRemove,
+}: {
+  weeks: DraftWeek[];
+  active: number;
+  onSelect: (index: number) => void;
+  onAdd: (week: DraftWeek) => void;
+  onRemove: () => void;
+}) {
+  const t = useT();
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {weeks.length > 1
+          ? weeks.map((_, index) => (
+              <Button
+                key={index}
+                type="button"
+                size="sm"
+                variant={index === active ? "default" : "outline"}
+                onClick={() => onSelect(index)}
+              >
+                {t("builder.weekNumber", { number: index + 1 })}
+              </Button>
+            ))
+          : null}
+
+        {/* Every existing week is offered as the starting point, not just the
+            one you happen to be looking at. On a program that ramps, week 5
+            is usually a copy of week 4 — but week 5 of a *new* block is far
+            more likely a copy of week 1, and having to navigate there first
+            just to press this is a step with no purpose. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button type="button" size="sm" variant="outline">
+                <PlusIcon data-icon="inline-start" />
+                {weeks.length > 1
+                  ? t("builder.duplicateWeek")
+                  : t("builder.addWeek")}
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="start" className="w-auto min-w-64">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{t("builder.weekFromCopy")}</DropdownMenuLabel>
+              {weeks.map((week, index) => (
+                <DropdownMenuItem
+                  key={index}
+                  onClick={() => onAdd(duplicateWeek(week))}
+                >
+                  <CopyIcon />
+                  {t("builder.weekNumber", { number: index + 1 })}
+                  {index === active ? (
+                    <span className="text-xs text-muted-foreground">
+                      {t("builder.weekOpen")}
+                    </span>
+                  ) : null}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => onAdd(emptyWeek())}>
+                <FilePlusIcon />
+                <div className="flex flex-col">
+                  <span>{t("builder.weekFromEmpty")}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {t("builder.weekFromEmptyHint")}
+                  </span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {weeks.length > 1 ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="text-muted-foreground"
+            onClick={onRemove}
+          >
+            <XIcon data-icon="inline-start" />
+            {t("builder.removeWeek", { number: active + 1 })}
+          </Button>
+        ) : null}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        {weeks.length > 1
+          ? t("builder.weeksHint", { count: weeks.length })
+          : t("builder.oneWeekHint")}
+      </p>
     </div>
   );
 }
@@ -271,6 +441,7 @@ function DayEditor({
                   ...day.exercises,
                   {
                     exerciseId: "",
+                    orAlternatives: [],
                     kind: "resistance",
                     isFinisher: false,
                     phases: [emptyPhase()],
@@ -300,6 +471,7 @@ function ExerciseEditor({
   const t = useT();
   const names = useNames();
   const options = useExerciseOptions();
+  const groups = useGroupedExerciseOptions(options);
   const [query, setQuery] = useState("");
 
   const selected = options.find((o) => o.id === exercise.exerciseId) ?? null;
@@ -338,11 +510,18 @@ function ExerciseEditor({
         <div className="flex min-w-56 flex-1 flex-col gap-1">
           <Label className="text-xs">{t("builder.pickExercise")}</Label>
           <Combobox
-            items={options}
+            items={groups}
             filter={filterExerciseOption}
             value={selected}
             onValueChange={(option: ExerciseOption | null) =>
-              onChange({ exerciseId: option?.id ?? "" })
+              // The library already knows conditioning from lifting, so picking
+              // one settles the kind rather than leaving you to notice the
+              // select still says "Main work" and the phase still asks for reps.
+              onChange(
+                option?.isCardio === true
+                  ? { exerciseId: option.id, kind: "cardio", phases: timed(exercise.phases) }
+                  : { exerciseId: option?.id ?? "" },
+              )
             }
             // Watched rather than left uncontrolled, so "no match" can offer to
             // create what you typed. The query lives on the root, not the input.
@@ -367,15 +546,27 @@ function ExerciseEditor({
                 )}
               </ComboboxEmpty>
               <ComboboxList>
-                {(option: ExerciseOption) => (
-                  <ComboboxItem key={option.id} value={option}>
-                    <span className="flex items-center gap-2">
-                      {option.name}
-                      {option.isCustom ? (
-                        <Badge variant="secondary">{t("library.custom")}</Badge>
-                      ) : null}
-                    </span>
-                  </ComboboxItem>
+                {(group: ExerciseOptionGroup, index: number) => (
+                  <ComboboxOptionGroup
+                    key={group.key}
+                    group={group}
+                    index={index}
+                  >
+                    {(option) => (
+                      <ComboboxItem key={option.id} value={option}>
+                        <span className="flex items-center gap-2">
+                          {option.name}
+                          {/* The heading says which muscle, not whose — a lift
+                              you added still needs marking as yours. */}
+                          {option.isCustom ? (
+                            <Badge variant="secondary">
+                              {t("library.custom")}
+                            </Badge>
+                          ) : null}
+                        </span>
+                      </ComboboxItem>
+                    )}
+                  </ComboboxOptionGroup>
                 )}
               </ComboboxList>
             </ComboboxContent>
@@ -387,9 +578,18 @@ function ExerciseEditor({
           <Select
             items={kinds}
             value={exercise.kind}
-            onValueChange={(value) =>
-              onChange({ kind: value as ExerciseEntry["kind"] })
-            }
+            onValueChange={(value) => {
+              const kind = value as ExerciseEntry["kind"];
+              // Switching to cardio by hand does the same conversion picking a
+              // cardio exercise does — otherwise the form would still be
+              // asking for reps under a select that says Cardio, which is the
+              // exact state this is fixing.
+              onChange(
+                kind === "cardio"
+                  ? { kind, phases: timed(exercise.phases) }
+                  : { kind },
+              );
+            }}
           >
             <SelectTrigger className="w-32">
               <SelectValue />
@@ -420,10 +620,138 @@ function ExerciseEditor({
         </Button>
       </div>
 
+      {/* Substitutes, in your own order of preference. Ids rather than free
+          text, because the player offers them as a swap and logs against
+          whichever you actually did — a substitute you can't log against is a
+          note to yourself.
+
+          Not offered for cardio: the library holds one conditioning entry, so
+          the picker would open on a list with nothing in it. */}
+      {exercise.kind === "cardio" ? null : (
+        <AlternativesEditor
+          exerciseId={exercise.exerciseId}
+          value={exercise.orAlternatives}
+          onChange={(orAlternatives) => onChange({ orAlternatives })}
+        />
+      )}
+
       <PhaseEditor
         phases={exercise.phases}
+        kind={exercise.kind}
         onChange={(phases) => onChange({ phases })}
       />
+    </div>
+  );
+}
+
+/**
+ * Turn a set of phases into timed ones, keeping the sets and rest you'd
+ * already typed.
+ *
+ * A cardio block is a duration, and the model has said so since the beginning
+ * (`durationSeconds`) — the builder simply never switched to it, so picking
+ * "Low-intensity steady-state cardio" left you looking at "3 sets of 8-12
+ * reps" with a Forced reps checkbox underneath. Anything already timed is left
+ * alone so an existing routine's numbers survive a re-pick.
+ */
+function timed(phases: DraftPhase[]): DraftPhase[] {
+  return phases.map((phase) =>
+    phase.duration !== undefined
+      ? phase
+      : {
+          ...phase,
+          duration: "20",
+          durationUnit: "min",
+          segments: undefined,
+          // One block, not three. A cardio phase is "twenty minutes", and the
+          // resistance default of three sets turned that into an hour of it.
+          sets: "1",
+          // And a single block has nothing to rest between, so it carries no
+          // rest at all rather than the resistance default of 90 seconds.
+          restSeconds: "",
+        },
+  );
+}
+
+function AlternativesEditor({
+  exerciseId,
+  value,
+  onChange,
+}: {
+  exerciseId: string;
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const t = useT();
+  const names = useNames();
+  const options = useExerciseOptions();
+  const groups = useGroupedExerciseOptions(options);
+
+  // The lift itself, and anything already listed — offering either would only
+  // produce a row reading "or <the same lift>".
+  const taken = new Set([exerciseId, ...value]);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Label className="text-xs">{t("builder.alternatives")}</Label>
+
+      {value.length > 0 ? (
+        <ul className="flex flex-wrap gap-1.5">
+          {value.map((id) => (
+            <li key={id}>
+              <Badge variant="secondary" className="gap-1 pr-1">
+                {names.exercise(id)}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={t("builder.removeAlternative", {
+                    name: names.exercise(id),
+                  })}
+                  onClick={() => onChange(value.filter((entry) => entry !== id))}
+                >
+                  <XIcon />
+                </Button>
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <Combobox
+        items={groups}
+        filter={filterExerciseOption}
+        // Held at null rather than showing the last pick: this control adds to
+        // a list, so a selection is an action, not a state.
+        value={null}
+        onValueChange={(option: ExerciseOption | null) => {
+          if (option !== null && !taken.has(option.id)) {
+            onChange([...value, option.id]);
+          }
+        }}
+        itemToStringLabel={(option: ExerciseOption) => option.name}
+      >
+        <ComboboxInput placeholder={t("builder.addAlternative")} />
+        <ComboboxContent>
+          <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
+          <ComboboxList>
+            {(group: ExerciseOptionGroup, index: number) => (
+              <ComboboxOptionGroup key={group.key} group={group} index={index}>
+                {(option) => (
+                  <ComboboxItem
+                    key={option.id}
+                    value={option}
+                    disabled={taken.has(option.id)}
+                  >
+                    {option.name}
+                  </ComboboxItem>
+                )}
+              </ComboboxOptionGroup>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+      <FieldDescription>{t("builder.alternativesHint")}</FieldDescription>
     </div>
   );
 }

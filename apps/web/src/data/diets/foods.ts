@@ -29,6 +29,7 @@ const RAW: Food[] = [
   {
     id: "whole-egg",
     name: "Whole eggs",
+    category: "dairy-eggs",
     unit: "unit",
     unitNote: "~50g each",
     macros: { protein: 6, fat: 5, carbs: 0.5 },
@@ -36,12 +37,14 @@ const RAW: Food[] = [
   {
     id: "liquid-egg-whites",
     name: "Liquid egg whites",
+    category: "dairy-eggs",
     unit: "ml",
     macros: { protein: 10.79, fat: 0.08, carbs: 0.71 },
   },
   {
     id: "bacon",
     name: "Bacon",
+    category: "meat-fish",
     unit: "unit",
     unitNote: "1 strip, ~15g",
     macros: { protein: 3, fat: 4.5, carbs: 0 },
@@ -49,12 +52,14 @@ const RAW: Food[] = [
   {
     id: "manchego-low-fat",
     name: "Low-fat manchego",
+    category: "dairy-eggs",
     unit: "g",
     macros: { protein: 28, fat: 22, carbs: 15 },
   },
   {
     id: "protein-flour",
     name: "Protein flour",
+    category: "grains",
     unit: "g",
     state: "raw",
     macros: { protein: 26, fat: 4, carbs: 51 },
@@ -64,6 +69,7 @@ const RAW: Food[] = [
   {
     id: "chicken-breast-cooked",
     name: "Chicken breast",
+    category: "meat-fish",
     unit: "g",
     state: "cooked",
     macros: { protein: 31, fat: 3.6, carbs: 0 },
@@ -71,6 +77,7 @@ const RAW: Food[] = [
   {
     id: "chicken-breast-raw",
     name: "Chicken breast",
+    category: "meat-fish",
     unit: "g",
     state: "raw",
     macros: { protein: 23, fat: 1.5, carbs: 0 },
@@ -78,6 +85,7 @@ const RAW: Food[] = [
   {
     id: "carne-asada-raw",
     name: "Carne asada",
+    category: "meat-fish",
     unit: "g",
     state: "raw",
     macros: { protein: 21.8, fat: 5, carbs: 0 },
@@ -85,6 +93,7 @@ const RAW: Food[] = [
   {
     id: "pork-loin-raw",
     name: "Pork loin",
+    category: "meat-fish",
     unit: "g",
     state: "raw",
     macros: { protein: 21, fat: 3.5, carbs: 0 },
@@ -92,6 +101,7 @@ const RAW: Food[] = [
   {
     id: "turkey-breast-raw",
     name: "Turkey breast",
+    category: "meat-fish",
     unit: "g",
     state: "raw",
     macros: { protein: 24.1, fat: 1.05, carbs: 0 },
@@ -99,6 +109,7 @@ const RAW: Food[] = [
   {
     id: "white-rice-cooked",
     name: "White rice",
+    category: "grains",
     unit: "g",
     state: "cooked",
     macros: { protein: 2.75, fat: 0.25, carbs: 28 },
@@ -106,6 +117,7 @@ const RAW: Food[] = [
   {
     id: "corn-tortilla",
     name: "Corn tortillas",
+    category: "grains",
     unit: "unit",
     unitNote: "~30g each",
     macros: { protein: 1.5, fat: 0.7, carbs: 12 },
@@ -113,6 +125,7 @@ const RAW: Food[] = [
   {
     id: "avocado",
     name: "Avocado",
+    category: "fats",
     unit: "g",
     macros: { protein: 2, fat: 15, carbs: 9 },
   },
@@ -121,6 +134,7 @@ const RAW: Food[] = [
   {
     id: "whey-protein",
     name: "Whey protein",
+    category: "supplements",
     unit: "unit",
     unitNote: "1 scoop, 31g",
     macros: { protein: 24, fat: 1.5, carbs: 4 },
@@ -128,24 +142,28 @@ const RAW: Food[] = [
   {
     id: "high-protein-milk",
     name: "High-protein milk",
+    category: "dairy-eggs",
     unit: "ml",
     macros: { protein: 5.4, fat: 0.5, carbs: 5.1 },
   },
   {
     id: "greek-yogurt",
     name: "Greek yogurt",
+    category: "dairy-eggs",
     unit: "ml",
     macros: { protein: 10.1, fat: 1.7, carbs: 8.3 },
   },
   {
     id: "peanut-butter",
     name: "Peanut butter",
+    category: "fats",
     unit: "g",
     macros: { protein: 24, fat: 49, carbs: 13 },
   },
   {
     id: "white-bread",
     name: "White bread",
+    category: "grains",
     unit: "g",
     unitNote: "~31.5g a slice",
     macros: { protein: 8.57, fat: 2.54, carbs: 50.63 },

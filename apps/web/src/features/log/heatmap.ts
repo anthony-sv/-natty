@@ -1,4 +1,5 @@
-import { addDays, DAYS_IN_WEEK, daysBetween, startOfDay, startOfWeek } from "@/lib/week";
+import { calendarWeeks } from "@/lib/calendar";
+import { addDays, daysBetween, startOfDay } from "@/lib/week";
 import type { LoggedSet } from "./schema";
 
 /**
@@ -66,28 +67,19 @@ export function toCalendar(
   }
 
   const today = startOfDay(now);
-  // Whole weeks ending with the one `now` falls in, so the last column is the
-  // current week and the grid always has seven complete rows.
-  const firstMonday = addDays(startOfWeek(now), -(weekCount - 1) * DAYS_IN_WEEK);
-
-  const weeks: CalendarDay[][] = [];
-  for (let week = 0; week < weekCount; week++) {
-    const days: CalendarDay[] = [];
-    for (let offset = 0; offset < DAYS_IN_WEEK; offset++) {
-      const date = addDays(firstMonday, week * DAYS_IN_WEEK + offset);
+  // The grid's shape is shared with the nutrition heatmaps — see
+  // `lib/calendar.ts`. Only what fills a cell differs.
+  const weeks = calendarWeeks({ weeks: weekCount, now }).map((week) =>
+    week.map(({ date, isPadding }): CalendarDay => {
       const logged = setsPerDay.get(date) ?? [];
-      days.push({
+      return {
         date,
         sets: logged.length,
         exercises: new Set(logged.map((set) => set.exerciseId)).size,
-        // The current week runs past today; those cells are real dates that
-        // simply haven't happened, and drawing them as empty would read as
-        // days you skipped.
-        isPadding: date > today,
-      });
-    }
-    weeks.push(days);
-  }
+        isPadding,
+      };
+    }),
+  );
 
   const inWindow = weeks.flat().filter((day) => !day.isPadding);
   const trained = inWindow.filter((day) => day.sets > 0);

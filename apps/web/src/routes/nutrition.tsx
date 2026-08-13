@@ -21,11 +21,12 @@ import { MacroCalculatorPanel } from "@/features/nutrition/components/MacroCalcu
 import { PlanPanel } from "@/features/nutrition/components/PlanPanel";
 import { useDiets } from "@/features/nutrition/use-diets";
 import { TodayPanel } from "@/features/intake/components/TodayPanel";
+import { TrendsPanel } from "@/features/intake/components/TrendsPanel";
 import { PantryPanel } from "@/features/pantry/components/PantryPanel";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 
-const TABS = ["today", "plan", "macros", "pantry"] as const;
+const TABS = ["today", "trends", "plan", "macros", "pantry"] as const;
 type Tab = (typeof TABS)[number];
 
 export const Route = createFileRoute("/nutrition")({
@@ -113,39 +114,40 @@ function NutritionPage() {
             </Select>
           </Field>
 
-          {isCustom ? (
-            <Button
-              variant="outline"
-              nativeButton={false}
-              render={
-                <Link
-                  to="/nutrition/$planSlug/edit"
-                  params={{ planSlug: plan.slug }}
-                />
-              }
-            >
-              <PencilLineIcon data-icon="inline-start" />
-              {t("dietBuilder.edit")}
-            </Button>
-          ) : null}
+          {/* Every plan is editable, built-in or not: saving a built-in writes
+              your version at its slug and it replaces the shipped one in this
+              picker, which stays compiled in and recoverable. */}
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={
+              <Link
+                to="/nutrition/$planSlug/edit"
+                params={{ planSlug: plan.slug }}
+              />
+            }
+          >
+            <PencilLineIcon data-icon="inline-start" />
+            {t("dietBuilder.edit")}
+          </Button>
 
-          {isCustom ? (
-            <Button
-              variant="outline"
-              onClick={() => {
-                void (async () => {
-                  const now = Date.now();
-                  const backup = await exportDiet(plan.slug, now);
-                  if (backup === undefined) return;
-                  downloadBackup(backup, backupFilename(now, "diet"));
-                  toast.add({ title: t("data.shared"), type: "success" });
-                })();
-              }}
-            >
-              <Share2Icon data-icon="inline-start" />
-              {t("data.share")}
-            </Button>
-          ) : null}
+          {/* Not gated on `isCustom` — a transcribed plan is as shareable as
+              one you wrote, and it arrives as the recipient's own copy. */}
+          <Button
+            variant="outline"
+            onClick={() => {
+              void (async () => {
+                const now = Date.now();
+                const backup = await exportDiet(plan.slug, now);
+                if (backup === undefined) return;
+                downloadBackup(backup, backupFilename(now, "diet"));
+                toast.add({ title: t("data.shared"), type: "success" });
+              })();
+            }}
+          >
+            <Share2Icon data-icon="inline-start" />
+            {t("data.share")}
+          </Button>
 
           <Button nativeButton={false} render={<Link to="/nutrition/new" />}>
             <PlusIcon data-icon="inline-start" />
@@ -160,12 +162,16 @@ function NutritionPage() {
       <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
         <TabsList>
           <TabsTrigger value="today">{t("intake.tab")}</TabsTrigger>
+          <TabsTrigger value="trends">{t("trends.tab")}</TabsTrigger>
           <TabsTrigger value="plan">{t("nutrition.tab.plan")}</TabsTrigger>
           <TabsTrigger value="macros">{t("nutrition.tab.macros")}</TabsTrigger>
           <TabsTrigger value="pantry">{t("pantry.tab")}</TabsTrigger>
         </TabsList>
         <TabsContent value="today">
           {tab === "today" ? <TodayPanel key={plan.slug} plan={plan} /> : null}
+        </TabsContent>
+        <TabsContent value="trends">
+          {tab === "trends" ? <TrendsPanel key={plan.slug} plan={plan} /> : null}
         </TabsContent>
         <TabsContent value="plan">
           {/* Keyed so switching plans resets the day and swap choices rather

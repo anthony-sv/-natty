@@ -193,6 +193,7 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "nutrition.tab.macros",
       "nutrition.tdee",
       "modifier.dropSet",
+      "modifier.restPause",
       // Gym loanwords: "pullover" and "curl" are what the movements are called
       // in Spanish too, and "cardio" is already on this list twice over.
       "pattern.pullover",
@@ -215,6 +216,20 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "split.core",
       "history.setsOnDay.one",
       "history.setsOnDay.other",
+      // Two placeholders and a bracket — there is nothing in it to translate.
+      "measure.siteSide",
+      // The unit abbreviation, which is "min" in Spanish too.
+      "builder.minutes",
+      // "Macros" is the word a Mexican gym uses, and the other two are the
+      // kcal symbol with and without a placeholder in front of it.
+      "trends.macros",
+      "trends.axisKcal",
+      "trends.kcalOff",
+      // An acronym and two strings that are nothing but placeholders and a
+      // unit — the same reason `body.stat.ffmi` is already up there.
+      "home.ffmi",
+      "home.siteValue",
+      "home.kcalOfTarget",
     ]);
 
     const unexplained = Object.keys(en).filter(

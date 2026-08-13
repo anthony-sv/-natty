@@ -32,10 +32,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
+import { ComboboxOptionGroup } from "@/components/combobox-option-group";
 import {
   filterExerciseOption,
   useExerciseOptions,
+  useGroupedExerciseOptions,
   type ExerciseOption,
+  type ExerciseOptionGroup,
 } from "@/features/library/use-exercise-options";
 import { useDateFormat, useT, type Translate } from "@/i18n/use-t";
 import { logSet } from "../collection";
@@ -81,6 +84,7 @@ export function LogEntryForm() {
   // Built-ins and your own, sorted for the reader's locale — see
   // `useExerciseOptions`, which every picker in the app shares.
   const options = useExerciseOptions();
+  const groups = useGroupedExerciseOptions(options);
   const [justLogged, setJustLogged] = useState<string | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
 
@@ -152,7 +156,7 @@ export function LogEntryForm() {
               {t("common.exercise")}
             </FieldLabel>
             <Combobox
-              items={options}
+              items={groups}
               itemToStringLabel={(item: ExerciseOption) => item.name}
               filter={filterExerciseOption}
               value={options.find((o) => o.id === field.state.value) ?? null}
@@ -167,10 +171,18 @@ export function LogEntryForm() {
               <ComboboxContent>
                 <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
                 <ComboboxList>
-                  {(item: ExerciseOption) => (
-                    <ComboboxItem key={item.id} value={item}>
-                      {item.name}
-                    </ComboboxItem>
+                  {(group: ExerciseOptionGroup, index: number) => (
+                    <ComboboxOptionGroup
+                      key={group.key}
+                      group={group}
+                      index={index}
+                    >
+                      {(item) => (
+                        <ComboboxItem key={item.id} value={item}>
+                          {item.name}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxOptionGroup>
                   )}
                 </ComboboxList>
               </ComboboxContent>

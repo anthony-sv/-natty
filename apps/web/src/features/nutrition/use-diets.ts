@@ -20,20 +20,27 @@ export interface PlanEntry {
 export function useDiets(): { plans: PlanEntry[]; isLoading: boolean } {
   const { data, isLoading } = useLiveQuery((q) => q.from({ d: userDiets }));
 
-  return useMemo(
-    () => ({
+  return useMemo(() => {
+    const mine = data ?? [];
+    // A plan saved at a built-in's slug replaces it, the same mechanism
+    // `useRoutines` uses — so editing "Cut v5" leaves one "Cut v5" in the
+    // picker, yours, rather than two under the same name.
+    const replaced = new Set(mine.map((plan) => plan.slug));
+
+    return {
       plans: [
-        ...(data ?? []).map((plan) => ({
+        ...mine.map((plan) => ({
           plan: plan as DietPlan,
           isCustom: true,
           isDraft: plan.isDraft,
         })),
-        ...diets.map((plan) => ({ plan, isCustom: false, isDraft: false })),
+        ...diets
+          .filter((plan) => !replaced.has(plan.slug))
+          .map((plan) => ({ plan, isCustom: false, isDraft: false })),
       ],
       isLoading,
-    }),
-    [data, isLoading],
-  );
+    };
+  }, [data, isLoading]);
 }
 
 /**
@@ -48,20 +55,40 @@ export function useDietPlan(slug: string): {
   isLoading: boolean;
   isCustom: boolean;
   isDraft: boolean;
+  /** A built-in you've edited — yours is showing, the shipped one is intact. */
+  isOverridden: boolean;
 } {
   const { data, isLoading } = useLiveQuery((q) => q.from({ d: userDiets }));
 
   return useMemo(() => {
-    const builtIn = getDietBySlug(slug);
-    if (builtIn !== undefined) {
-      return { plan: builtIn, isLoading: false, isCustom: false, isDraft: false };
-    }
+    // Yours first, or an override would be saved and then never shown.
     const own = (data ?? []).find((plan) => plan.slug === slug);
+    const builtIn = getDietBySlug(slug);
+
+    if (own !== undefined) {
+      return {
+        plan: own,
+        isLoading: false,
+        isCustom: true,
+        isDraft: own.isDraft,
+        isOverridden: builtIn !== undefined,
+      };
+    }
+    if (builtIn !== undefined) {
+      return {
+        plan: builtIn,
+        isLoading: false,
+        isCustom: false,
+        isDraft: false,
+        isOverridden: false,
+      };
+    }
     return {
-      plan: own,
+      plan: undefined,
       isLoading,
-      isCustom: own !== undefined,
-      isDraft: own?.isDraft ?? false,
+      isCustom: false,
+      isDraft: false,
+      isOverridden: false,
     };
   }, [slug, data, isLoading]);
 }

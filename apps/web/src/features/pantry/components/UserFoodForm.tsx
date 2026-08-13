@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
+import { foodCategorySchema } from "@/data/diets";
 import { kcalOf } from "@/features/nutrition/macros";
 import { useT, type Translate } from "@/i18n/use-t";
 import { createUserFood, updateUserFood } from "../collection";
@@ -25,6 +26,12 @@ import type { UserFood } from "../schema";
 
 const UNITS = ["g", "ml", "unit"] as const;
 const STATES = ["none", "raw", "cooked"] as const;
+/**
+ * "none" is a real answer, not an empty one: leaving it blank groups the food
+ * by whichever macro dominates it, which is usually the heading you'd have
+ * picked anyway. A Select has no null, so the choice is spelled out.
+ */
+const CATEGORIES = ["none", ...foodCategorySchema.options] as const;
 
 /** Built per locale, like every other form here — Zod bakes its messages in. */
 const buildSchema = (t: Translate) => {
@@ -38,6 +45,7 @@ const buildSchema = (t: Translate) => {
     name: z.string().trim().min(1, t("pantry.nameRequired")),
     unit: z.enum(UNITS),
     state: z.enum(STATES),
+    category: z.enum(CATEGORIES),
     unitNote: z.string(),
     protein: macro,
     carbs: macro,
@@ -59,6 +67,7 @@ export function UserFoodForm({
       name: existing?.name ?? "",
       unit: existing?.unit ?? ("g" as const),
       state: existing?.state ?? ("none" as const),
+      category: existing?.category ?? ("none" as const),
       unitNote: existing?.unitNote ?? "",
       protein: String(existing?.macros.protein ?? ""),
       carbs: String(existing?.macros.carbs ?? ""),
@@ -75,6 +84,7 @@ export function UserFoodForm({
           fat: Number(value.fat),
         },
         state: value.state === "none" ? undefined : value.state,
+        category: value.category === "none" ? undefined : value.category,
         unitNote: value.unitNote.trim() === "" ? undefined : value.unitNote.trim(),
       };
 
@@ -98,6 +108,16 @@ export function UserFoodForm({
   const states = STATES.map((value) => ({
     value,
     label: t(`pantry.state.${value}` as never),
+  }));
+  // Built per locale, and the labels have to be here rather than only on the
+  // SelectItems: SelectValue renders the *item's* label for the current value,
+  // so translating only the open list leaves the closed trigger in English.
+  const categories = CATEGORIES.map((value) => ({
+    value,
+    label:
+      value === "none"
+        ? t("pantry.category.none")
+        : t(`foodGroup.${value}` as never),
   }));
 
   return (
@@ -229,6 +249,33 @@ export function UserFoodForm({
                 </SelectContent>
               </Select>
               <FieldDescription>{t("pantry.stateHint")}</FieldDescription>
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="category">
+          {(field) => (
+            <Field>
+              <FieldLabel>{t("pantry.category")}</FieldLabel>
+              <Select
+                items={categories}
+                value={field.state.value}
+                onValueChange={(value) =>
+                  field.handleChange(value as (typeof CATEGORIES)[number])
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldDescription>{t("pantry.categoryHint")}</FieldDescription>
             </Field>
           )}
         </form.Field>

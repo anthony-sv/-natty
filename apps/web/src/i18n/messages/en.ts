@@ -72,6 +72,7 @@ export const en = {
   "modifier.partials": "Partials",
   "modifier.staticHolds": "Static holds",
   "modifier.dropSet": "Drop set",
+  "modifier.restPause": "Rest-pause",
   "modifier.ladder": "Ladder: {positions}",
 
   // ── Segmented sets ───────────────────────────────────────────────────────
@@ -102,12 +103,45 @@ export const en = {
   "index.resume.action": "Resume",
   "index.resume.discard": "Discard",
   "index.resume.discarded": "Workout discarded",
+  // ── The home cards ───────────────────────────────────────────────────────
+  "home.training": "Training",
+  "home.training.empty":
+    "No sets logged yet. Open a program and start a day — the app walks you through it.",
+  "home.streakDays.one": "{count} day streak",
+  "home.streakDays.other": "{count} day streak",
+  "home.setsThisWeek.one": "{count} set this week",
+  "home.setsThisWeek.other": "{count} sets this week",
+  "home.recordsHeld.one": "{count} record",
+  "home.recordsHeld.other": "{count} records",
+
+  "home.body": "Body",
+  "home.body.empty": "No weigh-ins yet. One takes a second and the rest follows.",
+  "home.weekAverage": "Week avg {weight} · {delta} vs last",
+  "home.bodyFat": "{percent}% body fat",
+  "home.noBodyFat": "No body fat reading",
+  "home.ffmi": "FFMI {value}",
+  "home.needHeight": "Set your height for FFMI",
+
+  "home.measurements": "Measurements",
+  "home.measurements.empty":
+    "Nothing measured yet. Arms and waist say what the scale can't.",
+  "home.sinceStart": "{delta} {unit} since you started",
+  "home.siteValue": "{site} {value}",
+
+  "home.food": "Today's food",
+  "home.food.empty": "Nothing logged today.",
+  "home.food.emptyMeals.one": "{count} meal to tick off today.",
+  "home.food.emptyMeals.other": "{count} meals to tick off today.",
+  "home.kcalOfTarget": "{eaten} / {target} kcal",
+  "home.mealsTicked": "{ticked} of {total} meals ticked",
+  "home.macrosSoFar": "P{protein} · C{carbs} · F{fat}",
+
   "index.dest.routines":
     "Programs week by week, or write your own. Open a day to start the player.",
   "index.dest.progress":
-    "Records, volume per muscle, a year of training days, and your own exercises.",
+    "Records, volume per muscle, a year of training days, your measurements, and your own exercises.",
   "index.dest.nutrition":
-    "Diet plans meal by meal, your own foods and recipes, and a macro calculator.",
+    "What you ate and how it trended, diet plans meal by meal, your own foods and recipes, and a macro calculator.",
   "index.dest.calculators": "One-rep max, RPE and RIR, and natural potential.",
   "index.dest.plates": "What to hang on each end, from the plates your gym has.",
 
@@ -224,7 +258,7 @@ export const en = {
   "builder.edit": "Edit",
   "builder.newTitle": "Write a routine",
   "builder.newBody":
-    "One week of training. It repeats \u2014 so a day you do every Monday is written once.",
+    "A cycle of days that repeats. Seven of them is a week; add eight for push/pull/legs/rest twice over, or three for a rolling PPL \u2014 the cycle is however many days you write, not however many are in a week.",
   "builder.editTitle": "Editing {name}",
   "builder.name": "Name",
   "builder.nameRequired": "Give it a name",
@@ -244,6 +278,46 @@ export const en = {
   "builder.pickExercise": "Pick an exercise",
   "builder.createNamed": "Add \"{name}\" as your own exercise",
   "builder.exerciseKind": "Kind",
+  "builder.edited": "Edited",
+  "builder.editingBuiltIn":
+    "This one came with the app. Saving keeps your version and hides the original from the list — the original stays put, so you can put it back any time.",
+  "builder.reset": "Reset to the original",
+  "builder.resetTitle": "Put the original back?",
+  "builder.resetBody":
+    "Your changes to this program are dropped and the version that came with the app returns. Nothing you've logged is affected.",
+  "builder.reset.done": "{name} is back to the original",
+  "builder.alternatives": "Or one of these",
+  "builder.alternativesHint":
+    "Lifts you'd equally accept. The player offers them as a swap mid-set, and logs against whichever you actually did.",
+  "builder.addAlternative": "Add a substitute...",
+  "builder.removeAlternative": "Remove {name}",
+  "builder.cardioHint":
+    "Cardio is a duration, not reps. Add a second block for intervals — four rounds of three minutes is four sets, or two blocks at different lengths.",
+  // No unit in the label — the picker beside the box carries it now.
+  "builder.duration": "How long",
+  "builder.durationUnit": "Minutes or seconds",
+  "builder.minutes": "min",
+  "builder.seconds": "sec",
+  "builder.weekNumber": "Week {number}",
+  "builder.addWeek": "Add a second week",
+  "builder.duplicateWeek": "Add a week",
+  "builder.weekFromCopy": "Start from a copy of",
+  "builder.weekOpen": "(open)",
+  "builder.weekFromEmpty": "Start from an empty week",
+  "builder.weekFromEmptyHint": "For a program that changes its split partway.",
+  "builder.removeWeek": "Remove week {number}",
+  "builder.daysInWeek": "Days — week {week}",
+  "builder.oneWeekHint":
+    "One cycle, repeated for as long as you run the program. Add a week only if the numbers change between them.",
+  "builder.weeksHint":
+    "{count} weeks, run in order and then repeated. A new one starts as a copy of whichever week you pick, so you only change what moves.",
+  "builder.restBetween": "Rest between (s)",
+  "builder.intensity": "How hard",
+  "builder.intensity.none": "Not stated",
+  "intensity.low": "Easy",
+  "intensity.moderate": "Moderate",
+  "intensity.high": "Hard",
+  "builder.setStyle.timed": "Timed",
   "builder.sets": "Sets",
   "builder.reps": "Reps",
   "builder.repsTo": "to",
@@ -371,6 +445,27 @@ export const en = {
     "A recipe is a list of ingredients plus how you cooked it. It then drops into a meal like any other food.",
   "pantry.yours": "Yours",
   "pantry.recipe": "Recipe",
+  "pantry.category": "Kind of food",
+  "pantry.categoryHint":
+    "Groups it in the picker. Leave it blank and it groups by whichever macro it's mostly made of.",
+  "pantry.category.none": "Work it out from the macros",
+
+  // ── Food picker headings ─────────────────────────────────────────────────
+  // The authored families, then the four the macros fall back to.
+  "foodGroup.vegetables": "Vegetables",
+  "foodGroup.fruits": "Fruit",
+  "foodGroup.grains": "Cereals and grains",
+  "foodGroup.tubers": "Potatoes and tubers",
+  "foodGroup.legumes": "Beans and legumes",
+  "foodGroup.dairy-eggs": "Dairy and eggs",
+  "foodGroup.meat-fish": "Meat and fish",
+  "foodGroup.fats": "Fats and oils",
+  "foodGroup.sweets": "Sweets and snacks",
+  "foodGroup.supplements": "Supplements",
+  "foodGroup.protein": "Mostly protein",
+  "foodGroup.carbs": "Mostly carbs",
+  "foodGroup.fat": "Mostly fat",
+  "foodGroup.mixed": "Mixed",
   "pantry.ingredientCount.one": "{count} ingredient",
   "pantry.ingredientCount.other": "{count} ingredients",
 
@@ -431,6 +526,15 @@ export const en = {
   "dietBuilder.cancel": "Cancel",
   "dietBuilder.delete": "Delete plan",
   "dietBuilder.deleted": "Deleted {name}",
+  "dietBuilder.targetsDisagree":
+    "These macros come to {fromMacros} kcal, but the daily target above says {statedKcal} — a difference of {delta}. Change one of them, or clear the daily target and it'll be worked out from these.",
+  "dietBuilder.editingBuiltIn":
+    "This one came with the app. Saving keeps your version and hides the original from the picker — the original stays put, so you can put it back any time.",
+  "dietBuilder.reset": "Reset to the original",
+  "dietBuilder.resetTitle": "Put the original back?",
+  "dietBuilder.resetBody":
+    "Your changes to this plan are dropped and the version that came with the app returns. Meals you've already ticked off aren't affected.",
+  "dietBuilder.reset.done": "{name} is back to the original",
   "dietBuilder.deleteTitle": "Delete this plan?",
   "dietBuilder.deleteBody": "Nothing else is affected \u2014 no intake is logged against a plan.",
   "dietBuilder.duplicate": "Start from a copy",
@@ -483,6 +587,10 @@ export const en = {
     "The button stays in the same place on every step. That's deliberate — it's the control you press forty times a session.",
   "about.player.p3":
     "You can step back and forward freely. Ending early asks first, because it throws away your place in the day.",
+  "about.player.p4":
+    "Warmup sets are shown and timed but never logged. Two ramp-ups at half your working weight aren't a record and aren't volume, so they stay out of both — and out of the day's set count.",
+  "about.player.p5":
+    "If a routine lists substitutes, you can swap mid-session and the set is logged against the lift you actually did. The swap lasts the session only — someone being on the machine today isn't an edit to your program.",
 
   "about.logging.title": "Logging sets and personal records",
   "about.logging.body":
@@ -508,11 +616,15 @@ export const en = {
   "about.builder.body":
     "Build a program from scratch, or start from a copy of a built-in one and change what you don't like.",
   "about.builder.p1":
-    "A routine you write is one week, which repeats. Copying a built-in takes its first week.",
+    "A routine is a cycle of days that repeats — seven is a week, eight is push/pull/legs/rest twice over. Add more weeks when the numbers change between them, starting from a copy of whichever week you pick.",
   "about.builder.p2":
-    "Sets can carry intensity techniques — drop sets, partials, negatives, forced reps — and can be built from parts, like a hold into pulses into reps.",
+    "You can edit the programs that came with the app. Your version replaces it in the list, the original stays compiled in, and \"Reset to the original\" hands it back.",
   "about.builder.p3":
-    "Type a lift the picker doesn't know and it offers to create it there and then.",
+    "Sets can carry intensity techniques — drop sets, rest-pause, partials, negatives, forced reps — and can be built from parts, like a hold into pulses into reps. A warmup phase is shown and timed but never logged.",
+  "about.builder.p4":
+    "Cardio is a duration rather than reps, in minutes or seconds, with how hard to go. A second block makes it intervals.",
+  "about.builder.p5":
+    "Type a lift the picker doesn't know and it offers to create it there and then. Name substitutes on an exercise and the player lets you swap mid-session, logging against whichever you actually did.",
   "about.builder.link": "Write a routine",
 
   "about.progress.title": "Progress",
@@ -526,6 +638,8 @@ export const en = {
     "History — a year of training days as a grid, and your current streak. It counts back from today, so a broken streak reads zero.",
   "about.progress.p4":
     "Body — weigh-ins, body fat and FFMI against the population bands. Set your height on that tab or the numbers can't be computed.",
+  "about.progress.p5":
+    "Measurements — girths over time, kept apart from Body because a tape and a scale answer different questions.",
   "about.progress.link": "Open progress",
 
   "about.nutrition.title": "Nutrition",
@@ -539,6 +653,8 @@ export const en = {
     "Plan — the diet as a reference, per weekday, with swap options and hydration worked out from your body weight.",
   "about.nutrition.p4":
     "Macros — drag the split and watch the grams and calories move, then send the result back as your plan's targets.",
+  "about.nutrition.p5":
+    "Writing a plan checks it against itself: if your macro targets don't come to the daily calorie figure you typed, it says so and by how much.",
   "about.nutrition.link": "Open nutrition",
 
   "about.pantry.title": "Your foods and recipes",
@@ -572,9 +688,31 @@ export const en = {
     "Inventory is counted in pairs, since a single plate can't be loaded evenly. Set a size to zero and it plans around it.",
   "about.plates.link": "Open the plate loader",
 
+  "about.trends.title": "Eating over time",
+  "about.trends.body":
+    "Twelve weeks of what you actually ate, and how often you did what the plan said.",
+  "about.trends.p1":
+    "Only days you logged are plotted, and the averages are over those days too. A fortnight you didn't open the app would otherwise drag the mean down and read as a crash diet.",
+  "about.trends.p2":
+    "Two grids, because they answer questions that can disagree: whether you ticked the plan's meals, and whether the day landed on its calorie target. Ticking every meal and then eating a second dinner is 100% on one and well over on the other.",
+  "about.trends.p3":
+    "The calorie grid is the one place colour runs two ways — under and over are different outcomes, so merging them into \"how far off\" would lose the thing you'd act on. Landing on target is the pale cell, because that's the day with nothing to look at.",
+  "about.trends.link": "See your trends",
+
+  "about.measurements.title": "Measurements",
+  "about.measurements.body":
+    "Girths over time — arms, waist and legs to begin with, and anything else you want to add.",
+  "about.measurements.p1":
+    "Each site gets its own chart rather than all of them sharing one. A neck and a chest on one axis would flatten the neck to a line, and the change you're looking for is a centimetre.",
+  "about.measurements.p2":
+    "Left and right are recorded separately only if you ask for it, and then they're two lines on one chart — comparing them is the whole reason to have written down a side.",
+  "about.measurements.p3":
+    "Six of the sites are the ones the natural-potential calculator predicts, so what you measure and what it estimates are directly comparable.",
+  "about.measurements.link": "Take a measurement",
+
   "about.sharing.title": "Backups and sharing",
   "about.sharing.body":
-    "Export everything as one file, or hand someone a single routine, plan or recipe.",
+    "Export everything as one file, or hand someone a single routine, plan, recipe, food or exercise — the ones that came with the app included.",
   "about.sharing.p1":
     "Restoring a full backup replaces what's in the browser. Importing a shared item adds to it and touches nothing you have.",
   "about.sharing.p2":
@@ -594,6 +732,48 @@ export const en = {
     "Language and dark mode are at the bottom of the sidebar. Both stick.",
 
   "intake.tab": "Today",
+
+  // ── Intake over time ─────────────────────────────────────────────────────
+  "trends.tab": "Trends",
+  "trends.daysLogged": "Days logged",
+  "trends.daysComplete": "Full days",
+  "trends.averageKcal": "Average kcal",
+  "trends.averageProtein": "Average protein",
+  "trends.averageNote":
+    "Averages are over the {days} days you logged, not the whole window — {protein}g protein, {carbs}g carbs, {fat}g fat, {kcal} kcal.",
+  "trends.overTime": "What you ate",
+  "trends.overTimeBody":
+    "Only days you logged. A gap is a day you didn't record, not a day you ate nothing.",
+  "trends.macros": "Macros",
+  "trends.macrosAria": "Protein, carbs and fat per day, in grams",
+  "trends.calories": "Calories",
+  "trends.caloriesAria": "Calories per day",
+  "trends.axisGrams": "Grams",
+  "trends.axisKcal": "kcal",
+  "trends.grams": "Grams",
+  "trends.kcal": "Calories",
+  "trends.targetLine": "Target {kcal}",
+  "trends.notEnough.title": "Not enough to draw yet",
+  "trends.notEnough.body": "Two logged days and the trend shows up here.",
+
+  "trends.consistency": "How often",
+  "trends.consistencyBody":
+    "Two questions that can disagree: whether you followed the plan, and whether you hit the numbers. Ticking every meal and then eating a second dinner is both at once.",
+  "trends.adherence": "Meals ticked off the plan",
+  "trends.adherenceCaption": "Share of the day's meals you ticked",
+  "trends.mealsOf": "{ticked} of {total} meals",
+  "trends.nothingTicked": "Nothing ticked",
+  "trends.caloriesCaption": "How far the day landed from its target",
+  "trends.under": "Under",
+  "trends.over": "Over",
+  "trends.onTarget": "On target",
+  "trends.kcalOff": "{delta} kcal",
+  "trends.noKcal": "Nothing logged",
+  "trends.needTarget":
+    "This plan states no calorie target, so there's nothing to measure a day against. Add one on the plan and this fills in.",
+  "trends.empty.title": "Nothing logged yet",
+  "trends.empty.body":
+    "Tick a meal off on the Today tab and it starts showing up here.",
   "intake.today": "Today",
   "intake.yesterday": "Yesterday",
   "intake.previousDay": "Previous day",
@@ -636,8 +816,52 @@ export const en = {
     "Nothing you have is touched. What's in the file arrives alongside it, with new ids so it can't overwrite anything \u2014 importing twice gives you two copies.",
   "data.mergeAction": "Add it",
   "data.merged": "Added",
+  // ── Girth measurements ───────────────────────────────────────────────────
+  "measure.tab": "Measurements",
+  "measure.title": "Take your measurements",
+  "measure.body":
+    "The scale says which direction you're going. A tape says where it went — two people at the same weight can have completely different arms.",
+  "measure.unit": "Measured in",
+  "measure.addSite": "Measure something else",
+  "measure.bothSides": "Both sides",
+  "measure.removeSite": "Stop measuring {site}",
+  "measure.noneTracked":
+    "Nothing on the form. Add whatever you measure — arms, waist and legs are the usual three.",
+  "measure.save": "Save",
+  "measure.saved.one": "{count} measurement saved",
+  "measure.saved.other": "{count} measurements saved",
+  "measure.delete": "Delete",
+  "measure.deleted": "Measurement deleted",
+  "measure.change": "{delta} {unit} since you started",
+  "measure.trend": "Over time",
+  "measure.history": "Every reading",
+  "measure.siteSide": "{site} ({side})",
+  "measure.empty.title": "Nothing measured yet",
+  "measure.empty.body":
+    "Fill in whatever you measured above. One reading is a starting point; the trend shows up from the second.",
+  "measure.chart.axis": "Girth ({unit})",
+  "measure.chart.aria": "{site} over time, in {unit}",
+  "measure.chart.latest": "Now {value} {unit}",
+  "measure.chart.latestSide": "{side}, now {value} {unit}",
+  "measure.chart.notEnough.title": "Not enough to draw yet",
+  "measure.chart.notEnough.body":
+    "A site needs two readings before there's a line between them.",
+
+  "measure.side.left": "Left",
+  "measure.side.right": "Right",
+  "measure.site.neck": "Neck",
+  "measure.site.shoulders": "Shoulders",
+  "measure.site.chest": "Chest",
+  "measure.site.upperArm": "Upper arm",
+  "measure.site.forearm": "Forearm",
+  "measure.site.waist": "Waist",
+  "measure.site.hips": "Hips",
+  "measure.site.thigh": "Thigh",
+  "measure.site.calf": "Calf",
+
   "data.kind.sets": "Logged sets",
   "data.kind.bodyEntries": "Weigh-ins",
+  "data.kind.measurements": "Measurements",
   "data.kind.exercises": "Your exercises",
   "data.kind.routines": "Your routines",
   "data.kind.foods": "Your foods",
@@ -886,10 +1110,22 @@ export const en = {
   "routines.summary.finishers.one": "Finisher",
   "routines.summary.finishers.other": "Finishers",
   "routines.setOf": "set {number} of {total}",
+  "routines.warmupSetOf": "warmup {number} of {total}",
+  // Distinct from `routines.warmup`, which is the day's mobility block. This
+  // is a light set of the lift you're about to do properly.
+  "routines.warmupSet": "Warmup",
+  // The plural form alone: on the day strip the count is the tile's value, so
+  // interpolating it here would print it twice. Same shape as
+  // `routines.summary.finishers`.
+  "routines.warmupSets.one": "Warmup set",
+  "routines.warmupSets.other": "Warmup sets",
 
   // ── The player ───────────────────────────────────────────────────────────
   "player.stepOf": "Step {current} of {total} · {left} to go",
   "player.exerciseOf": "Exercise {current} of {total}",
+  "player.swap": "Swap",
+  "player.swapTitle": "Doing instead",
+  "player.swappedFrom": "instead of {name}",
   "player.set": "Set",
   "player.setValue": "{number} of {total}",
   "player.target": "Target",

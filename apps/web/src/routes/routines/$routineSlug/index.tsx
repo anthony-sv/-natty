@@ -56,7 +56,7 @@ function RoutineNotFound() {
 
 function RoutineDetail() {
   const { routineSlug } = Route.useParams();
-  const { routine, isLoading, isCustom } = useRoutine(routineSlug);
+  const { routine, isLoading, isCustom, isOverridden } = useRoutine(routineSlug);
 
   // "Not found" is only true once the collection has answered. Deciding it in a
   // loader — which is what this used to do — 404s every user routine, because
@@ -64,15 +64,24 @@ function RoutineDetail() {
   if (isLoading) return null;
   if (routine === undefined) return <RoutineNotFound />;
 
-  return <RoutineBody routine={routine} isCustom={isCustom} />;
+  return (
+    <RoutineBody
+      routine={routine}
+      isCustom={isCustom}
+      isOverridden={isOverridden}
+    />
+  );
 }
 
 function RoutineBody({
   routine,
   isCustom,
+  isOverridden,
 }: {
   routine: Routine;
   isCustom: boolean;
+  /** A built-in you've edited: yours is showing, the shipped one is intact. */
+  isOverridden: boolean;
 }) {
   const t = useT();
   const f = useFormatting();
@@ -109,41 +118,51 @@ function RoutineBody({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          {isCustom ? (
-            <>
-              <Badge variant="secondary">{t("builder.yours")}</Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                nativeButton={false}
-                render={
-                  <Link
-                    to="/routines/$routineSlug/edit"
-                    params={{ routineSlug: routine.slug }}
-                  />
-                }
-              >
-                <PencilLineIcon data-icon="inline-start" />
-                {t("builder.edit")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  void (async () => {
-                    const now = Date.now();
-                    const backup = await exportRoutine(routine.slug, now);
-                    if (backup === undefined) return;
-                    downloadBackup(backup, backupFilename(now, "routine"));
-                    toast.add({ title: t("data.shared"), type: "success" });
-                  })();
-                }}
-              >
-                <Share2Icon data-icon="inline-start" />
-                {t("data.share")}
-              </Button>
-            </>
+          {/* "Yours" means a routine you wrote from nothing. An edited
+              built-in is yours too, but calling it that would lose the fact
+              that a shipped program sits underneath, recoverable. */}
+          {isCustom && !isOverridden ? (
+            <Badge variant="secondary">{t("builder.yours")}</Badge>
           ) : null}
+          {isOverridden ? (
+            <Badge variant="outline">{t("builder.edited")}</Badge>
+          ) : null}
+
+          {/* Every routine is editable now, built-in or not: saving a built-in
+              writes your version at its slug and it replaces the shipped one
+              in the list, which stays compiled in and recoverable. */}
+          <Button
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            render={
+              <Link
+                to="/routines/$routineSlug/edit"
+                params={{ routineSlug: routine.slug }}
+              />
+            }
+          >
+            <PencilLineIcon data-icon="inline-start" />
+            {t("builder.edit")}
+          </Button>
+          {/* Outside the `isCustom` block: a built-in is as shareable as one
+              you wrote, and the recipient gets an editable copy either way. */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void (async () => {
+                const now = Date.now();
+                const backup = await exportRoutine(routine.slug, now);
+                if (backup === undefined) return;
+                downloadBackup(backup, backupFilename(now, "routine"));
+                toast.add({ title: t("data.shared"), type: "success" });
+              })();
+            }}
+          >
+            <Share2Icon data-icon="inline-start" />
+            {t("data.share")}
+          </Button>
           {routine.source ? <Badge variant="outline">{routine.source}</Badge> : null}
           {routine.style ? (
             <Badge variant="secondary">{f.names.text(routine.style)}</Badge>

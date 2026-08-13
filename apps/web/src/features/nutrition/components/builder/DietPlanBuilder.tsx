@@ -11,7 +11,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,20 +41,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
 import type { DietPlan, MealItem } from "@/data/diets";
+import { ComboboxOptionGroup } from "@/components/combobox-option-group";
 import {
   filterFoodOption,
   useFoodOptions,
+  useGroupedFoodOptions,
   usePantry,
   type FoodOption,
+  type FoodOptionGroup,
 } from "@/features/pantry/use-pantry";
 import { useT } from "@/i18n/use-t";
-import { createUserDiet, dietSlugFor, updateUserDiet } from "../../collection";
+import {
+  createUserDiet,
+  dietSlugFor,
+  isBuiltInDietSlug,
+  saveBuiltInDietOverride,
+  updateUserDiet,
+} from "../../collection";
 import {
   TARGET_TOLERANCE_G,
   compareToTargets,
+  effectiveTargetKcal,
   kcalOf,
+  targetsSelfCheck,
+  TARGET_TOLERANCE_KCAL,
   totalFor,
 } from "../../macros";
 import {
@@ -88,9 +100,15 @@ export function DietPlanBuilder({
     const slug = existingSlug ?? dietSlugFor(draft.name);
     const toSave: DietPlan = { ...plan, slug };
 
-    const transaction = existingSlug
-      ? updateUserDiet(existingSlug, toSave, asDraft)
-      : createUserDiet(toSave, asDraft).transaction;
+    // Editing a built-in saves your version at its slug, so it replaces the
+    // shipped plan in the picker — see `saveBuiltInDietOverride`. There's no
+    // row to update the first time, which is why `updateUserDiet` can't do it.
+    const transaction =
+      existingSlug === undefined
+        ? createUserDiet(toSave, asDraft).transaction
+        : isBuiltInDietSlug(existingSlug)
+          ? saveBuiltInDietOverride(toSave, asDraft)
+          : updateUserDiet(existingSlug, toSave, asDraft);
 
     void toast.promise(transaction.isPersisted.promise, {
       loading: t("dietBuilder.saving"),
@@ -135,6 +153,16 @@ export function DietPlanBuilder({
   // stated — both mean "nothing to warn about".
   const gaps =
     plan && running ? compareToTargets(running, plan.targets) : [];
+
+  // Whether the plan's two statements of its own calorie target agree — the
+  // daily figure you typed, and what your macro targets multiply out to.
+  const selfCheck = plan ? targetsSelfCheck(plan) : undefined;
+
+  // The meals' calories against the target. Absent from this row entirely
+  // until now, so a day 79 kcal over read exactly like one that landed.
+  const targetKcal = plan ? effectiveTargetKcal(plan) : undefined;
+  const kcalDelta =
+    running && targetKcal ? kcalOf(running) - targetKcal.kcal : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -231,6 +259,18 @@ export function DietPlanBuilder({
             ))}
           </div>
           <FieldDescription>{t("dietBuilder.targetsHint")}</FieldDescription>
+          {/* Sits under the macro boxes rather than beside the totals, because
+              this is a contradiction between two things *you typed* — the
+              meals below have nothing to do with it and can't fix it. */}
+          {selfCheck ? (
+            <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-muted-foreground">
+              {t("dietBuilder.targetsDisagree", {
+                fromMacros: Math.round(selfCheck.fromMacros).toLocaleString(),
+                statedKcal: selfCheck.statedKcal.toLocaleString(),
+                delta: `${selfCheck.delta > 0 ? "+" : ""}${Math.round(selfCheck.delta).toLocaleString()}`,
+              })}
+            </p>
+          ) : null}
         </Field>
       </FieldGroup>
 
@@ -258,11 +298,10 @@ export function DietPlanBuilder({
                     {running[macro].toFixed(0)}
                     {delta !== undefined &&
                     Math.abs(delta) > TARGET_TOLERANCE_G ? (
-                      <span
-                        className={
-                          delta < 0 ? "text-destructive" : "text-foreground"
-                        }
-                      >
+                      // Both directions read as off-target. Only a shortfall
+                      // used to, so being 30g of fat *over* was drawn in
+                      // body ink and looked deliberate.
+                      <span className="text-destructive">
                         {" "}
                         {delta > 0 ? "+" : ""}
                         {delta.toFixed(0)}
@@ -271,7 +310,17 @@ export function DietPlanBuilder({
                   </span>
                 );
               })}
-              <span>{Math.round(kcalOf(running)).toLocaleString()} kcal</span>
+              <span>
+                {Math.round(kcalOf(running)).toLocaleString()} kcal
+                {kcalDelta !== undefined &&
+                Math.abs(kcalDelta) > TARGET_TOLERANCE_KCAL ? (
+                  <span className="text-destructive">
+                    {" "}
+                    {kcalDelta > 0 ? "+" : ""}
+                    {Math.round(kcalDelta).toLocaleString()}
+                  </span>
+                ) : null}
+              </span>
             </span>
           ) : null}
         </div>
@@ -487,6 +536,7 @@ function ItemList({
 }) {
   const t = useT();
   const options = useFoodOptions();
+  const groups = useGroupedFoodOptions(options);
   const pantry = usePantry();
 
   const macros = totalFor(items, pantry);
@@ -508,7 +558,7 @@ function ItemList({
           >
             <div className="flex min-w-48 flex-1 flex-col gap-1">
               <Combobox
-                items={options}
+                items={groups}
                 filter={filterFoodOption}
                 value={selected}
                 onValueChange={(option: FoodOption | null) =>
@@ -524,19 +574,28 @@ function ItemList({
                 <ComboboxContent>
                   <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
                   <ComboboxList>
-                    {(option: FoodOption) => (
-                      <ComboboxItem key={option.id} value={option}>
-                        <span className="flex items-center gap-2">
-                          {option.name}
-                          {/* Which half it came from, since a recipe and an
-                              ingredient read the same otherwise. */}
-                          {option.kind === "recipe" ? (
-                            <Badge variant="outline">{t("pantry.recipe")}</Badge>
-                          ) : option.kind === "food" ? (
-                            <Badge variant="secondary">{t("pantry.yours")}</Badge>
-                          ) : null}
-                        </span>
-                      </ComboboxItem>
+                    {(group: FoodOptionGroup, index: number) => (
+                      <ComboboxOptionGroup
+                        key={group.key}
+                        group={group}
+                        index={index}
+                      >
+                        {(option) => (
+                          <ComboboxItem key={option.id} value={option}>
+                            <span className="flex items-center gap-2">
+                              {option.name}
+                              {/* A dish you cooked reads the same as an
+                                  ingredient otherwise, and the heading now
+                                  says what kind of food it is instead. */}
+                              {option.kind === "recipe" ? (
+                                <Badge variant="outline">
+                                  {t("pantry.recipe")}
+                                </Badge>
+                              ) : null}
+                            </span>
+                          </ComboboxItem>
+                        )}
+                      </ComboboxOptionGroup>
                     )}
                   </ComboboxList>
                 </ComboboxContent>

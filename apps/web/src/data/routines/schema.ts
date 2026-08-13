@@ -33,6 +33,15 @@ export const setModifiersSchema = z.object({
   forcedReps: z.boolean().optional(),
   /** Strip weight and keep going, without racking. */
   dropSet: z.boolean().optional(),
+  /**
+   * Take the set to failure, rack it for a breath or two, then squeeze out
+   * more reps at the same weight.
+   *
+   * Distinct from `dropSet`, which changes the load and doesn't stop, and from
+   * `forcedReps`, which needs a spotter. This one is the same weight and no
+   * help — just a pause.
+   */
+  restPause: z.boolean().optional(),
   /** Emphasised or assisted eccentrics. */
   negatives: z.boolean().optional(),
   /** Partial-range reps, typically once full reps fail. */
@@ -106,6 +115,21 @@ export const prescriptionSchema = z
     /** Stretch hold, cardio duration, dead hang — a duration instead of reps. */
     durationSeconds: numberOrRange.optional(),
     /**
+     * How hard to go, for the work where that's the prescription rather than a
+     * load or a rep count.
+     *
+     * Cardio's whole dose is time × effort: twenty easy minutes and twenty
+     * hard ones are different sessions, and nothing else here could say which
+     * one was meant. `setModifiersSchema` is the wrong home — those are
+     * lifting techniques (forced reps, a drop set), and none of them mean
+     * anything on a bike.
+     *
+     * Three steps, not a percentage of max heart rate or a watt figure:
+     * nobody writing a program types those, and a scale you'd have to look up
+     * is a scale you'd leave blank.
+     */
+    intensity: z.enum(["low", "moderate", "high"]).optional(),
+    /**
      * The set is a sequence, described leg by leg. Two or more, because a
      * one-segment sequence is a plain prescription written the long way.
      */
@@ -115,6 +139,31 @@ export const prescriptionSchema = z
     pose: poseCueSchema.optional(),
     /** Reps/duration figure is per side (e.g. single-arm rows). */
     perSide: z.boolean().optional(),
+    /**
+     * Ramp-up sets before the working ones — two at half the load, one at
+     * ~70%, that sort of thing.
+     *
+     * A flag on the phase rather than a separate `warmupSets` array, because a
+     * phase *is* "a run of sets described one way", which is exactly what a
+     * warmup block is. It composes with everything already here: rest between
+     * them, a rep range, even a ramp written as several one-set phases.
+     *
+     * **Distinct from `TrainingDay.warmupRefs`**, which is the general
+     * mobility work that opens a session. This is the specific lift you're
+     * about to do, done light.
+     *
+     * A warmup set is never logged — see `isLoggableStep`. That's what keeps
+     * `LoggedSet` out of this entirely: no `isWarmup` on a stored set, so
+     * nothing downstream (the PR frontier, per-muscle volume, the heatmap) had
+     * to learn the difference or risk getting it wrong.
+     *
+     * Optional rather than `.default(false)`, like `perSide` beside it: a
+     * default puts the key on the *output* type, which would mean writing
+     * `isWarmup: false` on all seventy-odd authored prescriptions to say
+     * nothing. `buildSteps` normalises it to a plain boolean on the step, so
+     * the optionality stops at the model.
+     */
+    isWarmup: z.boolean().optional(),
     /** Intensity techniques for these sets. Absent means straight sets. */
     modifiers: setModifiersSchema.optional(),
   })

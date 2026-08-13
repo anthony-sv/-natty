@@ -12,9 +12,21 @@ import { LibraryPanel } from "@/features/library/components/LibraryPanel";
 import { RecordsPanel } from "@/features/log/components/RecordsPanel";
 import { HistoryPanel } from "@/features/log/components/HistoryPanel";
 import { VolumePanel } from "@/features/log/components/VolumePanel";
+import { MeasurementPanel } from "@/features/measurements/components/MeasurementPanel";
 import { useT } from "@/i18n/use-t";
 
-const TABS = ["records", "volume", "history", "library", "body", "data"] as const;
+// Measurements sits beside Body rather than inside it: they answer different
+// questions from different collections, and the Body panel already carries the
+// FFMI meter, two charts, a form and a history table.
+const TABS = [
+  "records",
+  "volume",
+  "history",
+  "library",
+  "body",
+  "measurements",
+  "data",
+] as const;
 type Tab = (typeof TABS)[number];
 
 export const Route = createFileRoute("/progress")({
@@ -60,6 +72,7 @@ function ProgressPage() {
           <TabsTrigger value="history">{t("history.tab")}</TabsTrigger>
           <TabsTrigger value="library">{t("library.tab")}</TabsTrigger>
           <TabsTrigger value="body">{t("progress.tab.body")}</TabsTrigger>
+          <TabsTrigger value="measurements">{t("measure.tab")}</TabsTrigger>
           <TabsTrigger value="data">{t("data.tab")}</TabsTrigger>
         </TabsList>
         <TabsContent value="records">
@@ -76,6 +89,9 @@ function ProgressPage() {
         </TabsContent>
         <TabsContent value="body">
           {tab === "body" ? <BodyPanel /> : null}
+        </TabsContent>
+        <TabsContent value="measurements">
+          {tab === "measurements" ? <MeasurementPanel /> : null}
         </TabsContent>
         <TabsContent value="data">
           {tab === "data" ? <DataPanel /> : null}

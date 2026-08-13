@@ -45,3 +45,41 @@ export function convertWeight(
   if (from === to) return weight;
   return to === "kg" ? weight * KG_PER_LB : weight / KG_PER_LB;
 }
+
+/**
+ * Length units, for girth measurements.
+ *
+ * The same trio as weight and for the same reasons: stored as entered, so a
+ * tape marked in inches reads back in inches, with conversion confined to the
+ * two places that compare or plot. Centimetres are the canonical side because
+ * that's what `profileSchema.heightCm` and the Casey Butt model already use.
+ */
+export const lengthUnitSchema = z.enum(["cm", "in"]);
+export type LengthUnit = z.infer<typeof lengthUnitSchema>;
+
+export const LENGTH_UNITS: Array<{ value: LengthUnit; label: string }> = [
+  { value: "cm", label: "cm" },
+  { value: "in", label: "in" },
+];
+
+const CM_PER_INCH = 2.54;
+
+/** Centimetres, whatever it was entered in. For comparison, never for display. */
+export function toCentimetres(length: number, unit: LengthUnit): number {
+  return unit === "in" ? length * CM_PER_INCH : length;
+}
+
+/**
+ * The same girth in another unit.
+ *
+ * Same job `convertWeight` does: a trend line mixing 40cm and 15.7in would
+ * draw a collapse that never happened.
+ */
+export function convertLength(
+  length: number,
+  from: LengthUnit,
+  to: LengthUnit,
+): number {
+  if (from === to) return length;
+  return to === "cm" ? length * CM_PER_INCH : length / CM_PER_INCH;
+}

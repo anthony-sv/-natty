@@ -71,6 +71,34 @@ export function updateUserDiet(slug: string, plan: DietPlan, isDraft = false) {
   });
 }
 
+/** Whether this slug belongs to one of the compiled-in plans. */
+export function isBuiltInDietSlug(slug: string): boolean {
+  return BUILT_IN_SLUGS.has(slug);
+}
+
+/**
+ * Save your edit of a built-in plan, at the built-in's own slug.
+ *
+ * The collision with `BUILT_IN_SLUGS` is deliberate and is the mechanism —
+ * `useDiets` drops any built-in you've saved over, so your version replaces it
+ * in the picker rather than appearing beside it. Same call `saveBuiltInOverride`
+ * makes for routines.
+ */
+export function saveBuiltInDietOverride(plan: DietPlan, isDraft = false) {
+  if (userDiets.get(plan.slug) !== undefined) {
+    return updateUserDiet(plan.slug, plan, isDraft);
+  }
+  const now = Date.now();
+  const row: UserDietPlan = { ...plan, createdAt: now, updatedAt: now, isDraft };
+  return userDiets.insert(row);
+}
+
+/** Throw the edit away; the compiled-in plan was never touched. */
+export function resetBuiltInDiet(slug: string) {
+  const plan = userDiets.get(slug);
+  return { plan, transaction: userDiets.delete(slug) };
+}
+
 export function deleteUserDiet(slug: string) {
   const plan = userDiets.get(slug);
   return { plan, transaction: userDiets.delete(slug) };

@@ -64,6 +64,42 @@ export function createUserRoutine(routine: Routine) {
   return { routine: row, transaction: userRoutines.insert(row) };
 }
 
+/** Whether this slug belongs to one of the compiled-in programs. */
+export function isBuiltInSlug(slug: string): boolean {
+  return BUILT_IN_SLUGS.has(slug);
+}
+
+/**
+ * Save your edit of a built-in, at the built-in's own slug.
+ *
+ * Deliberately **not** routed through `slugFor`, which exists to avoid exactly
+ * this collision. Here the collision is the mechanism: `useRoutines` drops any
+ * built-in whose slug you've saved over, so your version replaces it in every
+ * list and picker instead of appearing beside it under the same name.
+ *
+ * Keeping the slug also keeps a session you're part-way through resumable —
+ * `isSessionFor` matches on it — which a fresh slug would quietly break.
+ */
+export function saveBuiltInOverride(routine: Routine) {
+  const existing = userRoutines.get(routine.slug);
+  if (existing !== undefined) return updateUserRoutine(routine.slug, routine);
+
+  const now = Date.now();
+  const row: UserRoutine = { ...routine, createdAt: now, updatedAt: now };
+  return userRoutines.insert(row);
+}
+
+/**
+ * Throw your edit away and get the shipped program back.
+ *
+ * Possible at all because the original is compiled in and was never touched —
+ * an override is one row in localStorage, so undoing it is deleting that row.
+ */
+export function resetBuiltIn(slug: string) {
+  const routine = userRoutines.get(slug);
+  return { routine, transaction: userRoutines.delete(slug) };
+}
+
 export function updateUserRoutine(slug: string, routine: Routine) {
   return userRoutines.update(slug, (draft) => {
     // The slug is the key and is provenance on every set already logged against

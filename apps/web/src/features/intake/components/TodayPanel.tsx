@@ -44,11 +44,14 @@ import {
   weekdayOf,
 } from "@/features/nutrition/macros";
 import { MacroSplit } from "@/features/nutrition/components/MacroSplit";
+import { ComboboxOptionGroup } from "@/components/combobox-option-group";
 import {
   filterFoodOption,
   useFoodOptions,
+  useGroupedFoodOptions,
   usePantry,
   type FoodOption,
+  type FoodOptionGroup,
 } from "@/features/pantry/use-pantry";
 import {
   allIntake,
@@ -314,6 +317,7 @@ export function TodayPanel({ plan }: { plan: DietPlan }) {
 function AddExtra({ day }: { day: number }) {
   const t = useT();
   const options = useFoodOptions();
+  const groups = useGroupedFoodOptions(options);
   const [food, setFood] = useState<FoodOption | null>(null);
   const [amount, setAmount] = useState("");
 
@@ -325,7 +329,7 @@ function AddExtra({ day }: { day: number }) {
       <div className="flex min-w-48 flex-1 flex-col gap-1">
         <Label className="text-xs">{t("nutrition.item")}</Label>
         <Combobox
-          items={options}
+          items={groups}
           filter={filterFoodOption}
           value={food}
           onValueChange={(option: FoodOption | null) => setFood(option)}
@@ -335,17 +339,25 @@ function AddExtra({ day }: { day: number }) {
           <ComboboxContent>
             <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
             <ComboboxList>
-              {(option: FoodOption) => (
-                <ComboboxItem key={option.id} value={option}>
-                  <span className="flex items-center gap-2">
-                    {option.name}
-                    {option.kind === "recipe" ? (
-                      <Badge variant="outline">{t("pantry.recipe")}</Badge>
-                    ) : option.kind === "food" ? (
-                      <Badge variant="secondary">{t("pantry.yours")}</Badge>
-                    ) : null}
-                  </span>
-                </ComboboxItem>
+              {(group: FoodOptionGroup, index: number) => (
+                <ComboboxOptionGroup
+                  key={group.key}
+                  group={group}
+                  index={index}
+                >
+                  {(option) => (
+                    <ComboboxItem key={option.id} value={option}>
+                      <span className="flex items-center gap-2">
+                        {option.name}
+                        {/* The heading says what kind of food it is, not that
+                            it's a dish you cooked rather than an ingredient. */}
+                        {option.kind === "recipe" ? (
+                          <Badge variant="outline">{t("pantry.recipe")}</Badge>
+                        ) : null}
+                      </span>
+                    </ComboboxItem>
+                  )}
+                </ComboboxOptionGroup>
               )}
             </ComboboxList>
           </ComboboxContent>

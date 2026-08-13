@@ -181,6 +181,37 @@ export function percentSplit(macros: Macros): {
 }
 
 /**
+ * Which macro a food is mostly made of, by calories.
+ *
+ * The food picker's fallback heading for anything with no `category` — your
+ * own foods, and every recipe. Derived rather than stored, so a food you add
+ * lands under a useful heading without being asked a question, and correcting
+ * its macros moves it.
+ *
+ * **Share of calories, not of grams**, for the reason `percentSplit` gives:
+ * by weight, fat looks like a third of what it contributes.
+ *
+ * The half-the-calories bar is what stops this claiming more than it knows.
+ * Greek yogurt is 45% protein and 37% carbs — calling that "protein-rich"
+ * would be a judgement the numbers don't support, so it reads as mixed. A food
+ * with no calories at all is mixed too, rather than dividing by nothing.
+ */
+export function dominantMacro(
+  macros: Macros,
+): "protein" | "carbs" | "fat" | "mixed" {
+  const total = kcalOf(macros);
+  if (total <= 0) return "mixed";
+
+  const shares = [
+    ["protein", macros.protein * KCAL_PER_GRAM.protein] as const,
+    ["carbs", macros.carbs * KCAL_PER_GRAM.carbs] as const,
+    ["fat", macros.fat * KCAL_PER_GRAM.fat] as const,
+  ];
+  const [name, kcal] = shares.reduce((best, row) => (row[1] > best[1] ? row : best));
+  return kcal / total >= 0.5 ? name : "mixed";
+}
+
+/**
  * The plan's calorie target, stated or implied.
  *
  * A plan that gives macro targets has already given a calorie target — 180P,
@@ -243,6 +274,43 @@ export function compareToTargets(
 }
 
 /** The targets as a full `Macros`, or undefined if none were stated at all. */
+/**
+ * Slack on a calorie figure, in kcal.
+ *
+ * Deliberately much looser than `TARGET_TOLERANCE_G`: a gram of protein is 4
+ * kcal, so the 5 g of per-macro slack is already ~20-45 kcal of rounding
+ * before anything is actually wrong. 50 catches "these two numbers describe
+ * different diets" without firing on arithmetic.
+ */
+export const TARGET_TOLERANCE_KCAL = 50;
+
+/**
+ * Whether a plan's own two statements of its calorie target agree.
+ *
+ * A plan can say both "2,040 kcal a day" and "175P / 200C / 70F" — and those
+ * macros come to 2,130. Nothing caught that: `compareToTargets` checks the
+ * *meals* against the macro targets and never checks the targets against each
+ * other, so a plan could contradict itself on its own front page and read as
+ * fine.
+ *
+ * Undefined when there's nothing to compare — no stated calorie target, or no
+ * macro targets at all. Returning a zero gap for those would be a claim they
+ * agree, which is different from having nothing to say.
+ */
+export function targetsSelfCheck(
+  plan: DietPlan,
+): { statedKcal: number; fromMacros: number; delta: number } | undefined {
+  if (plan.targetKcal === undefined) return undefined;
+  const stated = macrosFromTargets(plan.targets);
+  if (stated === undefined) return undefined;
+
+  const fromMacros = kcalOf(stated);
+  const delta = fromMacros - plan.targetKcal;
+  return Math.abs(delta) > TARGET_TOLERANCE_KCAL
+    ? { statedKcal: plan.targetKcal, fromMacros, delta }
+    : undefined;
+}
+
 export function macrosFromTargets(targets: MacroTargets): Macros | undefined {
   const { protein, carbs, fat } = targets;
   if (protein === undefined && carbs === undefined && fat === undefined) {

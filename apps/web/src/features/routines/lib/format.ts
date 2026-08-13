@@ -74,6 +74,7 @@ export function formatModifiers(
   if (modifiers.partials) labels.push(t("modifier.partials"));
   if (modifiers.staticHolds) labels.push(t("modifier.staticHolds"));
   if (modifiers.dropSet) labels.push(t("modifier.dropSet"));
+  if (modifiers.restPause) labels.push(t("modifier.restPause"));
   if (modifiers.ladder) {
     labels.push(t("modifier.ladder", { positions: modifiers.ladder.join(" → ") }));
   }

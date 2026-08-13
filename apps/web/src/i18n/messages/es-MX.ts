@@ -73,6 +73,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "modifier.partials": "Parciales",
   "modifier.staticHolds": "Isométricos",
   "modifier.dropSet": "Drop set",
+  "modifier.restPause": "Rest-pause",
   "modifier.ladder": "Escalera: {positions}",
 
   // ── Sets por partes ──────────────────────────────────────────────────────
@@ -103,12 +104,45 @@ export const esMX: Record<keyof typeof en, string> = {
   "index.resume.action": "Retomar",
   "index.resume.discard": "Descartar",
   "index.resume.discarded": "Entrenamiento descartado",
+  "home.training": "Entrenamiento",
+  "home.training.empty":
+    "Todavía no hay sets. Abre un programa y empieza un día — la app te va llevando.",
+  "home.streakDays.one": "Racha de {count} día",
+  "home.streakDays.other": "Racha de {count} días",
+  "home.setsThisWeek.one": "{count} set esta semana",
+  "home.setsThisWeek.other": "{count} sets esta semana",
+  "home.recordsHeld.one": "{count} récord",
+  "home.recordsHeld.other": "{count} récords",
+
+  "home.body": "Cuerpo",
+  "home.body.empty":
+    "Todavía no hay pesajes. Uno toma un segundo y lo demás sale solo.",
+  "home.weekAverage": "Prom. semanal {weight} · {delta} vs la anterior",
+  "home.bodyFat": "{percent}% de grasa",
+  "home.noBodyFat": "Sin medición de grasa",
+  "home.ffmi": "FFMI {value}",
+  "home.needHeight": "Pon tu estatura para el FFMI",
+
+  "home.measurements": "Medidas",
+  "home.measurements.empty":
+    "Todavía no hay medidas. Brazos y cintura dicen lo que la báscula no.",
+  "home.sinceStart": "{delta} {unit} desde que empezaste",
+  "home.siteValue": "{site} {value}",
+
+  "home.food": "La comida de hoy",
+  "home.food.empty": "Hoy no has registrado nada.",
+  "home.food.emptyMeals.one": "{count} comida por marcar hoy.",
+  "home.food.emptyMeals.other": "{count} comidas por marcar hoy.",
+  "home.kcalOfTarget": "{eaten} / {target} kcal",
+  "home.mealsTicked": "{ticked} de {total} comidas marcadas",
+  "home.macrosSoFar": "P{protein} · C{carbs} · G{fat}",
+
   "index.dest.routines":
     "Programas semana por semana, o escribe el tuyo. Abre un día para empezar.",
   "index.dest.progress":
-    "Récords, volumen por músculo, un año de días entrenados y tus propios ejercicios.",
+    "Récords, volumen por músculo, un año de días entrenados, tus medidas y tus propios ejercicios.",
   "index.dest.nutrition":
-    "Planes de dieta comida por comida, tus propios alimentos y recetas, y una calculadora de macros.",
+    "Lo que comiste y cómo va, planes de dieta comida por comida, tus propios alimentos y recetas, y una calculadora de macros.",
   "index.dest.calculators": "Máximo de una rep, RPE y RIR, y potencial natural.",
   "index.dest.plates": "Qué colgar en cada extremo, con los discos que tiene tu gym.",
 
@@ -224,7 +258,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.edit": "Editar",
   "builder.newTitle": "Escribe una rutina",
   "builder.newBody":
-    "Una semana de entrenamiento. Se repite \u2014 as\u00ed que un d\u00eda que haces cada lunes se escribe una sola vez.",
+    "Un ciclo de d\u00edas que se repite. Siete son una semana; pon ocho para push/pull/piernas/descanso dos veces, o tres para un PPL corrido \u2014 el ciclo son los d\u00edas que escribas, no los que trae una semana.",
   "builder.editTitle": "Editando {name}",
   "builder.name": "Nombre",
   "builder.nameRequired": "Ponle un nombre",
@@ -244,6 +278,45 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.pickExercise": "Elige un ejercicio",
   "builder.createNamed": "Agregar \"{name}\" como ejercicio tuyo",
   "builder.exerciseKind": "Tipo",
+  "builder.edited": "Editada",
+  "builder.editingBuiltIn":
+    "Esta venía con la app. Al guardar se queda tu versión y la original se oculta de la lista — la original sigue ahí, así que puedes regresarla cuando quieras.",
+  "builder.reset": "Regresar a la original",
+  "builder.resetTitle": "¿Regresar la original?",
+  "builder.resetBody":
+    "Se descartan tus cambios a este programa y vuelve la versión que venía con la app. Nada de lo que registraste se ve afectado.",
+  "builder.reset.done": "{name} volvió a la original",
+  "builder.alternatives": "O alguno de estos",
+  "builder.alternativesHint":
+    "Ejercicios que aceptarías igual. El reproductor los ofrece como cambio a media serie, y registra el que de verdad hiciste.",
+  "builder.addAlternative": "Agregar un sustituto...",
+  "builder.removeAlternative": "Quitar {name}",
+  "builder.cardioHint":
+    "El cardio es tiempo, no reps. Agrega un segundo bloque para intervalos — cuatro rondas de tres minutos son cuatro sets, o dos bloques de distinta duración.",
+  "builder.duration": "Cuánto dura",
+  "builder.durationUnit": "Minutos o segundos",
+  "builder.minutes": "min",
+  "builder.seconds": "seg",
+  "builder.weekNumber": "Semana {number}",
+  "builder.addWeek": "Agregar una segunda semana",
+  "builder.duplicateWeek": "Agregar una semana",
+  "builder.weekFromCopy": "Empezar con una copia de",
+  "builder.weekOpen": "(abierta)",
+  "builder.weekFromEmpty": "Empezar con una semana vacía",
+  "builder.weekFromEmptyHint": "Para un programa que cambia de split a medio camino.",
+  "builder.removeWeek": "Quitar la semana {number}",
+  "builder.daysInWeek": "Días — semana {week}",
+  "builder.oneWeekHint":
+    "Un ciclo, repetido todo el tiempo que corras el programa. Agrega una semana solo si los números cambian entre una y otra.",
+  "builder.weeksHint":
+    "{count} semanas, en orden y luego se repiten. Una nueva empieza como copia de la semana que elijas, así solo cambias lo que se mueve.",
+  "builder.restBetween": "Descanso entre (s)",
+  "builder.intensity": "Qué tan fuerte",
+  "builder.intensity.none": "Sin especificar",
+  "intensity.low": "Suave",
+  "intensity.moderate": "Moderado",
+  "intensity.high": "Fuerte",
+  "builder.setStyle.timed": "Por tiempo",
   "builder.sets": "Sets",
   "builder.reps": "Reps",
   "builder.repsTo": "a",
@@ -369,6 +442,25 @@ export const esMX: Record<keyof typeof en, string> = {
     "Una receta es una lista de ingredientes m\u00e1s c\u00f3mo la cocinaste. Despu\u00e9s entra a una comida como cualquier otro alimento.",
   "pantry.yours": "Tuyo",
   "pantry.recipe": "Receta",
+  "pantry.category": "Tipo de alimento",
+  "pantry.categoryHint":
+    "Lo agrupa en el buscador. Déjalo en blanco y se agrupa por el macronutriente que más aporta.",
+  "pantry.category.none": "Deducirlo de los macros",
+
+  "foodGroup.vegetables": "Verduras",
+  "foodGroup.fruits": "Frutas",
+  "foodGroup.grains": "Cereales y granos",
+  "foodGroup.tubers": "Papas y tubérculos",
+  "foodGroup.legumes": "Frijoles y leguminosas",
+  "foodGroup.dairy-eggs": "Lácteos y huevo",
+  "foodGroup.meat-fish": "Carnes y pescados",
+  "foodGroup.fats": "Grasas y aceites",
+  "foodGroup.sweets": "Dulces y botanas",
+  "foodGroup.supplements": "Suplementos",
+  "foodGroup.protein": "Casi todo proteína",
+  "foodGroup.carbs": "Casi todo carbohidrato",
+  "foodGroup.fat": "Casi todo grasa",
+  "foodGroup.mixed": "Mixto",
   "pantry.ingredientCount.one": "{count} ingrediente",
   "pantry.ingredientCount.other": "{count} ingredientes",
 
@@ -429,6 +521,15 @@ export const esMX: Record<keyof typeof en, string> = {
   "dietBuilder.cancel": "Cancelar",
   "dietBuilder.delete": "Eliminar plan",
   "dietBuilder.deleted": "Se elimin\u00f3 {name}",
+  "dietBuilder.targetsDisagree":
+    "Estos macros dan {fromMacros} kcal, pero el objetivo diario de arriba dice {statedKcal} — una diferencia de {delta}. Cambia uno de los dos, o borra el objetivo diario y se calcula a partir de estos.",
+  "dietBuilder.editingBuiltIn":
+    "Este ven\u00eda con la app. Al guardar se queda tu versi\u00f3n y el original se oculta del selector \u2014 el original sigue ah\u00ed, as\u00ed que puedes regresarlo cuando quieras.",
+  "dietBuilder.reset": "Regresar al original",
+  "dietBuilder.resetTitle": "\u00bfRegresar el original?",
+  "dietBuilder.resetBody":
+    "Se descartan tus cambios a este plan y vuelve la versi\u00f3n que ven\u00eda con la app. Las comidas que ya marcaste no se ven afectadas.",
+  "dietBuilder.reset.done": "{name} volvi\u00f3 al original",
   "dietBuilder.deleteTitle": "\u00bfEliminar este plan?",
   "dietBuilder.deleteBody": "No afecta nada m\u00e1s \u2014 no se registra consumo contra un plan.",
   "dietBuilder.duplicate": "Empezar desde una copia",
@@ -481,6 +582,10 @@ export const esMX: Record<keyof typeof en, string> = {
     "El botón se queda en el mismo lugar en cada paso. Es a propósito — es el control que aprietas cuarenta veces por sesión.",
   "about.player.p3":
     "Puedes ir y regresar libremente. Terminar antes te pregunta primero, porque tira tu lugar en el día.",
+  "about.player.p4":
+    "Los sets de calentamiento se muestran y se cronometran, pero nunca se registran. Dos series de aproximación a la mitad del peso no son un récord ni son volumen, así que quedan fuera de ambos — y de la cuenta de sets del día.",
+  "about.player.p5":
+    "Si una rutina lista sustitutos, puedes cambiar a media sesión y la serie se registra contra el ejercicio que de verdad hiciste. El cambio dura solo esa sesión — que alguien esté en la máquina hoy no es una edición a tu programa.",
 
   "about.logging.title": "Registrar series y récords",
   "about.logging.body":
@@ -506,11 +611,15 @@ export const esMX: Record<keyof typeof en, string> = {
   "about.builder.body":
     "Arma un programa desde cero, o parte de una copia de uno de los que ya vienen y cambia lo que no te guste.",
   "about.builder.p1":
-    "Una rutina tuya es una semana, que se repite. Copiar uno de los que vienen toma su primera semana.",
+    "Una rutina es un ciclo de días que se repite — siete son una semana, ocho son push/pull/piernas/descanso dos veces. Agrega más semanas cuando los números cambien entre ellas, empezando desde una copia de la semana que elijas.",
   "about.builder.p2":
-    "Las series pueden traer técnicas de intensidad — drop sets, parciales, negativas, repeticiones forzadas — y pueden armarse por partes, como un hold que entra a pulsos y luego a reps.",
+    "Puedes editar los programas que vienen con la app. Tu versión lo reemplaza en la lista, el original sigue compilado, y \"Regresar a la original\" te lo devuelve.",
   "about.builder.p3":
-    "Escribe un ejercicio que el buscador no conozca y te ofrece crearlo ahí mismo.",
+    "Las series pueden traer técnicas de intensidad — drop sets, rest-pause, parciales, negativas, repeticiones forzadas — y pueden armarse por partes, como un hold que entra a pulsos y luego a reps. Un set de calentamiento se muestra y se cronometra, pero nunca se registra.",
+  "about.builder.p4":
+    "El cardio es tiempo en vez de reps, en minutos o segundos, con qué tan fuerte ir. Un segundo bloque lo vuelve intervalos.",
+  "about.builder.p5":
+    "Escribe un ejercicio que el buscador no conozca y te ofrece crearlo ahí mismo. Si le pones sustitutos a un ejercicio, el reproductor te deja cambiar a media sesión y registra el que de verdad hiciste.",
   "about.builder.link": "Escribir una rutina",
 
   "about.progress.title": "Progreso",
@@ -524,6 +633,8 @@ export const esMX: Record<keyof typeof en, string> = {
     "Historial — un año de días de entrenamiento en cuadrícula, y tu racha actual. Cuenta hacia atrás desde hoy, así que una racha rota marca cero.",
   "about.progress.p4":
     "Cuerpo — pesajes, grasa corporal y FFMI contra las bandas de referencia. Pon tu estatura en esa pestaña o los números no se pueden calcular.",
+  "about.progress.p5":
+    "Medidas — contornos con el tiempo, aparte de Cuerpo porque una cinta y una báscula responden preguntas distintas.",
   "about.progress.link": "Abrir progreso",
 
   "about.nutrition.title": "Nutrición",
@@ -537,6 +648,8 @@ export const esMX: Record<keyof typeof en, string> = {
     "Plan — la dieta como referencia, por día de la semana, con opciones de intercambio e hidratación calculada desde tu peso.",
   "about.nutrition.p4":
     "Macros — mueve el reparto y mira cómo cambian los gramos y las calorías, luego manda el resultado como los objetivos de tu plan.",
+  "about.nutrition.p5":
+    "Al escribir un plan se revisa contra sí mismo: si tus objetivos de macros no dan la cifra diaria de calorías que pusiste, te lo dice y por cuánto.",
   "about.nutrition.link": "Abrir nutrición",
 
   "about.pantry.title": "Tus alimentos y recetas",
@@ -570,9 +683,31 @@ export const esMX: Record<keyof typeof en, string> = {
     "El inventario se cuenta en pares, porque un disco suelto no se carga parejo. Pon una medida en cero y lo planea sin ella.",
   "about.plates.link": "Abrir el cargador de discos",
 
-  "about.sharing.title": "Respaldos y compartir",
+  "about.trends.title": "La comida con el tiempo",
+  "about.trends.body":
+    "Doce semanas de lo que de verdad comiste, y qué tan seguido hiciste lo que decía el plan.",
+  "about.trends.p1":
+    "Solo se grafican los días que registraste, y los promedios son sobre esos días. Si no, dos semanas sin abrir la app jalarían el promedio hacia abajo y se leería como una dieta salvaje.",
+  "about.trends.p2":
+    "Dos cuadrículas, porque responden preguntas que pueden no coincidir: si marcaste las comidas del plan, y si el día quedó en su objetivo de calorías. Marcar todo y luego cenar otra vez es 100% en una y muy pasado en la otra.",
+  "about.trends.p3":
+    "La cuadrícula de calorías es el único lugar donde el color va en dos direcciones — quedarse corto y pasarse son cosas distintas, y juntarlas en \"qué tan lejos\" perdería lo único accionable. Dar en el objetivo es la celda pálida, porque es el día que no tiene nada que ver.",
+  "about.trends.link": "Ver tus tendencias",
+
+  "about.measurements.title": "Medidas",
+  "about.measurements.body":
+    "Contornos con el tiempo — brazos, cintura y piernas para empezar, y lo demás que quieras agregar.",
+  "about.measurements.p1":
+    "Cada zona tiene su propia gráfica en vez de compartir una. Un cuello y un pecho en el mismo eje dejarían al cuello como una línea plana, y el cambio que buscas es de un centímetro.",
+  "about.measurements.p2":
+    "Izquierdo y derecho se registran por separado solo si lo pides, y entonces son dos líneas en una gráfica — compararlos es justo la razón de haber anotado el lado.",
+  "about.measurements.p3":
+    "Seis de las zonas son las que predice la calculadora de potencial natural, así que lo que mides y lo que estima se comparan directamente.",
+  "about.measurements.link": "Tomar una medida",
+
+  "about.sharing.title":"Respaldos y compartir",
   "about.sharing.body":
-    "Exporta todo en un archivo, o pásale a alguien una sola rutina, plan o receta.",
+    "Exporta todo en un archivo, o pásale a alguien una sola rutina, plan, receta, alimento o ejercicio — incluyendo los que vienen con la app.",
   "about.sharing.p1":
     "Restaurar un respaldo completo reemplaza lo que hay en el navegador. Importar algo compartido se suma y no toca nada de lo tuyo.",
   "about.sharing.p2":
@@ -592,6 +727,47 @@ export const esMX: Record<keyof typeof en, string> = {
     "El idioma y el modo oscuro están al fondo de la barra lateral. Los dos se quedan.",
 
   "intake.tab": "Hoy",
+
+  "trends.tab": "Tendencias",
+  "trends.daysLogged": "Días registrados",
+  "trends.daysComplete": "Días completos",
+  "trends.averageKcal": "Promedio kcal",
+  "trends.averageProtein": "Promedio proteína",
+  "trends.averageNote":
+    "Los promedios son sobre los {days} días que registraste, no sobre toda la ventana — {protein}g de proteína, {carbs}g de carbohidratos, {fat}g de grasa, {kcal} kcal.",
+  "trends.overTime": "Lo que comiste",
+  "trends.overTimeBody":
+    "Solo los días que registraste. Un hueco es un día que no anotaste, no un día que no comiste.",
+  "trends.macros": "Macros",
+  "trends.macrosAria": "Proteína, carbohidratos y grasa por día, en gramos",
+  "trends.calories": "Calorías",
+  "trends.caloriesAria": "Calorías por día",
+  "trends.axisGrams": "Gramos",
+  "trends.axisKcal": "kcal",
+  "trends.grams": "Gramos",
+  "trends.kcal": "Calorías",
+  "trends.targetLine": "Objetivo {kcal}",
+  "trends.notEnough.title": "Aún no hay suficiente para graficar",
+  "trends.notEnough.body": "Con dos días registrados aparece la tendencia.",
+
+  "trends.consistency": "Qué tan seguido",
+  "trends.consistencyBody":
+    "Dos preguntas que pueden no coincidir: si seguiste el plan, y si diste con los números. Marcar todas las comidas y luego cenar otra vez es las dos cosas a la vez.",
+  "trends.adherence": "Comidas marcadas del plan",
+  "trends.adherenceCaption": "Qué parte de las comidas del día marcaste",
+  "trends.mealsOf": "{ticked} de {total} comidas",
+  "trends.nothingTicked": "Nada marcado",
+  "trends.caloriesCaption": "Qué tan lejos quedó el día de su objetivo",
+  "trends.under": "Por debajo",
+  "trends.over": "Por encima",
+  "trends.onTarget": "En el objetivo",
+  "trends.kcalOff": "{delta} kcal",
+  "trends.noKcal": "Nada registrado",
+  "trends.needTarget":
+    "Este plan no tiene objetivo de calorías, así que no hay contra qué medir un día. Ponle uno al plan y esto se llena.",
+  "trends.empty.title": "Todavía no hay nada registrado",
+  "trends.empty.body":
+    "Marca una comida en la pestaña de Hoy y empieza a aparecer aquí.",
   "intake.today": "Hoy",
   "intake.yesterday": "Ayer",
   "intake.previousDay": "Día anterior",
@@ -634,8 +810,51 @@ export const esMX: Record<keyof typeof en, string> = {
     "Nada de lo tuyo se toca. Lo del archivo llega aparte, con ids nuevos para que no pueda sobrescribir nada \u2014 importar dos veces te deja dos copias.",
   "data.mergeAction": "Agregarlo",
   "data.merged": "Agregado",
+  "measure.tab": "Medidas",
+  "measure.title": "Toma tus medidas",
+  "measure.body":
+    "La báscula dice hacia dónde vas. La cinta dice a dónde llegó — dos personas con el mismo peso pueden tener brazos completamente distintos.",
+  "measure.unit": "Medido en",
+  "measure.addSite": "Medir algo más",
+  "measure.bothSides": "Ambos lados",
+  "measure.removeSite": "Dejar de medir {site}",
+  "measure.noneTracked":
+    "No hay nada en el formulario. Agrega lo que midas — brazos, cintura y piernas son las tres de siempre.",
+  "measure.save": "Guardar",
+  "measure.saved.one": "{count} medida guardada",
+  "measure.saved.other": "{count} medidas guardadas",
+  "measure.delete": "Eliminar",
+  "measure.deleted": "Medida eliminada",
+  "measure.change": "{delta} {unit} desde que empezaste",
+  "measure.trend": "Con el tiempo",
+  "measure.history": "Todas las lecturas",
+  "measure.siteSide": "{site} ({side})",
+  "measure.empty.title": "Todavía no hay medidas",
+  "measure.empty.body":
+    "Llena arriba lo que hayas medido. Una lectura es un punto de partida; la tendencia aparece desde la segunda.",
+  "measure.chart.axis": "Contorno ({unit})",
+  "measure.chart.aria": "{site} con el tiempo, en {unit}",
+  "measure.chart.latest": "Ahora {value} {unit}",
+  "measure.chart.latestSide": "{side}, ahora {value} {unit}",
+  "measure.chart.notEnough.title": "Aún no hay suficiente para graficar",
+  "measure.chart.notEnough.body":
+    "Una zona necesita dos lecturas para que haya una línea entre ellas.",
+
+  "measure.side.left": "Izquierdo",
+  "measure.side.right": "Derecho",
+  "measure.site.neck": "Cuello",
+  "measure.site.shoulders": "Hombros",
+  "measure.site.chest": "Pecho",
+  "measure.site.upperArm": "Brazo",
+  "measure.site.forearm": "Antebrazo",
+  "measure.site.waist": "Cintura",
+  "measure.site.hips": "Cadera",
+  "measure.site.thigh": "Muslo",
+  "measure.site.calf": "Pantorrilla",
+
   "data.kind.sets": "Sets registrados",
   "data.kind.bodyEntries": "Pesajes",
+  "data.kind.measurements": "Medidas",
   "data.kind.exercises": "Tus ejercicios",
   "data.kind.routines": "Tus rutinas",
   "data.kind.foods": "Tus alimentos",
@@ -889,10 +1108,17 @@ export const esMX: Record<keyof typeof en, string> = {
   "routines.summary.finishers.one": "Finisher",
   "routines.summary.finishers.other": "Finishers",
   "routines.setOf": "set {number} de {total}",
+  "routines.warmupSetOf": "calentamiento {number} de {total}",
+  "routines.warmupSet": "Calentamiento",
+  "routines.warmupSets.one": "Set de calentamiento",
+  "routines.warmupSets.other": "Sets de calentamiento",
 
   // ── The player ───────────────────────────────────────────────────────────
   "player.stepOf": "Paso {current} de {total} · faltan {left}",
   "player.exerciseOf": "Ejercicio {current} de {total}",
+  "player.swap": "Cambiar",
+  "player.swapTitle": "Estoy haciendo",
+  "player.swappedFrom": "en vez de {name}",
   "player.set": "Set",
   "player.setValue": "{number} de {total}",
   "player.target": "Meta",

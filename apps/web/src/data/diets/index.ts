@@ -12,6 +12,7 @@ export function getDietBySlug(slug: string): DietPlan | undefined {
 export { foods, findFood, getFood } from "./foods";
 export {
   dietPlanSchema,
+  foodCategorySchema,
   foodSchema,
   foodStateSchema,
   macroTargetsSchema,
@@ -22,6 +23,7 @@ export type { MacroTargets } from "./schema";
 export type {
   DietPlan,
   Food,
+  FoodCategory,
   FoodState,
   Macros,
   Meal,

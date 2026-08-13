@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { muscleSchema, type MuscleId } from "@/data/exercises";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 import { matchesAllWords } from "@/lib/search";
@@ -10,6 +11,19 @@ export interface ExerciseOption {
   /** Name plus every alias, so the filter sees the spellings you'd type. */
   search: string;
   isCustom: boolean;
+  /**
+   * First muscle the lift works directly, which is what the picker groups on.
+   *
+   * Undefined only for cardio — it's the one movement in the library with no
+   * muscles at all, and `userExerciseSchema` requires at least one.
+   */
+  primaryMuscle: MuscleId | undefined;
+  /**
+   * The library already knows this is conditioning, so the builder shouldn't
+   * ask — picking one sets the entry's `kind` and switches its phase to a
+   * duration. Reps, ramps and forced reps on a treadmill are all nonsense.
+   */
+  isCardio: boolean;
 }
 
 /**
@@ -39,10 +53,66 @@ export function useExerciseOptions(): ExerciseOption[] {
             " ",
           ),
           isCustom: entry.isCustom,
+          primaryMuscle: entry.primaryMuscles[0],
+          isCardio: entry.pattern === "cardio",
         }))
         .sort((a, b) => a.name.localeCompare(b.name, t.locale)),
     [selectable, names, t.locale],
   );
+}
+
+/** The key the muscle-less tail groups under. Not a `MuscleId`, deliberately. */
+const CARDIO_GROUP = "cardio";
+
+export interface ExerciseOptionGroup {
+  /** A `MuscleId`, or `"cardio"`. */
+  key: string;
+  label: string;
+  items: ExerciseOption[];
+}
+
+/**
+ * The same options, split into labelled sections by the muscle they work.
+ *
+ * Takes the flat list rather than calling `useExerciseOptions` itself, because
+ * every call site already holds it — resolving the Combobox's `value` needs a
+ * flat `find`, and one site filters before grouping.
+ *
+ * **Group order is the muscle enum's own order, not alphabetical.**
+ * `muscleSchema` already lists muscles anatomically, so the three delts sit
+ * together and the leg muscles sit together; sorting the headings by name would
+ * scatter them, and differently in each language. The names *inside* a group
+ * are still locale-sorted, which `useExerciseOptions` has already done.
+ */
+export function useGroupedExerciseOptions(
+  options: ExerciseOption[],
+): ExerciseOptionGroup[] {
+  const t = useT();
+
+  return useMemo(() => {
+    const byMuscle = new Map<string, ExerciseOption[]>();
+    for (const option of options) {
+      const key = option.primaryMuscle ?? CARDIO_GROUP;
+      const bucket = byMuscle.get(key);
+      if (bucket) bucket.push(option);
+      else byMuscle.set(key, [option]);
+    }
+
+    return [...muscleSchema.options, CARDIO_GROUP].flatMap((key) => {
+      const items = byMuscle.get(key);
+      if (items === undefined) return [];
+      return [
+        {
+          key,
+          label:
+            key === CARDIO_GROUP
+              ? t("common.cardio")
+              : t(`muscle.${key}` as never),
+          items,
+        },
+      ];
+    });
+  }, [options, t]);
 }
 
 /**

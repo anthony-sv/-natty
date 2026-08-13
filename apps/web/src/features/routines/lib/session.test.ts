@@ -217,3 +217,88 @@ describe("segmented sets", () => {
     expect(describeStep(work[2] as WorkStep, F)).toBe("12 reps, pulse each");
   });
 });
+
+describe("warmup sets", () => {
+  /** Two ramp-ups, then three working sets — the ordinary shape. */
+  function rampedDay(): TrainingDay {
+    return {
+      dayNumber: 1,
+      label: "Chest",
+      isRest: false,
+      warmupRefs: [],
+      exercises: [
+        {
+          exerciseId: "flat-barbell-bench-press",
+          orAlternatives: [],
+          kind: "resistance",
+          isFinisher: false,
+          prescriptions: [
+            { sets: 2, reps: 10, restSeconds: 60, isWarmup: true },
+            { sets: 3, reps: [8, 12], restSeconds: 120 },
+          ],
+        },
+      ],
+    };
+  }
+
+  /**
+   * The load-bearing rule. Numbering them together would make every routine
+   * that gained a warmup look like it grew two sets, and "set 3 of 5" would
+   * point at what the athlete calls their first real set.
+   */
+  it("numbers warmups and working sets separately", () => {
+    const work = buildSteps(rampedDay(), F).filter(
+      (s): s is WorkStep => s.type === "work",
+    );
+
+    expect(work.map((s) => [s.isWarmup, s.setNumber, s.setsInExercise])).toEqual([
+      [true, 1, 2],
+      [true, 2, 2],
+      [false, 1, 3],
+      [false, 2, 3],
+      [false, 3, 3],
+    ]);
+  });
+
+  it("gives every step its own id despite the two counters restarting", () => {
+    const ids = buildSteps(rampedDay(), F).map((s) => s.id);
+
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  /**
+   * Why `LoggedSet` needed no change at all: a warmup never becomes a row, so
+   * the PR frontier, the volume buckets and the heatmap never had to learn to
+   * exclude one.
+   */
+  it("offers no log control on a warmup", () => {
+    const work = buildSteps(rampedDay(), F).filter(
+      (s): s is WorkStep => s.type === "work",
+    );
+
+    expect(work.filter(isLoggableStep)).toHaveLength(3);
+    expect(work.filter(isLoggableStep).every((s) => !s.isWarmup)).toBe(true);
+  });
+
+  it("still rests between warmups, and still announces what's next", () => {
+    const steps = buildSteps(rampedDay(), F);
+    const firstRest = steps.find((s) => s.type === "rest");
+
+    expect(firstRest).toBeDefined();
+    expect(firstRest?.type === "rest" && firstRest.nextLabel).toContain(
+      "warmup 2 of 2",
+    );
+  });
+
+  it("treats an exercise with no warmup exactly as before", () => {
+    const day = rampedDay();
+    day.exercises[0].prescriptions = [{ sets: 3, reps: [8, 12], restSeconds: 120 }];
+    const work = buildSteps(day, F).filter(
+      (s): s is WorkStep => s.type === "work",
+    );
+
+    expect(work.map((s) => s.setNumber)).toEqual([1, 2, 3]);
+    expect(work.every((s) => !s.isWarmup)).toBe(true);
+    expect(work.filter(isLoggableStep)).toHaveLength(3);
+  });
+});

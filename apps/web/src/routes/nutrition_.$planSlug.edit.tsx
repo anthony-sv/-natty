@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Trash2Icon } from "lucide-react";
+import { RotateCcwIcon, Trash2Icon } from "lucide-react";
 import { Page } from "@/components/page";
 import {
   AlertDialog,
@@ -38,16 +38,19 @@ export const Route = createFileRoute("/nutrition_/$planSlug/edit")({
 
 function EditDietPlan() {
   const { planSlug } = Route.useParams();
-  const { plan, isLoading, isCustom } = useDietPlan(planSlug);
+  const { plan, isLoading, isCustom, isOverridden } = useDietPlan(planSlug);
   const t = useT();
   const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (isLoading) return null;
 
-  // Built-ins are transcribed source material; editing one in place would
-  // rewrite the reference copy. "Start from a copy" is the supported route.
-  if (plan === undefined || !isCustom) {
+  // Built-ins are editable: saving writes your version at the same slug, which
+  // replaces the shipped plan in the picker. It stays compiled in, so the
+  // button below hands it back.
+  const isBuiltIn = !isCustom || isOverridden;
+
+  if (plan === undefined) {
     return (
       <Page>
         <Empty>
@@ -80,20 +83,44 @@ function EditDietPlan() {
         <h1 className="text-2xl font-semibold">
           {t("dietBuilder.editTitle", { name: plan.name })}
         </h1>
-        <Button variant="outline" onClick={() => setConfirmDelete(true)}>
-          <Trash2Icon data-icon="inline-start" />
-          {t("dietBuilder.delete")}
-        </Button>
+        {/* Reset and delete are the same gesture on different things: one
+            hands back the shipped plan, the other throws away one that only
+            ever existed here. */}
+        {isBuiltIn ? (
+          isOverridden ? (
+            <Button variant="outline" onClick={() => setConfirmDelete(true)}>
+              <RotateCcwIcon data-icon="inline-start" />
+              {t("dietBuilder.reset")}
+            </Button>
+          ) : null
+        ) : (
+          <Button variant="outline" onClick={() => setConfirmDelete(true)}>
+            <Trash2Icon data-icon="inline-start" />
+            {t("dietBuilder.delete")}
+          </Button>
+        )}
       </div>
+
+      {isBuiltIn && !isOverridden ? (
+        <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
+          {t("dietBuilder.editingBuiltIn")}
+        </p>
+      ) : null}
 
       <DietPlanBuilder initial={toDraftPlan(plan)} existingSlug={planSlug} />
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("dietBuilder.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {isOverridden
+                ? t("dietBuilder.resetTitle")
+                : t("dietBuilder.deleteTitle")}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {t("dietBuilder.deleteBody")}
+              {isOverridden
+                ? t("dietBuilder.resetBody")
+                : t("dietBuilder.deleteBody")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -102,7 +129,9 @@ function EditDietPlan() {
               onClick={() => {
                 const { plan: removed } = deleteUserDiet(planSlug);
                 toast.add({
-                  title: t("dietBuilder.deleted", { name: plan.name }),
+                  title: isOverridden
+                    ? t("dietBuilder.reset.done", { name: plan.name })
+                    : t("dietBuilder.deleted", { name: plan.name }),
                   type: "info",
                   actionProps: {
                     children: t("history.undo"),
@@ -114,7 +143,7 @@ function EditDietPlan() {
                 void navigate({ to: "/nutrition" });
               }}
             >
-              {t("dietBuilder.delete")}
+              {isOverridden ? t("dietBuilder.reset") : t("dietBuilder.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

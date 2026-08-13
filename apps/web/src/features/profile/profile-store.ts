@@ -29,6 +29,36 @@ export const profileSchema = z.object({
    */
   wristCm: z.number().positive().optional(),
   ankleCm: z.number().positive().optional(),
+  /**
+   * Which girths the measurement form asks for.
+   *
+   * A preference rather than a fixed list, because nine sites × two sides is
+   * thirteen inputs on a form where most people fill three. Absent means the
+   * default trio (`DEFAULT_TRACKED_SITES`) — not "none", so a first-time form
+   * has something on it.
+   *
+   * Untyped as `MeasurementSite[]` on purpose: `profileSchema` is parsed by
+   * the backup reader, and a site retired from the enum later shouldn't make
+   * an old backup unreadable. The form filters to what it knows.
+   */
+  trackedSites: z.array(z.string()).optional(),
+  /**
+   * Which of those you measure left and right separately.
+   *
+   * A subset rather than one global switch. The switch meant ticking it gave
+   * you eight inputs when you only wanted two — you might well measure both
+   * arms and one thigh, and being made to choose for all four paired sites at
+   * once is a decision nobody has an answer to.
+   */
+  sidedSites: z.array(z.string()).optional(),
+  /**
+   * The switch `sidedSites` replaced. Kept only so an existing preference
+   * survives one more load: `MeasurementForm` seeds `sidedSites` from it and
+   * then it stops mattering.
+   *
+   * @deprecated
+   */
+  trackSides: z.boolean().optional(),
 });
 
 export type Profile = z.infer<typeof profileSchema>;

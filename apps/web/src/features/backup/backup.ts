@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { loggedSetSchema } from "@/features/log/schema";
 import { bodyEntrySchema } from "@/features/body/schema";
+import { measurementSchema } from "@/features/measurements/schema";
 import { userExerciseSchema } from "@/features/library/schema";
 import { userRoutineSchema } from "@/features/routines/collection";
 import { recipeSchema, userFoodSchema } from "@/features/pantry/schema";
@@ -39,6 +40,7 @@ export const BACKUP_VERSION = 1;
 export const backupDataSchema = z.object({
   sets: z.array(loggedSetSchema).default([]),
   bodyEntries: z.array(bodyEntrySchema).default([]),
+  measurements: z.array(measurementSchema).default([]),
   exercises: z.array(userExerciseSchema).default([]),
   routines: z.array(userRoutineSchema).default([]),
   foods: z.array(userFoodSchema).default([]),
@@ -54,11 +56,72 @@ export const backupSchema = z.object({
   app: z.literal("natty"),
   version: z.number().int().positive(),
   exportedAt: z.number(),
-  /** "everything" or the one thing you're sharing. */
-  scope: z.enum(["full", "routine", "diet", "recipe"]),
+  /**
+   * "everything" or the one thing you're sharing.
+   *
+   * Widening this list doesn't bump `version`: a file written by an older
+   * build still parses, which is the direction that matters. A *newer* file
+   * reaching an older build was always going to be refused, and it reports the
+   * honest reason — the scope isn't one it knows — rather than a version it
+   * would then try to migrate.
+   */
+  scope: z.enum(["full", "routine", "diet", "recipe", "food", "exercise"]),
   data: backupDataSchema,
 });
 export type Backup = z.infer<typeof backupSchema>;
+
+/**
+ * TanStack DB hangs its own bookkeeping off every row it hands back —
+ * `$synced`, `$origin`, `$key`, `$collectionId` — and `[...collection.values()]`
+ * returns rows wearing all four. They rode straight into every exported file.
+ *
+ * Harmless in the sense that none of it is secret: `$key` repeats the row's own
+ * `id` and `$collectionId` is a localStorage key name. But a backup is a
+ * *document*, and a document whose shape is "our schema plus whatever the
+ * storage layer happened to attach" has no contract — the reader would be
+ * within its rights to start trusting a field we never meant to write, and a
+ * file people hand to each other shouldn't carry our internal storage keys at
+ * all.
+ *
+ * Stripping by `$` prefix rather than by naming the four: the set is the
+ * library's to change, and none of *our* schemas declare a `$`-prefixed field
+ * — `backup.test.ts` walks them and asserts exactly that, so this rule can
+ * never start eating real data.
+ *
+ * A plain strip rather than re-parsing through `backupDataSchema`: an export is
+ * the thing you reach for *because* something is wrong, so it must not be able
+ * to throw on the way out. Reading still parses, which is where validation
+ * belongs.
+ */
+export function stripInternal<T>(row: T): T {
+  if (typeof row !== "object" || row === null) return row;
+  return Object.fromEntries(
+    Object.entries(row).filter(([key]) => !key.startsWith("$")),
+  ) as T;
+}
+
+/**
+ * Every collection in the envelope, cleaned.
+ *
+ * Applied inside `buildBackup` rather than at each caller, because that is the
+ * one function every export — full backup and each single-item share — already
+ * goes through. A strip the callers have to remember is a strip one of them
+ * eventually won't.
+ */
+function cleanData(data: BackupData): BackupData {
+  return {
+    sets: data.sets.map(stripInternal),
+    bodyEntries: data.bodyEntries.map(stripInternal),
+    measurements: data.measurements.map(stripInternal),
+    exercises: data.exercises.map(stripInternal),
+    routines: data.routines.map(stripInternal),
+    foods: data.foods.map(stripInternal),
+    recipes: data.recipes.map(stripInternal),
+    diets: data.diets.map(stripInternal),
+    intake: data.intake.map(stripInternal),
+    ...(data.profile === undefined ? {} : { profile: stripInternal(data.profile) }),
+  };
+}
 
 export function buildBackup(
   data: BackupData,
@@ -66,7 +129,13 @@ export function buildBackup(
   /** Passed in rather than read here, so this stays pure and testable. */
   exportedAt: number,
 ): Backup {
-  return { app: "natty", version: BACKUP_VERSION, exportedAt, scope, data };
+  return {
+    app: "natty",
+    version: BACKUP_VERSION,
+    exportedAt,
+    scope,
+    data: cleanData(data),
+  };
 }
 
 export type ReadResult =
@@ -113,6 +182,7 @@ export function summarise(data: BackupData): { key: keyof BackupData; count: num
     [
       ["sets", data.sets.length],
       ["bodyEntries", data.bodyEntries.length],
+      ["measurements", data.measurements.length],
       ["exercises", data.exercises.length],
       ["routines", data.routines.length],
       ["foods", data.foods.length],

@@ -11,8 +11,15 @@ import { buildSteps, type SessionStep } from "./session";
  */
 export interface DaySummary {
   exercises: number;
-  /** Every set you perform, across every phase of every exercise. */
+  /**
+   * Working sets only. A warmup is excluded here and counted in `warmupSets`,
+   * because "18 sets" should mean eighteen sets that count — a day whose
+   * number jumps because you wrote your ramp-ups down is a number that stopped
+   * being comparable to last week's.
+   */
   workingSets: number;
+  /** Ramp-up sets. They cost time, so the estimate still charges for them. */
+  warmupSets: number;
   finishers: number;
   /** Rough wall-clock, in seconds. See `WORK_SET_SECONDS`. */
   estimatedSeconds: number;
@@ -37,8 +44,12 @@ export function summariseDay(day: TrainingDay, f: Formatting): DaySummary {
     exercises: day.exercises.length,
     // Sets, not steps. A set that runs as a sequence is several work steps and
     // still one set — counting steps reported a three-set exercise as fifteen.
-    workingSets: steps.filter(isSetEnd).length,
+    workingSets: steps.filter((s) => isSetEnd(s) && !isWarmupStep(s)).length,
+    warmupSets: steps.filter((s) => isSetEnd(s) && isWarmupStep(s)).length,
     finishers: day.exercises.filter((exercise) => exercise.isFinisher).length,
+    // Warmups are charged here even though they're not counted above: they
+    // take just as long as a working set, and an estimate that skipped them
+    // would send you home early.
     estimatedSeconds: steps.reduce(secondsForStep, 0),
   };
 }
@@ -46,6 +57,10 @@ export function summariseDay(day: TrainingDay, f: Formatting): DaySummary {
 /** The step that completes a set: an unsegmented one, or a sequence's last leg. */
 function isSetEnd(step: SessionStep): boolean {
   return step.type === "work" && (step.segment?.isLast ?? true);
+}
+
+function isWarmupStep(step: SessionStep): boolean {
+  return step.type === "work" && step.isWarmup;
 }
 
 function secondsForStep(total: number, step: SessionStep): number {
@@ -71,9 +86,23 @@ export function formatEstimate(seconds: number): string {
  *
  * Separate from the totals because the row-level dots need it per exercise and
  * recomputing `buildSteps` per row would rebuild the whole day each time.
+ *
+ * Warmups are counted here, unlike in `workingSets`: the dots are a picture of
+ * what you'll actually do, and a row whose marks didn't include the ramp-ups
+ * would under-draw the exercise you spend longest on.
  */
 export function setsPerExercise(day: TrainingDay): number[] {
   return day.exercises.map((exercise) =>
     exercise.prescriptions.reduce((sets, p) => sets + p.sets, 0),
+  );
+}
+
+/** Of those sets, how many are warmups — so the dots can draw them differently. */
+export function warmupSetsPerExercise(day: TrainingDay): number[] {
+  return day.exercises.map((exercise) =>
+    exercise.prescriptions.reduce(
+      (sets, p) => sets + (p.isWarmup === true ? p.sets : 0),
+      0,
+    ),
   );
 }
