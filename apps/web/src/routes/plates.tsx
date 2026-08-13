@@ -23,9 +23,9 @@ import {
 import {
   Tabs,
   TabsContent,
-  TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { ScrollingTabsList } from "@/components/scrolling-tabs-list";
 import { cn } from "@/lib/utils";
 import { UNITS, type WeightUnit } from "@/lib/units";
 import { parseMeasurement } from "@/features/calculator/parse";
@@ -211,10 +211,10 @@ function PlatesPage() {
       </Card>
 
       <Tabs defaultValue="load">
-        <TabsList>
+        <ScrollingTabsList>
           <TabsTrigger value="load">{t("plates.loadWeight")}</TabsTrigger>
           <TabsTrigger value="add">{t("plates.addUp")}</TabsTrigger>
-        </TabsList>
+        </ScrollingTabsList>
 
         <TabsContent value="load">
           <Card>
