@@ -106,9 +106,9 @@ export const en = {
   "index.dest.routines":
     "Programs week by week, or write your own. Open a day to start the player.",
   "index.dest.progress":
-    "Records, volume per muscle, a year of training days, and your own exercises.",
+    "Records, volume per muscle, a year of training days, your measurements, and your own exercises.",
   "index.dest.nutrition":
-    "Diet plans meal by meal, your own foods and recipes, and a macro calculator.",
+    "What you ate and how it trended, diet plans meal by meal, your own foods and recipes, and a macro calculator.",
   "index.dest.calculators": "One-rep max, RPE and RIR, and natural potential.",
   "index.dest.plates": "What to hang on each end, from the plates your gym has.",
 
@@ -583,11 +583,15 @@ export const en = {
   "about.builder.body":
     "Build a program from scratch, or start from a copy of a built-in one and change what you don't like.",
   "about.builder.p1":
-    "A routine you write is one week, which repeats. You can edit the ones that came with the app too — your version replaces it in the list, and \"Reset to the original\" hands the shipped one back. Editing a program with several distinct weeks keeps week 1 and drops the rest, and says so first.",
+    "A routine is a cycle of days that repeats — seven is a week, eight is push/pull/legs/rest twice over. Add more weeks when the numbers change between them, starting from a copy of whichever week you pick.",
   "about.builder.p2":
-    "Sets can carry intensity techniques — drop sets, partials, negatives, forced reps — and can be built from parts, like a hold into pulses into reps.",
+    "You can edit the programs that came with the app. Your version replaces it in the list, the original stays compiled in, and \"Reset to the original\" hands it back.",
   "about.builder.p3":
-    "Type a lift the picker doesn't know and it offers to create it there and then.",
+    "Sets can carry intensity techniques — drop sets, rest-pause, partials, negatives, forced reps — and can be built from parts, like a hold into pulses into reps. A warmup phase is shown and timed but never logged.",
+  "about.builder.p4":
+    "Cardio is a duration rather than reps, in minutes or seconds, with how hard to go. A second block makes it intervals.",
+  "about.builder.p5":
+    "Type a lift the picker doesn't know and it offers to create it there and then. Name substitutes on an exercise and the player lets you swap mid-session, logging against whichever you actually did.",
   "about.builder.link": "Write a routine",
 
   "about.progress.title": "Progress",
@@ -601,6 +605,8 @@ export const en = {
     "History — a year of training days as a grid, and your current streak. It counts back from today, so a broken streak reads zero.",
   "about.progress.p4":
     "Body — weigh-ins, body fat and FFMI against the population bands. Set your height on that tab or the numbers can't be computed.",
+  "about.progress.p5":
+    "Measurements — girths over time, kept apart from Body because a tape and a scale answer different questions.",
   "about.progress.link": "Open progress",
 
   "about.nutrition.title": "Nutrition",
@@ -614,6 +620,8 @@ export const en = {
     "Plan — the diet as a reference, per weekday, with swap options and hydration worked out from your body weight.",
   "about.nutrition.p4":
     "Macros — drag the split and watch the grams and calories move, then send the result back as your plan's targets.",
+  "about.nutrition.p5":
+    "Writing a plan checks it against itself: if your macro targets don't come to the daily calorie figure you typed, it says so and by how much.",
   "about.nutrition.link": "Open nutrition",
 
   "about.pantry.title": "Your foods and recipes",

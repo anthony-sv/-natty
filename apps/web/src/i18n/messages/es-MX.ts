@@ -107,9 +107,9 @@ export const esMX: Record<keyof typeof en, string> = {
   "index.dest.routines":
     "Programas semana por semana, o escribe el tuyo. Abre un día para empezar.",
   "index.dest.progress":
-    "Récords, volumen por músculo, un año de días entrenados y tus propios ejercicios.",
+    "Récords, volumen por músculo, un año de días entrenados, tus medidas y tus propios ejercicios.",
   "index.dest.nutrition":
-    "Planes de dieta comida por comida, tus propios alimentos y recetas, y una calculadora de macros.",
+    "Lo que comiste y cómo va, planes de dieta comida por comida, tus propios alimentos y recetas, y una calculadora de macros.",
   "index.dest.calculators": "Máximo de una rep, RPE y RIR, y potencial natural.",
   "index.dest.plates": "Qué colgar en cada extremo, con los discos que tiene tu gym.",
 
@@ -578,11 +578,15 @@ export const esMX: Record<keyof typeof en, string> = {
   "about.builder.body":
     "Arma un programa desde cero, o parte de una copia de uno de los que ya vienen y cambia lo que no te guste.",
   "about.builder.p1":
-    "Una rutina tuya es una semana, que se repite. También puedes editar las que vienen con la app — tu versión la reemplaza en la lista, y \"Regresar a la original\" te devuelve la que venía. Editar un programa con varias semanas distintas se queda con la semana 1 y pierde las demás, y te lo avisa antes.",
+    "Una rutina es un ciclo de días que se repite — siete son una semana, ocho son push/pull/piernas/descanso dos veces. Agrega más semanas cuando los números cambien entre ellas, empezando desde una copia de la semana que elijas.",
   "about.builder.p2":
-    "Las series pueden traer técnicas de intensidad — drop sets, parciales, negativas, repeticiones forzadas — y pueden armarse por partes, como un hold que entra a pulsos y luego a reps.",
+    "Puedes editar los programas que vienen con la app. Tu versión lo reemplaza en la lista, el original sigue compilado, y \"Regresar a la original\" te lo devuelve.",
   "about.builder.p3":
-    "Escribe un ejercicio que el buscador no conozca y te ofrece crearlo ahí mismo.",
+    "Las series pueden traer técnicas de intensidad — drop sets, rest-pause, parciales, negativas, repeticiones forzadas — y pueden armarse por partes, como un hold que entra a pulsos y luego a reps. Un set de calentamiento se muestra y se cronometra, pero nunca se registra.",
+  "about.builder.p4":
+    "El cardio es tiempo en vez de reps, en minutos o segundos, con qué tan fuerte ir. Un segundo bloque lo vuelve intervalos.",
+  "about.builder.p5":
+    "Escribe un ejercicio que el buscador no conozca y te ofrece crearlo ahí mismo. Si le pones sustitutos a un ejercicio, el reproductor te deja cambiar a media sesión y registra el que de verdad hiciste.",
   "about.builder.link": "Escribir una rutina",
 
   "about.progress.title": "Progreso",
@@ -596,6 +600,8 @@ export const esMX: Record<keyof typeof en, string> = {
     "Historial — un año de días de entrenamiento en cuadrícula, y tu racha actual. Cuenta hacia atrás desde hoy, así que una racha rota marca cero.",
   "about.progress.p4":
     "Cuerpo — pesajes, grasa corporal y FFMI contra las bandas de referencia. Pon tu estatura en esa pestaña o los números no se pueden calcular.",
+  "about.progress.p5":
+    "Medidas — contornos con el tiempo, aparte de Cuerpo porque una cinta y una báscula responden preguntas distintas.",
   "about.progress.link": "Abrir progreso",
 
   "about.nutrition.title": "Nutrición",
@@ -609,6 +615,8 @@ export const esMX: Record<keyof typeof en, string> = {
     "Plan — la dieta como referencia, por día de la semana, con opciones de intercambio e hidratación calculada desde tu peso.",
   "about.nutrition.p4":
     "Macros — mueve el reparto y mira cómo cambian los gramos y las calorías, luego manda el resultado como los objetivos de tu plan.",
+  "about.nutrition.p5":
+    "Al escribir un plan se revisa contra sí mismo: si tus objetivos de macros no dan la cifra diaria de calorías que pusiste, te lo dice y por cuánto.",
   "about.nutrition.link": "Abrir nutrición",
 
   "about.pantry.title": "Tus alimentos y recetas",
