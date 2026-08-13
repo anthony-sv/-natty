@@ -20,7 +20,8 @@ import {
   ItemGroup,
   ItemTitle,
 } from "@/components/ui/item";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollingTabsList } from "@/components/scrolling-tabs-list";
 import { backupFilename } from "@/features/backup/backup";
 import { downloadBackup, exportRoutine } from "@/features/backup/use-backup";
 import { toast } from "@/components/ui/toast";
@@ -180,13 +181,13 @@ function RoutineBody({
 
       {routine.weeks.length > 1 ? (
         <Tabs defaultValue={String(routine.weeks[0].weekNumber)}>
-          <TabsList>
+          <ScrollingTabsList>
             {routine.weeks.map((week) => (
               <TabsTrigger key={week.weekNumber} value={String(week.weekNumber)}>
                 {t("routines.week", { number: week.weekNumber })}
               </TabsTrigger>
             ))}
-          </TabsList>
+          </ScrollingTabsList>
           {routine.weeks.map((week) => (
             <TabsContent key={week.weekNumber} value={String(week.weekNumber)}>
               <WeekDayList routineSlug={routine.slug} week={week} />

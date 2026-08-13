@@ -25,7 +25,13 @@ export function ScrollingTabsList({
 }: React.ComponentProps<typeof TabsList>) {
   return (
     <div className="max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <TabsList className={cn("max-w-none", className)} {...props} />
+      {/* `w-max` sizes to the tabs, `min-w-full` stops it stopping short. The
+          two together are what make one component cover both cases: where the
+          tabs fit, the strip spans the content width and the triggers' `flex-1`
+          shares it out, so five tabs read as a deliberate bar rather than a pill
+          floating at the left of a wide page; where they don't, the strip keeps
+          its natural width and the container scrolls. */}
+      <TabsList className={cn("w-max min-w-full", className)} {...props} />
     </div>
   );
 }

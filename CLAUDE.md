@@ -1497,8 +1497,24 @@ you cannot see in a screenshot without looking for it — check
 
 **A `TabsList` doesn't scroll.** shadcn's is `inline-flex w-fit`: seven tabs fit
 a laptop and made every `/progress` screen 95px wider than the phone, with the
-last two unreachable. `components/scrolling-tabs-list.tsx` wraps it — outside
-`ui/`, like `data-table.tsx`, because that directory is vendored.
+last two unreachable — and an eight-week program's week strip did the same to
+its own page. `components/scrolling-tabs-list.tsx` wraps it — outside `ui/`,
+like `data-table.tsx`, because that directory is vendored. It's `w-max
+min-w-full`: the strip spans the content width where the tabs fit, so five tabs
+read as a bar rather than a pill floating at the left of the page, and keeps its
+natural width and scrolls where they don't. **Use it for every tab strip**; a
+plain `TabsList` is one label translation away from overflowing.
+
+**Audit every route, including the parameterised ones.** The week strip shipped
+broken because the audit list had `/routines` and a day page but no *program*
+page, and an eight-week program is the widest thing in the app.
+
+**Wrap fixed-width cards in a grid, not `flex-wrap`.** Eleven 128px plate cards
+fit two to a phone and left the rest of the row empty; on a desktop they left a
+ragged tail. `grid-cols-[repeat(auto-fill,minmax(7rem,1fr))]` shares the row out
+evenly at every width. It's load-bearing rather than tidy for the plate picker,
+where a disc's drawn size scales with its weight — under `flex-wrap` every
+button was a different width and no two rows lined up.
 
 **A wrapped flex row needs `justify-center` if one line won't fill.** The macro
 donut sat hard against the left edge of a card it doesn't fill, once the legend

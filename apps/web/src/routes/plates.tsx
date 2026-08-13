@@ -160,14 +160,18 @@ function PlatesPage() {
           <CardTitle>{t("plates.rack")}</CardTitle>
           <CardDescription>{t("plates.rackBody")}</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-4">
+        {/* A grid, not `flex-wrap` with fixed-width cards. Wrapping 128px cards
+            fits two to a phone and leaves the rest of the row empty, and on a
+            desktop it leaves a ragged tail; auto-fill tracks share the row out
+            evenly at every width and keep the columns lined up. */}
+        <CardContent className="grid grid-cols-[repeat(auto-fill,minmax(7rem,1fr))] gap-3">
           {plates.map((plate) => {
             const pairs = inventory[String(plate.weight)] ?? 0;
             return (
               <div
                 key={plate.weight}
                 className={cn(
-                  "flex w-32 flex-col items-center gap-1.5 rounded-lg border p-2.5 transition-opacity",
+                  "flex flex-col items-center gap-1.5 rounded-lg border p-2.5 transition-opacity",
                   // A denomination you don't have is still listed — you need
                   // somewhere to type when you get one — but it shouldn't read
                   // as part of the rack.
@@ -302,11 +306,16 @@ function PlatesPage() {
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-2">
+              {/* Same grid, and here it's load-bearing rather than tidy: a
+                  disc's drawn size scales with its weight, so `flex-wrap` gave
+                  every button a different width and no two rows lined up. A
+                  uniform track is what makes eleven denominations read as one
+                  set of controls. */}
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(6.5rem,1fr))] gap-2">
                 {plates.map((plate) => (
                   <div
                     key={plate.weight}
-                    className="flex items-center gap-1.5 rounded-lg border p-1.5 pr-1"
+                    className="flex items-center justify-center gap-1.5 rounded-lg border p-1.5 pr-1"
                   >
                     <span className="flex h-11 items-center">
                       <PlateDisc
