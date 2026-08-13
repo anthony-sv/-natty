@@ -55,16 +55,21 @@ export interface SyncedCollectionOptions<TRow extends object, TCollection> {
 const resetters = new Set<() => void>();
 
 /**
- * Stop a collection syncing and drop the rows it holds.
+ * **Dropping the reference is the whole teardown — deliberately.**
  *
- * Not awaited anywhere: the reference is already gone by the time this runs,
- * and it's the *reference* that decides what the next account is handed. This
- * only stops the old one polling and frees its rows.
+ * The obvious extra step is calling `cleanup()` on the collection being
+ * discarded, and it's wrong: `cleanup()` puts every live query still reading
+ * that collection into an *error* state ("was manually cleaned up while live
+ * query … depends on it"), and at the moment the session changes those
+ * queries are still mounted — React hasn't re-rendered them onto the new
+ * backing yet. Signing out filled the console with exactly that.
+ *
+ * Nothing is left behind by not calling it. Once React re-renders, the live
+ * queries detach, and TanStack DB's own GC timer collects the orphan — which
+ * is what `gcTime` is for, and what "live queries prevent automatic GC" in
+ * that error message is telling you. `queryClient.clear()` below drops the
+ * cached rows immediately regardless.
  */
-function discard(collection: unknown): void {
-  void (collection as { cleanup?: () => Promise<void> } | null)?.cleanup?.();
-}
-
 if (typeof document !== "undefined") {
   let owner = sessionStore.state.userId;
   sessionStore.subscribe(() => {
@@ -94,10 +99,8 @@ export function forkCollection<TRow extends object, TCollection>({
   let syncedOwner: string | null = null;
 
   resetters.add(() => {
-    const stale = synced;
     synced = null;
     syncedOwner = null;
-    discard(stale);
   });
 
   /**
@@ -111,7 +114,6 @@ export function forkCollection<TRow extends object, TCollection>({
     // changes. This is the guarantee rather than the tidying: whatever else
     // happened, a collection built for someone else is never handed out.
     if (synced !== null && syncedOwner !== userId) {
-      discard(synced);
       synced = null;
     }
 

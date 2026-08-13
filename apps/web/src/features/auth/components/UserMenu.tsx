@@ -56,9 +56,14 @@ export function UserMenu({
   if (session.status !== "signed-in") {
     if (variant === "compact") {
       return (
+        // `nativeButton={false}` because this renders as an anchor: Base UI
+        // warns loudly otherwise, and it's right to — a non-`<button>` still
+        // claiming button semantics is the accessibility bug, not the noise.
+        // Every other `Button render={<Link/>}` in the app already says it.
         <Button
           variant="ghost"
           size="icon"
+          nativeButton={false}
           aria-label={t("account.signIn")}
           render={<Link to="/account" />}
         >
