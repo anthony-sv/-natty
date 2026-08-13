@@ -236,16 +236,24 @@ export function PhaseEditor({
               </div>
             ) : null}
 
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs">{t("builder.rest")}</Label>
-              <Input
-                type="number"
-                min="0"
-                className="w-20"
-                value={phase.restSeconds}
-                onChange={(e) => update(index, { restSeconds: e.target.value })}
-              />
-            </div>
+            {/* A single cardio block has nothing to rest *between* — one
+                twenty-minute walk followed by "90s rest" is a number with no
+                meaning. It comes back for intervals, where the rest between
+                rounds is the structure. */}
+            {isCardio && Number(phase.sets) <= 1 ? null : (
+              <div className="flex flex-col gap-1">
+                <Label className="text-xs">
+                  {isCardio ? t("builder.restBetween") : t("builder.rest")}
+                </Label>
+                <Input
+                  type="number"
+                  min="0"
+                  className="w-20"
+                  value={phase.restSeconds}
+                  onChange={(e) => update(index, { restSeconds: e.target.value })}
+                />
+              </div>
+            )}
 
             {/* On the phase, not the exercise: "two light sets, then three
                 working ones" is two phases, which is the same shape a ramp
@@ -351,7 +359,13 @@ export function PhaseEditor({
             onChange([
               ...phases,
               isCardio
-                ? { ...emptyPhase(), sets: "1", duration: "1", durationUnit: "min" }
+                ? {
+                    ...emptyPhase(),
+                    sets: "1",
+                    duration: "1",
+                    durationUnit: "min",
+                    restSeconds: "",
+                  }
                 : emptyPhase(),
             ])
           }

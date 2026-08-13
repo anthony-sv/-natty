@@ -117,16 +117,6 @@ function EditRoutine() {
         </p>
       ) : null}
 
-      {/* The builder writes one week that repeats; the transcribed programs run
-          eight distinct ones. Saving therefore keeps week 1 and drops the rest,
-          which is a big enough thing to happen that it has to be said before
-          you press the button rather than discovered after. */}
-      {routine.weeks.length > 1 ? (
-        <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-muted-foreground">
-          {t("builder.editingCollapsesWeeks", { weeks: routine.weeks.length })}
-        </p>
-      ) : null}
-
       <RoutineBuilder initial={toDraft(routine)} existingSlug={routineSlug} />
 
       {/* A dialog rather than an undo toast, unlike deleting a set: this throws

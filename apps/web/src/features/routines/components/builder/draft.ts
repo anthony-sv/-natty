@@ -25,6 +25,19 @@ import type {
 export interface DraftRoutine {
   name: string;
   style: string;
+  /**
+   * One entry per distinct week, each a cycle of days.
+   *
+   * Most routines have exactly one and repeat it — that's what the builder
+   * wrote for a long time, and it's why editing a shipped eight-week program
+   * used to warn you it would throw seven of them away. A second week is only
+   * worth writing when the *numbers* change between them, which is what the
+   * transcribed programs actually do.
+   */
+  weeks: DraftWeek[];
+}
+
+export interface DraftWeek {
   days: DraftDay[];
 }
 
@@ -131,8 +144,27 @@ export function emptyDay(): DraftDay {
   return { label: "", isRest: false, exercises: [] };
 }
 
+export function emptyWeek(): DraftWeek {
+  return { days: [emptyDay()] };
+}
+
 export function emptyDraft(): DraftRoutine {
-  return { name: "", style: "", days: [emptyDay()] };
+  return { name: "", style: "", weeks: [emptyWeek()] };
+}
+
+/**
+ * A copy of a week, ready to be changed.
+ *
+ * How a second week is almost always written: the split stays, the numbers
+ * move. Starting from an empty week would mean retyping the whole cycle to
+ * change one rep target, which is the reason nobody would use this.
+ *
+ * `structuredClone` rather than a spread — a week is four levels deep (days →
+ * exercises → phases → segments) and a shallow copy would leave both weeks
+ * editing the same phases.
+ */
+export function duplicateWeek(week: DraftWeek): DraftWeek {
+  return structuredClone(week);
 }
 
 /** A positive integer, or undefined if the field is blank or nonsense. */
@@ -228,7 +260,28 @@ export function toRoutine(
 ): Routine | undefined {
   if (draft.name.trim() === "") return undefined;
 
-  const days: TrainingDay[] = draft.days.map((day, index) => {
+  const weeks = draft.weeks.map((week, weekIndex) => ({
+    weekNumber: weekIndex + 1,
+    days: toDays(week),
+  }));
+
+  // A week with no days at all can't be run, and `routineSchema.weeks` is
+  // `.min(1)` — so an empty one keeps the save button disabled rather than
+  // producing a routine that renders as nothing.
+  if (weeks.length === 0 || weeks.some((week) => week.days.length === 0)) {
+    return undefined;
+  }
+
+  return {
+    slug,
+    name: draft.name.trim(),
+    style: draft.style.trim() === "" ? undefined : draft.style.trim(),
+    weeks,
+  };
+}
+
+function toDays(week: DraftWeek): TrainingDay[] {
+  return week.days.map((day, index) => {
     const exercises: ExerciseEntry[] = day.isRest
       ? []
       : day.exercises
@@ -271,17 +324,6 @@ export function toRoutine(
       warmupRefs: [],
     };
   });
-
-  if (days.length === 0) return undefined;
-
-  return {
-    slug,
-    name: draft.name.trim(),
-    style: draft.style.trim() === "" ? undefined : draft.style.trim(),
-    // One week, which repeats. Authoring eight by hand to match the built-ins
-    // would be absurd, and `routineSchema.weeks` is already `.min(1)`.
-    weeks: [{ weekNumber: 1, days }],
-  };
 }
 
 /**
@@ -301,54 +343,64 @@ function durationFields(
     : { duration: String(seconds), durationUnit: "s" };
 }
 
-/** Load an existing routine back into the editor, including a built-in to copy. */
+/**
+ * Load an existing routine back into the editor.
+ *
+ * **Every week, not just the first.** Taking `weeks[0]` is what made editing a
+ * shipped eight-week program throw seven of them away, and the edit page had
+ * to warn you about it before you pressed save.
+ */
 export function toDraft(routine: Routine): DraftRoutine {
   return {
     name: routine.name,
     style: routine.style ?? "",
-    days: routine.weeks[0].days.map((day) => ({
-      label: day.label,
-      isRest: day.isRest,
-      exercises: day.exercises.map((exercise) => ({
-        exerciseId: exercise.exerciseId,
-        orAlternatives: exercise.orAlternatives,
-        kind: exercise.kind,
-        isFinisher: exercise.isFinisher,
-        phases: exercise.prescriptions.map((p) => ({
-          sets: String(p.sets),
-          isWarmup: p.isWarmup === true,
-          repsFrom: Array.isArray(p.reps)
-            ? String(p.reps[0])
-            : p.reps !== undefined
-              ? String(p.reps)
-              : "",
-          repsTo: Array.isArray(p.reps) ? String(p.reps[1]) : "",
-          // A range is authored for some cardio blocks ("20-30 min"); the
-          // editor takes one number, so the upper bound stands for it — the
-          // same choice `countdownSeconds` makes when running one.
-          ...durationFields(
-            p.durationSeconds === undefined
-              ? undefined
-              : Array.isArray(p.durationSeconds)
-                ? p.durationSeconds[1]
-                : p.durationSeconds,
-          ),
-          intensity: p.intensity ?? "",
-          restSeconds: p.restSeconds !== undefined ? String(p.restSeconds) : "",
-          segments: p.segments?.map((segment) => ({
-            kind: segment.kind,
-            count: segment.kind === "hold" ? "12" : String(segment.count),
-            seconds: segment.kind === "hold" ? String(segment.seconds) : "10",
-            pulsePerRep: segment.kind === "reps" && segment.pulsePerRep === true,
+    weeks: routine.weeks.map((week) => ({
+      days: week.days.map((day) => ({
+        label: day.label,
+        isRest: day.isRest,
+        exercises: day.exercises.map((exercise) => ({
+          exerciseId: exercise.exerciseId,
+          orAlternatives: exercise.orAlternatives,
+          kind: exercise.kind,
+          isFinisher: exercise.isFinisher,
+          phases: exercise.prescriptions.map((p) => ({
+            sets: String(p.sets),
+            isWarmup: p.isWarmup === true,
+            repsFrom: Array.isArray(p.reps)
+              ? String(p.reps[0])
+              : p.reps !== undefined
+                ? String(p.reps)
+                : "",
+            repsTo: Array.isArray(p.reps) ? String(p.reps[1]) : "",
+            // A range is authored for some cardio blocks ("20-30 min"); the
+            // editor takes one number, so the upper bound stands for it — the
+            // same choice `countdownSeconds` makes when running one.
+            ...durationFields(
+              p.durationSeconds === undefined
+                ? undefined
+                : Array.isArray(p.durationSeconds)
+                  ? p.durationSeconds[1]
+                  : p.durationSeconds,
+            ),
+            intensity: p.intensity ?? "",
+            restSeconds:
+              p.restSeconds !== undefined ? String(p.restSeconds) : "",
+            segments: p.segments?.map((segment) => ({
+              kind: segment.kind,
+              count: segment.kind === "hold" ? "12" : String(segment.count),
+              seconds: segment.kind === "hold" ? String(segment.seconds) : "10",
+              pulsePerRep:
+                segment.kind === "reps" && segment.pulsePerRep === true,
+            })),
+            modifiers: {
+              forcedReps: p.modifiers?.forcedReps ?? false,
+              negatives: p.modifiers?.negatives ?? false,
+              partials: p.modifiers?.partials ?? false,
+              staticHolds: p.modifiers?.staticHolds ?? false,
+              dropSet: p.modifiers?.dropSet ?? false,
+              restPause: p.modifiers?.restPause ?? false,
+            },
           })),
-          modifiers: {
-            forcedReps: p.modifiers?.forcedReps ?? false,
-            negatives: p.modifiers?.negatives ?? false,
-            partials: p.modifiers?.partials ?? false,
-            staticHolds: p.modifiers?.staticHolds ?? false,
-            dropSet: p.modifiers?.dropSet ?? false,
-            restPause: p.modifiers?.restPause ?? false,
-          },
         })),
       })),
     })),

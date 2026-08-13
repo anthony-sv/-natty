@@ -248,8 +248,6 @@ export const en = {
   "builder.edited": "Edited",
   "builder.editingBuiltIn":
     "This one came with the app. Saving keeps your version and hides the original from the list — the original stays put, so you can put it back any time.",
-  "builder.editingCollapsesWeeks":
-    "This program has {weeks} different weeks, and the builder writes one week that repeats. Saving keeps week 1 and drops the rest. Reset puts them back.",
   "builder.reset": "Reset to the original",
   "builder.resetTitle": "Put the original back?",
   "builder.resetBody":
@@ -267,6 +265,16 @@ export const en = {
   "builder.durationUnit": "Minutes or seconds",
   "builder.minutes": "min",
   "builder.seconds": "sec",
+  "builder.weekNumber": "Week {number}",
+  "builder.addWeek": "Add a second week",
+  "builder.duplicateWeek": "Add a week",
+  "builder.removeWeek": "Remove week {number}",
+  "builder.daysInWeek": "Days — week {week}",
+  "builder.oneWeekHint":
+    "One cycle, repeated for as long as you run the program. Add a week only if the numbers change between them.",
+  "builder.weeksHint":
+    "{count} weeks, run in order and then repeated. A new week starts as a copy of the one you're on, so you only change what moves.",
+  "builder.restBetween": "Rest between (s)",
   "builder.intensity": "How hard",
   "builder.intensity.none": "Not stated",
   "intensity.low": "Easy",

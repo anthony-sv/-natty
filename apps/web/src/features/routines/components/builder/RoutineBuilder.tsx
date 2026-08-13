@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { PlusIcon, XIcon } from "lucide-react";
+import { CopyIcon, PlusIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +54,7 @@ import {
   updateUserRoutine,
 } from "../../collection";
 import {
+  duplicateWeek,
   emptyDay,
   emptyPhase,
   toRoutine,
@@ -61,6 +62,7 @@ import {
   type DraftExercise,
   type DraftPhase,
   type DraftRoutine,
+  type DraftWeek,
 } from "./draft";
 import { PhaseEditor } from "./PhaseEditor";
 
@@ -124,13 +126,26 @@ export function RoutineBuilder({
   const update = (patch: Partial<DraftRoutine>) =>
     setDraft((current) => ({ ...current, ...patch }));
 
-  const updateDay = (index: number, patch: Partial<DraftDay>) =>
+  /**
+   * Which week is on screen. Clamped on render rather than adjusted on delete,
+   * because removing the last week would otherwise leave this pointing past
+   * the end of the array.
+   */
+  const [weekIndex, setWeekIndex] = useState(0);
+  const activeWeek = Math.min(weekIndex, draft.weeks.length - 1);
+  const days = draft.weeks[activeWeek]?.days ?? [];
+
+  /** Replace the days of the week being edited, leaving the others alone. */
+  const updateDays = (next: DraftDay[]) =>
     setDraft((current) => ({
       ...current,
-      days: current.days.map((day, i) =>
-        i === index ? { ...day, ...patch } : day,
+      weeks: current.weeks.map((week, i) =>
+        i === activeWeek ? { ...week, days: next } : week,
       ),
     }));
+
+  const updateDay = (index: number, patch: Partial<DraftDay>) =>
+    updateDays(days.map((day, i) => (i === index ? { ...day, ...patch } : day)));
 
   return (
     <div className="flex flex-col gap-6">
@@ -155,22 +170,42 @@ export function RoutineBuilder({
         </Field>
       </FieldGroup>
 
-      <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-semibold">{t("builder.days")}</h2>
+      {/* The switcher only exists once there's a second week, so a routine
+          that repeats one cycle — which is most of them — looks exactly as it
+          did before any of this. */}
+      <WeekBar
+        weeks={draft.weeks}
+        active={activeWeek}
+        onSelect={setWeekIndex}
+        onAdd={(week) => {
+          update({ weeks: [...draft.weeks, week] });
+          setWeekIndex(draft.weeks.length);
+        }}
+        onRemove={() =>
+          update({ weeks: draft.weeks.filter((_, i) => i !== activeWeek) })
+        }
+      />
 
-        {draft.days.length === 0 ? (
+      <div className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold">
+          {draft.weeks.length > 1
+            ? t("builder.daysInWeek", { week: activeWeek + 1 })
+            : t("builder.days")}
+        </h2>
+
+        {days.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("builder.noDays")}</p>
         ) : null}
 
-        {draft.days.map((day, index) => (
+        {days.map((day, index) => (
           <DayEditor
-            key={index}
+            // Keyed by week too: without it, switching weeks reuses each
+            // DayEditor's subtree for a different week's day.
+            key={`${activeWeek}-${index}`}
             day={day}
             index={index}
             onChange={(patch) => updateDay(index, patch)}
-            onRemove={() =>
-              update({ days: draft.days.filter((_, i) => i !== index) })
-            }
+            onRemove={() => updateDays(days.filter((_, i) => i !== index))}
           />
         ))}
 
@@ -178,7 +213,7 @@ export function RoutineBuilder({
           type="button"
           variant="outline"
           className="self-start"
-          onClick={() => update({ days: [...draft.days, emptyDay()] })}
+          onClick={() => updateDays([...days, emptyDay()])}
         >
           <PlusIcon data-icon="inline-start" />
           {t("builder.addDay")}
@@ -193,6 +228,83 @@ export function RoutineBuilder({
           {t("builder.cancel")}
         </Button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Pick a week, add one, or throw one away.
+ *
+ * Hidden entirely at one week, which is the case for most routines and every
+ * one the builder could write until now — a switcher over a single tab is
+ * furniture. "Add a week" then appears as a plain button, so the feature is
+ * discoverable without being in the way.
+ */
+function WeekBar({
+  weeks,
+  active,
+  onSelect,
+  onAdd,
+  onRemove,
+}: {
+  weeks: DraftWeek[];
+  active: number;
+  onSelect: (index: number) => void;
+  onAdd: (week: DraftWeek) => void;
+  onRemove: () => void;
+}) {
+  const t = useT();
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        {weeks.length > 1
+          ? weeks.map((_, index) => (
+              <Button
+                key={index}
+                type="button"
+                size="sm"
+                variant={index === active ? "default" : "outline"}
+                onClick={() => onSelect(index)}
+              >
+                {t("builder.weekNumber", { number: index + 1 })}
+              </Button>
+            ))
+          : null}
+
+        {/* A copy of the week you're looking at, not an empty one: a second
+            week almost always keeps the split and moves the numbers, and
+            retyping the cycle to change one rep target is the reason nobody
+            would use this. */}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => onAdd(duplicateWeek(weeks[active]))}
+        >
+          <CopyIcon data-icon="inline-start" />
+          {weeks.length > 1 ? t("builder.duplicateWeek") : t("builder.addWeek")}
+        </Button>
+
+        {weeks.length > 1 ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="text-muted-foreground"
+            onClick={onRemove}
+          >
+            <XIcon data-icon="inline-start" />
+            {t("builder.removeWeek", { number: active + 1 })}
+          </Button>
+        ) : null}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        {weeks.length > 1
+          ? t("builder.weeksHint", { count: weeks.length })
+          : t("builder.oneWeekHint")}
+      </p>
     </div>
   );
 }
@@ -509,6 +621,9 @@ function timed(phases: DraftPhase[]): DraftPhase[] {
           // One block, not three. A cardio phase is "twenty minutes", and the
           // resistance default of three sets turned that into an hour of it.
           sets: "1",
+          // And a single block has nothing to rest between, so it carries no
+          // rest at all rather than the resistance default of 90 seconds.
+          restSeconds: "",
         },
   );
 }

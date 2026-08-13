@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { routineSchema } from "@/data/routines";
+import { routines, routineSchema } from "@/data/routines";
 import { formattingFor } from "@/i18n/test-formatting";
 import { buildSteps, isLoggableStep } from "../../lib/session";
 import {
+  duplicateWeek,
   emptyDraft,
   emptyPhase,
   emptySegment,
@@ -23,7 +24,7 @@ function holdAndPulseDraft(): DraftRoutine {
   return {
     name: "Glute day",
     style: "",
-    days: [
+    weeks: [{ days: [
       {
         label: "Glutes",
         isRest: false,
@@ -48,7 +49,7 @@ function holdAndPulseDraft(): DraftRoutine {
           },
         ],
       },
-    ],
+    ] }],
   };
 }
 
@@ -67,7 +68,7 @@ describe("producing a routine", () => {
   it("numbers days from one, in order", () => {
     const draft = emptyDraft();
     draft.name = "Split";
-    draft.days = [
+    draft.weeks[0].days = [
       { label: "Push", isRest: false, exercises: [] },
       { label: "Rest", isRest: true, exercises: [] },
       { label: "Pull", isRest: false, exercises: [] },
@@ -77,13 +78,13 @@ describe("producing a routine", () => {
     expect(routine.weeks[0].days.map((d) => d.isRest)).toEqual([false, true, false]);
   });
 
-  it("is one week, because it repeats", () => {
+  it("is one week unless you asked for more", () => {
     expect(toRoutine(holdAndPulseDraft(), "s")!.weeks).toHaveLength(1);
   });
 
   it("drops an exercise with no lift picked", () => {
     const draft = holdAndPulseDraft();
-    draft.days[0].exercises.push({
+    draft.weeks[0].days[0].exercises.push({
       exerciseId: "",
       orAlternatives: [],
       kind: "resistance",
@@ -95,7 +96,7 @@ describe("producing a routine", () => {
 
   it("drops a sequence with fewer than two parts", () => {
     const draft = holdAndPulseDraft();
-    draft.days[0].exercises[0].phases[0].segments = [emptySegment("hold")];
+    draft.weeks[0].days[0].exercises[0].phases[0].segments = [emptySegment("hold")];
     // Three phases survive, not four — and the whole exercise stays.
     expect(
       toRoutine(draft, "s")!.weeks[0].days[0].exercises[0].prescriptions,
@@ -104,14 +105,14 @@ describe("producing a routine", () => {
 
   it("keeps a rest day's exercises out", () => {
     const draft = holdAndPulseDraft();
-    draft.days[0].isRest = true;
+    draft.weeks[0].days[0].isRest = true;
     expect(toRoutine(draft, "s")!.weeks[0].days[0].exercises).toEqual([]);
   });
 
   it("reads a single rep target as a number, not a range", () => {
     const draft = emptyDraft();
     draft.name = "x";
-    draft.days[0].exercises = [
+    draft.weeks[0].days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
         orAlternatives: [],
@@ -126,7 +127,7 @@ describe("producing a routine", () => {
   it("only carries the modifiers that are on", () => {
     const draft = emptyDraft();
     draft.name = "x";
-    draft.days[0].exercises = [
+    draft.weeks[0].days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
         orAlternatives: [],
@@ -148,7 +149,7 @@ describe("producing a routine", () => {
   it("marks a warmup phase, and says nothing about the others", () => {
     const draft = emptyDraft();
     draft.name = "x";
-    draft.days[0].exercises = [
+    draft.weeks[0].days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
         orAlternatives: [],
@@ -173,7 +174,7 @@ describe("producing a routine", () => {
   it("writes a timed phase as a duration, with no reps", () => {
     const draft = emptyDraft();
     draft.name = "x";
-    draft.days[0].exercises = [
+    draft.weeks[0].days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
         orAlternatives: [],
@@ -200,7 +201,7 @@ describe("producing a routine", () => {
   it("takes seconds when that's the unit you picked", () => {
     const draft = emptyDraft();
     draft.name = "x";
-    draft.days[0].exercises = [
+    draft.weeks[0].days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
         orAlternatives: [],
@@ -220,7 +221,7 @@ describe("producing a routine", () => {
   it("rounds a fractional minute to whole seconds", () => {
     const draft = emptyDraft();
     draft.name = "x";
-    draft.days[0].exercises = [
+    draft.weeks[0].days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
         orAlternatives: [],
@@ -270,7 +271,7 @@ describe("producing a routine", () => {
       weeks: [{ weekNumber: 1, days: [build(45)] }],
     });
 
-    const phase = (d: DraftRoutine) => d.days[0].exercises[0].phases[0];
+    const phase = (d: DraftRoutine) => d.weeks[0].days[0].exercises[0].phases[0];
     expect(phase(asMinutes).duration).toBe("20");
     expect(phase(asMinutes).durationUnit).toBe("min");
     expect(phase(asSeconds).duration).toBe("45");
@@ -280,7 +281,7 @@ describe("producing a routine", () => {
   it("carries the intensity, and says nothing when you didn't", () => {
     const withIntensity = emptyDraft();
     withIntensity.name = "x";
-    withIntensity.days[0].exercises = [
+    withIntensity.weeks[0].days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
         orAlternatives: [],
@@ -303,7 +304,7 @@ describe("producing a routine", () => {
     expect(p(withIntensity).intensity).toBe("low");
 
     const blank = structuredClone(withIntensity);
-    blank.days[0].exercises[0].phases[0].intensity = "";
+    blank.weeks[0].days[0].exercises[0].phases[0].intensity = "";
     // "" means you didn't say, which is different from "moderate".
     expect(p(blank).intensity).toBeUndefined();
   });
@@ -311,7 +312,7 @@ describe("producing a routine", () => {
   it("carries the substitutes you picked", () => {
     const draft = emptyDraft();
     draft.name = "x";
-    draft.days[0].exercises = [
+    draft.weeks[0].days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
         orAlternatives: ["smith-machine-hip-thrust", "machine-hip-abduction"],
@@ -331,7 +332,7 @@ describe("producing a routine", () => {
     // player two identical entries in its swap list.
     const draft = emptyDraft();
     draft.name = "x";
-    draft.days[0].exercises = [
+    draft.weeks[0].days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
         orAlternatives: [
@@ -380,7 +381,7 @@ describe("round-tripping", () => {
   it("round-trips a plain rep range too", () => {
     const draft = emptyDraft();
     draft.name = "x";
-    draft.days[0].exercises = [
+    draft.weeks[0].days[0].exercises = [
       {
         exerciseId: "barbell-hip-thrust",
         orAlternatives: [],
@@ -391,5 +392,126 @@ describe("round-tripping", () => {
     ];
     const original = toRoutine(draft, "s")!;
     expect(toRoutine(toDraft(original), "s")).toEqual(original);
+  });
+});
+
+/**
+ * The builder used to write one week and `toDraft` used to read only
+ * `weeks[0]`, so editing a shipped eight-week program threw seven of them
+ * away — the edit page had to warn you before you pressed save. These pin the
+ * two halves of the fix.
+ */
+describe("multi-week routines", () => {
+  function twoWeeks(): DraftRoutine {
+    const draft = emptyDraft();
+    draft.name = "Ramp";
+    draft.weeks = [
+      {
+        days: [
+          {
+            label: "Chest",
+            isRest: false,
+            exercises: [
+              {
+                exerciseId: "flat-barbell-bench-press",
+                orAlternatives: [],
+                kind: "resistance",
+                isFinisher: false,
+                phases: [{ ...emptyPhase(), repsFrom: "10", repsTo: "12" }],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        days: [
+          {
+            label: "Chest",
+            isRest: false,
+            exercises: [
+              {
+                exerciseId: "flat-barbell-bench-press",
+                orAlternatives: [],
+                kind: "resistance",
+                isFinisher: false,
+                // Week 2 is week 1 with the numbers moved, which is what a
+                // second week is actually for.
+                phases: [{ ...emptyPhase(), repsFrom: "6", repsTo: "8" }],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    return draft;
+  }
+
+  it("numbers the weeks from one, in order", () => {
+    const routine = toRoutine(twoWeeks(), "s")!;
+
+    expect(routine.weeks.map((w) => w.weekNumber)).toEqual([1, 2]);
+  });
+
+  it("keeps each week's own numbers", () => {
+    const routine = toRoutine(twoWeeks(), "s")!;
+    const reps = (week: number) =>
+      routine.weeks[week].days[0].exercises[0].prescriptions[0].reps;
+
+    expect(reps(0)).toEqual([10, 12]);
+    expect(reps(1)).toEqual([6, 8]);
+  });
+
+  it("makes something the schema still accepts", () => {
+    expect(routineSchema.safeParse(toRoutine(twoWeeks(), "s")).success).toBe(true);
+  });
+
+  /**
+   * The half that was actually broken: `toDraft` read `weeks[0]` and dropped
+   * the rest, so opening an eight-week program in the editor lost seven weeks
+   * before you touched anything.
+   */
+  it("reads every week back, not just the first", () => {
+    const original = toRoutine(twoWeeks(), "s")!;
+    const back = toDraft(original);
+
+    expect(back.weeks).toHaveLength(2);
+    expect(back.weeks[1].days[0].exercises[0].phases[0].repsFrom).toBe("6");
+  });
+
+  it("round-trips without rewriting anything", () => {
+    const original = toRoutine(twoWeeks(), "s")!;
+
+    expect(toRoutine(toDraft(original), "s")).toEqual(original);
+  });
+
+  /** Every shipped program, through the editor and back out unchanged. */
+  it("round-trips the built-in programs, weeks and all", () => {
+    for (const routine of routines) {
+      const back = toRoutine(toDraft(routine), routine.slug)!;
+      expect(back.weeks).toHaveLength(routine.weeks.length);
+      expect(back.weeks.map((w) => w.days.length)).toEqual(
+        routine.weeks.map((w) => w.days.length),
+      );
+    }
+  });
+
+  it("refuses a week with no days rather than saving an unrunnable routine", () => {
+    const draft = twoWeeks();
+    draft.weeks[1].days = [];
+
+    expect(toRoutine(draft, "s")).toBeUndefined();
+  });
+
+  /**
+   * A new week starts as a copy so you only change what moves. It has to be a
+   * deep one — a week is four levels down to segments, and a shallow copy
+   * would leave both weeks editing the same phases.
+   */
+  it("duplicates a week without sharing its phases", () => {
+    const week = twoWeeks().weeks[0];
+    const copy = duplicateWeek(week);
+    copy.days[0].exercises[0].phases[0].repsFrom = "99";
+
+    expect(week.days[0].exercises[0].phases[0].repsFrom).toBe("10");
   });
 });

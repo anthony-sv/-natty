@@ -248,8 +248,6 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.edited": "Editada",
   "builder.editingBuiltIn":
     "Esta venía con la app. Al guardar se queda tu versión y la original se oculta de la lista — la original sigue ahí, así que puedes regresarla cuando quieras.",
-  "builder.editingCollapsesWeeks":
-    "Este programa tiene {weeks} semanas distintas, y el editor escribe una semana que se repite. Al guardar se queda la semana 1 y se pierden las demás. Regresar a la original las devuelve.",
   "builder.reset": "Regresar a la original",
   "builder.resetTitle": "¿Regresar la original?",
   "builder.resetBody":
@@ -266,6 +264,16 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.durationUnit": "Minutos o segundos",
   "builder.minutes": "min",
   "builder.seconds": "seg",
+  "builder.weekNumber": "Semana {number}",
+  "builder.addWeek": "Agregar una segunda semana",
+  "builder.duplicateWeek": "Agregar una semana",
+  "builder.removeWeek": "Quitar la semana {number}",
+  "builder.daysInWeek": "Días — semana {week}",
+  "builder.oneWeekHint":
+    "Un ciclo, repetido todo el tiempo que corras el programa. Agrega una semana solo si los números cambian entre una y otra.",
+  "builder.weeksHint":
+    "{count} semanas, en orden y luego se repiten. Una semana nueva empieza como copia de la que tienes abierta, así solo cambias lo que se mueve.",
+  "builder.restBetween": "Descanso entre (s)",
   "builder.intensity": "Qué tan fuerte",
   "builder.intensity.none": "Sin especificar",
   "intensity.low": "Suave",
