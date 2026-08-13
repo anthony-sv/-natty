@@ -268,8 +268,8 @@ export const en = {
   "builder.weekNumber": "Week {number}",
   "builder.addWeek": "Add a second week",
   "builder.duplicateWeek": "Add a week",
-  "builder.weekFromCopy": "Copy week {number}",
-  "builder.weekFromCopyHint": "Same days and exercises — change the numbers.",
+  "builder.weekFromCopy": "Start from a copy of",
+  "builder.weekOpen": "(open)",
   "builder.weekFromEmpty": "Start from an empty week",
   "builder.weekFromEmptyHint": "For a program that changes its split partway.",
   "builder.removeWeek": "Remove week {number}",
@@ -277,7 +277,7 @@ export const en = {
   "builder.oneWeekHint":
     "One cycle, repeated for as long as you run the program. Add a week only if the numbers change between them.",
   "builder.weeksHint":
-    "{count} weeks, run in order and then repeated. A new week starts as a copy of the one you're on, so you only change what moves.",
+    "{count} weeks, run in order and then repeated. A new one starts as a copy of whichever week you pick, so you only change what moves.",
   "builder.restBetween": "Rest between (s)",
   "builder.intensity": "How hard",
   "builder.intensity.none": "Not stated",

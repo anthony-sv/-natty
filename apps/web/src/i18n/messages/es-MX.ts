@@ -267,8 +267,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.weekNumber": "Semana {number}",
   "builder.addWeek": "Agregar una segunda semana",
   "builder.duplicateWeek": "Agregar una semana",
-  "builder.weekFromCopy": "Copiar la semana {number}",
-  "builder.weekFromCopyHint": "Mismos días y ejercicios — cambia los números.",
+  "builder.weekFromCopy": "Empezar con una copia de",
+  "builder.weekOpen": "(abierta)",
   "builder.weekFromEmpty": "Empezar con una semana vacía",
   "builder.weekFromEmptyHint": "Para un programa que cambia de split a medio camino.",
   "builder.removeWeek": "Quitar la semana {number}",
@@ -276,7 +276,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.oneWeekHint":
     "Un ciclo, repetido todo el tiempo que corras el programa. Agrega una semana solo si los números cambian entre una y otra.",
   "builder.weeksHint":
-    "{count} semanas, en orden y luego se repiten. Una semana nueva empieza como copia de la que tienes abierta, así solo cambias lo que se mueve.",
+    "{count} semanas, en orden y luego se repiten. Una nueva empieza como copia de la semana que elijas, así solo cambias lo que se mueve.",
   "builder.restBetween": "Descanso entre (s)",
   "builder.intensity": "Qué tan fuerte",
   "builder.intensity.none": "Sin especificar",

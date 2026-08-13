@@ -37,6 +37,8 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
@@ -280,10 +282,11 @@ function WeekBar({
             ))
           : null}
 
-        {/* Two ways to start a week, asked rather than assumed. Copying is
-            the common one — a second week usually keeps the split and moves
-            the numbers — but a program that changes its split partway through
-            shouldn't have to delete a copy first. */}
+        {/* Every existing week is offered as the starting point, not just the
+            one you happen to be looking at. On a program that ramps, week 5
+            is usually a copy of week 4 — but week 5 of a *new* block is far
+            more likely a copy of week 1, and having to navigate there first
+            just to press this is a step with no purpose. */}
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
@@ -297,17 +300,24 @@ function WeekBar({
           />
           <DropdownMenuContent align="start" className="w-auto min-w-64">
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => onAdd(duplicateWeek(weeks[active]))}>
-                <CopyIcon />
-                <div className="flex flex-col">
-                  <span>
-                    {t("builder.weekFromCopy", { number: active + 1 })}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {t("builder.weekFromCopyHint")}
-                  </span>
-                </div>
-              </DropdownMenuItem>
+              <DropdownMenuLabel>{t("builder.weekFromCopy")}</DropdownMenuLabel>
+              {weeks.map((week, index) => (
+                <DropdownMenuItem
+                  key={index}
+                  onClick={() => onAdd(duplicateWeek(week))}
+                >
+                  <CopyIcon />
+                  {t("builder.weekNumber", { number: index + 1 })}
+                  {index === active ? (
+                    <span className="text-xs text-muted-foreground">
+                      {t("builder.weekOpen")}
+                    </span>
+                  ) : null}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => onAdd(emptyWeek())}>
                 <FilePlusIcon />
                 <div className="flex flex-col">
