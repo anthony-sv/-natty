@@ -1410,7 +1410,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "nutrition.creatineSimple":
     "Con {grams} g al día le alcanza a casi cualquiera — lo demás sólo vale la pena si estás lejos del promedio.",
   "nutrition.creatineDaily": "Tu dosis diaria",
-  "nutrition.creatineLoading": "Carga, si te animas",
+  "nutrition.creatineLoading": "Carga (opcional)",
   "nutrition.creatineLoadingNote":
     "{perDose} g × {doses} al día por {days} días, y luego bajas a la dosis diaria. Saltártela sólo significa saturar unas semanas después.",
   "nutrition.creatineFromLean":

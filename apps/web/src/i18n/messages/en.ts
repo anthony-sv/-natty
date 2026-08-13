@@ -1422,7 +1422,7 @@ export const en = {
   "nutrition.creatineSimple":
     "{grams} g a day covers almost everyone — the rest of this is only worth reading if you're far from average.",
   "nutrition.creatineDaily": "Your daily dose",
-  "nutrition.creatineLoading": "Loading, if you bother",
+  "nutrition.creatineLoading": "Loading (optional)",
   "nutrition.creatineLoadingNote":
     "{perDose} g × {doses} a day for {days} days, then drop to the daily dose. Skipping it only means saturating a few weeks later.",
   "nutrition.creatineFromLean":

@@ -316,31 +316,36 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
             </Empty>
           ) : (
             <div className="flex flex-col gap-3">
-              <div className="grid gap-6 sm:grid-cols-2">
-                <div className="flex flex-col gap-1">
+              {/* Two columns at every width, not just from `sm`: the values
+                  are three characters long, so stacking them on a phone made
+                  one short line of text into half a screen. The loading
+                  detail sits under *both* rather than inside its own column,
+                  which is what made the pair lopsided. */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-0.5">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     {t("nutrition.creatineDaily")}
                   </span>
-                  <span className="text-2xl font-semibold tabular-nums">
+                  <span className="text-xl font-semibold tabular-nums">
                     {creatine.maintenanceG} g
                   </span>
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-0.5">
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     {t("nutrition.creatineLoading")}
                   </span>
-                  <span className="text-2xl font-semibold tabular-nums">
+                  <span className="text-xl font-semibold tabular-nums">
                     {creatine.loadingG} g
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {t("nutrition.creatineLoadingNote", {
-                      perDose: creatine.loadingPerDoseG,
-                      doses: LOADING_SPLIT,
-                      days: LOADING_DAYS,
-                    })}
                   </span>
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground">
+                {t("nutrition.creatineLoadingNote", {
+                  perDose: creatine.loadingPerDoseG,
+                  doses: LOADING_SPLIT,
+                  days: LOADING_DAYS,
+                })}
+              </p>
               {/* Which mass it scaled from, because "3.4 g from your lean
                   mass" and "3.4 g from your weight" are different claims. */}
               <p className="text-xs text-muted-foreground">
