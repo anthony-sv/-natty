@@ -1106,6 +1106,46 @@ Unticking removes with an Undo on the toast, like `deleteSet`. Toggling reads
 exists for, and deciding "is this already ticked" from a stale render logs a
 duplicate.
 
+## Accounts and sync (`src/features/auth/`, `src/server/`)
+
+Optional Supabase accounts — the app is fully usable signed out, and that is a
+design commitment, not a transition state. Weigh-ins are the **pilot synced
+collection**; every collection that follows copies this shape.
+
+- **Auth is cookie-based on purpose.** `features/auth/client.ts` creates the
+  browser client lazily (module scope would run in the shell prerender) via
+  `@supabase/ssr`, which keeps the session in cookies rather than localStorage
+  — exactly so `server/supabase.ts` can bind a server client to the calling
+  request's cookies. `session-store.ts` is a plain TanStack Store in the
+  `theme-store` mold, with a `loading` status because collections fork on it.
+- **`server/auth.ts` exports `authMiddleware`**, which every data server
+  function runs behind. It calls `getUser()` — revalidating the JWT, not
+  trusting cookie claims — and injects `context.userId`, the **only** user id
+  a handler may scope by. Ids in payloads are client-minted and only unique
+  per user; tables key on `(user_id, id)` for the same reason.
+- **The DB layer is Drizzle over Supabase Postgres** (`server/db/`), reached
+  through the transaction pooler (`prepare: false` is required, not tuning).
+  `drizzle.config.ts` pins `schemaFilter: ["public"]` so drizzle-kit never
+  touches Supabase's own schemas; `pnpm db:push` applies schema changes.
+  Tables carry `.enableRLS()` even though the Data API is disabled at the
+  project level — deny-all costs nothing and survives someone re-enabling it.
+  Column types stay permissive: the client's own Zod schema revalidates at the
+  server boundary (`.validator(...)`), and two sources of rules would drift.
+- **The collection forks, the interface doesn't.** `features/body/collection.ts`
+  keeps the localStorage collection and adds a lazily-created query collection
+  (`queryCollectionOptions` + server-function handlers); `activeBodyEntries()`
+  picks by session state, and every consumer goes through `useBodyEntries` /
+  `logBodyEntry` unchanged. Local data is never migrated or cleared on
+  sign-in — the account page offers the explicit, idempotent upload (upsert on
+  the composite key), and signing out shows this device's own data again.
+- **The QueryClient is a module singleton** (`lib/query-client.ts`) because
+  synced collections need it outside the component tree. Fine in SPA mode
+  where a page load is one client; it is one more reason full SSR stays off.
+- Env: `DATABASE_URL` (secret, unprefixed — falls back to the Vercel
+  integration's `POSTGRES_URL`) and the `VITE_SUPABASE_URL` /
+  `VITE_SUPABASE_PUBLISHABLE_KEY` pair, which are client-safe by design.
+  The service-role key is deliberately read nowhere in this codebase.
+
 ## Export, import and sharing (`src/features/backup/`)
 
 Everything lives in eleven localStorage keys, and the half that would hurt

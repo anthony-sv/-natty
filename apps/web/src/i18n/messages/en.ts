@@ -38,6 +38,14 @@ export const en = {
   "account.signInError": "Couldn't sign in",
   "account.signUpError": "Couldn't create the account",
   "account.signOutError": "Couldn't sign out",
+  "account.upload.pending.one":
+    "{count} weigh-in on this device isn't in your account yet",
+  "account.upload.pending.other":
+    "{count} weigh-ins on this device aren't in your account yet",
+  "account.upload.action": "Upload to my account",
+  "account.upload.uploading": "Uploading...",
+  "account.upload.done": "Weigh-ins uploaded",
+  "account.upload.error": "Upload failed",
 
   "palette.placeholder": "Search pages and routines...",
   "palette.empty": "No results.",
@@ -580,7 +588,7 @@ export const en = {
 
   "about.storage.title": "Where your data lives",
   "about.storage.body":
-    "In this browser, on this device. There is no account and nothing is sent anywhere.",
+    "In this browser, on this device — unless you sign in, which syncs your weigh-ins to your account, with the rest to follow.",
   "about.storage.p1":
     "That makes it private by construction — but it also means clearing your browser data deletes it, and it doesn't follow you to your phone.",
   "about.storage.p2":
@@ -588,6 +596,17 @@ export const en = {
   "about.storage.p3":
     "The six training programs and the built-in foods are compiled into the app, so those are never at risk.",
   "about.storage.link": "Back up your data",
+
+  "about.account.title": "Your account",
+  "about.account.body":
+    "Optional, and off by default. The app is fully usable without one; signing in is what starts syncing your data — weigh-ins first, the rest feature by feature.",
+  "about.account.p1":
+    "Nothing moves by itself. The account page shows what this device has that your account doesn't, and uploading is one tap — safe to press twice, since the account keeps one copy per entry.",
+  "about.account.p2":
+    "Signing out brings back this device's own data untouched. The account keeps what you uploaded, ready for the next device.",
+  "about.account.p3":
+    "Backups still work signed in — the export covers whatever the app is showing right now, so it's your way out of the server too.",
+  "about.account.link": "Go to your account",
 
   "about.routines.title": "Programs and days",
   "about.routines.body":

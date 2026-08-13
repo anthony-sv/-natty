@@ -1,6 +1,6 @@
 import { getDietBySlug } from "@/data/diets";
 import { getRoutineBySlug } from "@/data/routines";
-import { bodyEntries } from "@/features/body/collection";
+import { activeBodyEntries } from "@/features/body/collection";
 import { userExercises } from "@/features/library/collection";
 import { intakeEntries } from "@/features/intake/collection";
 import { measurements } from "@/features/measurements/collection";
@@ -19,10 +19,14 @@ import { rekey, type IdSource } from "./rekey";
  * `backup.ts` so the format stays pure and directly testable.
  */
 
-/** Every collection the backup covers, in one list so nothing is forgotten. */
-const ALL_COLLECTIONS = [
+/**
+ * Every collection the backup covers, in one list so nothing is forgotten.
+ * A function, not a const: the body collection forks on session state, so
+ * "which collections" is a question with a per-call answer now.
+ */
+const allCollections = () => [
   loggedSets,
-  bodyEntries,
+  activeBodyEntries(),
   measurements,
   userExercises,
   userRoutines,
@@ -47,7 +51,7 @@ const ALL_COLLECTIONS = [
  * everything" would quietly merge instead.
  */
 async function loadAll(): Promise<void> {
-  await Promise.all(ALL_COLLECTIONS.map((collection) => collection.preload()));
+  await Promise.all(allCollections().map((collection) => collection.preload()));
 }
 
 /** Read synchronously, not from a live query — an export is a point in time. */
@@ -55,7 +59,7 @@ export async function currentData(): Promise<BackupData> {
   await loadAll();
   return {
     sets: [...loggedSets.values()],
-    bodyEntries: [...bodyEntries.values()],
+    bodyEntries: [...activeBodyEntries().values()],
     measurements: [...measurements.values()],
     exercises: [...userExercises.values()],
     routines: [...userRoutines.values()],
@@ -261,12 +265,16 @@ export async function importAdditive(
  */
 export async function restoreEverything(data: BackupData): Promise<void> {
   await loadAll();
-  for (const collection of ALL_COLLECTIONS) {
-    for (const key of [...collection.keys()]) collection.delete(key);
+  for (const collection of allCollections()) {
+    // One batched delete per collection: on a synced collection every
+    // transaction is a server round trip, so a thousand keys must not be a
+    // thousand calls.
+    const keys = [...collection.keys()];
+    if (keys.length > 0) collection.delete(keys);
   }
 
   for (const set of data.sets) loggedSets.insert(set);
-  for (const entry of data.bodyEntries) bodyEntries.insert(entry);
+  if (data.bodyEntries.length > 0) activeBodyEntries().insert(data.bodyEntries);
   for (const row of data.measurements) measurements.insert(row);
   for (const exercise of data.exercises) userExercises.insert(exercise);
   for (const routine of data.routines) userRoutines.insert(routine);

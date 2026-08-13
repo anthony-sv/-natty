@@ -1,6 +1,12 @@
+import { useMemo } from "react";
 import { useForm } from "@tanstack/react-form";
-import { LogInIcon, LogOutIcon, UserPlusIcon } from "lucide-react";
+import { useLiveQuery } from "@tanstack/react-db";
+import { LogInIcon, LogOutIcon, UploadIcon, UserPlusIcon } from "lucide-react";
 import { z } from "zod";
+import {
+  localBodyEntries,
+  syncedBodyEntries,
+} from "@/features/body/collection";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -37,41 +43,101 @@ export function AccountPanel() {
 
   if (session.status === "signed-in") {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("account.title")}</CardTitle>
-          <CardDescription>
-            {t("account.signedInAs", { email: session.email ?? "" })}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button
-            variant="outline"
-            onClick={() => {
-              void getSupabaseBrowserClient()
-                .auth.signOut()
-                .then(({ error }) => {
-                  if (error) {
-                    toast.add({
-                      title: t("account.signOutError"),
-                      description: error.message,
-                      type: "error",
-                    });
-                  } else {
-                    toast.add({ title: t("account.signedOut"), type: "success" });
-                  }
-                });
-            }}
-          >
-            <LogOutIcon data-icon="inline-start" />
-            {t("account.signOut")}
-          </Button>
-        </CardContent>
-      </Card>
+      <>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("account.title")}</CardTitle>
+            <CardDescription>
+              {t("account.signedInAs", { email: session.email ?? "" })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="outline"
+              onClick={() => {
+                void getSupabaseBrowserClient()
+                  .auth.signOut()
+                  .then(({ error }) => {
+                    if (error) {
+                      toast.add({
+                        title: t("account.signOutError"),
+                        description: error.message,
+                        type: "error",
+                      });
+                    } else {
+                      toast.add({
+                        title: t("account.signedOut"),
+                        type: "success",
+                      });
+                    }
+                  });
+              }}
+            >
+              <LogOutIcon data-icon="inline-start" />
+              {t("account.signOut")}
+            </Button>
+          </CardContent>
+        </Card>
+        <UploadWeighInsCard />
+      </>
     );
   }
 
   return <SignInCard />;
+}
+
+/**
+ * The migration path for this device's data, one collection at a time —
+ * weigh-ins are the pilot. Local rows are never cleared: signed out, this
+ * device still shows its own data, and the upload is idempotent (upsert on
+ * `(user_id, id)`), so pressing it twice is harmless.
+ */
+function UploadWeighInsCard() {
+  const t = useT();
+  const synced = syncedBodyEntries();
+  const { data: localRows } = useLiveQuery((q) =>
+    q.from({ entry: localBodyEntries }),
+  );
+  const { data: syncedRows, isLoading } = useLiveQuery(
+    (q) => q.from({ entry: synced }),
+    [synced],
+  );
+
+  const pending = useMemo(() => {
+    const uploaded = new Set((syncedRows ?? []).map((row) => row.id));
+    return (localRows ?? []).filter((row) => !uploaded.has(row.id));
+  }, [localRows, syncedRows]);
+
+  // Until the synced side has loaded there's no honest count to show, and a
+  // device with nothing new has nothing to say.
+  if (isLoading || pending.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardDescription>
+          {t.plural("account.upload.pending", pending.length, {
+            count: pending.length,
+          })}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button
+          onClick={() => {
+            const transaction = synced.insert(pending);
+            void toast.promise(transaction.isPersisted.promise, {
+              loading: t("account.upload.uploading"),
+              success: { title: t("account.upload.done"), type: "success" },
+              error: { title: t("account.upload.error"), type: "error" },
+            });
+          }}
+        >
+          <UploadIcon data-icon="inline-start" />
+          {t("account.upload.action")}
+        </Button>
+      </CardContent>
+    </Card>
+  );
 }
 
 function SignInCard() {

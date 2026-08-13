@@ -41,6 +41,14 @@ export const esMX: Record<keyof typeof en, string> = {
   "account.signInError": "No se pudo iniciar sesión",
   "account.signUpError": "No se pudo crear la cuenta",
   "account.signOutError": "No se pudo cerrar sesión",
+  "account.upload.pending.one":
+    "{count} pesaje de este dispositivo aún no está en tu cuenta",
+  "account.upload.pending.other":
+    "{count} pesajes de este dispositivo aún no están en tu cuenta",
+  "account.upload.action": "Subir a mi cuenta",
+  "account.upload.uploading": "Subiendo...",
+  "account.upload.done": "Pesajes subidos",
+  "account.upload.error": "No se pudo subir",
 
   "palette.placeholder": "Busca páginas y rutinas...",
   "palette.empty": "Sin resultados.",
@@ -573,7 +581,7 @@ export const esMX: Record<keyof typeof en, string> = {
 
   "about.storage.title": "Dónde viven tus datos",
   "about.storage.body":
-    "En este navegador, en este dispositivo. No hay cuenta y no se manda nada a ningún lado.",
+    "En este navegador, en este dispositivo — a menos que inicies sesión, lo que sincroniza tus pesajes con tu cuenta, y el resto irá llegando.",
   "about.storage.p1":
     "Eso lo hace privado por construcción — pero también significa que borrar los datos del navegador los elimina, y que no te siguen al celular.",
   "about.storage.p2":
@@ -581,6 +589,17 @@ export const esMX: Record<keyof typeof en, string> = {
   "about.storage.p3":
     "Los seis programas y los alimentos de la lista base vienen dentro de la app, así que esos nunca corren riesgo.",
   "about.storage.link": "Respalda tus datos",
+
+  "about.account.title": "Tu cuenta",
+  "about.account.body":
+    "Opcional, y desactivada por defecto. La app funciona completa sin cuenta; iniciar sesión es lo que activa la sincronización — primero los pesajes, el resto función por función.",
+  "about.account.p1":
+    "Nada se mueve solo. La página de cuenta muestra lo que este dispositivo tiene y tu cuenta no, y subirlo es un toque — seguro aunque lo presiones dos veces, porque la cuenta guarda una sola copia de cada registro.",
+  "about.account.p2":
+    "Al cerrar sesión, este dispositivo vuelve a mostrar sus propios datos intactos. La cuenta conserva lo que subiste, listo para el siguiente dispositivo.",
+  "about.account.p3":
+    "Los respaldos siguen funcionando con sesión iniciada — la exportación cubre lo que la app muestra en ese momento, así que también es tu salida del servidor.",
+  "about.account.link": "Ir a tu cuenta",
 
   "about.routines.title": "Programas y días",
   "about.routines.body":

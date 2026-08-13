@@ -14,6 +14,7 @@ import {
   ShoppingBasketIcon,
   TrendingUpIcon,
   TrophyIcon,
+  UserIcon,
   UtensilsIcon,
 } from "lucide-react";
 import { Page } from "@/components/page";
@@ -67,6 +68,15 @@ const GUIDE: Section[] = [
     to: "/progress",
     search: { tab: "data" },
     linkKey: "about.storage.link",
+  },
+  {
+    id: "account",
+    icon: UserIcon,
+    titleKey: "about.account.title",
+    bodyKey: "about.account.body",
+    points: ["about.account.p1", "about.account.p2", "about.account.p3"],
+    to: "/account",
+    linkKey: "about.account.link",
   },
   {
     id: "routines",
