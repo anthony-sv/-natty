@@ -36,7 +36,6 @@ export const en = {
   "account.signedOut": "Signed out",
   "account.checkEmail": "Check your inbox to confirm your account",
   "account.continueGoogle": "Continue with Google",
-  "account.continueApple": "Continue with Apple",
   "account.or": "or",
   "account.providerError": "Couldn't start sign-in",
   "account.unavailable":

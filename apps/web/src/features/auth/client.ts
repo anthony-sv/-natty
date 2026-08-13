@@ -32,8 +32,15 @@ export function getSupabaseBrowserClient(): SupabaseClient {
   return client;
 }
 
-/** The identity providers the account page offers, in the order it shows them. */
-export const OAUTH_PROVIDERS = ["google", "apple"] as const;
+/**
+ * The identity providers the account page offers.
+ *
+ * Google only. Apple's is the other one people expect, and it requires a paid
+ * developer account to issue the Services ID and signing key — not worth it
+ * until someone actually asks. Adding a provider is this list plus a mark and
+ * a label in `ProviderButtons.tsx`; the rest of the flow is provider-agnostic.
+ */
+export const OAUTH_PROVIDERS = ["google"] as const;
 export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
 
 /**

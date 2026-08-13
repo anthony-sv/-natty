@@ -1118,8 +1118,12 @@ collection**; every collection that follows copies this shape.
   — exactly so `server/supabase.ts` can bind a server client to the calling
   request's cookies. `session-store.ts` is a plain TanStack Store in the
   `theme-store` mold, with a `loading` status because collections fork on it.
-- **Google and Apple sit above the email form**, because an account you
-  already have beats one you'd invent a password for. `signInWithProvider`
+- **Google sits above the email form**, because an account you
+  already have beats one you'd invent a password for. Apple is deliberately
+  absent: it needs a paid developer account to issue a Services ID and signing
+  key, which isn't worth it until someone asks. Adding a provider is
+  `OAUTH_PROVIDERS` plus a mark and label — the flow itself is
+  provider-agnostic. `signInWithProvider`
   redirects back to `/account` with a `?code=`, which the browser client
   exchanges itself (`detectSessionInUrl`) — no callback route, because
   `@supabase/ssr` keeps the PKCE verifier in a cookie that same client reads.

@@ -39,7 +39,6 @@ export const esMX: Record<keyof typeof en, string> = {
   "account.signedOut": "Sesión cerrada",
   "account.checkEmail": "Revisa tu correo para confirmar tu cuenta",
   "account.continueGoogle": "Continuar con Google",
-  "account.continueApple": "Continuar con Apple",
   "account.or": "o",
   "account.providerError": "No se pudo iniciar el acceso",
   "account.unavailable":
