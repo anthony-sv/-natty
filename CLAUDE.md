@@ -1192,6 +1192,18 @@ the profile; theme, locale and `session-store` stay local by design.
   across nine collections needs both sides of each awake, and doing that on
   every render of the account page would fetch the whole account to draw one
   number.
+- **Two names, and they are different things.** `Profile.displayName` is
+  private: seeded from the provider (so usually your real name), synced in the
+  profile blob, not unique, and what *you* see. The **handle** is the public
+  one — `features/profile/handle.ts` holds the rules, and it lives in its own
+  `handles` table because uniqueness is the entire point and a jsonb blob
+  can't have a unique index inside it. The handle's primary key *is* the
+  handle, so two simultaneous claims can't both win: the loser is told, rather
+  than the race being lost. Nothing public exists yet — the namespace is
+  reserved now precisely because handing out handles after people have picked
+  names means backfilling collisions. The server validates with the same
+  exported function the field does, so a field can't accept what the server
+  refuses.
 - **The profile syncs, but not as a collection.** It's one always-present
   record, so `features/profile/sync.ts` mirrors the localStorage store to a
   `profiles` row (jsonb — read whole, never queried across users) while
@@ -1695,6 +1707,19 @@ Radix default. Preset is **Nova** (Lucide icons, Geist Variable font via
   flashing and correcting; `__root.tsx` imports it for that side effect.
   Switched from the sidebar footer (a `Switch`, not a select) or the command
   palette.
+- Chrome is a sidebar plus a header (`app-sidebar.tsx`, `app-header.tsx`).
+  **Theme, language and the account menu live in the header**, not the sidebar
+  footer where they started: the sidebar collapses on a phone and took them
+  with it, so the only way to reach them was to open a panel. `UserMenu` takes
+  a `variant` — `wide` for the sidebar row, `compact` for the header's avatar
+  button — and both render the same menu below the trigger, so the account
+  can't offer different things in different corners.
+  - The sidebar's active row is computed with `useMatchRoute` and passed as
+    `isActive`. **A `Link` marks itself with `data-status`, which is not the
+    `data-active` the sidebar styles** — so without this every row draws
+    identically and the only highlight on screen is whatever the mouse is
+    over. It's drawn with a bar down the left as well as the accent, because
+    the accent alone *is* the hover colour.
 - Navigation is a shadcn **sidebar** (`src/components/app-sidebar.tsx`), not a
   top nav — `SidebarProvider` + `SidebarInset` wrap the outlet in `__root.tsx`.
   Note `SidebarMenuButton` composes via `useRender` and takes `render={<Link/>}`

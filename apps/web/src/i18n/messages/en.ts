@@ -38,10 +38,21 @@ export const en = {
   "account.continueGoogle": "Continue with Google",
   "account.or": "or",
   "account.providerError": "Couldn't start sign-in",
+  "account.handle": "Handle",
+  "account.handleHelp":
+    "Unique, and the only name anything public would ever show. Letters, numbers and underscores.",
+  "account.handleSave": "Claim",
+  "account.handleSaved": "Handle claimed",
+  "account.handleTaken": "Someone already has that one",
+  "account.handleProblem.too-short": "At least 3 characters",
+  "account.handleProblem.too-long": "At most 20 characters",
+  "account.handleProblem.shape":
+    "Letters, numbers and underscores only, starting with a letter",
+  "account.handleProblem.reserved": "That one's reserved",
   "account.username": "Display name",
   "account.usernamePlaceholder": "What should we call you?",
   "account.usernameHelp":
-    "Only shown to you. It follows your account to your other devices.",
+    "Private — only you see it, and it follows your account to your other devices.",
   "account.unavailable":
     "Accounts aren't set up in this build. Everything still works — your data stays on this device.",
   "account.signInError": "Couldn't sign in",

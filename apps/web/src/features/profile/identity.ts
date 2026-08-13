@@ -21,20 +21,20 @@ export interface ProviderIdentity {
  * Seed the profile from a provider, without ever overwriting your own edits.
  *
  * Both fields are **only filled when empty**: signing in again must not undo
- * a username you changed, and Google hands back the same `full_name` every
- * time, so a plain assignment would silently revert it on every sign-in.
+ * a name you changed, and Google hands back the same `full_name` every time,
+ * so a plain assignment would silently revert it on every sign-in.
  */
 export function adoptProviderIdentity(identity: ProviderIdentity): void {
   const current = profileStore.state;
-  const patch: { username?: string; avatarUrl?: string } = {};
+  const patch: { displayName?: string; avatarUrl?: string } = {};
 
-  if (current.username === undefined) {
+  if (current.displayName === undefined) {
     const fromProvider = identity.name?.trim();
     // The local part of an email is a decent name and a terrible one — but it
     // beats an empty circle, and it's editable.
     const fromEmail = identity.email?.split("@")[0];
     const chosen = fromProvider || fromEmail;
-    if (chosen) patch.username = chosen.slice(0, 40);
+    if (chosen) patch.displayName = chosen.slice(0, 40);
   }
 
   if (current.avatarUrl === undefined && identity.avatarUrl) {
@@ -51,10 +51,10 @@ export function adoptProviderIdentity(identity: ProviderIdentity): void {
  * returns undefined and lets the caller show its own prompt.
  */
 export function displayName(
-  username: string | undefined,
+  chosen: string | undefined,
   email: string | null,
 ): string | undefined {
-  return username ?? email?.split("@")[0] ?? email ?? undefined;
+  return chosen ?? email?.split("@")[0] ?? email ?? undefined;
 }
 
 /**

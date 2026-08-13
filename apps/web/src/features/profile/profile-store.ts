@@ -12,14 +12,15 @@ const STORAGE_KEY = "natty.profile.v1";
  */
 export const profileSchema = z.object({
   /**
-   * What to call you.
+   * What to call you — the **private** half of the name pair.
    *
-   * A display name, not an identity — nothing keys on it and nothing checks
-   * it's unique, because two people picking "anthony" costs nothing when the
-   * account is already keyed by an id nobody types. Seeded from the provider
-   * on an OAuth sign-in, asked for on an email one, and editable after.
+   * Seeded from the provider, so it's usually your real name, and it is not
+   * an identity: nothing keys on it and nothing checks it's unique. The
+   * public, unique one is the handle, which lives server-side in its own
+   * table because uniqueness can't be enforced from here — see
+   * `features/profile/handle.ts`.
    */
-  username: z.string().min(1).max(40).optional(),
+  displayName: z.string().min(1).max(40).optional(),
   /**
    * A provider's avatar, when it gave one. Never uploaded by the app: hosting
    * user images is a whole feature, and initials in a circle answer the same

@@ -76,6 +76,30 @@ export const profiles = pgTable("profiles", {
 }).enableRLS();
 
 /**
+ * `@you` — the one public, unique name.
+ *
+ * Its own table rather than a field on `profiles`, and that isn't tidiness:
+ * uniqueness is the entire point, a jsonb blob can't have a unique index on a
+ * key inside it, and no amount of client-side checking makes a claim safe
+ * against two people pressing the button at the same moment. The primary key
+ * *is* the handle, so the database refuses the second one — the race can't be
+ * lost, only reported.
+ *
+ * Stored already lowercased by `normalizeHandle`, so the key does
+ * case-insensitive matching without every query remembering to.
+ */
+export const handles = pgTable("handles", {
+  handle: text("handle").primaryKey(),
+  // One each: claiming a new handle replaces the old one rather than
+  // accumulating them, which is what the unique constraint here enforces.
+  userId: uuid("user_id")
+    .notNull()
+    .unique()
+    .references(() => authUsers.id, { onDelete: "cascade" }),
+  claimedAt: bigint("claimed_at", { mode: "number" }).notNull(),
+}).enableRLS();
+
+/**
  * Shared by every owned table: the user column, its cascade, and the
  * client-minted id. Spread into a table's column object as `...owned()`.
  *

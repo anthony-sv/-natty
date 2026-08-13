@@ -6,6 +6,8 @@ import { useStore } from "@tanstack/react-store";
 import { Input as TextInput } from "@/components/ui/input";
 import { displayName } from "@/features/profile/identity";
 import { profileStore, setProfile } from "@/features/profile/profile-store";
+import { handleProblem, suggestHandle } from "@/features/profile/handle";
+import { claimHandle, fetchHandle } from "@/server/handles";
 import { uploadLocalData } from "../upload";
 import { UserAvatar } from "./UserMenu";
 import { Button } from "@/components/ui/button";
@@ -80,7 +82,7 @@ export function AccountPanel() {
 function ProfileCard({ email }: { email: string | null }) {
   const t = useT();
   const profile = useStore(profileStore);
-  const name = displayName(profile.username, email) ?? "";
+  const name = displayName(profile.displayName, email) ?? "";
 
   return (
     <Card>
@@ -108,18 +110,20 @@ function ProfileCard({ email }: { email: string | null }) {
           </FieldLabel>
           <TextInput
             id="account-username"
-            value={profile.username ?? ""}
+            value={profile.displayName ?? ""}
             maxLength={40}
             placeholder={t("account.usernamePlaceholder")}
             onChange={(e) => {
               const value = e.target.value;
               // Empty clears it rather than storing "", so the fallback chain
               // takes over again instead of showing a blank name.
-              setProfile({ username: value.trim() === "" ? undefined : value });
+              setProfile({ displayName: value.trim() === "" ? undefined : value });
             }}
           />
           <FieldDescription>{t("account.usernameHelp")}</FieldDescription>
         </Field>
+
+        <HandleField name={name} />
 
         <div>
           <Button
@@ -146,6 +150,90 @@ function ProfileCard({ email }: { email: string | null }) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Claiming `@you`.
+ *
+ * A separate field from the display name above, and separately saved: this
+ * one is unique, so it has to ask the server, and it can be refused. It
+ * validates with the same function the server does, so the field can't call
+ * something fine that the server then rejects for shape — only for being
+ * taken, which the field genuinely cannot know.
+ */
+function HandleField({ name }: { name: string }) {
+  const t = useT();
+  const [value, setValue] = useState<string | undefined>(undefined);
+  const [saved, setSaved] = useState<string | null>(null);
+  const [status, setStatus] = useState<"idle" | "saving" | "taken">("idle");
+
+  // Read once on mount. `useState` initialiser rather than an effect, since
+  // `react-hooks/set-state-in-effect` is enforced outside `ui/`.
+  const [loaded] = useState(() =>
+    fetchHandle()
+      .then((existing) => {
+        setSaved(existing);
+        setValue(existing ?? "");
+      })
+      .catch(() => setValue("")),
+  );
+  void loaded;
+
+  if (value === undefined) return null;
+
+  const problem = value.trim() === "" ? undefined : handleProblem(value);
+  const dirty = value !== (saved ?? "");
+  const canSave = dirty && value.trim() !== "" && problem === undefined;
+
+  return (
+    <Field>
+      <FieldLabel htmlFor="account-handle">{t("account.handle")}</FieldLabel>
+      <div className="flex items-center gap-2">
+        {/* The @ is chrome, not something you type — putting it in the value
+            means every rule has to strip it first. */}
+        <span className="text-muted-foreground">@</span>
+        <TextInput
+          id="account-handle"
+          value={value}
+          maxLength={20}
+          placeholder={suggestHandle(name)}
+          onChange={(e) => {
+            setStatus("idle");
+            setValue(e.target.value.toLowerCase());
+          }}
+          className="flex-1"
+        />
+        <Button
+          variant="outline"
+          disabled={!canSave || status === "saving"}
+          onClick={() => {
+            setStatus("saving");
+            void claimHandle({ data: value })
+              .then((result) => {
+                if (result.ok) {
+                  setSaved(result.handle);
+                  setValue(result.handle);
+                  setStatus("idle");
+                  toast.add({ title: t("account.handleSaved"), type: "success" });
+                } else {
+                  setStatus(result.reason === "taken" ? "taken" : "idle");
+                }
+              })
+              .catch(() => setStatus("idle"));
+          }}
+        >
+          {t("account.handleSave")}
+        </Button>
+      </div>
+      <FieldDescription>
+        {status === "taken"
+          ? t("account.handleTaken")
+          : problem !== undefined
+            ? t(`account.handleProblem.${problem}`)
+            : t("account.handleHelp")}
+      </FieldDescription>
+    </Field>
   );
 }
 

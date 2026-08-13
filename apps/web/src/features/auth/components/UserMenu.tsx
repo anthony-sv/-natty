@@ -7,6 +7,7 @@ import {
   UserIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,14 +30,18 @@ import { getSupabaseBrowserClient, isSupabaseConfigured } from "../client";
 import { useSession } from "../session-store";
 
 /**
- * Who you're signed in as, at the bottom of the sidebar.
+ * Who you're signed in as.
  *
- * Where every app this one is judged against puts it — so it's where people
- * look for the way out. Sign-out lived only on `/account`, which meant
- * navigating to a page to leave, and nothing anywhere else on screen said
- * whose data you were looking at.
+ * Two shapes, one menu. `wide` is the sidebar footer's row with a name and an
+ * email; `compact` is the header's avatar button, which is the one that
+ * survives the sidebar collapsing on a phone. They share everything below the
+ * trigger, so the account can't offer different things in different corners.
  */
-export function UserMenu() {
+export function UserMenu({
+  variant = "wide",
+}: {
+  variant?: "wide" | "compact";
+}) {
   const t = useT();
   const session = useSession();
   const profile = useStore(profileStore);
@@ -45,10 +50,22 @@ export function UserMenu() {
   // would be a button that can't do anything.
   if (!isSupabaseConfigured) return null;
 
-  // `loading` renders the signed-out row rather than nothing: the session
-  // settles in milliseconds, and a footer that appears late makes the whole
-  // sidebar jump.
+  // `loading` renders the signed-out affordance rather than nothing: the
+  // session settles in milliseconds, and chrome that appears late makes the
+  // whole layout jump.
   if (session.status !== "signed-in") {
+    if (variant === "compact") {
+      return (
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={t("account.signIn")}
+          render={<Link to="/account" />}
+        >
+          <LogInIcon />
+        </Button>
+      );
+    }
     return (
       <SidebarMenu>
         <SidebarMenuItem>
@@ -61,37 +78,49 @@ export function UserMenu() {
     );
   }
 
-  const name = displayName(profile.username, session.email) ?? "";
+  const name = displayName(profile.displayName, session.email) ?? "";
+  const avatar = (
+    <UserAvatar
+      name={name}
+      avatarUrl={profile.avatarUrl}
+      className="size-8 rounded-lg"
+    />
+  );
 
-  return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <SidebarMenuButton size="lg">
-                <UserAvatar
-                  name={name}
-                  avatarUrl={profile.avatarUrl}
-                  className="size-8 rounded-lg"
-                />
-                {/* min-w-0 so a long email truncates instead of printing
-                    over the chevron — the flex rule this codebase keeps
-                    relearning. */}
-                <div className="grid min-w-0 flex-1 text-left leading-tight">
-                  <span className="truncate text-sm font-medium">{name}</span>
-                  <span className="truncate text-xs text-muted-foreground">
-                    {session.email}
-                  </span>
-                </div>
-                <ChevronsUpDownIcon className="ml-auto" />
-              </SidebarMenuButton>
-            }
-          />
+  const menu = (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          variant === "compact" ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t("account.title")}
+              className="rounded-lg"
+            >
+              {avatar}
+            </Button>
+          ) : (
+            <SidebarMenuButton size="lg">
+              {avatar}
+              {/* min-w-0 so a long email truncates instead of printing over
+                  the chevron — the flex rule this codebase keeps
+                  relearning. */}
+              <div className="grid min-w-0 flex-1 text-left leading-tight">
+                <span className="truncate text-sm font-medium">{name}</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {session.email}
+                </span>
+              </div>
+              <ChevronsUpDownIcon className="ml-auto" />
+            </SidebarMenuButton>
+          )
+        }
+      />
           <DropdownMenuContent
-            side="top"
-            align="start"
-            className="w-(--anchor-width) min-w-56"
+            side={variant === "compact" ? "bottom" : "top"}
+            align="end"
+            className="min-w-56"
           >
             {/* The Group is required, not decoration: `DropdownMenuLabel` is
                 Base UI's `GroupLabel`, and one outside a Group throws — the
@@ -138,8 +167,16 @@ export function UserMenu() {
               {t("account.signOut")}
             </DropdownMenuItem>
           </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarMenuItem>
+    </DropdownMenu>
+  );
+
+  // The header drops it straight in; the sidebar needs its menu scaffolding
+  // for the row to size and indent like every other one.
+  return variant === "compact" ? (
+    menu
+  ) : (
+    <SidebarMenu>
+      <SidebarMenuItem>{menu}</SidebarMenuItem>
     </SidebarMenu>
   );
 }

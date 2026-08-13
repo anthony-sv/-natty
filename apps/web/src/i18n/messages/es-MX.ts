@@ -41,10 +41,21 @@ export const esMX: Record<keyof typeof en, string> = {
   "account.continueGoogle": "Continuar con Google",
   "account.or": "o",
   "account.providerError": "No se pudo iniciar el acceso",
+  "account.handle": "Usuario",
+  "account.handleHelp":
+    "Único, y el único nombre que aparecería en algo público. Letras, números y guiones bajos.",
+  "account.handleSave": "Reservar",
+  "account.handleSaved": "Usuario reservado",
+  "account.handleTaken": "Alguien ya lo tiene",
+  "account.handleProblem.too-short": "Mínimo 3 caracteres",
+  "account.handleProblem.too-long": "Máximo 20 caracteres",
+  "account.handleProblem.shape":
+    "Sólo letras, números y guiones bajos, empezando con letra",
+  "account.handleProblem.reserved": "Ese está reservado",
   "account.username": "Nombre visible",
   "account.usernamePlaceholder": "¿Cómo te llamamos?",
   "account.usernameHelp":
-    "Sólo tú lo ves. Te sigue a tus otros dispositivos junto con tu cuenta.",
+    "Privado — sólo tú lo ves, y te sigue a tus otros dispositivos con tu cuenta.",
   "account.unavailable":
     "Esta versión no tiene cuentas configuradas. Todo sigue funcionando — tus datos se quedan en este dispositivo.",
   "account.signInError": "No se pudo iniciar sesión",

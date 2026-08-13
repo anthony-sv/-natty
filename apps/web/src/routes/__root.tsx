@@ -14,11 +14,8 @@ import { FormDevtoolsPanel } from "@tanstack/react-form-devtools";
 import { HotkeysDevtoolsPanel } from "@tanstack/react-hotkeys-devtools";
 import { PacerDevtoolsPanel } from "@tanstack/react-pacer-devtools";
 import { TableDevtoolsPanel } from "@tanstack/react-table-devtools";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { AppHeader } from "@/components/app-header";
 import { AppSidebar } from "@/components/app-sidebar";
 import { CommandPalette } from "@/components/command-palette";
 import { Analytics } from "@/components/analytics";
@@ -85,12 +82,7 @@ function RootComponent() {
             <SidebarProvider>
               <AppSidebar />
               <SidebarInset>
-                {/* The trigger is the only chrome left at the top — it
-                    collapses the sidebar and is the sole nav affordance on
-                    small screens. */}
-                <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-                  <SidebarTrigger />
-                </header>
+                <AppHeader />
                 <Outlet />
               </SidebarInset>
               <CommandPalette />
