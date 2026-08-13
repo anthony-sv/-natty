@@ -7,14 +7,26 @@ import {
   BACKUP_VERSION,
   backupDataSchema,
   backupFilename,
+  backupSchema,
   buildBackup,
   readBackup,
+  scopeMatchesIntent,
   summarise,
+  type Backup,
   type BackupData,
 } from "./backup";
 import { rekey, type IdSource } from "./rekey";
 
 const AT = Date.UTC(2026, 7, 11, 12);
+
+/** Every scope that is a share rather than a whole-machine backup. */
+const SHARE_SCOPES = [
+  "routine",
+  "diet",
+  "recipe",
+  "food",
+  "exercise",
+] as const satisfies readonly Backup["scope"][];
 
 function emptyData(): BackupData {
   return {
@@ -165,6 +177,40 @@ describe("the envelope", () => {
       "recipes",
       "diets",
     ]);
+  });
+
+  it("counts a profile, so a file carrying one never previews as empty", () => {
+    // It was omitted while every array was listed, which put "there's nothing
+    // in it" above a button that replaces everything.
+    expect(summarise(emptyData())).toEqual([]);
+    expect(
+      summarise({ ...emptyData(), profile: { heightCm: 179 } }).map((r) => r.key),
+    ).toEqual(["profile"]);
+  });
+
+  describe("scopeMatchesIntent", () => {
+    it("lets a full backup restore and a share merge", () => {
+      expect(scopeMatchesIntent("full", "restore")).toBe(true);
+      for (const scope of SHARE_SCOPES) {
+        expect(scopeMatchesIntent(scope, "merge")).toBe(true);
+      }
+    });
+
+    it("refuses a share down the restore path, and a backup down the share path", () => {
+      // The whole point: a file must not be able to route itself to
+      // `restoreEverything`, which clears every collection.
+      for (const scope of SHARE_SCOPES) {
+        expect(scopeMatchesIntent(scope, "restore")).toBe(false);
+      }
+      expect(scopeMatchesIntent("full", "merge")).toBe(false);
+    });
+
+    it("covers every scope the envelope allows", () => {
+      // A new scope has to be classified deliberately rather than defaulting
+      // into whichever branch the ternary happens to take.
+      const all = backupSchema.shape.scope.options;
+      expect([...all].sort()).toEqual([...SHARE_SCOPES, "full"].sort());
+    });
   });
 
   it("names the file by date and scope", () => {

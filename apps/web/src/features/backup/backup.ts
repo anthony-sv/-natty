@@ -176,7 +176,46 @@ export function readBackup(json: unknown): ReadResult {
   return { ok: true, backup: parsed.data };
 }
 
-/** What's in a file, for the confirmation step before anything is written. */
+/**
+ * Which of the two imports you asked for.
+ *
+ * Held apart from `scope` on purpose: `scope` is what the *file* claims to be,
+ * and this is what the person clicked. They're checked against each other
+ * rather than one being derived from the other — see `scopeMatchesIntent`.
+ */
+export type ImportIntent = "restore" | "merge";
+
+/**
+ * Does this file belong to the button that was pressed?
+ *
+ * **The action must never be picked by the file.** Reading `scope` and
+ * branching on it meant a file could route itself to `restoreEverything`,
+ * which clears every collection — so a routine someone sent you decided, on
+ * its own, whether your logged sets survived opening it. The dialog did say
+ * "replace", but a document choosing which question you get asked is the wrong
+ * shape regardless of how the question is worded.
+ *
+ * So the intent comes from the click and the file is checked against it. A
+ * mismatch is refused outright rather than silently doing the other thing:
+ * the two differ by whether your data is deleted, which is not a difference to
+ * paper over with a best guess.
+ */
+export function scopeMatchesIntent(
+  scope: Backup["scope"],
+  intent: ImportIntent,
+): boolean {
+  return intent === "restore" ? scope === "full" : scope !== "full";
+}
+
+/**
+ * What's in a file, for the confirmation step before anything is written.
+ *
+ * **`profile` is counted even though it isn't a collection.** It was left out
+ * while every array was listed, so a file carrying only a profile previewed as
+ * "there's nothing in it" — directly above a button that replaces everything.
+ * A preview that under-reports is worse than no preview: it's read as
+ * reassurance.
+ */
 export function summarise(data: BackupData): { key: keyof BackupData; count: number }[] {
   return (
     [
@@ -189,6 +228,7 @@ export function summarise(data: BackupData): { key: keyof BackupData; count: num
       ["recipes", data.recipes.length],
       ["diets", data.diets.length],
       ["intake", data.intake.length],
+      ["profile", data.profile === undefined ? 0 : 1],
     ] as const
   )
     .filter(([, count]) => count > 0)

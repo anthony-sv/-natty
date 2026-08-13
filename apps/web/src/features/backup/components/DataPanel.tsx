@@ -20,7 +20,14 @@ import {
 } from "@/components/ui/card";
 import { toast } from "@/components/ui/toast";
 import { useT } from "@/i18n/use-t";
-import { backupFilename, readBackup, summarise, type Backup } from "../backup";
+import {
+  backupFilename,
+  readBackup,
+  scopeMatchesIntent,
+  summarise,
+  type Backup,
+  type ImportIntent,
+} from "../backup";
 import {
   downloadBackup,
   exportEverything,
@@ -38,9 +45,25 @@ import {
 export function DataPanel() {
   const t = useT();
   const fileInput = useRef<HTMLInputElement>(null);
+  /**
+   * Which button opened the picker.
+   *
+   * A ref rather than state because nothing renders from it until a file comes
+   * back, and re-rendering the card between the click and the picker closing
+   * would be a wasted pass. Read once in `onFile` and then carried on
+   * `pending`, so the dialog can't drift from the click that opened it.
+   */
+  const intent = useRef<ImportIntent>("merge");
   // Held until confirmed: nothing is written before you've seen what's in the
   // file, because one of the two paths replaces everything you have.
-  const [pending, setPending] = useState<Backup | undefined>();
+  const [pending, setPending] = useState<
+    { backup: Backup; intent: ImportIntent } | undefined
+  >();
+
+  function pick(next: ImportIntent) {
+    intent.current = next;
+    fileInput.current?.click();
+  }
 
   async function onExport() {
     const now = Date.now();
@@ -75,12 +98,23 @@ export function DataPanel() {
       });
       return;
     }
-    setPending(result.backup);
+    // The file has to be the kind you asked for. Refused rather than quietly
+    // switched: the two actions differ by whether your data is deleted.
+    const chosen = intent.current;
+    if (!scopeMatchesIntent(result.backup.scope, chosen)) {
+      toast.add({
+        title: chosen === "restore" ? t("data.notABackup") : t("data.notAShare"),
+        type: "error",
+      });
+      return;
+    }
+
+    setPending({ backup: result.backup, intent: chosen });
   }
 
-  const rows = pending ? summarise(pending.data) : [];
-  // A full backup is your own data going home; anything smaller is a share.
-  const isRestore = pending?.scope === "full";
+  const rows = pending ? summarise(pending.backup.data) : [];
+  // Decided by the button, never by the file — see `scopeMatchesIntent`.
+  const isRestore = pending?.intent === "restore";
 
   return (
     <>
@@ -95,9 +129,17 @@ export function DataPanel() {
               <DownloadIcon data-icon="inline-start" />
               {t("data.export")}
             </Button>
-            <Button variant="outline" onClick={() => fileInput.current?.click()}>
+            {/* Two buttons, because they are two actions — one replaces
+                everything you have and the other adds to it. One "Import"
+                that read the answer off the file put that choice in the
+                file's hands. */}
+            <Button variant="outline" onClick={() => pick("merge")}>
               <UploadIcon data-icon="inline-start" />
-              {t("data.import")}
+              {t("data.importShare")}
+            </Button>
+            <Button variant="outline" onClick={() => pick("restore")}>
+              <UploadIcon data-icon="inline-start" />
+              {t("data.restoreFile")}
             </Button>
             <input
               ref={fileInput}
@@ -139,8 +181,14 @@ export function DataPanel() {
                 <span className="text-muted-foreground">{count}</span>
               </li>
             ))}
+            {/* An empty file is a neutral fact on a merge and a warning on a
+                restore: "there's nothing in it" sat directly above a button
+                that clears every collection, which read as reassurance at the
+                exact moment it should alarm. */}
             {rows.length === 0 ? (
-              <li className="text-muted-foreground">{t("data.empty")}</li>
+              <li className={isRestore ? "text-destructive" : "text-muted-foreground"}>
+                {isRestore ? t("data.restoreEmpty") : t("data.empty")}
+              </li>
             ) : null}
           </ul>
 
@@ -149,7 +197,7 @@ export function DataPanel() {
             <AlertDialogAction
               onClick={() => {
                 if (pending === undefined) return;
-                const data = pending.data;
+                const data = pending.backup.data;
                 void (async () => {
                   if (isRestore) await restoreEverything(data);
                   else await importAdditive(data);

@@ -796,7 +796,8 @@ export const en = {
   "data.body":
     "Everything lives in this browser. Export a file you can keep, restore it on another device, or hand someone a single routine, plan or recipe.",
   "data.export": "Export everything",
-  "data.import": "Import a file",
+  "data.importShare": "Add a shared item",
+  "data.restoreFile": "Restore a backup",
   "data.localOnly":
     "The file is saved to this device and read from it. Nothing is uploaded anywhere.",
   "data.exported": "Backup downloaded",
@@ -805,6 +806,12 @@ export const en = {
   "data.wrongVersion": "That file is version {version}, which this build doesn't read",
   "data.invalid": "That file didn't validate \u2014 {detail}",
   "data.empty": "There's nothing in it",
+  "data.restoreEmpty":
+    "There's nothing in this file. Restoring it would leave you with nothing.",
+  "data.notABackup":
+    "That's a shared item, not a full backup. Use “Add a shared item” to bring it in alongside your data.",
+  "data.notAShare":
+    "That's a full backup, not a shared item. Use “Restore a backup” if you mean to replace everything.",
   "data.cancel": "Cancel",
   "data.restoreTitle": "Restore everything?",
   "data.restoreBody":
@@ -868,6 +875,7 @@ export const en = {
   "data.kind.recipes": "Your recipes",
   "data.kind.diets": "Your diet plans",
   "data.kind.intake": "Meals eaten",
+  "data.kind.profile": "Your profile",
   "data.share": "Share",
   "data.shared": "File downloaded",
 

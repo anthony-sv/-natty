@@ -790,7 +790,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "data.body":
     "Todo vive en este navegador. Exporta un archivo que puedas guardar, restáuralo en otro dispositivo, o p\u00e1sale a alguien una sola rutina, plan o receta.",
   "data.export": "Exportar todo",
-  "data.import": "Importar un archivo",
+  "data.importShare": "Agregar algo compartido",
+  "data.restoreFile": "Restaurar un respaldo",
   "data.localOnly":
     "El archivo se guarda en este dispositivo y se lee de aqu\u00ed. No se sube a ning\u00fan lado.",
   "data.exported": "Respaldo descargado",
@@ -799,6 +800,12 @@ export const esMX: Record<keyof typeof en, string> = {
   "data.wrongVersion": "Ese archivo es versi\u00f3n {version}, y esta build no la lee",
   "data.invalid": "Ese archivo no pas\u00f3 la validaci\u00f3n \u2014 {detail}",
   "data.empty": "No trae nada",
+  "data.restoreEmpty":
+    "Este archivo no trae nada. Restaurarlo te dejaría sin nada.",
+  "data.notABackup":
+    "Eso es algo compartido, no un respaldo completo. Usa “Agregar algo compartido” para sumarlo a tus datos.",
+  "data.notAShare":
+    "Eso es un respaldo completo, no algo compartido. Usa “Restaurar un respaldo” si de verdad quieres reemplazar todo.",
   "data.cancel": "Cancelar",
   "data.restoreTitle": "\u00bfRestaurar todo?",
   "data.restoreBody":
@@ -861,6 +868,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "data.kind.recipes": "Tus recetas",
   "data.kind.diets": "Tus planes de dieta",
   "data.kind.intake": "Comidas registradas",
+  "data.kind.profile": "Tu perfil",
   "data.share": "Compartir",
   "data.shared": "Archivo descargado",
 
