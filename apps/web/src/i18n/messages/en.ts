@@ -268,6 +268,10 @@ export const en = {
   "builder.weekNumber": "Week {number}",
   "builder.addWeek": "Add a second week",
   "builder.duplicateWeek": "Add a week",
+  "builder.weekFromCopy": "Copy week {number}",
+  "builder.weekFromCopyHint": "Same days and exercises — change the numbers.",
+  "builder.weekFromEmpty": "Start from an empty week",
+  "builder.weekFromEmptyHint": "For a program that changes its split partway.",
   "builder.removeWeek": "Remove week {number}",
   "builder.daysInWeek": "Days — week {week}",
   "builder.oneWeekHint":
@@ -724,10 +728,11 @@ export const en = {
   "measure.body":
     "The scale says which direction you're going. A tape says where it went — two people at the same weight can have completely different arms.",
   "measure.unit": "Measured in",
-  "measure.trackSides": "Left and right separately",
-  "measure.tracking": "Sites to keep on the form",
-  "measure.showAll": "Measure something else",
-  "measure.showTracked": "Just my usual ones",
+  "measure.addSite": "Measure something else",
+  "measure.bothSides": "Both sides",
+  "measure.removeSite": "Stop measuring {site}",
+  "measure.noneTracked":
+    "Nothing on the form. Add whatever you measure — arms, waist and legs are the usual three.",
   "measure.save": "Save",
   "measure.saved.one": "{count} measurement saved",
   "measure.saved.other": "{count} measurements saved",

@@ -267,6 +267,10 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.weekNumber": "Semana {number}",
   "builder.addWeek": "Agregar una segunda semana",
   "builder.duplicateWeek": "Agregar una semana",
+  "builder.weekFromCopy": "Copiar la semana {number}",
+  "builder.weekFromCopyHint": "Mismos días y ejercicios — cambia los números.",
+  "builder.weekFromEmpty": "Empezar con una semana vacía",
+  "builder.weekFromEmptyHint": "Para un programa que cambia de split a medio camino.",
   "builder.removeWeek": "Quitar la semana {number}",
   "builder.daysInWeek": "Días — semana {week}",
   "builder.oneWeekHint":
@@ -718,10 +722,11 @@ export const esMX: Record<keyof typeof en, string> = {
   "measure.body":
     "La báscula dice hacia dónde vas. La cinta dice a dónde llegó — dos personas con el mismo peso pueden tener brazos completamente distintos.",
   "measure.unit": "Medido en",
-  "measure.trackSides": "Izquierdo y derecho por separado",
-  "measure.tracking": "Zonas que quieres en el formulario",
-  "measure.showAll": "Medir algo más",
-  "measure.showTracked": "Solo las de siempre",
+  "measure.addSite": "Medir algo más",
+  "measure.bothSides": "Ambos lados",
+  "measure.removeSite": "Dejar de medir {site}",
+  "measure.noneTracked":
+    "No hay nada en el formulario. Agrega lo que midas — brazos, cintura y piernas son las tres de siempre.",
   "measure.save": "Guardar",
   "measure.saved.one": "{count} medida guardada",
   "measure.saved.other": "{count} medidas guardadas",

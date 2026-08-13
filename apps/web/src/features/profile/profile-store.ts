@@ -43,11 +43,20 @@ export const profileSchema = z.object({
    */
   trackedSites: z.array(z.string()).optional(),
   /**
-   * Whether the paired sites are measured left and right separately.
+   * Which of those you measure left and right separately.
    *
-   * One switch rather than a flag per site: nobody measures one arm both ways
-   * and the other once, and four per-site toggles would be four decisions to
-   * answer the same question.
+   * A subset rather than one global switch. The switch meant ticking it gave
+   * you eight inputs when you only wanted two — you might well measure both
+   * arms and one thigh, and being made to choose for all four paired sites at
+   * once is a decision nobody has an answer to.
+   */
+  sidedSites: z.array(z.string()).optional(),
+  /**
+   * The switch `sidedSites` replaced. Kept only so an existing preference
+   * survives one more load: `MeasurementForm` seeds `sidedSites` from it and
+   * then it stops mattering.
+   *
+   * @deprecated
    */
   trackSides: z.boolean().optional(),
 });

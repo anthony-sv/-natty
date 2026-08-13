@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { CopyIcon, PlusIcon, XIcon } from "lucide-react";
+import { CopyIcon, FilePlusIcon, PlusIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,6 +32,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
 import type { ExerciseEntry, Routine } from "@/data/routines";
@@ -57,6 +64,7 @@ import {
   duplicateWeek,
   emptyDay,
   emptyPhase,
+  emptyWeek,
   toRoutine,
   type DraftDay,
   type DraftExercise,
@@ -272,19 +280,46 @@ function WeekBar({
             ))
           : null}
 
-        {/* A copy of the week you're looking at, not an empty one: a second
-            week almost always keeps the split and moves the numbers, and
-            retyping the cycle to change one rep target is the reason nobody
-            would use this. */}
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => onAdd(duplicateWeek(weeks[active]))}
-        >
-          <CopyIcon data-icon="inline-start" />
-          {weeks.length > 1 ? t("builder.duplicateWeek") : t("builder.addWeek")}
-        </Button>
+        {/* Two ways to start a week, asked rather than assumed. Copying is
+            the common one — a second week usually keeps the split and moves
+            the numbers — but a program that changes its split partway through
+            shouldn't have to delete a copy first. */}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button type="button" size="sm" variant="outline">
+                <PlusIcon data-icon="inline-start" />
+                {weeks.length > 1
+                  ? t("builder.duplicateWeek")
+                  : t("builder.addWeek")}
+              </Button>
+            }
+          />
+          <DropdownMenuContent align="start" className="w-auto min-w-64">
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => onAdd(duplicateWeek(weeks[active]))}>
+                <CopyIcon />
+                <div className="flex flex-col">
+                  <span>
+                    {t("builder.weekFromCopy", { number: active + 1 })}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {t("builder.weekFromCopyHint")}
+                  </span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onAdd(emptyWeek())}>
+                <FilePlusIcon />
+                <div className="flex flex-col">
+                  <span>{t("builder.weekFromEmpty")}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {t("builder.weekFromEmptyHint")}
+                  </span>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {weeks.length > 1 ? (
           <Button
