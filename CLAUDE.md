@@ -1158,6 +1158,12 @@ the profile; theme, locale and `session-store` stay local by design.
   trusting cookie claims — and injects `context.userId`, the **only** user id
   a handler may scope by. Ids in payloads are client-minted and only unique
   per user; tables key on `(user_id, id)` for the same reason.
+  - It **throws a `Response`, not an `Error`**: Start returns a thrown
+    `Response` verbatim and runs a thrown `Error` through seroval as a 500, so
+    an expired cookie — the ordinary failure — used to read as the server
+    falling over. 401 for no usable session; 403 belongs to the CSRF
+    middleware, and keeping them apart is what makes "sign in again" and
+    "wrong origin" tellable apart in a network tab.
 - **The DB layer is Drizzle over Supabase Postgres** (`server/db/`), reached
   through the transaction pooler (`prepare: false` is required, not tuning).
   Tables carry `.enableRLS()` even though the Data API is disabled at the
