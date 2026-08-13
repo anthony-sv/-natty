@@ -28,6 +28,8 @@ function sampleDraft(): DraftPlan {
     tdeeKcal: "3000",
     targetKcal: "2200",
     targets: { protein: "180", carbs: "200", fat: "70" },
+    notes: [],
+    supplements: [],
     meals: [
       {
         name: "Meal 1",
@@ -158,6 +160,28 @@ describe("round-tripping", () => {
     // What Edit and "start from a copy" both depend on.
     const original = toDietPlan(sampleDraft(), "s")!;
     expect(toDietPlan(toDraftPlan(original), "s")).toEqual(original);
+  });
+
+  it("keeps the plan's notes and supplements", () => {
+    // Both used to be written empty on save, so editing a plan's *name*
+    // silently deleted whatever was under it — and copying a built-in threw
+    // away its protocol. The editor now carries notes (which it can edit) and
+    // supplements (which it can't, yet) straight through.
+    const plan = toDietPlan(
+      {
+        ...sampleDraft(),
+        notes: ["Weigh the chicken cooked.", "  "],
+        supplements: [{ name: "Magnesium", dose: "300mg", timing: "Before bed" }],
+      },
+      "s",
+    )!;
+    // The blank row is dropped rather than saved as an empty bullet.
+    expect(plan.notes).toEqual(["Weigh the chicken cooked."]);
+    expect(plan.supplements).toHaveLength(1);
+
+    const again = toDietPlan(toDraftPlan(plan), "s")!;
+    expect(again.notes).toEqual(plan.notes);
+    expect(again.supplements).toEqual(plan.supplements);
   });
 
   it("keeps a meal's note and its option labels", () => {

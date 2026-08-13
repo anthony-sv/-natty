@@ -570,6 +570,10 @@ export const en = {
   "dietBuilder.draft": "Draft",
   "dietBuilder.draftBody":
     "This plan doesn't add up to its targets yet. Edit it and save again to clear this.",
+  "dietBuilder.notes": "Notes",
+  "dietBuilder.addNote": "Add a note",
+  "dietBuilder.removeNote": "Remove note",
+  "dietBuilder.notePlaceholder": "Anything worth remembering about this plan",
   "dietBuilder.save": "Save plan",
   "dietBuilder.saving": "Saving\u2026",
   "dietBuilder.saved": "Saved {name}",

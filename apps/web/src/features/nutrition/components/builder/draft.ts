@@ -20,6 +20,17 @@ export interface DraftPlan {
   targetKcal: string;
   targets: { protein: string; carbs: string; fat: string };
   meals: DraftMeal[];
+  /** Free lines under the plan — editable, one per row. */
+  notes: string[];
+  /**
+   * Carried through the editor untouched rather than edited.
+   *
+   * There's no supplements section yet, and dropping them on save is the
+   * thing that must not happen: editing a plan's name would have quietly
+   * deleted a protocol you'd copied from elsewhere. Round-tripping something
+   * you can't yet edit is a strictly better position than destroying it.
+   */
+  supplements: DietPlan["supplements"];
 }
 
 export interface DraftMeal {
@@ -47,6 +58,8 @@ export function emptyPlan(): DraftPlan {
     targetKcal: "",
     targets: { protein: "", carbs: "", fat: "" },
     meals: [emptyMeal(0)],
+    notes: [],
+    supplements: [],
   };
 }
 
@@ -116,11 +129,10 @@ export function toDietPlan(
     targetKcal,
     targets,
     meals,
-    // Both are in the schema with defaults and neither is worth a builder
-    // section: supplements are a standing protocol rather than part of a plan's
-    // arithmetic, and the docs' plan-level notes are transcription artefacts.
-    supplements: [],
-    notes: [],
+    supplements: draft.supplements,
+    // Blank rows are dropped rather than saved: an empty note renders as an
+    // empty bullet, which reads as something failing to load.
+    notes: draft.notes.map((note) => note.trim()).filter((note) => note !== ""),
   };
 }
 
@@ -152,6 +164,8 @@ export function toDraftPlan(plan: DietPlan): DraftPlan {
         items: option.items,
       })),
     })),
+    notes: [...plan.notes],
+    supplements: plan.supplements,
   };
 }
 

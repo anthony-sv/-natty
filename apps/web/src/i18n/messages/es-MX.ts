@@ -563,6 +563,10 @@ export const esMX: Record<keyof typeof en, string> = {
   "dietBuilder.draft": "Borrador",
   "dietBuilder.draftBody":
     "Este plan todavía no suma a sus objetivos. Edítalo y vuelve a guardar para quitar esto.",
+  "dietBuilder.notes": "Notas",
+  "dietBuilder.addNote": "Agregar nota",
+  "dietBuilder.removeNote": "Quitar nota",
+  "dietBuilder.notePlaceholder": "Algo que valga la pena recordar de este plan",
   "dietBuilder.save": "Guardar plan",
   "dietBuilder.saving": "Guardando\u2026",
   "dietBuilder.saved": "Se guard\u00f3 {name}",
