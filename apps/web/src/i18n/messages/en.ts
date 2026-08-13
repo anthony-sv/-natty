@@ -67,6 +67,26 @@ export const en = {
   "account.upload.done.other": "{count} items uploaded",
   "account.upload.none": "Your account already has everything on this device",
   "account.upload.error": "Upload failed",
+  "account.upload.checking": "Checking...",
+  "account.upload.confirmTitle": "Upload this to your account?",
+  "account.upload.confirmBody":
+    "This is what this device has that your account doesn't. Nothing is removed from this device.",
+  "account.upload.confirmAction": "Upload",
+  "account.upload.otherAccount":
+    "A different account uploaded from this device before, so some of this may not be yours. Check the numbers above before continuing.",
+
+  "account.delete.title": "Delete your account",
+  "account.delete.body":
+    "Removes your account and everything in it, on every device. There is no undo.",
+  "account.delete.exportFirst": "Download your data first",
+  "account.delete.action": "Delete my account",
+  "account.delete.confirmTitle": "Delete your account?",
+  "account.delete.confirmBody":
+    "Your training log, weigh-ins, measurements, meals and everything you wrote will be deleted from the server, along with your handle. This cannot be undone. Data still on this device is left alone and will show again the next time you open the app.",
+  "account.delete.typeEmail": "Type {email} to confirm",
+  "account.delete.confirmAction": "Delete everything",
+  "account.delete.done": "Your account has been deleted",
+  "account.delete.error": "Couldn't delete the account",
 
   "palette.placeholder": "Search pages and routines...",
   "palette.empty": "No results.",
@@ -1535,7 +1555,7 @@ export const en = {
   "privacy.control.p2":
     "Individual entries can be edited or deleted wherever they appear, and deleting is immediate rather than a request you file.",
   "privacy.control.p3":
-    "To have your account and everything in it deleted, email the address below and it will be done. Signing out on its own does not delete anything — it just stops syncing.",
+    "Deleting your account is a button on the account page, and it removes everything the server holds — your log, your measurements, your meals, what you wrote, and your handle. Signing out on its own deletes nothing; it just stops syncing.",
 
   "privacy.contact.title": "Contact",
   "privacy.contact.p1":

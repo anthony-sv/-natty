@@ -70,6 +70,26 @@ export const esMX: Record<keyof typeof en, string> = {
   "account.upload.done.other": "{count} elementos subidos",
   "account.upload.none": "Tu cuenta ya tiene todo lo de este dispositivo",
   "account.upload.error": "No se pudo subir",
+  "account.upload.checking": "Revisando...",
+  "account.upload.confirmTitle": "¿Subir esto a tu cuenta?",
+  "account.upload.confirmBody":
+    "Esto es lo que este dispositivo tiene y tu cuenta no. No se quita nada de este dispositivo.",
+  "account.upload.confirmAction": "Subir",
+  "account.upload.otherAccount":
+    "Otra cuenta subió datos desde este dispositivo antes, así que parte de esto podría no ser tuyo. Revisa los números de arriba antes de continuar.",
+
+  "account.delete.title": "Eliminar tu cuenta",
+  "account.delete.body":
+    "Borra tu cuenta y todo lo que contiene, en todos tus dispositivos. No se puede deshacer.",
+  "account.delete.exportFirst": "Descarga tus datos primero",
+  "account.delete.action": "Eliminar mi cuenta",
+  "account.delete.confirmTitle": "¿Eliminar tu cuenta?",
+  "account.delete.confirmBody":
+    "Tu registro de entrenamiento, pesajes, medidas, comidas y todo lo que escribiste se borrarán del servidor, junto con tu usuario. Esto no se puede deshacer. Los datos que sigan en este dispositivo se quedan intactos y volverán a aparecer la próxima vez que abras la app.",
+  "account.delete.typeEmail": "Escribe {email} para confirmar",
+  "account.delete.confirmAction": "Eliminar todo",
+  "account.delete.done": "Tu cuenta fue eliminada",
+  "account.delete.error": "No se pudo eliminar la cuenta",
 
   "palette.placeholder": "Busca páginas y rutinas...",
   "palette.empty": "Sin resultados.",
@@ -1518,7 +1538,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "privacy.control.p2":
     "Cada registro se puede editar o borrar donde aparece, y borrar es inmediato, no una solicitud que se tramita.",
   "privacy.control.p3":
-    "Para que se elimine tu cuenta y todo lo que contiene, escribe al correo de abajo y se hará. Cerrar sesión por sí solo no borra nada — solo deja de sincronizar.",
+    "Eliminar tu cuenta es un botón en la página de cuenta, y borra todo lo que guarda el servidor — tu registro, tus medidas, tus comidas, lo que escribiste y tu usuario. Cerrar sesión por sí solo no borra nada; solo deja de sincronizar.",
 
   "privacy.contact.title": "Contacto",
   "privacy.contact.p1":

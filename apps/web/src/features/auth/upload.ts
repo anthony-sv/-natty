@@ -21,7 +21,49 @@ import { userRoutinesFork } from "@/features/routines/collection";
  * server upserts on `(user_id, id)` anyway, so pressing it twice does nothing
  * the first press didn't. Local rows are never cleared: sign out and this
  * device still shows its own data.
+ *
+ * ## Why it counts first and writes second
+ *
+ * On a shared device the local data belongs to whoever used it last, and the
+ * account signed in now may not be theirs — so uploading on a single press
+ * could pour one person's training history into another's account. It's
+ * their own press and their own device, so refusing outright would be
+ * paternalistic and sometimes wrong. Showing what is about to move is the
+ * honest version: a year of someone else's training is unmistakable as a
+ * list of counts, and nobody confirms 1,824 sets they don't recognise.
  */
+
+/** Which account last uploaded from this device. */
+const OWNER_KEY = "natty.upload.owner.v1";
+
+/**
+ * Deliberately *not* `natty.profile.owner.v1`. That one is rewritten on every
+ * sign-in, so by the time someone reads the upload card it already names
+ * them — it can say who is here, never whose data this is. This is written
+ * only by an upload, so it survives a different person signing in.
+ */
+function storedOwner(): string | null {
+  if (typeof localStorage === "undefined") return null;
+  return localStorage.getItem(OWNER_KEY);
+}
+
+function rememberOwner(userId: string): void {
+  if (typeof localStorage === "undefined") return;
+  localStorage.setItem(OWNER_KEY, userId);
+}
+
+/**
+ * Whether this device's data is known to have been uploaded by someone else.
+ *
+ * Only ever *known* — a device nobody has uploaded from returns false, and
+ * the preview is what protects that case. Exported for its test.
+ */
+export function belongsToAnotherAccount(
+  owner: string | null,
+  userId: string,
+): boolean {
+  return owner !== null && owner !== userId;
+}
 
 /**
  * Loosely typed on purpose — nine collections of nine different row shapes,
@@ -60,33 +102,73 @@ const TARGETS: Array<{ labelKey: MessageKey; fork: AnyFork }> = [
   { labelKey: "data.kind.intake", fork: intakeEntriesFork as unknown as AnyFork },
 ];
 
+export interface PendingUpload {
+  /** What would move, per collection — only the non-empty ones. */
+  rows: Array<{ labelKey: MessageKey; count: number }>;
+  total: number;
+  /** True when a *different* account uploaded from this device before. */
+  fromAnotherAccount: boolean;
+}
+
+/**
+ * What would be uploaded, without uploading it.
+ *
+ * The rows themselves are deliberately not returned: re-reading them at
+ * commit time is one more cheap pass over an in-memory collection, and
+ * holding a snapshot across a confirmation dialog would upload what was true
+ * when the dialog opened rather than when it was confirmed.
+ */
+export async function pendingUpload(userId: string): Promise<PendingUpload> {
+  const rows: PendingUpload["rows"] = [];
+
+  for (const { labelKey, fork } of TARGETS) {
+    const count = (await missingRows(fork)).length;
+    if (count > 0) rows.push({ labelKey, count });
+  }
+
+  return {
+    rows,
+    total: rows.reduce((sum, row) => sum + row.count, 0),
+    fromAnotherAccount: belongsToAnotherAccount(storedOwner(), userId),
+  };
+}
+
+/** Everything this device has that the account doesn't. */
+async function missingRows(fork: AnyFork): Promise<Array<object>> {
+  const local = fork.local;
+  const synced = fork.synced();
+  // **Both sides have to be awake first.** Collections load lazily, so an
+  // unloaded one reads back empty — which here would mean either uploading
+  // nothing or re-uploading everything.
+  await Promise.all([local.preload(), synced.preload()]);
+
+  const have = new Set(synced.keys());
+  return [...local.values()].filter(
+    (row) => !have.has(fork.getKey(row as never)),
+  );
+}
+
 export interface UploadResult {
-  /** How many rows were sent, per collection — only the non-empty ones. */
   uploaded: Array<{ labelKey: MessageKey; count: number }>;
   total: number;
 }
 
-export async function uploadLocalData(): Promise<UploadResult> {
+export async function uploadLocalData(userId: string): Promise<UploadResult> {
   const uploaded: UploadResult["uploaded"] = [];
 
   for (const { labelKey, fork } of TARGETS) {
-    const local = fork.local;
-    const synced = fork.synced();
-    // **Both sides have to be awake first.** Collections load lazily, so an
-    // unloaded one reads back empty — which here would mean either uploading
-    // nothing or re-uploading everything.
-    await Promise.all([local.preload(), synced.preload()]);
-
-    const have = new Set(synced.keys());
-    const missing = [...local.values()].filter(
-      (row) => !have.has(fork.getKey(row as never)),
-    );
+    const missing = await missingRows(fork);
     if (missing.length === 0) continue;
 
     // One transaction per collection: each is a single round trip.
-    synced.insert(missing as Array<never>);
+    fork.synced().insert(missing as Array<never>);
     uploaded.push({ labelKey, count: missing.length });
   }
+
+  // Claims the device for this account, so a different one is warned next
+  // time. Recorded even for an empty upload: pressing the button is the
+  // claim, and "nothing was missing" still means this account owns it.
+  rememberOwner(userId);
 
   return {
     uploaded,

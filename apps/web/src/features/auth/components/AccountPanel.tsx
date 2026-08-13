@@ -1,6 +1,14 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useForm } from "@tanstack/react-form";
-import { LogInIcon, LogOutIcon, UploadIcon, UserPlusIcon } from "lucide-react";
+import {
+  AlertTriangleIcon,
+  LogInIcon,
+  LogOutIcon,
+  Trash2Icon,
+  UploadIcon,
+  UserPlusIcon,
+} from "lucide-react";
 import { z } from "zod";
 import { useStore } from "@tanstack/react-store";
 import { Input as TextInput } from "@/components/ui/input";
@@ -8,8 +16,23 @@ import { displayName } from "@/features/profile/identity";
 import { profileStore, setProfile } from "@/features/profile/profile-store";
 import { handleProblem, suggestHandle } from "@/features/profile/handle";
 import { claimHandle, fetchHandle } from "@/server/handles";
-import { uploadLocalData } from "../upload";
+import {
+  pendingUpload,
+  uploadLocalData,
+  type PendingUpload,
+} from "../upload";
+import { deleteAccount } from "@/server/account";
 import { UserAvatar } from "./UserMenu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -64,7 +87,8 @@ export function AccountPanel() {
     return (
       <>
         <ProfileCard email={session.email} />
-        <UploadCard />
+        <UploadCard userId={session.userId!} />
+        <DangerZone email={session.email} />
       </>
     );
   }
@@ -245,47 +269,228 @@ function HandleField({ name }: { name: string }) {
  * that on every render of the account page would fetch the whole account to
  * draw one number. Pressing it is already the moment you want the answer, and
  * the result says exactly what moved.
+ *
+ * **It counts before it writes.** On a shared device the local data belongs
+ * to whoever used it last, which may not be the account signed in now — so a
+ * single press could pour one person's training history into another's
+ * account. Listing what would move is the honest guard: nobody confirms 1,824
+ * sets they don't recognise, and it works even on a device nobody has
+ * uploaded from before, where there is no owner recorded to check.
  */
-function UploadCard() {
+function UploadCard({ userId }: { userId: string }) {
   const t = useT();
   const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<PendingUpload | undefined>(undefined);
+
+  const commit = () => {
+    setPending(undefined);
+    setBusy(true);
+    void uploadLocalData(userId)
+      .then((result) => {
+        toast.add({
+          title: t.plural("account.upload.done", result.total, {
+            count: result.total,
+          }),
+          description: result.uploaded
+            .map((row) => `${t(row.labelKey)}: ${row.count}`)
+            .join(" · "),
+          type: "success",
+        });
+      })
+      .catch(() => {
+        toast.add({ title: t("account.upload.error"), type: "error" });
+      })
+      .finally(() => setBusy(false));
+  };
 
   return (
-    <Card>
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("account.upload.title")}</CardTitle>
+          <CardDescription>{t("account.upload.body")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              void pendingUpload(userId)
+                .then((result) => {
+                  // Nothing to move needs no dialog — a confirmation with an
+                  // empty list is a question with one answer.
+                  if (result.total === 0) {
+                    toast.add({
+                      title: t("account.upload.none"),
+                      type: "info",
+                    });
+                    return;
+                  }
+                  setPending(result);
+                })
+                .catch(() => {
+                  toast.add({ title: t("account.upload.error"), type: "error" });
+                })
+                .finally(() => setBusy(false));
+            }}
+          >
+            <UploadIcon data-icon="inline-start" />
+            {busy ? t("account.upload.checking") : t("account.upload.action")}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <AlertDialog
+        open={pending !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setPending(undefined);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("account.upload.confirmTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("account.upload.confirmBody")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <ul className="flex flex-col gap-1 text-sm">
+            {(pending?.rows ?? []).map((row) => (
+              <li key={row.labelKey} className="flex justify-between gap-4">
+                <span className="text-muted-foreground">{t(row.labelKey)}</span>
+                <span className="tabular-nums">{row.count}</span>
+              </li>
+            ))}
+          </ul>
+
+          {/* Only when it's *known* — a device nobody has uploaded from says
+              nothing, and the counts above are what protect that case. */}
+          {pending?.fromAnotherAccount ? (
+            <p className="flex items-start gap-2 text-sm text-destructive">
+              <AlertTriangleIcon className="mt-0.5 size-4 shrink-0" />
+              {t("account.upload.otherAccount")}
+            </p>
+          ) : null}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={commit}>
+              {t("account.upload.confirmAction")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+/**
+ * Deleting the account.
+ *
+ * Behind a typed confirmation rather than a second button, which is the one
+ * place in this app that friction is the right answer: it is the only action
+ * with no undo, no toast to catch it, and a blast radius of every device.
+ * Typing your own email is the check — it can't be muscle memory, and it
+ * needs no translated magic word.
+ *
+ * The dialog points at the export first. Someone deleting an account after a
+ * year of training should be offered the file on the way out rather than
+ * discover afterwards that it existed.
+ */
+function DangerZone({ email }: { email: string | null }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const confirmed = typed.trim().toLowerCase() === (email ?? "").toLowerCase();
+
+  return (
+    <Card className="border-destructive/40">
       <CardHeader>
-        <CardTitle>{t("account.upload.title")}</CardTitle>
-        <CardDescription>{t("account.upload.body")}</CardDescription>
+        <CardTitle className="text-destructive">
+          {t("account.delete.title")}
+        </CardTitle>
+        <CardDescription>{t("account.delete.body")}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col items-start gap-3">
         <Button
-          disabled={busy}
-          onClick={() => {
-            setBusy(true);
-            void uploadLocalData()
-              .then((result) => {
-                if (result.total === 0) {
-                  toast.add({ title: t("account.upload.none"), type: "info" });
-                  return;
-                }
-                toast.add({
-                  title: t.plural("account.upload.done", result.total, {
-                    count: result.total,
-                  }),
-                  description: result.uploaded
-                    .map((row) => `${t(row.labelKey)}: ${row.count}`)
-                    .join(" · "),
-                  type: "success",
-                });
-              })
-              .catch(() => {
-                toast.add({ title: t("account.upload.error"), type: "error" });
-              })
-              .finally(() => setBusy(false));
+          variant="outline"
+          nativeButton={false}
+          render={<Link to="/progress" search={{ tab: "data" }} />}
+        >
+          {t("account.delete.exportFirst")}
+        </Button>
+
+        <AlertDialog
+          open={open}
+          onOpenChange={(next) => {
+            setOpen(next);
+            if (!next) setTyped("");
           }}
         >
-          <UploadIcon data-icon="inline-start" />
-          {busy ? t("account.upload.uploading") : t("account.upload.action")}
-        </Button>
+          <Button variant="destructive" onClick={() => setOpen(true)}>
+            <Trash2Icon data-icon="inline-start" />
+            {t("account.delete.action")}
+          </Button>
+
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("account.delete.confirmTitle")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("account.delete.confirmBody")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            <Field>
+              <FieldLabel htmlFor="delete-confirm">
+                {t("account.delete.typeEmail", { email: email ?? "" })}
+              </FieldLabel>
+              <TextInput
+                id="delete-confirm"
+                value={typed}
+                autoComplete="off"
+                onChange={(e) => setTyped(e.target.value)}
+              />
+            </Field>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={!confirmed || busy}
+                onClick={() => {
+                  setBusy(true);
+                  void deleteAccount()
+                    .then(async () => {
+                      // Signed out after, not before: the server function
+                      // needs the session to know whose account to delete.
+                      await getSupabaseBrowserClient().auth.signOut();
+                      toast.add({
+                        title: t("account.delete.done"),
+                        type: "success",
+                      });
+                    })
+                    .catch(() => {
+                      toast.add({
+                        title: t("account.delete.error"),
+                        type: "error",
+                      });
+                    })
+                    .finally(() => {
+                      setBusy(false);
+                      setOpen(false);
+                    });
+                }}
+              >
+                {t("account.delete.confirmAction")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
