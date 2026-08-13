@@ -16,6 +16,23 @@ Both exit non-zero on a finding, take `BASE`, `LOCALE` and (for the audit)
 `OUT` and `NOISE_PX` from the environment, and find Chrome themselves — set
 `CHROME=/path/to/chrome` if they can't.
 
+## Filling the app with data
+
+```bash
+node tools/seed-backup.mjs          # writes natty-seed.json (gitignored)
+```
+
+A year of training, weigh-ins, measurements, meals and a couple of things
+you'd have written yourself, as a **backup file** — import it at /progress →
+Data → Import → Restore everything. It replaces what's there, so export first
+if you have real data.
+
+A file rather than localStorage writes (which is what the audit does above),
+because it goes in through the app's own import and therefore proves the same
+path a real user takes. `seed-backup.test.ts` parses it with `readBackup` and
+checks every id resolves, so a seed that the app would refuse fails the build
+instead of wasting your afternoon.
+
 ## Five things to know before changing them
 
 **Audit a production build, not the dev server.** The TanStack devtools badge is
