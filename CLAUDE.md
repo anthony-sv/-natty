@@ -1140,6 +1140,19 @@ the profile; theme, locale and `session-store` stay local by design.
   The brand marks are inline SVG in `ProviderButtons.tsx` (Lucide ships none,
   and an unmarked provider button reads as a phishing page); Google's keeps
   its fixed four colours in both themes, Apple's takes `currentColor`.
+- **`src/start.ts` registers `createCsrfMiddleware` as request middleware**,
+  scoped to server functions with `filter: ({ handlerType }) => handlerType
+  === "serverFn"`. **That filter is load-bearing, not tidiness**: the
+  middleware validates every request it is handed with no method check, so
+  unfiltered it 403s a cross-site GET navigation (`Sec-Fetch-Site:
+  cross-site`) and a URL typed into the address bar (`none`) — every inbound
+  link to the app — and fails the SPA-shell prerender, which fetches `/` with
+  none of those headers. Server functions are also exactly the surface that
+  needs it, being the only thing that touches account data. The strict
+  defaults stay: `Referer` is the fallback, and a request with no origin
+  signal at all is refused. Supabase's cookies are `SameSite=Lax`, which is
+  what stopped this before — one cookie-policy change or same-site subdomain
+  from not being true.
 - **`server/auth.ts` exports `authMiddleware`**, which every data server
   function runs behind. It calls `getUser()` — revalidating the JWT, not
   trusting cookie claims — and injects `context.userId`, the **only** user id
