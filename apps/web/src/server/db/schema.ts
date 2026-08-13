@@ -1,12 +1,14 @@
 import {
   bigint,
   doublePrecision,
+  jsonb,
   pgSchema,
   pgTable,
   primaryKey,
   text,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { Profile } from "@/features/profile/profile-store";
 import type { WeightUnit } from "@/lib/units";
 
 /**
@@ -50,6 +52,24 @@ export const bodyEntries = pgTable(
   },
   (table) => [primaryKey({ columns: [table.userId, table.id] })],
 ).enableRLS();
+
+/**
+ * Standing facts and form preferences — height, sex, wrist/ankle, which
+ * girths the measurement form asks for. One row per user.
+ *
+ * **A jsonb blob rather than a column each, unlike `body_entries` above**, and
+ * the difference is what the data is *for*: weigh-ins are rows to be ordered,
+ * filtered and charted, while this is one opaque record read whole and never
+ * queried across users. Columns would buy nothing and cost a migration every
+ * time a preference is added. `profileSchema` validates it on the way in, the
+ * same authority the client already parses localStorage with.
+ */
+export const profiles = pgTable("profiles", {
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => authUsers.id, { onDelete: "cascade" }),
+  data: jsonb("data").$type<Profile>().notNull(),
+}).enableRLS();
 // RLS with no policies = deny-all for the Data API roles. The Data API is
 // disabled at the project level, so this is belt and braces for the day
 // someone re-enables it; Drizzle connects as the table owner and is

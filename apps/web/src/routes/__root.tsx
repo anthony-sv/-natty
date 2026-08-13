@@ -28,6 +28,10 @@ import appCss from "@/styles.css?url";
 // Imported for the side effect: resolves the stored theme onto <html> before
 // first paint, so there's no flash of the wrong one.
 import "@/features/theme/theme-store";
+// Likewise: mirrors the profile to the account while signed in. Height and sex
+// aren't a collection, so nothing else would carry them across devices — and
+// without height every synced weigh-in shows an FFMI of nothing.
+import "@/features/profile/sync";
 
 export interface RouterContext {
   queryClient: QueryClient;

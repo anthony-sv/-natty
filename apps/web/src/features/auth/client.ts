@@ -31,3 +31,24 @@ export function getSupabaseBrowserClient(): SupabaseClient {
   client ??= createBrowserClient(url, key);
   return client;
 }
+
+/** The identity providers the account page offers, in the order it shows them. */
+export const OAUTH_PROVIDERS = ["google", "apple"] as const;
+export type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
+
+/**
+ * Hand off to an identity provider.
+ *
+ * The redirect comes back to `/account` carrying a `?code=`, which the
+ * browser client exchanges for a session on its own (`detectSessionInUrl`) —
+ * no callback route needed, because `@supabase/ssr`'s browser client keeps
+ * the PKCE verifier in a cookie this same client can read. `redirectTo` must
+ * be listed in Supabase's redirect allow-list or the provider bounces back
+ * to the project's Site URL instead.
+ */
+export async function signInWithProvider(provider: OAuthProvider) {
+  return getSupabaseBrowserClient().auth.signInWithOAuth({
+    provider,
+    options: { redirectTo: `${window.location.origin}/account` },
+  });
+}

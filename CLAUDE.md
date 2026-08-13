@@ -1118,6 +1118,15 @@ collection**; every collection that follows copies this shape.
   — exactly so `server/supabase.ts` can bind a server client to the calling
   request's cookies. `session-store.ts` is a plain TanStack Store in the
   `theme-store` mold, with a `loading` status because collections fork on it.
+- **Google and Apple sit above the email form**, because an account you
+  already have beats one you'd invent a password for. `signInWithProvider`
+  redirects back to `/account` with a `?code=`, which the browser client
+  exchanges itself (`detectSessionInUrl`) — no callback route, because
+  `@supabase/ssr` keeps the PKCE verifier in a cookie that same client reads.
+  Each `redirectTo` origin must be in Supabase's redirect allow-list.
+  The brand marks are inline SVG in `ProviderButtons.tsx` (Lucide ships none,
+  and an unmarked provider button reads as a phishing page); Google's keeps
+  its fixed four colours in both themes, Apple's takes `currentColor`.
 - **`server/auth.ts` exports `authMiddleware`**, which every data server
   function runs behind. It calls `getUser()` — revalidating the JWT, not
   trusting cookie claims — and injects `context.userId`, the **only** user id
@@ -1138,6 +1147,16 @@ collection**; every collection that follows copies this shape.
   `logBodyEntry` unchanged. Local data is never migrated or cleared on
   sign-in — the account page offers the explicit, idempotent upload (upsert on
   the composite key), and signing out shows this device's own data again.
+- **The profile syncs, but not as a collection.** It's one always-present
+  record, so `features/profile/sync.ts` mirrors the localStorage store to a
+  `profiles` row (jsonb — read whole, never queried across users) while
+  signed in, and is imported for its side effect from `__root.tsx`. Fields
+  **merge**, server-wins-per-field: adopting the server's record wholesale is
+  simpler and silently wrong, since signing in on a fresh browser would upload
+  an empty record and erase the height on the device that had one. Height in
+  particular has to travel — without it every synced weigh-in shows no FFMI.
+  Writes are `asyncDebounce`d (800ms) because `ProfileFields` writes through
+  on change, so typing a height is three writes.
 - **The QueryClient is a module singleton** (`lib/query-client.ts`) because
   synced collections need it outside the component tree. Fine in SPA mode
   where a page load is one client; it is one more reason full SSR stays off.

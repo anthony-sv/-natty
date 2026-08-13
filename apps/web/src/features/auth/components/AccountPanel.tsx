@@ -20,12 +20,14 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
+  FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { useT, type Translate } from "@/i18n/use-t";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "../client";
 import { useSession } from "../session-store";
+import { ProviderButtons } from "./ProviderButtons";
 
 /** Built per locale — Zod bakes messages into the schema. */
 const buildSchema = (t: Translate) =>
@@ -210,6 +212,8 @@ function SignInCard() {
         <CardDescription>{t("account.subtitle")}</CardDescription>
       </CardHeader>
       <CardContent>
+        <ProviderButtons />
+        <FieldSeparator className="my-6">{t("account.or")}</FieldSeparator>
         <form
           onSubmit={(e) => {
             e.preventDefault();

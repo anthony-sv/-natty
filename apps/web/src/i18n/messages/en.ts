@@ -35,6 +35,10 @@ export const en = {
   "account.signedInAs": "Signed in as {email}",
   "account.signedOut": "Signed out",
   "account.checkEmail": "Check your inbox to confirm your account",
+  "account.continueGoogle": "Continue with Google",
+  "account.continueApple": "Continue with Apple",
+  "account.or": "or",
+  "account.providerError": "Couldn't start sign-in",
   "account.unavailable":
     "Accounts aren't set up in this build. Everything still works — your data stays on this device.",
   "account.signInError": "Couldn't sign in",

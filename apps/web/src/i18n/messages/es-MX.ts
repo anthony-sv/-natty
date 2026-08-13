@@ -38,6 +38,10 @@ export const esMX: Record<keyof typeof en, string> = {
   "account.signedInAs": "Sesión iniciada como {email}",
   "account.signedOut": "Sesión cerrada",
   "account.checkEmail": "Revisa tu correo para confirmar tu cuenta",
+  "account.continueGoogle": "Continuar con Google",
+  "account.continueApple": "Continuar con Apple",
+  "account.or": "o",
+  "account.providerError": "No se pudo iniciar el acceso",
   "account.unavailable":
     "Esta versión no tiene cuentas configuradas. Todo sigue funcionando — tus datos se quedan en este dispositivo.",
   "account.signInError": "No se pudo iniciar sesión",
