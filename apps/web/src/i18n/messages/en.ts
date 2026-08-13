@@ -263,7 +263,7 @@ export const en = {
   "builder.name": "Name",
   "builder.nameRequired": "Give it a name",
   "builder.style": "Style",
-  "builder.stylePlaceholder": "Push/pull/legs, upper/lower, whatever you call it",
+  "builder.stylePlaceholder": "Push/pull/legs, upper/lower…",
   "builder.days": "Days",
   "builder.addDay": "Add a day",
   "builder.dayLabel": "What it's for",
@@ -1374,6 +1374,9 @@ export const en = {
   "nutrition.carbs": "Carbs",
   "nutrition.fat": "Fat",
   "nutrition.fibre": "Fibre",
+  // The slider's accessible name. It read "Carbs in grams" in every language,
+  // because it was built by concatenation from a hard-coded English label.
+  "nutrition.gramsOf": "{macro} in grams",
   "nutrition.calories": "Calories",
   "nutrition.fibreAria": "Fibre in grams",
   "nutrition.resetToPlan": "Reset to plan",

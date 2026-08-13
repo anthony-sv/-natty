@@ -1,3 +1,4 @@
+import { formatWeightValue } from "@/lib/units";
 import { useMemo } from "react";
 import { DataTable } from "@/components/data-table";
 import { createAppColumnHelper } from "@/lib/table";
@@ -37,7 +38,7 @@ function buildColumns(
       sortFn: "basic",
       cell: (info) => (
         <span className="font-medium tabular-nums">
-          {info.getValue()} {info.row.original.unit}
+          {formatWeightValue(info.getValue())} {info.row.original.unit}
         </span>
       ),
     }),

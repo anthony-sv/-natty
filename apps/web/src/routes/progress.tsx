@@ -3,9 +3,9 @@ import { Page } from "@/components/page";
 import {
   Tabs,
   TabsContent,
-  TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { ScrollingTabsList } from "@/components/scrolling-tabs-list";
 import { DataPanel } from "@/features/backup/components/DataPanel";
 import { BodyPanel } from "@/features/body/components/BodyPanel";
 import { LibraryPanel } from "@/features/library/components/LibraryPanel";
@@ -66,7 +66,7 @@ function ProgressPage() {
           on the library's unmount timing, and it also stops four live queries
           running for one visible panel. */}
       <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
-        <TabsList>
+        <ScrollingTabsList>
           <TabsTrigger value="records">{t("progress.tab.records")}</TabsTrigger>
           <TabsTrigger value="volume">{t("volume.tab")}</TabsTrigger>
           <TabsTrigger value="history">{t("history.tab")}</TabsTrigger>
@@ -74,7 +74,7 @@ function ProgressPage() {
           <TabsTrigger value="body">{t("progress.tab.body")}</TabsTrigger>
           <TabsTrigger value="measurements">{t("measure.tab")}</TabsTrigger>
           <TabsTrigger value="data">{t("data.tab")}</TabsTrigger>
-        </TabsList>
+        </ScrollingTabsList>
         <TabsContent value="records">
           {tab === "records" ? <RecordsPanel /> : null}
         </TabsContent>

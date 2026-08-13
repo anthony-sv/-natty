@@ -124,7 +124,11 @@ export function MacroSplit({
   const isEmpty = total <= 0;
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-6", className)}>
+    // `justify-center` is only ever visible on a phone. Side by side, the
+    // legend's `flex-1` eats the free space and there is nothing left to
+    // centre; once the row wraps, the donut is alone on its line and was
+    // sitting hard against the left edge of a card it doesn't fill.
+    <div className={cn("flex flex-wrap items-center justify-center gap-6", className)}>
       <div className="relative shrink-0" style={{ width: size, height: size }}>
         {isEmpty ? (
           <div className="size-full rounded-full border-8 border-dashed border-muted" />

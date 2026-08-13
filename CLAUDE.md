@@ -1465,6 +1465,64 @@ layout (never a bare `div` with gaps), `data-icon="inline-start"` on icons
 inside `Button`, `gap-*` over `space-y-*`, `size-*` when width equals height,
 semantic tokens over raw colours, and existing components before custom markup.
 
+## Responsive
+
+The app is used on a phone. Everything below came out of one audit at 393×852
+and each item is a bug that shipped.
+
+**Audit in Spanish.** English is the shortest language the app speaks, and a
+layout tested only in it is untested: `/routines` was clean in English and
+overflowed its cards by 60px in Spanish, because "8 weeks · 5 training days ·
+2 rest" fits where "ciclo de 7 días · 5 días de entrenamiento · 2 de descanso"
+does not. Same for `/progress`, where the tab strip went from 103px to 118px
+over. Seed `natty.locale.v1` before the app's first import.
+
+**Audit with data in it.** Empty states are short and wrap beautifully; tables,
+charts, heatmaps and logged-set rows only exist once there is something to
+render, so a fresh install shows the one version of each screen that was never
+going to break. Seed the collections (`{ [key]: { versionKey, data } }` per
+localStorage key) and re-run.
+
+**`min-w-0`, never `shrink-0`, on a flex child holding text.** A flex item that
+refuses to shrink takes its max-content width *even on a line of its own* after
+wrapping, so it doesn't clip — it paints over whatever is beside it. That's what
+put the routine meta line through the card border.
+
+**Three different failures, three different fixes.** Text past the right edge of
+the *screen* needs the page to stop being wider than the device. Text cut off
+inside a box needs either room or a scroll container. Text wider than its own
+parent with nothing clipping it just prints over the neighbour, and is the one
+you cannot see in a screenshot without looking for it — check
+`el.scrollWidth > el.clientWidth` and `rect.right > parent.right` separately.
+
+**A `TabsList` doesn't scroll.** shadcn's is `inline-flex w-fit`: seven tabs fit
+a laptop and made every `/progress` screen 95px wider than the phone, with the
+last two unreachable. `components/scrolling-tabs-list.tsx` wraps it — outside
+`ui/`, like `data-table.tsx`, because that directory is vendored.
+
+**A wrapped flex row needs `justify-center` if one line won't fill.** The macro
+donut sat hard against the left edge of a card it doesn't fill, once the legend
+wrapped below it. On a wide screen the legend's `flex-1` eats the slack and the
+property does nothing, so it costs nothing to set.
+
+**A horizontal scroll container opens at the left, which is usually wrong.** The
+heatmap's leftmost column is a year ago; the run you're on is the point of the
+graph and was the part off screen. It pins `scrollLeft` to the end on mount.
+
+**Fixed-width label columns break on translation.** `w-20` was sized to "Carbs"
+and "Carbohidratos" is half again as wide. Full width on mobile, fixed column
+from `sm:` up — the fixed column exists only to line controls up with each
+other, which is worth having only once they're side by side.
+
+**Seven direct labels don't fit a phone.** The FFMI meter's bands truncated to
+"Sobre el…" across the board, which is worse than no labels and quietly removed
+what the multi-hue palette was leaning on. Below `sm` the track carries no text
+and the band you're in is named under it; the numbered axis carries the rest.
+
+**Never render a stored number raw.** `formatWeightValue` in `lib/units.ts`
+exists because the weigh-in history printed `83.60000000000001 kg` — binary
+floats don't hold 83.6, and a converted or imported value will find that out.
+
 ## UI components (shadcn/ui)
 
 All shadcn/ui components are installed in `src/components/ui/` (`npx shadcn@latest

@@ -56,7 +56,13 @@ export function RoutineRow({ routine }: { routine: Routine }) {
             ) : null}
           </div>
 
-          <ItemDescription className="shrink-0">
+          {/* `min-w-0`, never `shrink-0`. This wraps onto its own line on a
+              phone, and a flex item that refuses to shrink takes its max-content
+              width even with a whole line to itself — so in Spanish, where
+              "ciclo de 7 días · 5 días de entrenamiento · 2 de descanso" is half
+              again as long as the English, it ran 60px past the card and printed
+              over the border. Nothing was clipping it, so it just showed. */}
+          <ItemDescription className="min-w-0">
             {summary.length} ·{" "}
             {t.plural("routines.trainingDays", summary.trainingDays)}
             {summary.restDays > 0

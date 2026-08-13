@@ -226,7 +226,12 @@ export function LogEntryForm() {
         )}
       </form.Field>
 
-      <div className="flex gap-3">
+      {/* Stacked on a phone. Side by side, each half is ~150px, and the weight
+          half then splits again around an 80px unit picker — leaving the input
+          about 60px, which renders the "Optional" placeholder as "Opc" and the
+          Spanish "Opcional" no better. Two full-width rows beat four cramped
+          columns on the screen this form is actually filled in on. */}
+      <div className="flex flex-col gap-3 sm:flex-row">
         <form.Field name="weight">
           {(field) => (
             <Field className="flex-1">

@@ -11,7 +11,7 @@ import {
 import { profileStore } from "@/features/profile/profile-store";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
-import type { WeightUnit } from "@/lib/units";
+import { formatWeightValue, type WeightUnit } from "@/lib/units";
 import { useBodyEntries } from "../collection";
 import { describeFfmi, ffmi, formatIndex, leanMassKg, normalizedFfmi } from "../ffmi";
 import { weeklyAverages } from "../weekly";
@@ -75,7 +75,7 @@ export function BodyPanel() {
           <CardContent className="flex flex-wrap gap-x-10 gap-y-4">
             <Stat
               label={t("common.weight")}
-              value={`${latest.weight} ${latest.unit}`}
+              value={`${formatWeightValue(latest.weight)} ${latest.unit}`}
             />
             <Stat
               label={t("body.stat.bodyFat")}

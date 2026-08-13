@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useDateFormat } from "@/i18n/use-t";
 import { useWeekdayLabels } from "@/i18n/use-weekdays";
 import { cn } from "@/lib/utils";
@@ -98,11 +98,29 @@ export function HeatmapGrid<Day extends GridDay>({
     });
   }, [weeks, month]);
 
+  /**
+   * Open on the most recent weeks, not the oldest.
+   *
+   * A year of columns is wider than a phone, so the grid scrolls — and a scroll
+   * container starts at the left, which here is *last* August. The whole point
+   * of the graph is the run you're on now, and on mobile it was the one part
+   * off screen; you had to swipe the length of a year to reach today.
+   *
+   * Keyed on `weeks` so a data change re-pins it to the end, and it sets
+   * `scrollLeft` rather than any state, which is what keeps it clear of the
+   * `set-state-in-effect` rule.
+   */
+  const scroller = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = scroller.current;
+    if (el !== null) el.scrollLeft = el.scrollWidth;
+  }, [weeks]);
+
   return (
     <div className="flex flex-col gap-2">
       {/* The grid is wider than a phone; it scrolls rather than shrinking the
           cells to the point where a week is unreadable. */}
-      <div className="overflow-x-auto pb-1">
+      <div ref={scroller} className="overflow-x-auto pb-1">
         <div className="flex w-max gap-1.5">
           <div className="flex shrink-0 flex-col gap-[3px] pt-[18px]">
             {weekdayList.map((label, row) => (

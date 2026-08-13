@@ -29,10 +29,17 @@ import { MacroSplit } from "./MacroSplit";
 /** Upper ends, generous enough for a big bulk without making the grams fiddly. */
 const LIMITS = { protein: 350, carbs: 600, fat: 200, fibre: 80 } as const;
 
+/**
+ * Slider rows. **Labels are message keys, not text** — built at module scope,
+ * they were three hard-coded English words that stayed English in Spanish,
+ * directly above a legend on the same card rendering the same three macros
+ * translated. `i18n.test.ts` can't catch this: both dictionaries have the keys,
+ * nothing here ever asked for them.
+ */
 const ROWS = [
-  { key: "protein", label: "Protein", color: "var(--macro-protein)" },
-  { key: "carbs", label: "Carbs", color: "var(--macro-carbs)" },
-  { key: "fat", label: "Fat", color: "var(--macro-fat)" },
+  { key: "protein", labelKey: "nutrition.protein", color: "var(--macro-protein)" },
+  { key: "carbs", labelKey: "nutrition.carbs", color: "var(--macro-carbs)" },
+  { key: "fat", labelKey: "nutrition.fat", color: "var(--macro-fat)" },
 ] as const;
 
 /**
@@ -149,16 +156,21 @@ export function MacroCalculatorPanel({
         <CardContent className="flex flex-col gap-5">
           {ROWS.map((row) => (
             <div key={row.key} className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="flex w-20 items-center gap-2 text-sm">
+              {/* Full width on a phone, a fixed column on a laptop. `w-20` was
+                  sized to the word "Carbs"; "Carbohidratos" is half again as
+                  wide and would push the slider out of the card. The fixed
+                  column is only there to line the sliders up with each other,
+                  which is a thing worth having only once they're side by side. */}
+              <span className="flex w-full items-center gap-2 text-sm sm:w-32">
                 <span
                   aria-hidden
                   className="size-3 shrink-0 rounded-full"
                   style={{ backgroundColor: row.color }}
                 />
-                {row.label}
+                {t(row.labelKey)}
               </span>
               <Slider
-                aria-label={`${row.label} in grams`}
+                aria-label={t("nutrition.gramsOf", { macro: t(row.labelKey) })}
                 className="min-w-40 flex-1"
                 min={0}
                 max={LIMITS[row.key]}
