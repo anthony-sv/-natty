@@ -999,8 +999,40 @@ migrate rather than silently mis-parse.
 wording.** A full backup restores, which *replaces* and says so behind an
 `AlertDialog`; sharing one routine, plan or recipe *merges*, and nothing you
 have is touched. Importing a routine a friend sent must not wipe a year of
-logs, and the file looks the same either way — the distinction is carried by
-`scope` and by the dialog you get.
+logs, and the file looks the same either way.
+
+**Which action runs comes from the button, never from the file.** There are two
+import buttons, and `scopeMatchesIntent(scope, intent)` checks the file against
+the one you pressed — a mismatch is refused outright rather than quietly doing
+the other thing, since the two differ by whether your data is deleted. Deriving
+`isRestore` from `scope` instead meant a file routed *itself* to
+`restoreEverything`, which clears every collection: a routine someone sent you
+decided whether your logged sets survived opening it. The dialog did say
+"replace", but a document choosing which question you get asked is the wrong
+shape however the question is worded.
+
+Relatedly, **`summarise` counts `profile`** even though it isn't a collection.
+It was the one field left out while every array was listed, so a file carrying
+only a profile — or nothing at all — previewed as "there's nothing in it"
+directly above a button that replaces everything. A preview that under-reports
+is worse than none: it reads as reassurance. An empty file is a plain note on a
+merge and a `text-destructive` warning on a restore.
+
+**The two dialogs ask different questions, so they show different things.** A
+merge lists what's arriving, because it takes nothing away. A restore renders
+`compareCounts(await currentData(), incoming)` as a now → after table, since
+listing the file's contents answers the wrong question there: a file with three
+routines and no sets is truthfully "3 routines" while a year of logged sets
+goes with it. A row survives if *either* side is non-zero — the interesting
+rows are exactly the ones the file has nothing for — and a falling number is
+marked `text-destructive`. `countsOf` backs both `summarise` and
+`compareCounts` so they can't disagree about what a backup contains.
+
+The current counts are read in `onFile`, which is already async, rather than in
+an effect: `react-hooks/set-state-in-effect` is enforced outside `ui/`. They go
+through `currentData()`, which wakes every collection first — reading them cold
+reports zero across the board and would make the dialog claim there's nothing
+to lose.
 
 **Imported items are re-keyed** (`rekey.ts`), and that isn't tidiness: a slug
 is provenance in `LoggedSet.routineSlug`, so adopting the exporter's would
@@ -1234,6 +1266,35 @@ reads like exercise naming but isn't:
   list of position names rather than a boolean.
 - **`/`** always means "or" (`"Smith machine/Hack squat"`), never a compound —
   and the exercise named first is the primary.
+
+## Analytics (`src/components/analytics.tsx`)
+
+Vercel Web Analytics and Speed Insights, mounted inside the router because the
+matched route only exists there. Both are fed `toRoutePattern(routeId)` —
+`/routines/[routineSlug]/week/[weekNumber]/day/[dayNumber]` — rather than being
+left to read `location.pathname`, so a page with real traffic doesn't read as a
+hundred pages with none.
+
+**`path` is the pattern too, and that is a privacy rule, not a grouping one.**
+Both fields ride in the pageview payload, so passing the real pathname sent
+`/routines/my-cutting-block-a1b2/…`, and that slug is `slugFor()` over a name
+the user typed. It made routine names the one piece of user-authored data
+leaving the device, while the Data tab says on screen that nothing does.
+Restoring the real path looks like a fix and is the leak.
+
+This is **the only thing in the app that talks to a network at all** — there is
+no `fetch` anywhere in `src/`, no backend, and export/import are a Blob
+download and a local file read. Worth knowing before reasoning about what the
+app can leak: ids in an export are localStorage keys, not request parameters,
+so there is no IDOR surface until `apps/api` lands. When it does, client-minted
+ids (`user:`, `food:`, `recipe:`, and routine/diet slugs) stop being local keys
+and every read and write has to be scoped server-side by the authenticated
+user.
+
+Both packages sniff `process.env.NODE_ENV`, which doesn't exist in the browser
+under Vite, so each is told about dev explicitly — `mode` for Analytics, and
+`scriptSrc` for Speed Insights, which has no `mode`. Dev logs each event to the
+console, which is how you check what's actually reported.
 
 ## Devtools
 

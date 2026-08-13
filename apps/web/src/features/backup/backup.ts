@@ -176,8 +176,58 @@ export function readBackup(json: unknown): ReadResult {
   return { ok: true, backup: parsed.data };
 }
 
-/** What's in a file, for the confirmation step before anything is written. */
+/**
+ * Which of the two imports you asked for.
+ *
+ * Held apart from `scope` on purpose: `scope` is what the *file* claims to be,
+ * and this is what the person clicked. They're checked against each other
+ * rather than one being derived from the other — see `scopeMatchesIntent`.
+ */
+export type ImportIntent = "restore" | "merge";
+
+/**
+ * Does this file belong to the button that was pressed?
+ *
+ * **The action must never be picked by the file.** Reading `scope` and
+ * branching on it meant a file could route itself to `restoreEverything`,
+ * which clears every collection — so a routine someone sent you decided, on
+ * its own, whether your logged sets survived opening it. The dialog did say
+ * "replace", but a document choosing which question you get asked is the wrong
+ * shape regardless of how the question is worded.
+ *
+ * So the intent comes from the click and the file is checked against it. A
+ * mismatch is refused outright rather than silently doing the other thing:
+ * the two differ by whether your data is deleted, which is not a difference to
+ * paper over with a best guess.
+ */
+export function scopeMatchesIntent(
+  scope: Backup["scope"],
+  intent: ImportIntent,
+): boolean {
+  return intent === "restore" ? scope === "full" : scope !== "full";
+}
+
+/**
+ * What's in a file, for the confirmation step before anything is written.
+ *
+ * **`profile` is counted even though it isn't a collection.** It was left out
+ * while every array was listed, so a file carrying only a profile previewed as
+ * "there's nothing in it" — directly above a button that replaces everything.
+ * A preview that under-reports is worse than no preview: it's read as
+ * reassurance.
+ */
 export function summarise(data: BackupData): { key: keyof BackupData; count: number }[] {
+  return countsOf(data).filter(({ count }) => count > 0);
+}
+
+/**
+ * Every countable thing in a backup, zeroes included.
+ *
+ * One list so `summarise` and `compareCounts` can't disagree about what a
+ * backup contains — a key added to one and forgotten in the other would go
+ * missing from exactly one of the two dialogs.
+ */
+function countsOf(data: BackupData): { key: keyof BackupData; count: number }[] {
   return (
     [
       ["sets", data.sets.length],
@@ -189,10 +239,32 @@ export function summarise(data: BackupData): { key: keyof BackupData; count: num
       ["recipes", data.recipes.length],
       ["diets", data.diets.length],
       ["intake", data.intake.length],
+      ["profile", data.profile === undefined ? 0 : 1],
     ] as const
-  )
-    .filter(([, count]) => count > 0)
-    .map(([key, count]) => ({ key: key as keyof BackupData, count }));
+  ).map(([key, count]) => ({ key: key as keyof BackupData, count }));
+}
+
+/**
+ * What a restore would actually do to you, row by row.
+ *
+ * **Listing the file's contents was never the question a restore asks.** That
+ * dialog replaces everything, so the number that matters is the one you're
+ * about to lose — and a file with 3 routines and no logged sets rendered as
+ * "Your routines 3", which is a true sentence that leaves out the year of sets
+ * going with it.
+ *
+ * A row survives if *either* side is non-zero, which is the whole point: the
+ * interesting rows are precisely the ones the file has nothing for. Rows where
+ * both are zero are dropped, since neither having nor gaining any is news.
+ */
+export function compareCounts(
+  current: BackupData,
+  incoming: BackupData,
+): { key: keyof BackupData; from: number; to: number }[] {
+  const after = new Map(countsOf(incoming).map(({ key, count }) => [key, count]));
+  return countsOf(current)
+    .map(({ key, count }) => ({ key, from: count, to: after.get(key) ?? 0 }))
+    .filter(({ from, to }) => from > 0 || to > 0);
 }
 
 /** A filename that sorts by date and says what it is. */

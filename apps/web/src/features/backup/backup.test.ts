@@ -7,14 +7,27 @@ import {
   BACKUP_VERSION,
   backupDataSchema,
   backupFilename,
+  backupSchema,
   buildBackup,
+  compareCounts,
   readBackup,
+  scopeMatchesIntent,
   summarise,
+  type Backup,
   type BackupData,
 } from "./backup";
 import { rekey, type IdSource } from "./rekey";
 
 const AT = Date.UTC(2026, 7, 11, 12);
+
+/** Every scope that is a share rather than a whole-machine backup. */
+const SHARE_SCOPES = [
+  "routine",
+  "diet",
+  "recipe",
+  "food",
+  "exercise",
+] as const satisfies readonly Backup["scope"][];
 
 function emptyData(): BackupData {
   return {
@@ -29,6 +42,10 @@ function emptyData(): BackupData {
     intake: [],
   };
 }
+
+/** One of each, for counting. Reused rather than re-typed per assertion. */
+const FOOD = sharedData().foods[0]!;
+const ROUTINE = { ...routines[0]!, createdAt: AT, updatedAt: AT };
 
 /** A pantry that shares one food between a recipe and a plan. */
 function sharedData(): BackupData {
@@ -165,6 +182,67 @@ describe("the envelope", () => {
       "recipes",
       "diets",
     ]);
+  });
+
+  it("counts a profile, so a file carrying one never previews as empty", () => {
+    // It was omitted while every array was listed, which put "there's nothing
+    // in it" above a button that replaces everything.
+    expect(summarise(emptyData())).toEqual([]);
+    expect(
+      summarise({ ...emptyData(), profile: { heightCm: 179 } }).map((r) => r.key),
+    ).toEqual(["profile"]);
+  });
+
+  describe("compareCounts", () => {
+    it("keeps a row the file has nothing for, which is the point", () => {
+      // The dialog's job is to say what a restore *removes*. A file with one
+      // routine and no sets must not render as "1 routine" while a year of
+      // logged sets goes quietly.
+      const current: BackupData = {
+        ...emptyData(),
+        routines: [ROUTINE],
+        profile: { heightCm: 179 },
+      };
+      const incoming: BackupData = { ...emptyData(), foods: [FOOD] };
+
+      expect(compareCounts(current, incoming)).toEqual([
+        { key: "routines", from: 1, to: 0 },
+        { key: "foods", from: 0, to: 1 },
+        { key: "profile", from: 1, to: 0 },
+      ]);
+    });
+
+    it("drops rows that are zero on both sides", () => {
+      expect(compareCounts(emptyData(), emptyData())).toEqual([]);
+      // ...and says nothing about collections neither side has.
+      const rows = compareCounts({ ...emptyData(), foods: [FOOD] }, emptyData());
+      expect(rows.map((r) => r.key)).toEqual(["foods"]);
+    });
+  });
+
+  describe("scopeMatchesIntent", () => {
+    it("lets a full backup restore and a share merge", () => {
+      expect(scopeMatchesIntent("full", "restore")).toBe(true);
+      for (const scope of SHARE_SCOPES) {
+        expect(scopeMatchesIntent(scope, "merge")).toBe(true);
+      }
+    });
+
+    it("refuses a share down the restore path, and a backup down the share path", () => {
+      // The whole point: a file must not be able to route itself to
+      // `restoreEverything`, which clears every collection.
+      for (const scope of SHARE_SCOPES) {
+        expect(scopeMatchesIntent(scope, "restore")).toBe(false);
+      }
+      expect(scopeMatchesIntent("full", "merge")).toBe(false);
+    });
+
+    it("covers every scope the envelope allows", () => {
+      // A new scope has to be classified deliberately rather than defaulting
+      // into whichever branch the ternary happens to take.
+      const all = backupSchema.shape.scope.options;
+      expect([...all].sort()).toEqual([...SHARE_SCOPES, "full"].sort());
+    });
   });
 
   it("names the file by date and scope", () => {

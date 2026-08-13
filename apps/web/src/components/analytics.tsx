@@ -22,6 +22,12 @@ function toRoutePattern(routeId: string): string {
  * reads as a hundred pages that get none, and Speed Insights has no page with
  * enough samples to score.
  *
+ * **The pattern is also the only thing reported.** `location.pathname` is
+ * never read: a routine slug is a name you typed, and sending it would put
+ * user-authored data on a third party's server — the one place this app's
+ * local-only claim could actually break. Grouping and privacy happen to want
+ * the same value here.
+ *
  * Renders nothing. Mounted inside the router, which is the only place the
  * matched route exists.
  */
@@ -29,7 +35,6 @@ export function Analytics() {
   const routeId = useRouterState({
     select: (state) => state.matches.at(-1)?.routeId,
   });
-  const path = useRouterState({ select: (state) => state.location.pathname });
   const route = routeId ? toRoutePattern(routeId) : null;
 
   return (
@@ -45,7 +50,17 @@ export function Analytics() {
         // Passing `route` also turns the script's own pushState tracking off;
         // the component reports each navigation instead.
         route={route}
-        path={path}
+        // The pattern again, deliberately — **not** `location.pathname`.
+        //
+        // Both fields ride in the pageview payload, so the real path would
+        // send `/routines/my-cutting-block-a1b2/week/3/day/2` — and that slug
+        // is `slugFor()` over a name you typed. Routine names are the one
+        // thing in this app that would otherwise leave the device, which the
+        // Data tab's own copy says doesn't happen.
+        //
+        // Restoring the real path here looks like a fix (a dashboard row per
+        // page!) and is the leak.
+        path={route}
       />
       <SpeedInsights
         // Same `process.env` problem, but this package has no `mode` — the
