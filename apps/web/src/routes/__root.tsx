@@ -41,7 +41,14 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       { name: "viewport", content: "width=device-width, initial-scale=1.0" },
       { title: "!natty" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      // There was never a favicon — not since `index.html`, which didn't
+      // declare one either — so every page load 404'd on `/favicon.ico` and
+      // the tab wore a blank sheet. SVG so one file covers every size and can
+      // follow the browser chrome's own light/dark.
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+    ],
   }),
   shellComponent: RootDocument,
   component: RootComponent,
