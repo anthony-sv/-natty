@@ -647,6 +647,17 @@ export const en = {
     "Inventory is counted in pairs, since a single plate can't be loaded evenly. Set a size to zero and it plans around it.",
   "about.plates.link": "Open the plate loader",
 
+  "about.trends.title": "Eating over time",
+  "about.trends.body":
+    "Twelve weeks of what you actually ate, and how often you did what the plan said.",
+  "about.trends.p1":
+    "Only days you logged are plotted, and the averages are over those days too. A fortnight you didn't open the app would otherwise drag the mean down and read as a crash diet.",
+  "about.trends.p2":
+    "Two grids, because they answer questions that can disagree: whether you ticked the plan's meals, and whether the day landed on its calorie target. Ticking every meal and then eating a second dinner is 100% on one and well over on the other.",
+  "about.trends.p3":
+    "The calorie grid is the one place colour runs two ways — under and over are different outcomes, so merging them into \"how far off\" would lose the thing you'd act on. Landing on target is the pale cell, because that's the day with nothing to look at.",
+  "about.trends.link": "See your trends",
+
   "about.measurements.title": "Measurements",
   "about.measurements.body":
     "Girths over time — arms, waist and legs to begin with, and anything else you want to add.",
@@ -680,6 +691,48 @@ export const en = {
     "Language and dark mode are at the bottom of the sidebar. Both stick.",
 
   "intake.tab": "Today",
+
+  // ── Intake over time ─────────────────────────────────────────────────────
+  "trends.tab": "Trends",
+  "trends.daysLogged": "Days logged",
+  "trends.daysComplete": "Full days",
+  "trends.averageKcal": "Average kcal",
+  "trends.averageProtein": "Average protein",
+  "trends.averageNote":
+    "Averages are over the {days} days you logged, not the whole window — {protein}g protein, {carbs}g carbs, {fat}g fat, {kcal} kcal.",
+  "trends.overTime": "What you ate",
+  "trends.overTimeBody":
+    "Only days you logged. A gap is a day you didn't record, not a day you ate nothing.",
+  "trends.macros": "Macros",
+  "trends.macrosAria": "Protein, carbs and fat per day, in grams",
+  "trends.calories": "Calories",
+  "trends.caloriesAria": "Calories per day",
+  "trends.axisGrams": "Grams",
+  "trends.axisKcal": "kcal",
+  "trends.grams": "Grams",
+  "trends.kcal": "Calories",
+  "trends.targetLine": "Target {kcal}",
+  "trends.notEnough.title": "Not enough to draw yet",
+  "trends.notEnough.body": "Two logged days and the trend shows up here.",
+
+  "trends.consistency": "How often",
+  "trends.consistencyBody":
+    "Two questions that can disagree: whether you followed the plan, and whether you hit the numbers. Ticking every meal and then eating a second dinner is both at once.",
+  "trends.adherence": "Meals ticked off the plan",
+  "trends.adherenceCaption": "Share of the day's meals you ticked",
+  "trends.mealsOf": "{ticked} of {total} meals",
+  "trends.nothingTicked": "Nothing ticked",
+  "trends.caloriesCaption": "How far the day landed from its target",
+  "trends.under": "Under",
+  "trends.over": "Over",
+  "trends.onTarget": "On target",
+  "trends.kcalOff": "{delta} kcal",
+  "trends.noKcal": "Nothing logged",
+  "trends.needTarget":
+    "This plan states no calorie target, so there's nothing to measure a day against. Add one on the plan and this fills in.",
+  "trends.empty.title": "Nothing logged yet",
+  "trends.empty.body":
+    "Tick a meal off on the Today tab and it starts showing up here.",
   "intake.today": "Today",
   "intake.yesterday": "Yesterday",
   "intake.previousDay": "Previous day",

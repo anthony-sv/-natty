@@ -31,10 +31,12 @@ const PROGRESS_TABS = [
   ["history", "history.tab"],
   ["library", "library.tab"],
   ["body", "progress.tab.body"],
+  ["measurements", "measure.tab"],
 ] as const;
 
 const NUTRITION_TABS = [
   ["today", "intake.tab"],
+  ["trends", "trends.tab"],
   ["plan", "nutrition.tab.plan"],
   ["macros", "nutrition.tab.macros"],
   ["pantry", "pantry.tab"],

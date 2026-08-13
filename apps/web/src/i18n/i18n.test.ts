@@ -220,6 +220,11 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "measure.siteSide",
       // The unit abbreviation, which is "min" in Spanish too.
       "builder.minutes",
+      // "Macros" is the word a Mexican gym uses, and the other two are the
+      // kcal symbol with and without a placeholder in front of it.
+      "trends.macros",
+      "trends.axisKcal",
+      "trends.kcalOff",
     ]);
 
     const unexplained = Object.keys(en).filter(

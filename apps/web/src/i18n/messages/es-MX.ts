@@ -642,6 +642,17 @@ export const esMX: Record<keyof typeof en, string> = {
     "El inventario se cuenta en pares, porque un disco suelto no se carga parejo. Pon una medida en cero y lo planea sin ella.",
   "about.plates.link": "Abrir el cargador de discos",
 
+  "about.trends.title": "La comida con el tiempo",
+  "about.trends.body":
+    "Doce semanas de lo que de verdad comiste, y qué tan seguido hiciste lo que decía el plan.",
+  "about.trends.p1":
+    "Solo se grafican los días que registraste, y los promedios son sobre esos días. Si no, dos semanas sin abrir la app jalarían el promedio hacia abajo y se leería como una dieta salvaje.",
+  "about.trends.p2":
+    "Dos cuadrículas, porque responden preguntas que pueden no coincidir: si marcaste las comidas del plan, y si el día quedó en su objetivo de calorías. Marcar todo y luego cenar otra vez es 100% en una y muy pasado en la otra.",
+  "about.trends.p3":
+    "La cuadrícula de calorías es el único lugar donde el color va en dos direcciones — quedarse corto y pasarse son cosas distintas, y juntarlas en \"qué tan lejos\" perdería lo único accionable. Dar en el objetivo es la celda pálida, porque es el día que no tiene nada que ver.",
+  "about.trends.link": "Ver tus tendencias",
+
   "about.measurements.title": "Medidas",
   "about.measurements.body":
     "Contornos con el tiempo — brazos, cintura y piernas para empezar, y lo demás que quieras agregar.",
@@ -675,6 +686,47 @@ export const esMX: Record<keyof typeof en, string> = {
     "El idioma y el modo oscuro están al fondo de la barra lateral. Los dos se quedan.",
 
   "intake.tab": "Hoy",
+
+  "trends.tab": "Tendencias",
+  "trends.daysLogged": "Días registrados",
+  "trends.daysComplete": "Días completos",
+  "trends.averageKcal": "Promedio kcal",
+  "trends.averageProtein": "Promedio proteína",
+  "trends.averageNote":
+    "Los promedios son sobre los {days} días que registraste, no sobre toda la ventana — {protein}g de proteína, {carbs}g de carbohidratos, {fat}g de grasa, {kcal} kcal.",
+  "trends.overTime": "Lo que comiste",
+  "trends.overTimeBody":
+    "Solo los días que registraste. Un hueco es un día que no anotaste, no un día que no comiste.",
+  "trends.macros": "Macros",
+  "trends.macrosAria": "Proteína, carbohidratos y grasa por día, en gramos",
+  "trends.calories": "Calorías",
+  "trends.caloriesAria": "Calorías por día",
+  "trends.axisGrams": "Gramos",
+  "trends.axisKcal": "kcal",
+  "trends.grams": "Gramos",
+  "trends.kcal": "Calorías",
+  "trends.targetLine": "Objetivo {kcal}",
+  "trends.notEnough.title": "Aún no hay suficiente para graficar",
+  "trends.notEnough.body": "Con dos días registrados aparece la tendencia.",
+
+  "trends.consistency": "Qué tan seguido",
+  "trends.consistencyBody":
+    "Dos preguntas que pueden no coincidir: si seguiste el plan, y si diste con los números. Marcar todas las comidas y luego cenar otra vez es las dos cosas a la vez.",
+  "trends.adherence": "Comidas marcadas del plan",
+  "trends.adherenceCaption": "Qué parte de las comidas del día marcaste",
+  "trends.mealsOf": "{ticked} de {total} comidas",
+  "trends.nothingTicked": "Nada marcado",
+  "trends.caloriesCaption": "Qué tan lejos quedó el día de su objetivo",
+  "trends.under": "Por debajo",
+  "trends.over": "Por encima",
+  "trends.onTarget": "En el objetivo",
+  "trends.kcalOff": "{delta} kcal",
+  "trends.noKcal": "Nada registrado",
+  "trends.needTarget":
+    "Este plan no tiene objetivo de calorías, así que no hay contra qué medir un día. Ponle uno al plan y esto se llena.",
+  "trends.empty.title": "Todavía no hay nada registrado",
+  "trends.empty.body":
+    "Marca una comida en la pestaña de Hoy y empieza a aparecer aquí.",
   "intake.today": "Hoy",
   "intake.yesterday": "Ayer",
   "intake.previousDay": "Día anterior",

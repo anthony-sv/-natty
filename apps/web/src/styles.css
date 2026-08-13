@@ -139,6 +139,48 @@ body {
 }
 
 /*
+ * Calories against target, as a **diverging** scale.
+ *
+ * The one place here that isn't sequential, and deliberately: over and under
+ * are different outcomes, and a single "how far off" ramp would lose the only
+ * thing you'd act on. Two hues from the validated palette — slot 1 for under,
+ * slot 2 for over — with a neutral grey where they meet, which is the rule for
+ * a diverging scale and the reason a rainbow isn't one.
+ *
+ * **The pale end is the middle, which is the right way round here.** Landing
+ * on target is the state with nothing to look at; a day that drifted is what
+ * should catch the eye. That inverts the usual heatmap reading and is why this
+ * can't share `--heat-*`.
+ *
+ * `--kcal-none` is a day with no data and has to stay clearly apart from
+ * `--kcal-on`: "I hit it" and "I didn't record anything" are opposite claims.
+ * It's `--muted`'s value, several steps lighter than the midpoint in light
+ * mode and several darker in dark.
+ *
+ * Poles validated all-pairs in both modes: worst protan ΔE 24.7 light, 26.8
+ * dark. The intermediate steps are lightness variants of their own pole, so
+ * what matters there is monotonicity — pale to strong as the miss grows, and
+ * dark-to-light in dark mode, the same direction `--heat-*` climbs.
+ */
+:root {
+  --kcal-under-2: #2a78d6;
+  --kcal-under-1: #96bdea;
+  --kcal-on: #d4d4d8;
+  --kcal-over-1: #f5bda3;
+  --kcal-over-2: #eb6834;
+  --kcal-none: oklch(0.97 0 0);
+}
+
+.dark {
+  --kcal-under-2: #3d8ce8;
+  --kcal-under-1: #2461a8;
+  --kcal-on: #52525b;
+  --kcal-over-1: #8a3a19;
+  --kcal-over-2: #d95926;
+  --kcal-none: oklch(0.269 0 0);
+}
+
+/*
  * Push / pull / legs, slots 1–3 of the same palette.
  *
  * Deliberately their own tokens rather than reusing `--macro-*`: they happen to

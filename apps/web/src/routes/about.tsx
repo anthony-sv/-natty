@@ -162,6 +162,16 @@ const GUIDE: Section[] = [
     linkKey: "about.nutrition.link",
   },
   {
+    id: "trends",
+    icon: TrendingUpIcon,
+    titleKey: "about.trends.title",
+    bodyKey: "about.trends.body",
+    points: ["about.trends.p1", "about.trends.p2", "about.trends.p3"],
+    to: "/nutrition",
+    search: { tab: "trends" },
+    linkKey: "about.trends.link",
+  },
+  {
     id: "pantry",
     icon: ShoppingBasketIcon,
     titleKey: "about.pantry.title",
