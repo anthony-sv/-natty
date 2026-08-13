@@ -594,7 +594,7 @@ export const en = {
 
   "about.storage.title": "Where your data lives",
   "about.storage.body":
-    "In this browser, on this device — unless you sign in, which syncs your weigh-ins to your account, with the rest to follow.",
+    "In this browser, on this device — unless you sign in, which syncs everything you log and everything you write to your account.",
   "about.storage.p1":
     "That makes it private by construction — but it also means clearing your browser data deletes it, and it doesn't follow you to your phone.",
   "about.storage.p2":
@@ -605,9 +605,9 @@ export const en = {
 
   "about.account.title": "Your account",
   "about.account.body":
-    "Optional, and off by default. The app is fully usable without one; signing in is what starts syncing your data — weigh-ins first, the rest feature by feature.",
+    "Optional, and off by default. The app is fully usable without one; signing in is what makes your data follow you to another device.",
   "about.account.p1":
-    "Nothing moves by itself. The account page shows what this device has that your account doesn't, and uploading is one tap — safe to press twice, since the account keeps one copy per entry.",
+    "Nothing moves by itself. Uploading this device's data is one button on the account page — safe to press twice, since the account keeps one copy of each thing.",
   "about.account.p2":
     "Signing out brings back this device's own data untouched. The account keeps what you uploaded, ready for the next device.",
   "about.account.p3":

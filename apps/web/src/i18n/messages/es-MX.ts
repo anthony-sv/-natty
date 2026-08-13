@@ -587,7 +587,7 @@ export const esMX: Record<keyof typeof en, string> = {
 
   "about.storage.title": "Dónde viven tus datos",
   "about.storage.body":
-    "En este navegador, en este dispositivo — a menos que inicies sesión, lo que sincroniza tus pesajes con tu cuenta, y el resto irá llegando.",
+    "En este navegador, en este dispositivo — a menos que inicies sesión, lo que sincroniza con tu cuenta todo lo que registras y todo lo que escribes.",
   "about.storage.p1":
     "Eso lo hace privado por construcción — pero también significa que borrar los datos del navegador los elimina, y que no te siguen al celular.",
   "about.storage.p2":
@@ -598,9 +598,9 @@ export const esMX: Record<keyof typeof en, string> = {
 
   "about.account.title": "Tu cuenta",
   "about.account.body":
-    "Opcional, y desactivada por defecto. La app funciona completa sin cuenta; iniciar sesión es lo que activa la sincronización — primero los pesajes, el resto función por función.",
+    "Opcional, y desactivada por defecto. La app funciona completa sin cuenta; iniciar sesión es lo que hace que tus datos te sigan a otro dispositivo.",
   "about.account.p1":
-    "Nada se mueve solo. La página de cuenta muestra lo que este dispositivo tiene y tu cuenta no, y subirlo es un toque — seguro aunque lo presiones dos veces, porque la cuenta guarda una sola copia de cada registro.",
+    "Nada se mueve solo. Subir los datos de este dispositivo es un botón en la página de cuenta — seguro aunque lo presiones dos veces, porque la cuenta guarda una sola copia de cada cosa.",
   "about.account.p2":
     "Al cerrar sesión, este dispositivo vuelve a mostrar sus propios datos intactos. La cuenta conserva lo que subiste, listo para el siguiente dispositivo.",
   "about.account.p3":
