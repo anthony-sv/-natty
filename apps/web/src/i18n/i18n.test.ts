@@ -232,6 +232,9 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "home.ffmi",
       "home.siteValue",
       "home.kcalOfTarget",
+      // "Cookies" is the word Spanish uses for them as well — the loanword
+      // won, and "galletas" would be a different food.
+      "privacy.cookies.title",
     ]);
 
     const unexplained = Object.keys(en).filter(

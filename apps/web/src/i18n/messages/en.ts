@@ -1484,4 +1484,102 @@ export const en = {
   "nutrition.trainingDay": "Training day",
   "nutrition.raw": "Raw",
   "nutrition.cooked": "Cooked",
+
+  // ── Privacy and terms ────────────────────────────────────────────────────
+  // Written against what the code does, not from a template. If the analytics
+  // rule or the fork-on-session behaviour changes, these are wrong.
+  "legal.updated": "Last updated {date}",
+
+  "privacy.title": "Privacy",
+  "privacy.subtitle":
+    "What this app knows about you, where it goes, and how to get it back.",
+  "privacy.summary.title": "The short version",
+  "privacy.summary.p1":
+    "Without an account, nothing you log leaves your device. With one, your training data is stored so it follows you to your other devices — and that is the only reason it is stored.",
+  "privacy.summary.p2":
+    "Nothing is sold, rented, or shared with anyone. There is no advertising, and no third party is given your data to profile you with.",
+
+  "privacy.local.title": "Without an account",
+  "privacy.local.p1":
+    "Everything — your sets, weigh-ins, measurements, meals, and anything you write — lives in your browser's storage on the device you are using. It is never sent anywhere.",
+  "privacy.local.p2":
+    "That also means clearing your browser data deletes it, and it does not follow you to your phone. Progress → Data exports the lot to a file you keep.",
+
+  "privacy.account.title": "With an account",
+  "privacy.account.p1":
+    "Signing in stores your email address. If you sign in with Google, the app also receives the name and profile picture on your Google account — nothing else, and never your password.",
+  "privacy.account.p2":
+    "Your account then holds what you choose to sync: the display name and handle you pick, your profile (height, sex, and the wrist and ankle measurements the calculators use), and the data you log — sets, weigh-ins, girth measurements and meals — along with the exercises, routines, foods, recipes and plans you write yourself.",
+  "privacy.account.p3":
+    "Nothing is uploaded automatically. This device's existing data moves to your account only when you press the upload button on the account page, and signing out leaves this device's own copy exactly where it was.",
+
+  "privacy.where.title": "Where it is stored",
+  "privacy.where.p1":
+    "Account data is held in a Postgres database run by Supabase, in the region the project was created in. The app itself is served by Vercel. Both are processors here: they hold the data so the app can work, not for their own purposes.",
+  "privacy.where.p2":
+    "Every read and write is scoped to the account that asked for it, checked on the server against a revalidated session rather than anything the browser claims.",
+
+  "privacy.analytics.title": "Analytics",
+  "privacy.analytics.p1":
+    "Page views are counted with Vercel Web Analytics and Speed Insights, which use no cookies and build no cross-site profile.",
+  "privacy.analytics.p2":
+    "Pages are reported as their route pattern and never their real address — a program you wrote is counted as a program page, never by its name. That is deliberate: names you typed are the one thing that would otherwise leave the device, so the app strips them before anything is sent.",
+
+  "privacy.cookies.title": "Cookies",
+  "privacy.cookies.p1":
+    "One kind: the cookie that keeps you signed in. There are no advertising or tracking cookies, and signing out clears it.",
+
+  "privacy.control.title": "Your data, and getting it out",
+  "privacy.control.p1":
+    "Progress → Data exports everything to a single file at any time, signed in or not. It is plain JSON, readable without this app, and importing it anywhere puts you back exactly where you were.",
+  "privacy.control.p2":
+    "Individual entries can be edited or deleted wherever they appear, and deleting is immediate rather than a request you file.",
+  "privacy.control.p3":
+    "To have your account and everything in it deleted, email the address below and it will be done. Signing out on its own does not delete anything — it just stops syncing.",
+
+  "privacy.contact.title": "Contact",
+  "privacy.contact.p1":
+    "This app is made by one person. Questions about any of the above, or a deletion request, go to anthonysteiner96@gmail.com.",
+
+  "terms.title": "Terms",
+  "terms.subtitle": "What this app is, and what it is not.",
+  "terms.what.title": "What this is",
+  "terms.what.p1":
+    "A training log: somewhere to record what you lifted, what you weighed and what you ate, and to see it added up. It is a personal project, offered as-is and free to use.",
+
+  "terms.health.title": "This is not medical advice",
+  "terms.health.p1":
+    "Nothing here is medical, nutritional or clinical advice, and nothing here is a diagnosis. The app is a calculator and a notebook: it applies published formulas to numbers you typed in, and it has never examined you.",
+  "terms.health.p2":
+    "Calorie and macro targets, hydration figures, the creatine dose, FFMI readings, one-rep-max estimates and the natural-potential model are all general-population formulas. They can be wrong for you specifically, and they take no account of any condition, medication or injury you have.",
+  "terms.health.p3":
+    "Talk to a doctor or a registered dietitian before changing how you eat or train, especially if you are pregnant, have a medical condition, or are taking anything. If something hurts, stop.",
+
+  "terms.estimates.title": "The numbers are estimates",
+  "terms.estimates.p1":
+    "Where formulas disagree, the app shows you that rather than hiding it behind one confident figure — five one-rep-max estimates instead of one, a band rather than a score.",
+  "terms.estimates.p2":
+    "Anything derived from what you logged is only as good as what you logged. The app cannot tell a mistyped weight from a real one.",
+
+  "terms.account.title": "Your account",
+  "terms.account.p1":
+    "One account is for one person. Keep access to it to yourself — anyone who can open your email or your Google account can reach your data.",
+  "terms.account.p2":
+    "Handles are first come, first served, and picking one that impersonates someone else is not allowed.",
+
+  "terms.content.title": "What you write stays yours",
+  "terms.content.p1":
+    "The exercises, routines, foods, recipes and plans you write are yours. No ownership of them is claimed, and they are not used for anything beyond running the app for you.",
+  "terms.content.p2":
+    "Sharing one produces a file that you hand over yourself. Nothing is published, and there is nowhere in this app for anyone else to see your data.",
+
+  "terms.availability.title": "Availability",
+  "terms.availability.p1":
+    "This is a personal project, not a service with an uptime guarantee. It may change, break, or stop, and no promise is made about any of that.",
+  "terms.availability.p2":
+    "Which is the real reason the export exists: keep a copy of anything you would miss. To the extent the law allows, use of the app is at your own risk and no liability is accepted for any loss arising from it.",
+
+  "terms.changes.title": "Changes",
+  "terms.changes.p1":
+    "These terms and the privacy policy may change as the app does. The date at the top is when they last did.",
 } as const;
