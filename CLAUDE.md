@@ -1127,7 +1127,16 @@ collection**; every collection that follows copies this shape.
   redirects back to `/account` with a `?code=`, which the browser client
   exchanges itself (`detectSessionInUrl`) — no callback route, because
   `@supabase/ssr` keeps the PKCE verifier in a cookie that same client reads.
-  Each `redirectTo` origin must be in Supabase's redirect allow-list.
+  Each `redirectTo` origin must be in Supabase's redirect allow-list, **with
+  its scheme and a `/**` suffix**; an entry that doesn't match is not an error,
+  it silently falls back to the project's Site URL. `session-store` strips the
+  spent `?code=` on the way in, wherever it landed, so that misconfiguration
+  degrades to "signed in on the wrong page" rather than a URL full of
+  credential-looking noise that fails if reloaded.
+  Google's consent screen shows the raw `<ref>.supabase.co` domain rather than
+  the app name — that's the callback's root domain and is expected; fixing it
+  needs either Google's verification review or a Supabase custom domain
+  (paid), not a code change.
   The brand marks are inline SVG in `ProviderButtons.tsx` (Lucide ships none,
   and an unmarked provider button reads as a phishing page); Google's keeps
   its fixed four colours in both themes, Apple's takes `currentColor`.

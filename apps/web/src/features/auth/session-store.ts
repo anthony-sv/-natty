@@ -37,6 +37,28 @@ function apply(session: Session | null): void {
   );
 }
 
+/**
+ * Take the spent OAuth code out of the address bar.
+ *
+ * The provider redirect lands carrying `?code=`, which the client has already
+ * exchanged by the time a session exists — leaving it on screen shows the
+ * user a URL full of credential-looking noise, and re-sharing or reloading
+ * that URL tries to spend a code that's gone. `replaceState` rather than a
+ * router navigation: this is tidying the current entry, not a new one to go
+ * back to. It also runs wherever the redirect landed, which matters because
+ * Supabase falls back to the project's Site URL when `redirectTo` isn't in
+ * the allow-list, and that's a config mistake the app shouldn't break on.
+ */
+function stripAuthParams(): void {
+  const url = new URL(window.location.href);
+  const spent = ["code", "error", "error_description"].filter((key) =>
+    url.searchParams.has(key),
+  );
+  if (spent.length === 0) return;
+  for (const key of spent) url.searchParams.delete(key);
+  window.history.replaceState(null, "", url.pathname + url.search + url.hash);
+}
+
 // Seeded at import time, browser only — the SPA-shell prerender evaluates
 // this module in Node, where there is no session to resolve. A build with no
 // Supabase project settles straight to signed-out, so every collection reads
@@ -45,7 +67,10 @@ if (typeof document !== "undefined") {
   if (isSupabaseConfigured) {
     const supabase = getSupabaseBrowserClient();
     void supabase.auth.getSession().then(({ data }) => apply(data.session));
-    supabase.auth.onAuthStateChange((_event, session) => apply(session));
+    supabase.auth.onAuthStateChange((_event, session) => {
+      apply(session);
+      if (session) stripAuthParams();
+    });
   } else {
     apply(null);
   }
