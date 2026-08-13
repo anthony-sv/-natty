@@ -1,0 +1,52 @@
+import {
+  bigint,
+  doublePrecision,
+  pgSchema,
+  pgTable,
+  primaryKey,
+  text,
+  uuid,
+} from "drizzle-orm/pg-core";
+import type { WeightUnit } from "@/lib/units";
+
+/**
+ * Supabase's managed auth schema, declared only far enough to reference —
+ * `schemaFilter: ["public"]` in drizzle.config.ts keeps drizzle-kit from ever
+ * trying to manage it.
+ */
+const authSchema = pgSchema("auth");
+export const authUsers = authSchema.table("users", {
+  id: uuid("id").primaryKey(),
+});
+
+/**
+ * One weigh-in — mirrors `bodyEntrySchema` in `features/body/schema.ts` plus
+ * the owner column.
+ *
+ * The primary key is `(user_id, id)`, not `id` alone: ids are client-minted
+ * (`crypto.randomUUID()` today, but routine slugs and `food:` ids follow the
+ * same path later), so uniqueness only holds per user. Every read and write
+ * must be scoped by the authenticated user's id — the Data API is disabled at
+ * the project level, so server functions are the only door.
+ *
+ * Column types stay permissive (plain text for `unit`, no check constraints):
+ * the Zod schema the client already uses is the authority, revalidated in the
+ * server function at the boundary. Two sources of validation rules would
+ * drift.
+ */
+export const bodyEntries = pgTable(
+  "body_entries",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    id: text("id").notNull(),
+    /** Epoch ms, exactly as the app stores it — the row round-trips as-is. */
+    measuredAt: bigint("measured_at", { mode: "number" }).notNull(),
+    weight: doublePrecision("weight").notNull(),
+    unit: text("unit").$type<WeightUnit>().notNull().default("kg"),
+    bodyFatPercent: doublePrecision("body_fat_percent"),
+    notes: text("notes"),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.id] })],
+);

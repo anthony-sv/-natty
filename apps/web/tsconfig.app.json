@@ -19,6 +19,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
+    // src/ is full-stack since the Start migration: server modules
+    // (src/server/) read process.env. Node globals are typed app-wide, but
+    // runtime still enforces the boundary — DATABASE_URL has no VITE_ prefix,
+    // so client code that touches it gets undefined, not a secret.
+    "types": ["node"],
+
     "paths": {
       "@/*": ["./src/*"]
     }
