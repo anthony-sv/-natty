@@ -1,7 +1,6 @@
 import { Store } from "@tanstack/store";
 import { useStore } from "@tanstack/react-store";
 import type { Session } from "@supabase/supabase-js";
-import { adoptProviderIdentity } from "@/features/profile/identity";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "./client";
 
 /**
@@ -18,41 +17,52 @@ export interface SessionState {
   status: "loading" | "signed-out" | "signed-in";
   userId: string | null;
   email: string | null;
+  /**
+   * What the provider says you're called, and the picture it gave.
+   *
+   * Carried here rather than applied to the profile from this module, because
+   * two writers to one profile store have to agree on order and they didn't:
+   * this ran *after* the store's subscribers, so `features/profile/sync.ts`
+   * had already decided what to keep by the time the provider's values
+   * arrived. `sync.ts` owns every profile write now and reads these.
+   */
+  name: string | null;
+  avatarUrl: string | null;
 }
 
-export const sessionStore = new Store<SessionState>({
-  status: "loading",
+const SIGNED_OUT: SessionState = {
+  status: "signed-out",
   userId: null,
   email: null,
+  name: null,
+  avatarUrl: null,
+};
+
+export const sessionStore = new Store<SessionState>({
+  ...SIGNED_OUT,
+  status: "loading",
 });
 
 function apply(session: Session | null): void {
-  sessionStore.setState(() =>
-    session
-      ? {
-          status: "signed-in",
-          userId: session.user.id,
-          email: session.user.email ?? null,
-        }
-      : { status: "signed-out", userId: null, email: null },
-  );
+  sessionStore.setState(() => {
+    if (!session) return SIGNED_OUT;
 
-  if (session) {
     // Google hands back a name and a picture; the email form hands back
-    // neither and the local part of the address stands in. Only fills what's
-    // empty, so signing in again never undoes a name you changed.
+    // neither, and the local part of the address stands in downstream.
     const meta = session.user.user_metadata as {
       full_name?: string;
       name?: string;
       avatar_url?: string;
       picture?: string;
     };
-    adoptProviderIdentity({
+    return {
+      status: "signed-in",
+      userId: session.user.id,
       email: session.user.email ?? null,
-      name: meta.full_name ?? meta.name,
-      avatarUrl: meta.avatar_url ?? meta.picture,
-    });
-  }
+      name: meta.full_name ?? meta.name ?? null,
+      avatarUrl: meta.avatar_url ?? meta.picture ?? null,
+    };
+  });
 }
 
 /**

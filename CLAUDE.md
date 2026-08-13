@@ -1174,6 +1174,15 @@ the profile; theme, locale and `session-store` stay local by design.
   - **A `useLiveQuery` over a forked collection needs the collection in its
     dep array**, or it keeps querying the backing that was active when the
     component first rendered and signing in appears to do nothing.
+  - **A synced collection belongs to one account, and that is a security
+    property.** It's memoised against the `userId` it was built for, its
+    `queryKey` carries that id, and a session change drops every fork and
+    clears the `QueryClient`. Without this the second person to sign in on a
+    shared browser was handed the first person's populated instance — signing
+    out isn't a reload, so nothing else was going to clear it, and `/progress`
+    painted someone else's logged sets and weigh-ins until a refetch landed.
+    `synced-collection.test.ts` pins it, including the account-to-account swap
+    that never passes through signed-out.
   - Exported accessors are **functions** (`loggedSets()`, `userDiets()`), not
     consts — which backing is right changes while the app runs.
   - It holds one deliberate cast, in `forkCollection` rather than at the call
@@ -1214,6 +1223,24 @@ the profile; theme, locale and `session-store` stay local by design.
   particular has to travel — without it every synced weigh-in shows no FFMI.
   Writes are `asyncDebounce`d (800ms) because `ProfileFields` writes through
   on change, so typing a height is three writes.
+  - **The merge is gated on `natty.profile.owner.v1`**, and that gate is a
+    security property too. The store holds a real name, a provider photo,
+    height, sex and two girths and isn't cleared on sign-out, so merging it
+    under whoever signs in next wrote one person's identity and body metrics
+    into another person's account — pushed to the server, and on to their
+    other devices. `mayMergeLocalProfile` allows it only for the same account,
+    or for a record built while signed out (which is this device's own and is
+    what the merge exists to carry). A different owner adopts the server's
+    record wholesale instead. The owner id is kept *beside* the profile rather
+    than in `profileSchema`: that schema is the payload the server stores and
+    a backup file carries, and an owner id travelling in it would be the
+    problem rather than the fix.
+  - `sync.ts` owns **every** profile write, including seeding the provider's
+    name and picture. `session-store` used to do that seeding itself and ran
+    *after* the store's subscribers, so the two writers disagreed about order
+    — the provider values landed before the ownership decision and survived
+    it, leaving a new account wearing the previous one's face. The session
+    carries `name`/`avatarUrl` now and `sync.ts` applies them after adopting.
 - **The QueryClient is a module singleton** (`lib/query-client.ts`) because
   synced collections need it outside the component tree. Fine in SPA mode
   where a page load is one client; it is one more reason full SSR stays off.
