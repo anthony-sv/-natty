@@ -49,4 +49,8 @@ export const bodyEntries = pgTable(
     notes: text("notes"),
   },
   (table) => [primaryKey({ columns: [table.userId, table.id] })],
-);
+).enableRLS();
+// RLS with no policies = deny-all for the Data API roles. The Data API is
+// disabled at the project level, so this is belt and braces for the day
+// someone re-enables it; Drizzle connects as the table owner and is
+// unaffected. Every table in this schema should carry it.

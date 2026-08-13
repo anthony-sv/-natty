@@ -13,7 +13,9 @@ export default defineConfig({
   schema: "./src/server/db/schema.ts",
   out: "./drizzle",
   dialect: "postgresql",
-  dbCredentials: { url: process.env.DATABASE_URL! },
+  dbCredentials: {
+    url: (process.env.DATABASE_URL || process.env.POSTGRES_URL)!,
+  },
   // Supabase owns `auth`, `storage`, etc. — drizzle-kit must only ever
   // manage `public`, or a push would try to reconcile Supabase's own tables.
   schemaFilter: ["public"],
