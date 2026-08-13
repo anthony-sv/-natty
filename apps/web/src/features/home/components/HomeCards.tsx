@@ -19,8 +19,15 @@ import { loggedSets } from "@/features/log/collection";
 import { toCalendar } from "@/features/log/heatmap";
 import { useAllRecords } from "@/features/log/queries";
 import { useMeasurements } from "@/features/measurements/collection";
-import { orderSeries, toSeries } from "@/features/measurements/measurements";
-import { measurementSiteSchema } from "@/features/measurements/schema";
+import {
+  orderSeries,
+  toSeries,
+  type SiteSeries,
+} from "@/features/measurements/measurements";
+import {
+  measurementSiteSchema,
+  type MeasurementSite,
+} from "@/features/measurements/schema";
 import {
   effectiveTargetKcal,
   variantForDay,
@@ -48,6 +55,24 @@ import { cn } from "@/lib/utils";
 
 /** A year, matching the heatmap the training card's streak is read from. */
 const STREAK_WEEKS = 52;
+
+/**
+ * What the measurements card leads with, ahead of the head-to-foot order the
+ * measurements tab reads down.
+ *
+ * Arms and waist are the two the card exists for — one for what you're
+ * building and one for what you'd rather not be, which is the same pair
+ * `DEFAULT_TRACKED_SITES` opens the form on. Head-to-foot puts neck, shoulders
+ * and chest first, so tracking any of them would push both off a card that
+ * only shows three.
+ */
+const HOME_SITES: readonly MeasurementSite[] = [
+  "upperArm",
+  "waist",
+  ...measurementSiteSchema.options.filter(
+    (site) => site !== "upperArm" && site !== "waist",
+  ),
+];
 
 export function HomeCards() {
   return (
@@ -166,10 +191,18 @@ function MeasurementsCard() {
   const t = useT();
   const { rows } = useMeasurements();
 
-  const series = useMemo(
-    () => orderSeries(toSeries(rows), measurementSiteSchema.options),
-    [rows],
-  );
+  const series = useMemo(() => orderSeries(toSeries(rows), HOME_SITES), [rows]);
+
+  // A left and a right arm are two series, and arms are what this card leads
+  // with — so the side has to be on the label or the card shows two rows
+  // reading "Upper arm" with different numbers.
+  const label = (entry: SiteSeries) =>
+    entry.side === undefined
+      ? t(`measure.site.${entry.site}` as never)
+      : t("measure.siteSide", {
+          site: t(`measure.site.${entry.site}` as never),
+          side: t(`measure.side.${entry.side}` as never),
+        });
 
   if (series.length === 0) {
     return (
@@ -194,7 +227,7 @@ function MeasurementsCard() {
       to="/progress"
       search={{ tab: "measurements" }}
       headline={`${first.latest.toFixed(1)} ${first.unit}`}
-      headlineHint={t(`measure.site.${first.site}` as never)}
+      headlineHint={label(first)}
       lines={[
         first.change === undefined
           ? undefined
@@ -202,10 +235,16 @@ function MeasurementsCard() {
               delta: `${first.change >= 0 ? "+" : "−"}${Math.abs(first.change).toFixed(1)}`,
               unit: first.unit,
             }),
+        // The rest carry their own change too. Waist is nearly always one of
+        // them, and a waist figure without a direction is the least useful
+        // number on the page — it's the one you're watching move.
         ...rest.map((entry) =>
           t("home.siteValue", {
-            site: t(`measure.site.${entry.site}` as never),
-            value: `${entry.latest.toFixed(1)} ${entry.unit}`,
+            site: label(entry),
+            value:
+              entry.change === undefined
+                ? `${entry.latest.toFixed(1)} ${entry.unit}`
+                : `${entry.latest.toFixed(1)} ${entry.unit} (${entry.change >= 0 ? "+" : "−"}${Math.abs(entry.change).toFixed(1)})`,
           }),
         ),
       ]}

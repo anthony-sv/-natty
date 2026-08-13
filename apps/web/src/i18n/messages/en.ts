@@ -124,7 +124,7 @@ export const en = {
 
   "home.measurements": "Measurements",
   "home.measurements.empty":
-    "Nothing measured yet. A tape says what the scale can't.",
+    "Nothing measured yet. Arms and waist say what the scale can't.",
   "home.sinceStart": "{delta} {unit} since you started",
   "home.siteValue": "{site} {value}",
 

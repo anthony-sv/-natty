@@ -125,7 +125,7 @@ export const esMX: Record<keyof typeof en, string> = {
 
   "home.measurements": "Medidas",
   "home.measurements.empty":
-    "Todavía no hay medidas. Una cinta dice lo que la báscula no.",
+    "Todavía no hay medidas. Brazos y cintura dicen lo que la báscula no.",
   "home.sinceStart": "{delta} {unit} desde que empezaste",
   "home.siteValue": "{site} {value}",
 
