@@ -2,6 +2,12 @@ import {
   createCollection,
   localStorageCollectionOptions,
 } from "@tanstack/react-db";
+import { forkCollection } from "@/lib/synced-collection";
+import {
+  deleteLoggedSets,
+  fetchLoggedSets,
+  upsertLoggedSets,
+} from "@/server/log";
 import { isNewRecord } from "./pr";
 import {
   loggedSetSchema,
@@ -10,24 +16,43 @@ import {
 } from "./schema";
 
 /**
- * Every set ever logged, persisted to localStorage.
+ * Every set ever logged.
  *
  * A TanStack DB collection rather than another hand-rolled Store +
  * localStorage pair like `session-store.ts`: this data is queried (per
  * exercise, for PRs and last-set) rather than just read whole, and the
- * collection gives live queries and cross-tab sync for free. Swapping to a
- * server-backed adapter later changes only the options creator here.
+ * collection gives live queries and cross-tab sync for free — which is also
+ * what let it gain a server backing without a single caller changing.
  *
  * Separate key from `natty.session.v1` on purpose — the session is scratch
  * state that `endSession()` throws away, this is the permanent record.
  */
-export const loggedSets = createCollection(
+const localLoggedSets = createCollection(
   localStorageCollectionOptions({
     storageKey: "natty.log.v1",
     getKey: (set) => set.id,
     schema: loggedSetSchema,
   }),
 );
+
+export const loggedSetsFork = forkCollection({
+  queryKey: "logged-sets",
+  local: localLoggedSets,
+  getKey: (set) => set.id,
+  fetch: () => fetchLoggedSets(),
+  upsert: (rows) => upsertLoggedSets({ data: rows }),
+  remove: (ids) => deleteLoggedSets({ data: ids }),
+});
+
+/**
+ * The collection backing the app right now.
+ *
+ * A function, not a const: which one it is depends on whether you're signed
+ * in, and that changes while the app is running.
+ */
+const loggedSets = () => loggedSetsFork.active();
+
+export { localLoggedSets, loggedSets };
 
 /**
  * Every set logged for one exercise, read straight from the collection.
@@ -40,7 +65,7 @@ export const loggedSets = createCollection(
  * on a first-ever one.
  */
 export function setsFor(exerciseId: string): LoggedSet[] {
-  return [...loggedSets.values()].filter(
+  return [...loggedSets().values()].filter(
     (set) => set.exerciseId === exerciseId,
   );
 }
@@ -63,7 +88,7 @@ export interface StepRef {
  * so it survives remounting and stepping Back and forward again.
  */
 export function loggedSetsForStep(ref: StepRef): LoggedSet[] {
-  return [...loggedSets.values()].filter(
+  return [...loggedSets().values()].filter(
     (set) =>
       set.exerciseId === ref.exerciseId &&
       set.routineSlug === ref.routineSlug &&
@@ -88,7 +113,7 @@ export function loggedSetsForStep(ref: StepRef): LoggedSet[] {
 export function logSet(input: LoggedSetInput) {
   const previouslyLogged = setsFor(input.exerciseId);
   const set = { ...input, id: crypto.randomUUID() };
-  const transaction = loggedSets.insert(set);
+  const transaction = loggedSets().insert(set);
   return { set, transaction, isRecord: isNewRecord(previouslyLogged, set) };
 }
 
@@ -109,7 +134,7 @@ export function updateSet(
   id: string,
   patch: Pick<LoggedSet, "weight" | "unit" | "reps" | "performedAt">,
 ) {
-  return loggedSets.update(id, (draft) => {
+  return loggedSets().update(id, (draft) => {
     draft.weight = patch.weight;
     draft.unit = patch.unit;
     draft.reps = patch.reps;
@@ -119,19 +144,19 @@ export function updateSet(
 
 /** Remove a set. Returns the row too, so the caller can offer an undo. */
 export function deleteSet(id: string) {
-  const set = loggedSets.get(id);
-  const transaction = loggedSets.delete(id);
+  const set = loggedSets().get(id);
+  const transaction = loggedSets().delete(id);
   return { set, transaction };
 }
 
 /** Put a deleted set back, id and all — what the undo on the toast calls. */
 export function restoreSet(set: LoggedSet) {
-  return loggedSets.insert(set);
+  return loggedSets().insert(set);
 }
 
 /** Every set logged on one local calendar day, for the history sheet. */
 export function setsBetween(from: number, to: number): LoggedSet[] {
-  return [...loggedSets.values()]
+  return [...loggedSets().values()]
     .filter((set) => set.performedAt >= from && set.performedAt < to)
     .sort((a, b) => a.performedAt - b.performedAt);
 }

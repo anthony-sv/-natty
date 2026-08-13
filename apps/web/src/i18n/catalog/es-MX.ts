@@ -348,7 +348,6 @@ export const text: Record<string, string> = {
 
   // Supplements, doses and timings
   Whey: "Proteína de suero",
-  Creatine: "Creatina",
   "Magnesium glycinate": "Glicinato de magnesio",
   Carnigen: "Carnigen",
   Evoburn: "Evoburn",

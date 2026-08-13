@@ -252,6 +252,16 @@ export type TrainingWeek = z.infer<typeof trainingWeekSchema>;
 export const routineSchema = z.object({
   slug: z.string(),
   name: z.string(),
+  /**
+   * Free lines under the program — what a diet plan's `notes` are.
+   *
+   * `.optional()` rather than `.default([])`, which is the difference between
+   * "may be absent" and "is always an array": the six transcribed programs
+   * are written as `Routine` literals, and a defaulted field is *required* in
+   * the parsed type, so a default here would mean adding `notes: []` to six
+   * files that have none.
+   */
+  notes: z.array(z.string()).optional(),
   /** Who this program is attributed to/sourced from, if known. */
   source: z.string().optional(),
   /** Training style/methodology label, if any (e.g. "Push/Pull/Legs"). */

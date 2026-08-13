@@ -1,6 +1,6 @@
 import { getDietBySlug } from "@/data/diets";
 import { getRoutineBySlug } from "@/data/routines";
-import { bodyEntries } from "@/features/body/collection";
+import { activeBodyEntries } from "@/features/body/collection";
 import { userExercises } from "@/features/library/collection";
 import { intakeEntries } from "@/features/intake/collection";
 import { measurements } from "@/features/measurements/collection";
@@ -19,17 +19,21 @@ import { rekey, type IdSource } from "./rekey";
  * `backup.ts` so the format stays pure and directly testable.
  */
 
-/** Every collection the backup covers, in one list so nothing is forgotten. */
-const ALL_COLLECTIONS = [
-  loggedSets,
-  bodyEntries,
-  measurements,
-  userExercises,
-  userRoutines,
-  userFoods,
-  userRecipes,
-  userDiets,
-  intakeEntries,
+/**
+ * Every collection the backup covers, in one list so nothing is forgotten.
+ * A function, not a const: the body collection forks on session state, so
+ * "which collections" is a question with a per-call answer now.
+ */
+const allCollections = () => [
+  loggedSets(),
+  activeBodyEntries(),
+  measurements(),
+  userExercises(),
+  userRoutines(),
+  userFoods(),
+  userRecipes(),
+  userDiets(),
+  intakeEntries(),
 ];
 
 /**
@@ -47,22 +51,22 @@ const ALL_COLLECTIONS = [
  * everything" would quietly merge instead.
  */
 async function loadAll(): Promise<void> {
-  await Promise.all(ALL_COLLECTIONS.map((collection) => collection.preload()));
+  await Promise.all(allCollections().map((collection) => collection.preload()));
 }
 
 /** Read synchronously, not from a live query — an export is a point in time. */
 export async function currentData(): Promise<BackupData> {
   await loadAll();
   return {
-    sets: [...loggedSets.values()],
-    bodyEntries: [...bodyEntries.values()],
-    measurements: [...measurements.values()],
-    exercises: [...userExercises.values()],
-    routines: [...userRoutines.values()],
-    foods: [...userFoods.values()],
-    recipes: [...userRecipes.values()],
-    diets: [...userDiets.values()],
-    intake: [...intakeEntries.values()],
+    sets: [...loggedSets().values()],
+    bodyEntries: [...activeBodyEntries().values()],
+    measurements: [...measurements().values()],
+    exercises: [...userExercises().values()],
+    routines: [...userRoutines().values()],
+    foods: [...userFoods().values()],
+    recipes: [...userRecipes().values()],
+    diets: [...userDiets().values()],
+    intake: [...intakeEntries().values()],
     profile: profileStore.state,
   };
 }
@@ -112,7 +116,7 @@ export async function exportRoutine(
   now: number,
 ): Promise<Backup | undefined> {
   await loadAll();
-  const own = userRoutines.get(slug);
+  const own = userRoutines().get(slug);
   const builtIn = getRoutineBySlug(slug);
   const routine =
     own ?? (builtIn && { ...builtIn, createdAt: now, updatedAt: now });
@@ -130,7 +134,7 @@ export async function exportRoutine(
     {
       ...emptyData(),
       routines: [routine],
-      exercises: [...userExercises.values()].filter((e) => referenced.has(e.id)),
+      exercises: [...userExercises().values()].filter((e) => referenced.has(e.id)),
     },
     "routine",
     now,
@@ -143,7 +147,7 @@ export async function exportRecipe(
   now: number,
 ): Promise<Backup | undefined> {
   await loadAll();
-  const recipe = userRecipes.get(id);
+  const recipe = userRecipes().get(id);
   if (recipe === undefined) return undefined;
 
   const referenced = new Set(recipe.ingredients.map((item) => item.foodId));
@@ -151,7 +155,7 @@ export async function exportRecipe(
     {
       ...emptyData(),
       recipes: [recipe],
-      foods: [...userFoods.values()].filter((f) => referenced.has(f.id)),
+      foods: [...userFoods().values()].filter((f) => referenced.has(f.id)),
     },
     "recipe",
     now,
@@ -170,7 +174,7 @@ export async function exportFood(
   now: number,
 ): Promise<Backup | undefined> {
   await loadAll();
-  const food = userFoods.get(id);
+  const food = userFoods().get(id);
   if (food === undefined) return undefined;
   return buildBackup({ ...emptyData(), foods: [food] }, "food", now);
 }
@@ -181,7 +185,7 @@ export async function exportExercise(
   now: number,
 ): Promise<Backup | undefined> {
   await loadAll();
-  const exercise = userExercises.get(id);
+  const exercise = userExercises().get(id);
   if (exercise === undefined) return undefined;
   return buildBackup({ ...emptyData(), exercises: [exercise] }, "exercise", now);
 }
@@ -198,7 +202,7 @@ export async function exportDiet(
   now: number,
 ): Promise<Backup | undefined> {
   await loadAll();
-  const own = userDiets.get(slug);
+  const own = userDiets().get(slug);
   const builtIn = getDietBySlug(slug);
   const plan =
     own ??
@@ -212,7 +216,7 @@ export async function exportDiet(
       ),
     ),
   );
-  const recipes = [...userRecipes.values()].filter((r) => referenced.has(r.id));
+  const recipes = [...userRecipes().values()].filter((r) => referenced.has(r.id));
   // A recipe's own ingredients have to travel too, or it lands with nothing in
   // it — the same transitive step `rekey` handles on the way back in.
   const fromRecipes = recipes.flatMap((r) => r.ingredients.map((i) => i.foodId));
@@ -222,7 +226,7 @@ export async function exportDiet(
       ...emptyData(),
       diets: [plan],
       recipes,
-      foods: [...userFoods.values()].filter(
+      foods: [...userFoods().values()].filter(
         (f) => referenced.has(f.id) || fromRecipes.includes(f.id),
       ),
     },
@@ -244,12 +248,12 @@ export async function importAdditive(
 ): Promise<void> {
   await loadAll();
   const fresh = rekey(data, ids);
-  for (const food of fresh.foods) userFoods.insert(food);
-  for (const exercise of fresh.exercises) userExercises.insert(exercise);
-  for (const recipe of fresh.recipes) userRecipes.insert(recipe);
-  for (const routine of fresh.routines) userRoutines.insert(routine);
-  for (const plan of fresh.diets) userDiets.insert(plan);
-  for (const entry of fresh.intake) intakeEntries.insert(entry);
+  if (fresh.foods.length > 0) userFoods().insert(fresh.foods);
+  if (fresh.exercises.length > 0) userExercises().insert(fresh.exercises);
+  if (fresh.recipes.length > 0) userRecipes().insert(fresh.recipes);
+  if (fresh.routines.length > 0) userRoutines().insert(fresh.routines);
+  if (fresh.diets.length > 0) userDiets().insert(fresh.diets);
+  if (fresh.intake.length > 0) intakeEntries().insert(fresh.intake);
 }
 
 /**
@@ -261,19 +265,23 @@ export async function importAdditive(
  */
 export async function restoreEverything(data: BackupData): Promise<void> {
   await loadAll();
-  for (const collection of ALL_COLLECTIONS) {
-    for (const key of [...collection.keys()]) collection.delete(key);
+  for (const collection of allCollections()) {
+    // One batched delete per collection: on a synced collection every
+    // transaction is a server round trip, so a thousand keys must not be a
+    // thousand calls.
+    const keys = [...collection.keys()];
+    if (keys.length > 0) collection.delete(keys);
   }
 
-  for (const set of data.sets) loggedSets.insert(set);
-  for (const entry of data.bodyEntries) bodyEntries.insert(entry);
-  for (const row of data.measurements) measurements.insert(row);
-  for (const exercise of data.exercises) userExercises.insert(exercise);
-  for (const routine of data.routines) userRoutines.insert(routine);
-  for (const food of data.foods) userFoods.insert(food);
-  for (const recipe of data.recipes) userRecipes.insert(recipe);
-  for (const plan of data.diets) userDiets.insert(plan);
-  for (const entry of data.intake) intakeEntries.insert(entry);
+  if (data.sets.length > 0) loggedSets().insert(data.sets);
+  if (data.bodyEntries.length > 0) activeBodyEntries().insert(data.bodyEntries);
+  if (data.measurements.length > 0) measurements().insert(data.measurements);
+  if (data.exercises.length > 0) userExercises().insert(data.exercises);
+  if (data.routines.length > 0) userRoutines().insert(data.routines);
+  if (data.foods.length > 0) userFoods().insert(data.foods);
+  if (data.recipes.length > 0) userRecipes().insert(data.recipes);
+  if (data.diets.length > 0) userDiets().insert(data.diets);
+  if (data.intake.length > 0) intakeEntries().insert(data.intake);
   if (data.profile) profileStore.setState(() => data.profile!);
 }
 

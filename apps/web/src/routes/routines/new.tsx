@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { routines } from "@/data/routines";
+import { useRoutines } from "@/features/routines/use-routines";
 import { RoutineBuilder } from "@/features/routines/components/builder/RoutineBuilder";
 import {
   emptyDraft,
@@ -38,6 +38,8 @@ function NewRoutine() {
   // starts from the copy rather than merging into what was already typed.
   const [seed, setSeed] = useState(0);
 
+  // Every routine, not just the compiled-in six — see the diet builder.
+  const { routines } = useRoutines();
   const templates = routines.map((routine) => ({
     value: routine.slug,
     label: f.names.routine(routine.slug, routine.name),

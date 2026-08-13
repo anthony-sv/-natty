@@ -3,9 +3,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PencilLineIcon, PlusIcon, Share2Icon } from "lucide-react";
 import { Page } from "@/components/page";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/components/ui/toast";
-import { backupFilename } from "@/features/backup/backup";
-import { downloadBackup, exportDiet } from "@/features/backup/use-backup";
+import { exportDiet } from "@/features/backup/use-backup";
+import { useShare } from "@/features/backup/use-share";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
@@ -69,6 +68,7 @@ function NutritionPage() {
       replace: true,
     });
   const t = useT();
+  const share = useShare();
   const names = useNames();
 
   // Yours first, then the built-ins — a plan you wrote is the one you follow.
@@ -137,13 +137,7 @@ function NutritionPage() {
           <Button
             variant="outline"
             onClick={() => {
-              void (async () => {
-                const now = Date.now();
-                const backup = await exportDiet(plan.slug, now);
-                if (backup === undefined) return;
-                downloadBackup(backup, backupFilename(now, "diet"));
-                toast.add({ title: t("data.shared"), type: "success" });
-              })();
+              void share((now) => exportDiet(plan.slug, now), "diet");
             }}
           >
             <Share2Icon data-icon="inline-start" />

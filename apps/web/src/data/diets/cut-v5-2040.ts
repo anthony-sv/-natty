@@ -113,7 +113,10 @@ export const cutV5: DietPlan = dietPlanSchema.parse({
       timing: "Pre-lifting or pre-cardio",
     },
     { name: "Whey", dose: "1 scoop", timing: "With dinner", note: "Already in the plan." },
-    { name: "Creatine", dose: "5g", timing: "Daily" },
+    // Creatine is deliberately absent: the plan panel computes a dose from
+    // your own fat-free mass, and a transcribed "5g daily" beside it is the
+    // same advice stated twice — with two different numbers whenever you're
+    // not the person the doc was written for.
     { name: "Magnesium glycinate", dose: "300–400mg", timing: "Before bed" },
   ],
   notes: [

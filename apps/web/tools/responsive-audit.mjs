@@ -42,6 +42,7 @@ const VIEWPORTS = [
  */
 const ROUTES = [
   ["index", "/"],
+  ["account", "/account"],
   ["routines", "/routines"],
   ["routines-new", "/routines/new"],
   ["program-8wk", "/routines/cutting-program"],
@@ -172,11 +173,12 @@ const PROBE = `(() => {
       + " :: " + (el.textContent || "").replace(/\\s+/g, " ").trim().slice(0, 44);
   };
 
-  // Screen-reader-only text is *meant* to be a 1px box with its content hanging
-  // out, a closed dialog still measures, and the dev-only devtools badge lives
-  // in a bare id-less div appended to body — outside #root and outside the id'd
-  // divs Base UI portals into. Together they were most of the first run.
-  const appRoots = [...document.body.children].filter((c) => c.id !== "");
+  // Since the TanStack Start migration the app renders straight into <body> —
+  // there is no #root div — so every body child is app-owned in a production
+  // build. The dev-only devtools badge this filter used to exclude doesn't
+  // exist there, which is one more reason the audit mandates a prod build.
+  // Screen-reader-only text and closed dialogs are handled by real() below.
+  const appRoots = [...document.body.children];
   const real = (el, rect) => {
     if (rect.width <= 2 || rect.height <= 2) return false;
     if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return false;

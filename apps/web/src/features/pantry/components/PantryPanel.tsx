@@ -28,12 +28,11 @@ import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
-import { backupFilename } from "@/features/backup/backup";
 import {
-  downloadBackup,
   exportFood,
   exportRecipe,
 } from "@/features/backup/use-backup";
+import { useShare } from "@/features/backup/use-share";
 import { kcalOf } from "@/features/nutrition/macros";
 import { useT } from "@/i18n/use-t";
 import {
@@ -43,8 +42,8 @@ import {
   deleteUserFood,
   restoreRecipe,
   restoreUserFood,
-  userFoods,
-  userRecipes,
+  userFoodsFork,
+  userRecipesFork,
 } from "../collection";
 import { recipeAsFood } from "../pantry";
 import type { Recipe, UserFood } from "../schema";
@@ -55,14 +54,23 @@ import { UserFoodForm } from "./UserFoodForm";
 /** Foods and recipes you wrote: add, correct, archive, restore. */
 export function PantryPanel() {
   const t = useT();
+  const share = useShare();
   const [showArchived, setShowArchived] = useState(false);
   const [editingFood, setEditingFood] = useState<UserFood | undefined>();
   const [editingRecipe, setEditingRecipe] = useState<Recipe | undefined>();
   const [adding, setAdding] = useState<"food" | "recipe" | undefined>();
 
   const pantry = usePantry();
-  const { data: foodRows } = useLiveQuery((q) => q.from({ f: userFoods }));
-  const { data: recipeRows } = useLiveQuery((q) => q.from({ r: userRecipes }));
+  const userFoods = userFoodsFork.useActive();
+  const userRecipes = userRecipesFork.useActive();
+  const { data: foodRows } = useLiveQuery(
+    (q) => q.from({ f: userFoods }),
+    [userFoods],
+  );
+  const { data: recipeRows } = useLiveQuery(
+    (q) => q.from({ r: userRecipes }),
+    [userRecipes],
+  );
 
   const foods = (foodRows ?? []).filter(
     (f) => showArchived || f.archivedAt === undefined,
@@ -145,16 +153,7 @@ export function PantryPanel() {
                         .join(" · ")}
                       badge={t("pantry.recipe")}
                       onShare={() => {
-                        void (async () => {
-                          const now = Date.now();
-                          const backup = await exportRecipe(recipe.id, now);
-                          if (backup === undefined) return;
-                          downloadBackup(backup, backupFilename(now, "recipe"));
-                          toast.add({
-                            title: t("data.shared"),
-                            type: "success",
-                          });
-                        })();
+                        void share((now) => exportRecipe(recipe.id, now), "recipe");
                       }}
                       onEdit={() => setEditingRecipe(recipe)}
                       onArchive={() => {
@@ -224,16 +223,7 @@ export function PantryPanel() {
                       // the macros off a local product once is exactly the
                       // work worth handing to someone else.
                       onShare={() => {
-                        void (async () => {
-                          const now = Date.now();
-                          const backup = await exportFood(food.id, now);
-                          if (backup === undefined) return;
-                          downloadBackup(backup, backupFilename(now, "food"));
-                          toast.add({
-                            title: t("data.shared"),
-                            type: "success",
-                          });
-                        })();
+                        void share((now) => exportFood(food.id, now), "food");
                       }}
                       onEdit={() => setEditingFood(food)}
                       onArchive={() => {

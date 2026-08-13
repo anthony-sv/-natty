@@ -6,7 +6,7 @@ listed below shipped.
 
 ```bash
 pnpm --filter web build
-pnpm --filter web preview --port 5300 &
+pnpm --filter web preview &   # serves the Nitro build on :5300 (PORT to change)
 
 pnpm --filter web audit:responsive   # overflow across every route
 pnpm --filter web audit:tabs         # every tab strip spans its container
@@ -16,12 +16,30 @@ Both exit non-zero on a finding, take `BASE`, `LOCALE` and (for the audit)
 `OUT` and `NOISE_PX` from the environment, and find Chrome themselves — set
 `CHROME=/path/to/chrome` if they can't.
 
+## Filling the app with data
+
+```bash
+node tools/seed-backup.mjs          # writes natty-seed.json (gitignored)
+```
+
+A year of training, weigh-ins, measurements, meals and a couple of things
+you'd have written yourself, as a **backup file** — import it at /progress →
+Data → Import → Restore everything. It replaces what's there, so export first
+if you have real data.
+
+A file rather than localStorage writes (which is what the audit does above),
+because it goes in through the app's own import and therefore proves the same
+path a real user takes. `seed-backup.test.ts` parses it with `readBackup` and
+checks every id resolves, so a seed that the app would refuse fails the build
+instead of wasting your afternoon.
+
 ## Five things to know before changing them
 
 **Audit a production build, not the dev server.** The TanStack devtools badge is
-a 56px fixed element that reports as an overflow on every page. The probe
-excludes it by ignoring subtrees outside `#root` and the id'd divs Base UI
-portals into, but the honest environment is the built one.
+a 56px fixed element that reports as an overflow on every page, and since the
+Start migration the app renders straight into `<body>` — there is no `#root`
+div for the probe to scope to, so the badge would be measured like anything
+else. A production build has no badge, and is the honest environment anyway.
 
 **Audit in Spanish.** English is the shortest language the app speaks, and a
 layout tested only in it is untested. `/routines` was clean in English and

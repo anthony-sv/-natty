@@ -16,7 +16,7 @@ import { ffmi, formatIndex, leanMassKg } from "@/features/body/ffmi";
 import { weeklyAverages, weekOverWeek } from "@/features/body/weekly";
 import { useIntake } from "@/features/intake/use-intake";
 import { resolveIntake, tickedMeals } from "@/features/intake/intake";
-import { loggedSets } from "@/features/log/collection";
+import { loggedSetsFork } from "@/features/log/collection";
 import { toCalendar } from "@/features/log/heatmap";
 import { useAllRecords } from "@/features/log/queries";
 import { useMeasurements } from "@/features/measurements/collection";
@@ -89,7 +89,8 @@ export function HomeCards() {
 function TrainingCard() {
   const t = useT();
   const { rows, loggedSetCount } = useAllRecords();
-  const { data } = useLiveQuery((q) => q.from({ set: loggedSets }));
+  const loggedSets = loggedSetsFork.useActive();
+  const { data } = useLiveQuery((q) => q.from({ set: loggedSets }), [loggedSets]);
   const [now] = useState(() => Date.now());
 
   const sets = useMemo(() => data ?? [], [data]);

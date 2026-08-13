@@ -23,6 +23,53 @@ export const esMX: Record<keyof typeof en, string> = {
   "nav.searchHint": "Presiona {key} para buscar",
   "nav.language": "Idioma",
   "nav.darkMode": "Modo oscuro",
+  "nav.account": "Cuenta",
+
+  "account.title": "Cuenta",
+  "account.subtitle": "Inicia sesión para sincronizar tus datos entre dispositivos.",
+  "account.localNote": "Sin cuenta, todo se queda en este dispositivo.",
+  "account.email": "Correo electrónico",
+  "account.password": "Contraseña",
+  "account.emailError": "Escribe un correo válido",
+  "account.passwordError": "Mínimo 6 caracteres",
+  "account.signIn": "Iniciar sesión",
+  "account.createAccount": "Crear cuenta",
+  "account.signOut": "Cerrar sesión",
+  "account.signedInAs": "Sesión iniciada como {email}",
+  "account.signedOut": "Sesión cerrada",
+  "account.checkEmail": "Revisa tu correo para confirmar tu cuenta",
+  "account.continueGoogle": "Continuar con Google",
+  "account.or": "o",
+  "account.providerError": "No se pudo iniciar el acceso",
+  "account.handle": "Usuario",
+  "account.handleHelp":
+    "Único, y el único nombre que aparecería en algo público. Letras, números y guiones bajos.",
+  "account.handleSave": "Reservar",
+  "account.handleSaved": "Usuario reservado",
+  "account.handleTaken": "Alguien ya lo tiene",
+  "account.handleProblem.too-short": "Mínimo 3 caracteres",
+  "account.handleProblem.too-long": "Máximo 20 caracteres",
+  "account.handleProblem.shape":
+    "Sólo letras, números y guiones bajos, empezando con letra",
+  "account.handleProblem.reserved": "Ese está reservado",
+  "account.username": "Nombre visible",
+  "account.usernamePlaceholder": "¿Cómo te llamamos?",
+  "account.usernameHelp":
+    "Privado — sólo tú lo ves, y te sigue a tus otros dispositivos con tu cuenta.",
+  "account.unavailable":
+    "Esta versión no tiene cuentas configuradas. Todo sigue funcionando — tus datos se quedan en este dispositivo.",
+  "account.signInError": "No se pudo iniciar sesión",
+  "account.signUpError": "No se pudo crear la cuenta",
+  "account.signOutError": "No se pudo cerrar sesión",
+  "account.upload.title": "Los datos de este dispositivo",
+  "account.upload.body":
+    "Copia a tu cuenta lo que este dispositivo tenga y allá falte. Puedes presionarlo dos veces sin problema — no se duplica nada, y no se borra nada de este dispositivo.",
+  "account.upload.action": "Subir a mi cuenta",
+  "account.upload.uploading": "Subiendo...",
+  "account.upload.done.one": "{count} elemento subido",
+  "account.upload.done.other": "{count} elementos subidos",
+  "account.upload.none": "Tu cuenta ya tiene todo lo de este dispositivo",
+  "account.upload.error": "No se pudo subir",
 
   "palette.placeholder": "Busca páginas y rutinas...",
   "palette.empty": "Sin resultados.",
@@ -345,6 +392,7 @@ export const esMX: Record<keyof typeof en, string> = {
     "Para un set que corre como una secuencia fija \u2014 un aguante, luego pulsos, luego reps. Cada parte es su propio paso en el reproductor, y los aguantes llevan cron\u00f3metro.",
   "builder.needTwoSegments": "Una secuencia necesita al menos dos partes",
   "builder.modifiers": "T\u00e9cnicas de intensidad",
+  "builder.notePlaceholder": "Algo que valga la pena recordar de este programa",
   "builder.save": "Guardar rutina",
   "builder.saving": "Guardando\u2026",
   "builder.saved": "Se guard\u00f3 {name}",
@@ -516,6 +564,10 @@ export const esMX: Record<keyof typeof en, string> = {
   "dietBuilder.draft": "Borrador",
   "dietBuilder.draftBody":
     "Este plan todavía no suma a sus objetivos. Edítalo y vuelve a guardar para quitar esto.",
+  "dietBuilder.notes": "Notas",
+  "dietBuilder.addNote": "Agregar nota",
+  "dietBuilder.removeNote": "Quitar nota",
+  "dietBuilder.notePlaceholder": "Algo que valga la pena recordar de este plan",
   "dietBuilder.save": "Guardar plan",
   "dietBuilder.saving": "Guardando\u2026",
   "dietBuilder.saved": "Se guard\u00f3 {name}",
@@ -555,7 +607,7 @@ export const esMX: Record<keyof typeof en, string> = {
 
   "about.storage.title": "Dónde viven tus datos",
   "about.storage.body":
-    "En este navegador, en este dispositivo. No hay cuenta y no se manda nada a ningún lado.",
+    "En este navegador, en este dispositivo — a menos que inicies sesión, lo que sincroniza con tu cuenta todo lo que registras y todo lo que escribes.",
   "about.storage.p1":
     "Eso lo hace privado por construcción — pero también significa que borrar los datos del navegador los elimina, y que no te siguen al celular.",
   "about.storage.p2":
@@ -563,6 +615,17 @@ export const esMX: Record<keyof typeof en, string> = {
   "about.storage.p3":
     "Los seis programas y los alimentos de la lista base vienen dentro de la app, así que esos nunca corren riesgo.",
   "about.storage.link": "Respalda tus datos",
+
+  "about.account.title": "Tu cuenta",
+  "about.account.body":
+    "Opcional, y desactivada por defecto. La app funciona completa sin cuenta; iniciar sesión es lo que hace que tus datos te sigan a otro dispositivo.",
+  "about.account.p1":
+    "Nada se mueve solo. Subir los datos de este dispositivo es un botón en la página de cuenta — seguro aunque lo presiones dos veces, porque la cuenta guarda una sola copia de cada cosa.",
+  "about.account.p2":
+    "Al cerrar sesión, este dispositivo vuelve a mostrar sus propios datos intactos. La cuenta conserva lo que subiste, listo para el siguiente dispositivo.",
+  "about.account.p3":
+    "Los respaldos siguen funcionando con sesión iniciada — la exportación cubre lo que la app muestra en ese momento, así que también es tu salida del servidor.",
+  "about.account.link": "Ir a tu cuenta",
 
   "about.routines.title": "Programas y días",
   "about.routines.body":
@@ -878,6 +941,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "data.kind.intake": "Comidas registradas",
   "data.kind.profile": "Tu perfil",
   "data.share": "Compartir",
+  "data.shareMissing": "No se encontró eso para compartir",
+  "data.shareError": "No se pudo crear el archivo",
   "data.shared": "Archivo descargado",
 
   "split.push": "Empuje",
@@ -1348,6 +1413,18 @@ export const esMX: Record<keyof typeof en, string> = {
   "nutrition.hydrationHours": "asume {hours} hora de entrenamiento",
   "nutrition.hydrationFormula":
     "{perKg}ml por kg, más {creatine}ml por la creatina, más {perHour}ml por cada hora de entrenamiento. Es una regla general — el calor y lo que sudes lo mueven bastante.",
+  "nutrition.creatine": "Creatina",
+  "nutrition.creatineSimple":
+    "Con {grams} g al día le alcanza a casi cualquiera — lo demás sólo vale la pena si estás lejos del promedio.",
+  "nutrition.creatineDaily": "Tu dosis diaria",
+  "nutrition.creatineLoading": "Carga (opcional)",
+  "nutrition.creatineLoadingNote":
+    "{perDose} g × {doses} al día por {days} días, y luego bajas a la dosis diaria. Saltártela sólo significa saturar unas semanas después.",
+  "nutrition.creatineFromLean":
+    "Calculado con {mass} kg de masa libre de grasa — la creatina se almacena en el músculo, así que es la parte que vale la pena usar.",
+  "nutrition.creatineFromWeight":
+    "Calculado con {mass} kg de peso corporal. Registra tu porcentaje de grasa y usará tu masa libre de grasa, que es la que realmente la almacena.",
+  "nutrition.creatineNoWeight": "Todavía no hay pesaje",
   "nutrition.kcalPerDay": "kcal/día",
   "nutrition.kgPerWeek": "kg/semana",
   "nutrition.tdee": "TDEE",

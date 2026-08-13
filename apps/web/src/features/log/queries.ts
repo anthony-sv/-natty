@@ -3,7 +3,7 @@ import { eq, useLiveQuery } from "@tanstack/react-db";
 import { muscleSchema } from "@/data/exercises";
 import { useLibrary } from "@/features/library/use-library";
 import { useNames } from "@/i18n/names";
-import { loggedSets } from "./collection";
+import { loggedSetsFork } from "./collection";
 import { lastSetFor, prFrontier } from "./pr";
 import { toRecordRows, type RecordRow } from "./records";
 import {
@@ -21,6 +21,7 @@ import {
  * result, not something the query builder expresses.
  */
 export function useExerciseLog(exerciseId: string | undefined) {
+  const loggedSets = loggedSetsFork.useActive();
   const { data, isLoading } = useLiveQuery(
     (q) =>
       exerciseId === undefined
@@ -28,7 +29,7 @@ export function useExerciseLog(exerciseId: string | undefined) {
         : q
             .from({ set: loggedSets })
             .where(({ set }) => eq(set.exerciseId, exerciseId)),
-    [exerciseId],
+    [exerciseId, loggedSets],
   );
 
   const sets = useMemo(() => data ?? [], [data]);
@@ -56,7 +57,11 @@ export function useAllRecords(): {
   isLoading: boolean;
   loggedSetCount: number;
 } {
-  const { data, isLoading } = useLiveQuery((q) => q.from({ set: loggedSets }));
+  const loggedSets = loggedSetsFork.useActive();
+  const { data, isLoading } = useLiveQuery(
+    (q) => q.from({ set: loggedSets }),
+    [loggedSets],
+  );
   // Names in the reader's language, not the library's English — the table's
   // headings, its cells and the text its search runs over are all this.
   const names = useNames();
@@ -95,7 +100,11 @@ export function useVolume(
   isLoading: boolean;
   loggedSetCount: number;
 } {
-  const { data, isLoading } = useLiveQuery((q) => q.from({ set: loggedSets }));
+  const loggedSets = loggedSetsFork.useActive();
+  const { data, isLoading } = useLiveQuery(
+    (q) => q.from({ set: loggedSets }),
+    [loggedSets],
+  );
   const { anatomy, trainableDirectly } = useLibrary();
 
   const weeks = useMemo(

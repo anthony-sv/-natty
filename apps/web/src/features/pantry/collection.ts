@@ -2,6 +2,12 @@ import {
   createCollection,
   localStorageCollectionOptions,
 } from "@tanstack/react-db";
+import { forkCollection } from "@/lib/synced-collection";
+import {
+  deleteDocuments,
+  fetchDocuments,
+  upsertDocuments,
+} from "@/server/documents";
 import {
   recipeSchema,
   userFoodSchema,
@@ -19,7 +25,7 @@ import {
  * sees `Food`s, and which half a `foodId` came from is nobody's business
  * downstream.
  */
-export const userFoods = createCollection(
+const localUserFoods = createCollection(
   localStorageCollectionOptions({
     storageKey: "natty.foods.v1",
     getKey: (food) => food.id,
@@ -27,7 +33,20 @@ export const userFoods = createCollection(
   }),
 );
 
-export const userRecipes = createCollection(
+export const userFoodsFork = forkCollection({
+  queryKey: "foods",
+  local: localUserFoods,
+  getKey: (food) => food.id,
+  fetch: async () =>
+    (await fetchDocuments({ data: { kind: "food" } })) as UserFood[],
+  upsert: (rows) => upsertDocuments({ data: { kind: "food", rows } }),
+  remove: (ids) => deleteDocuments({ data: { kind: "food", ids } }),
+});
+
+/** Whichever collection backs the app right now — see `forkCollection`. */
+export const userFoods = () => userFoodsFork.active();
+
+const localUserRecipes = createCollection(
   localStorageCollectionOptions({
     storageKey: "natty.recipes.v1",
     getKey: (recipe) => recipe.id,
@@ -35,12 +54,25 @@ export const userRecipes = createCollection(
   }),
 );
 
+export const userRecipesFork = forkCollection({
+  queryKey: "recipes",
+  local: localUserRecipes,
+  getKey: (recipe) => recipe.id,
+  fetch: async () =>
+    (await fetchDocuments({ data: { kind: "recipe" } })) as Recipe[],
+  upsert: (rows) => upsertDocuments({ data: { kind: "recipe", rows } }),
+  remove: (ids) => deleteDocuments({ data: { kind: "recipe", ids } }),
+});
+
+/** Whichever collection backs the app right now — see `forkCollection`. */
+export const userRecipes = () => userRecipesFork.active();
+
 export function allUserFoods(): UserFood[] {
-  return [...userFoods.values()];
+  return [...userFoods().values()];
 }
 
 export function allRecipes(): Recipe[] {
-  return [...userRecipes.values()];
+  return [...userRecipes().values()];
 }
 
 export function createUserFood(input: UserFoodInput) {
@@ -49,11 +81,11 @@ export function createUserFood(input: UserFoodInput) {
     id: `food:${crypto.randomUUID()}`,
     createdAt: Date.now(),
   };
-  return { food, transaction: userFoods.insert(food) };
+  return { food, transaction: userFoods().insert(food) };
 }
 
 export function updateUserFood(id: string, patch: UserFoodInput) {
-  return userFoods.update(id, (draft) => {
+  return userFoods().update(id, (draft) => {
     Object.assign(draft, patch);
   });
 }
@@ -64,11 +96,11 @@ export function createRecipe(input: RecipeInput) {
     id: `recipe:${crypto.randomUUID()}`,
     createdAt: Date.now(),
   };
-  return { recipe, transaction: userRecipes.insert(recipe) };
+  return { recipe, transaction: userRecipes().insert(recipe) };
 }
 
 export function updateRecipe(id: string, patch: RecipeInput) {
-  return userRecipes.update(id, (draft) => {
+  return userRecipes().update(id, (draft) => {
     Object.assign(draft, patch);
   });
 }
@@ -81,35 +113,35 @@ export function updateRecipe(id: string, patch: RecipeInput) {
  * hides it from the pickers while everything already written keeps resolving.
  */
 export function archiveUserFood(id: string) {
-  return userFoods.update(id, (draft) => {
+  return userFoods().update(id, (draft) => {
     draft.archivedAt = Date.now();
   });
 }
 
 export function restoreUserFood(id: string) {
-  return userFoods.update(id, (draft) => {
+  return userFoods().update(id, (draft) => {
     draft.archivedAt = undefined;
   });
 }
 
 export function archiveRecipe(id: string) {
-  return userRecipes.update(id, (draft) => {
+  return userRecipes().update(id, (draft) => {
     draft.archivedAt = Date.now();
   });
 }
 
 export function restoreRecipe(id: string) {
-  return userRecipes.update(id, (draft) => {
+  return userRecipes().update(id, (draft) => {
     draft.archivedAt = undefined;
   });
 }
 
 export function deleteUserFood(id: string) {
-  const food = userFoods.get(id);
-  return { food, transaction: userFoods.delete(id) };
+  const food = userFoods().get(id);
+  return { food, transaction: userFoods().delete(id) };
 }
 
 export function deleteRecipe(id: string) {
-  const recipe = userRecipes.get(id);
-  return { recipe, transaction: userRecipes.delete(id) };
+  const recipe = userRecipes().get(id);
+  return { recipe, transaction: userRecipes().delete(id) };
 }

@@ -28,18 +28,17 @@ import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/toast";
-import { backupFilename } from "@/features/backup/backup";
 import {
-  downloadBackup,
   exportExercise,
 } from "@/features/backup/use-backup";
+import { useShare } from "@/features/backup/use-share";
 import { useT } from "@/i18n/use-t";
 import { setsFor } from "@/features/log/collection";
 import {
   archiveUserExercise,
   deleteUserExercise,
   restoreUserExercise,
-  userExercises,
+  userExercisesFork,
 } from "../collection";
 import type { UserExercise } from "../schema";
 import { UserExerciseForm } from "./UserExerciseForm";
@@ -51,7 +50,11 @@ export function LibraryPanel() {
   const [editing, setEditing] = useState<UserExercise | undefined>(undefined);
   const [isAdding, setIsAdding] = useState(false);
 
-  const { data } = useLiveQuery((q) => q.from({ e: userExercises }));
+  const userExercises = userExercisesFork.useActive();
+  const { data } = useLiveQuery(
+    (q) => q.from({ e: userExercises }),
+    [userExercises],
+  );
   const all = data ?? [];
   const visible = all
     .filter((e) => showArchived || e.archivedAt === undefined)
@@ -145,6 +148,7 @@ function ExerciseRow({
   onEdit: () => void;
 }) {
   const t = useT();
+  const share = useShare();
   const isArchived = exercise.archivedAt !== undefined;
 
   // Read synchronously rather than from a live query: this decides whether
@@ -183,13 +187,7 @@ function ExerciseRow({
         className="shrink-0 text-muted-foreground"
         aria-label={t("data.share")}
         onClick={() => {
-          void (async () => {
-            const now = Date.now();
-            const backup = await exportExercise(exercise.id, now);
-            if (backup === undefined) return;
-            downloadBackup(backup, backupFilename(now, "exercise"));
-            toast.add({ title: t("data.shared"), type: "success" });
-          })();
+          void share((now) => exportExercise(exercise.id, now), "exercise");
         }}
       >
         <Share2Icon />

@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { CopyIcon, FilePlusIcon, PlusIcon, XIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -227,6 +228,50 @@ export function RoutineBuilder({
         >
           <PlusIcon data-icon="inline-start" />
           {t("builder.addDay")}
+        </Button>
+      </div>
+
+      {/* The same section the diet builder has, and for the same reason: a
+          program usually comes with a couple of standing instructions that
+          don't belong on any one exercise. */}
+      <div className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold">{t("dietBuilder.notes")}</h2>
+        {draft.notes.map((note, index) => (
+          <div key={index} className="flex items-start gap-2">
+            <Textarea
+              value={note}
+              rows={2}
+              className="min-w-0 flex-1"
+              placeholder={t("builder.notePlaceholder")}
+              onChange={(e) =>
+                update({
+                  notes: draft.notes.map((n, i) =>
+                    i === index ? e.target.value : n,
+                  ),
+                })
+              }
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={t("dietBuilder.removeNote")}
+              onClick={() =>
+                update({ notes: draft.notes.filter((_, i) => i !== index) })
+              }
+            >
+              <XIcon />
+            </Button>
+          </div>
+        ))}
+        <Button
+          type="button"
+          variant="outline"
+          className="self-start"
+          onClick={() => update({ notes: [...draft.notes, ""] })}
+        >
+          <PlusIcon data-icon="inline-start" />
+          {t("dietBuilder.addNote")}
         </Button>
       </div>
 

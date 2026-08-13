@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useLiveQuery } from "@tanstack/react-db";
-import { userExercises } from "./collection";
+import { userExercisesFork } from "./collection";
 import { mergeLibrary, type MergedLibrary } from "./merged";
 
 /**
@@ -12,7 +12,11 @@ import { mergeLibrary, type MergedLibrary } from "./merged";
  * `useNames` memoises on the locale.
  */
 export function useLibrary(): MergedLibrary & { isLoading: boolean } {
-  const { data, isLoading } = useLiveQuery((q) => q.from({ e: userExercises }));
+  const userExercises = userExercisesFork.useActive();
+  const { data, isLoading } = useLiveQuery(
+    (q) => q.from({ e: userExercises }),
+    [userExercises],
+  );
 
   const merged = useMemo(() => mergeLibrary(data ?? []), [data]);
 

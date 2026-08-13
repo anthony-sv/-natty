@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { diets } from "@/data/diets";
 import { DietPlanBuilder } from "@/features/nutrition/components/builder/DietPlanBuilder";
 import {
   emptyPlan,
@@ -24,6 +23,7 @@ import {
   toDraftPlan,
   type DraftPlan,
 } from "@/features/nutrition/components/builder/draft";
+import { useDiets } from "@/features/nutrition/use-diets";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 
@@ -74,9 +74,13 @@ function NewDietPlan() {
   const [seed, setSeed] = useState(0);
   const [copiedVariants, setCopiedVariants] = useState(false);
 
-  const templates = diets.map((plan) => ({
-    value: plan.slug,
-    label: names.dietPlan(plan.slug, plan.name),
+  // Every plan, not just the compiled-in two: the whole point of copying is
+  // to start from something close to what you want, and what's closest is
+  // usually the last one you wrote.
+  const { plans } = useDiets();
+  const templates = plans.map((entry) => ({
+    value: entry.plan.slug,
+    label: names.dietPlan(entry.plan.slug, entry.plan.name),
   }));
 
   return (
@@ -111,7 +115,9 @@ function NewDietPlan() {
             items={templates}
             value={null}
             onValueChange={(value) => {
-              const source = diets.find((plan) => plan.slug === value);
+              const source = plans.find(
+                (entry) => entry.plan.slug === value,
+              )?.plan;
               if (source === undefined) return;
               const copy = toDraftPlan(source);
               setDraft({

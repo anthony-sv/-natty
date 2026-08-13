@@ -2,8 +2,8 @@ import { useMemo } from "react";
 import { useStore } from "@tanstack/react-store";
 import { useLiveQuery } from "@tanstack/react-db";
 import { getExercise, getMovement } from "@/data/exercises";
-import { userExercises } from "@/features/library/collection";
-import { userFoods, userRecipes } from "@/features/pantry/collection";
+import { userExercisesFork } from "@/features/library/collection";
+import { userFoodsFork, userRecipesFork } from "@/features/pantry/collection";
 import { getPose } from "@/data/poses";
 import { findFood } from "@/data/diets/foods";
 import * as esMX from "./catalog/es-MX";
@@ -133,10 +133,22 @@ export function namesFor(locale: Locale): Names {
  */
 export function useNames(): Names {
   const locale = useStore(localeStore, (s) => s);
-  const { data } = useLiveQuery((q) => q.from({ e: userExercises }));
+  const userExercises = userExercisesFork.useActive();
+  const { data } = useLiveQuery(
+    (q) => q.from({ e: userExercises }),
+    [userExercises],
+  );
 
-  const { data: ownFoods } = useLiveQuery((q) => q.from({ f: userFoods }));
-  const { data: ownRecipes } = useLiveQuery((q) => q.from({ r: userRecipes }));
+  const userFoods = userFoodsFork.useActive();
+  const { data: ownFoods } = useLiveQuery(
+    (q) => q.from({ f: userFoods }),
+    [userFoods],
+  );
+  const userRecipes = userRecipesFork.useActive();
+  const { data: ownRecipes } = useLiveQuery(
+    (q) => q.from({ r: userRecipes }),
+    [userRecipes],
+  );
 
   return useMemo(() => {
     const base = namesFor(locale);

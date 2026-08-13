@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useLiveQuery } from "@tanstack/react-db";
-import { intakeEntries } from "./collection";
+import { intakeEntriesFork } from "./collection";
 import type { IntakeEntry } from "./schema";
 
 /**
@@ -14,6 +14,10 @@ import type { IntakeEntry } from "./schema";
  * `allIntake()` instead.
  */
 export function useIntake(): { entries: IntakeEntry[]; isLoading: boolean } {
-  const { data, isLoading } = useLiveQuery((q) => q.from({ e: intakeEntries }));
+  const collection = intakeEntriesFork.useActive();
+  const { data, isLoading } = useLiveQuery(
+    (q) => q.from({ e: collection }),
+    [collection],
+  );
   return useMemo(() => ({ entries: data ?? [], isLoading }), [data, isLoading]);
 }

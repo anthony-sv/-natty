@@ -133,6 +133,11 @@ export function CommandPalette() {
           <CommandItem onSelect={() => go("/plates")}>
             {t("nav.plates")}
           </CommandItem>
+          {/* Kept here precisely because the sidebar no longer lists it — the
+              avatar menu is the visible way in, and this is the typed one. */}
+          <CommandItem onSelect={() => go("/account")}>
+            {t("nav.account")}
+          </CommandItem>
           <CommandItem onSelect={() => go("/about")}>
             {t("nav.about")}
           </CommandItem>

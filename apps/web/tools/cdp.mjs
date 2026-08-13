@@ -216,7 +216,7 @@ export async function requireServer(base) {
   console.error(
     `Nothing serving ${base}.\n\n` +
       `  pnpm --filter web build\n` +
-      `  pnpm --filter web preview --port 5300 &\n\n` +
+      `  pnpm --filter web preview &\n\n` +
       `Audit the production build, not the dev server: the devtools badge is a ` +
       `56px fixed element that reports as an overflow on every page.`,
   );

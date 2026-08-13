@@ -20,6 +20,53 @@ export const en = {
   "nav.searchHint": "Press {key} to search",
   "nav.language": "Language",
   "nav.darkMode": "Dark mode",
+  "nav.account": "Account",
+
+  "account.title": "Account",
+  "account.subtitle": "Sign in to sync your data across devices.",
+  "account.localNote": "Without an account, everything stays on this device.",
+  "account.email": "Email",
+  "account.password": "Password",
+  "account.emailError": "Enter a valid email",
+  "account.passwordError": "At least 6 characters",
+  "account.signIn": "Sign in",
+  "account.createAccount": "Create account",
+  "account.signOut": "Sign out",
+  "account.signedInAs": "Signed in as {email}",
+  "account.signedOut": "Signed out",
+  "account.checkEmail": "Check your inbox to confirm your account",
+  "account.continueGoogle": "Continue with Google",
+  "account.or": "or",
+  "account.providerError": "Couldn't start sign-in",
+  "account.handle": "Handle",
+  "account.handleHelp":
+    "Unique, and the only name anything public would ever show. Letters, numbers and underscores.",
+  "account.handleSave": "Claim",
+  "account.handleSaved": "Handle claimed",
+  "account.handleTaken": "Someone already has that one",
+  "account.handleProblem.too-short": "At least 3 characters",
+  "account.handleProblem.too-long": "At most 20 characters",
+  "account.handleProblem.shape":
+    "Letters, numbers and underscores only, starting with a letter",
+  "account.handleProblem.reserved": "That one's reserved",
+  "account.username": "Display name",
+  "account.usernamePlaceholder": "What should we call you?",
+  "account.usernameHelp":
+    "Private — only you see it, and it follows your account to your other devices.",
+  "account.unavailable":
+    "Accounts aren't set up in this build. Everything still works — your data stays on this device.",
+  "account.signInError": "Couldn't sign in",
+  "account.signUpError": "Couldn't create the account",
+  "account.signOutError": "Couldn't sign out",
+  "account.upload.title": "This device's data",
+  "account.upload.body":
+    "Copy anything on this device that isn't in your account yet. Safe to press twice — nothing is duplicated, and nothing is removed from this device.",
+  "account.upload.action": "Upload to my account",
+  "account.upload.uploading": "Uploading...",
+  "account.upload.done.one": "{count} item uploaded",
+  "account.upload.done.other": "{count} items uploaded",
+  "account.upload.none": "Your account already has everything on this device",
+  "account.upload.error": "Upload failed",
 
   "palette.placeholder": "Search pages and routines...",
   "palette.empty": "No results.",
@@ -348,6 +395,7 @@ export const en = {
     "For a set that runs as a fixed sequence \u2014 a hold, then pulses, then reps. Each part becomes its own step in the player, and holds get a countdown.",
   "builder.needTwoSegments": "A sequence needs at least two parts",
   "builder.modifiers": "Intensity techniques",
+  "builder.notePlaceholder": "Anything worth remembering about this program",
   "builder.save": "Save routine",
   "builder.saving": "Saving\u2026",
   "builder.saved": "Saved {name}",
@@ -523,6 +571,10 @@ export const en = {
   "dietBuilder.draft": "Draft",
   "dietBuilder.draftBody":
     "This plan doesn't add up to its targets yet. Edit it and save again to clear this.",
+  "dietBuilder.notes": "Notes",
+  "dietBuilder.addNote": "Add a note",
+  "dietBuilder.removeNote": "Remove note",
+  "dietBuilder.notePlaceholder": "Anything worth remembering about this plan",
   "dietBuilder.save": "Save plan",
   "dietBuilder.saving": "Saving\u2026",
   "dietBuilder.saved": "Saved {name}",
@@ -562,7 +614,7 @@ export const en = {
 
   "about.storage.title": "Where your data lives",
   "about.storage.body":
-    "In this browser, on this device. There is no account and nothing is sent anywhere.",
+    "In this browser, on this device — unless you sign in, which syncs everything you log and everything you write to your account.",
   "about.storage.p1":
     "That makes it private by construction — but it also means clearing your browser data deletes it, and it doesn't follow you to your phone.",
   "about.storage.p2":
@@ -570,6 +622,17 @@ export const en = {
   "about.storage.p3":
     "The six training programs and the built-in foods are compiled into the app, so those are never at risk.",
   "about.storage.link": "Back up your data",
+
+  "about.account.title": "Your account",
+  "about.account.body":
+    "Optional, and off by default. The app is fully usable without one; signing in is what makes your data follow you to another device.",
+  "about.account.p1":
+    "Nothing moves by itself. Uploading this device's data is one button on the account page — safe to press twice, since the account keeps one copy of each thing.",
+  "about.account.p2":
+    "Signing out brings back this device's own data untouched. The account keeps what you uploaded, ready for the next device.",
+  "about.account.p3":
+    "Backups still work signed in — the export covers whatever the app is showing right now, so it's your way out of the server too.",
+  "about.account.link": "Go to your account",
 
   "about.routines.title": "Programs and days",
   "about.routines.body":
@@ -887,6 +950,8 @@ export const en = {
   "data.kind.intake": "Meals eaten",
   "data.kind.profile": "Your profile",
   "data.share": "Share",
+  "data.shareMissing": "Couldn't find that to share",
+  "data.shareError": "Couldn't build the file",
   "data.shared": "File downloaded",
 
   "split.push": "Push",
@@ -1360,6 +1425,18 @@ export const en = {
   "nutrition.hydrationHours": "assumes {hours} hour of training",
   "nutrition.hydrationFormula":
     "{perKg}ml per kg, plus {creatine}ml for creatine, plus {perHour}ml per hour of training. A rule of thumb — heat and how much you sweat move it a lot.",
+  "nutrition.creatine": "Creatine",
+  "nutrition.creatineSimple":
+    "{grams} g a day covers almost everyone — the rest of this is only worth reading if you're far from average.",
+  "nutrition.creatineDaily": "Your daily dose",
+  "nutrition.creatineLoading": "Loading (optional)",
+  "nutrition.creatineLoadingNote":
+    "{perDose} g × {doses} a day for {days} days, then drop to the daily dose. Skipping it only means saturating a few weeks later.",
+  "nutrition.creatineFromLean":
+    "Scaled from {mass} kg of fat-free mass — creatine is stored in muscle, so that's the part worth scaling by.",
+  "nutrition.creatineFromWeight":
+    "Scaled from {mass} kg of bodyweight. Log a body-fat percentage and this uses your fat-free mass instead, which is what actually stores it.",
+  "nutrition.creatineNoWeight": "No weigh-in yet",
   "nutrition.kcalPerDay": "kcal/day",
   "nutrition.kgPerWeek": "kg/week",
   "nutrition.tdee": "TDEE",
