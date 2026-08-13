@@ -6,7 +6,7 @@ listed below shipped.
 
 ```bash
 pnpm --filter web build
-pnpm --filter web preview --port 5300 &
+pnpm --filter web preview &   # serves the Nitro build on :5300 (PORT to change)
 
 pnpm --filter web audit:responsive   # overflow across every route
 pnpm --filter web audit:tabs         # every tab strip spans its container
@@ -19,9 +19,10 @@ Both exit non-zero on a finding, take `BASE`, `LOCALE` and (for the audit)
 ## Five things to know before changing them
 
 **Audit a production build, not the dev server.** The TanStack devtools badge is
-a 56px fixed element that reports as an overflow on every page. The probe
-excludes it by ignoring subtrees outside `#root` and the id'd divs Base UI
-portals into, but the honest environment is the built one.
+a 56px fixed element that reports as an overflow on every page, and since the
+Start migration the app renders straight into `<body>` — there is no `#root`
+div for the probe to scope to, so the badge would be measured like anything
+else. A production build has no badge, and is the honest environment anyway.
 
 **Audit in Spanish.** English is the shortest language the app speaks, and a
 layout tested only in it is untested. `/routines` was clean in English and

@@ -3,23 +3,36 @@ import path from "path";
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { tanstackRouter } from "@tanstack/router-plugin/vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { nitro } from "nitro/vite";
 import { devtools } from "@tanstack/devtools-vite";
 
 export default defineConfig(({ mode }) => ({
   plugins: [
     // AST-strips every `@tanstack/*-devtools` shell import and the JSX it
-    // produces on build, which is what removes the panels in `main.tsx`
+    // produces on build, which is what removes the panels in `__root.tsx`
     // without a hand-written environment guard around them. It does not reach
     // the registration hook inside `DataTable` — that's app code, not a shell
     // import — which is what the alias below is still for.
     devtools(),
-    tanstackRouter({
-      target: "react",
-      autoCodeSplitting: true,
-      routesDirectory: "./src/routes",
-      generatedRouteTree: "./src/routeTree.gen.ts",
-    }),
+    // The Start plugin's optimizeDeps handling breaks module resolution under
+    // Vitest (TanStack/router#6246), and the tests exercise the data layer,
+    // not the server — so neither Start nor Nitro belongs in a test run.
+    ...(process.env.VITEST
+      ? []
+      : [
+          // SPA mode: only a `_shell.html` is prerendered and route components
+          // never run on the server — required here, not a preference, because
+          // theme/locale stores write to `document` at import time and every
+          // collection is a localStorage collection. Server functions still
+          // work; full SSR is the thing this opts out of.
+          // Router defaults match this repo (src/routes, src/routeTree.gen.ts,
+          // autoCodeSplitting on), so no router options are restated.
+          tanstackStart({ spa: { enabled: true } }),
+          // Deploys the server build as Vercel Functions via zero-config
+          // detection; locally `vite build` emits `.output/`.
+          nitro(),
+        ]),
     react(),
     tailwindcss(),
   ],
