@@ -42,10 +42,11 @@ export function summariseDay(day: TrainingDay, f: Formatting): DaySummary {
 
   return {
     exercises: day.exercises.length,
-    // Sets, not steps. A set that runs as a sequence is several work steps and
-    // still one set — counting steps reported a three-set exercise as fifteen.
-    workingSets: steps.filter((s) => isSetEnd(s) && !isWarmupStep(s)).length,
-    warmupSets: steps.filter((s) => isSetEnd(s) && isWarmupStep(s)).length,
+    // One work step *is* one set, including a set that runs as a sequence —
+    // that used to be five steps and needed unpicking here to avoid reporting a
+    // three-set exercise as fifteen.
+    workingSets: steps.filter((s) => s.type === "work" && !s.isWarmup).length,
+    warmupSets: steps.filter((s) => s.type === "work" && s.isWarmup).length,
     finishers: day.exercises.filter((exercise) => exercise.isFinisher).length,
     // Warmups are charged here even though they're not counted above: they
     // take just as long as a working set, and an estimate that skipped them
@@ -54,23 +55,14 @@ export function summariseDay(day: TrainingDay, f: Formatting): DaySummary {
   };
 }
 
-/** The step that completes a set: an unsegmented one, or a sequence's last leg. */
-function isSetEnd(step: SessionStep): boolean {
-  return step.type === "work" && (step.segment?.isLast ?? true);
-}
-
-function isWarmupStep(step: SessionStep): boolean {
-  return step.type === "work" && step.isWarmup;
-}
-
 function secondsForStep(total: number, step: SessionStep): number {
   if (step.type === "rest" || step.type === "pose") return total + step.seconds;
-  // Timed things carry a real duration — cardio blocks and holds inside a set.
+  // A sequence set is paced end to end, so it reports a real length the same
+  // way a cardio block does — the guess below is for a set with no clock on it
+  // at all, and charging it on top would count the same minute twice.
+  if (step.sequence !== undefined) return total + step.sequence.seconds;
   if (step.durationSeconds !== undefined) return total + step.durationSeconds;
-  // The guess is per *set*, so a sequence's untimed legs don't each charge it
-  // again. Multiplying the one guess in the estimate by five would be a worse
-  // error than under-counting the pulses.
-  return total + (isSetEnd(step) ? WORK_SET_SECONDS : 0);
+  return total + WORK_SET_SECONDS;
 }
 
 /** "1h 05m" or "48m" — minutes only, since the estimate isn't finer than that. */

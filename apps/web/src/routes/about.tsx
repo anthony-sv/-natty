@@ -88,6 +88,8 @@ const GUIDE: Section[] = [
       "about.player.p3",
       "about.player.p4",
       "about.player.p5",
+      "about.player.p6",
+      "about.player.p7",
     ],
   },
   {

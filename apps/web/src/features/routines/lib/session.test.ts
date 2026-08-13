@@ -2,13 +2,21 @@
 import { getRoutineBySlug, type TrainingDay } from "@/data/routines";
 import { formattingFor } from "@/i18n/test-formatting";
 import {
-  autoStartSecondsFor,
+  autoStartFor,
+  buildSequence,
   buildSteps,
   countWorkSteps,
   describeStep,
+  extendSequence,
   isLoggableStep,
+  LEAD_IN_SECONDS,
+  partAt,
+  setLadder,
+  timedSecondsFor,
+  type SessionStep,
   type WorkStep,
 } from "./session";
+import { formatSegment } from "./format";
 
 /** English, so the assertions here read against the source strings. */
 const F = formattingFor();
@@ -104,15 +112,35 @@ describe("pose hold steps", () => {
 });
 
 describe("auto-start", () => {
-  it("starts rest and pose holds, but waits on cardio and work", () => {
+  it("starts rest and pose holds, but waits on work", () => {
+    const steps = buildSteps(dayWithFinisher(), F);
+    const rest = steps.find((s) => s.type === "rest")!;
+    const work = steps.find((s) => s.type === "work")!;
+
+    expect(autoStartFor(rest)).toEqual({
+      seconds: rest.seconds,
+      leadSeconds: 0,
+    });
+    expect(autoStartFor(work)).toBeUndefined();
+    expect(autoStartFor(undefined)).toBeUndefined();
+  });
+
+  /**
+   * The bug the lead-in exists for: a pose hold used to begin the instant you
+   * tapped Done, while you were still finding the pose, so a prescribed 10s
+   * hold reliably measured about seven. Rest gets none — there's nothing to be
+   * ready for, and a lead-in there would just make every rest longer.
+   */
+  it("counts you into a pose hold, but not into rest", () => {
     const steps = buildSteps(dayWithFinisher(), F);
     const pose = steps.find((s) => s.type === "pose")!;
     const rest = steps.find((s) => s.type === "rest")!;
-    const work = steps.find((s) => s.type === "work")!;
-    expect(autoStartSecondsFor(pose)).toBe(10);
-    expect(autoStartSecondsFor(rest)).toBe(rest.seconds);
-    expect(autoStartSecondsFor(work)).toBeUndefined();
-    expect(autoStartSecondsFor(undefined)).toBeUndefined();
+
+    expect(autoStartFor(pose)).toEqual({
+      seconds: 10,
+      leadSeconds: LEAD_IN_SECONDS,
+    });
+    expect(autoStartFor(rest)?.leadSeconds).toBe(0);
   });
 });
 
@@ -153,68 +181,335 @@ describe("segmented sets", () => {
     };
   }
 
-  it("makes each leg of the set its own step", () => {
+  /**
+   * The change this model exists for. Five steps per set was defensible on
+   * paper and unusable in a gym: the parts of a sequence have no rest between
+   * them, so advancing them meant tapping a phone four times mid-set with both
+   * hands loaded.
+   */
+  it("makes one step per set, carrying the whole sequence", () => {
     const steps = buildSteps(holdAndPulseDay(), F);
     const work = steps.filter((s) => s.type === "work");
-    // Four sets of five legs. The rest steps sit between them, and the last
-    // one is trimmed as always.
-    expect(work).toHaveLength(20);
+
+    expect(work).toHaveLength(4);
     expect(steps.filter((s) => s.type === "rest")).toHaveLength(3);
-  });
-
-  it("keeps counting sets, not legs", () => {
-    const steps = buildSteps(holdAndPulseDay(), F);
-    const work = steps.filter((s) => s.type === "work");
-    // This is the assertion the whole design hangs on: five steps share one
-    // setNumber, so "set 2 of 4" stays true through the middle of a set and
-    // `loggedSetsForStep` matches all five legs to the same logged entries.
-    expect(work.map((s) => s.setNumber)).toEqual([
-      1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-    ]);
-    expect(new Set(work.map((s) => s.setsInExercise))).toEqual(new Set([4]));
-  });
-
-  it("offers logging once per set, on the last leg", () => {
-    const steps = buildSteps(holdAndPulseDay(), F);
-    const loggable = steps
-      .map((step, index) => ({ step, index }))
-      .filter(({ step }) => isLoggableStep(step));
-    // One per set, and it's the fifth leg each time — you log what the whole
-    // sequence took, not five entries for one set.
-    expect(loggable).toHaveLength(4);
-    for (const { step } of loggable) {
-      expect(step.type === "work" && step.segment?.index).toBe(5);
+    for (const step of work) {
+      expect(step.type === "work" && step.sequence?.parts).toHaveLength(5);
     }
   });
 
-  it("auto-starts a hold inside a set, unlike other work steps", () => {
+  it("numbers the sets and offers logging once each", () => {
     const steps = buildSteps(holdAndPulseDay(), F);
-    const work = steps.filter((s) => s.type === "work");
-    // Legs 1 and 4 are the holds; you're already loaded and in position, so
-    // making you tap Start is a tap you can't spare mid-set.
-    expect(autoStartSecondsFor(work[0])).toBe(10);
-    expect(autoStartSecondsFor(work[3])).toBe(10);
-    // The pulse and rep legs are counted, not timed.
-    expect(autoStartSecondsFor(work[1])).toBeUndefined();
-    expect(autoStartSecondsFor(work[2])).toBeUndefined();
+    const work = steps.filter((s): s is WorkStep => s.type === "work");
+
+    expect(work.map((s) => s.setNumber)).toEqual([1, 2, 3, 4]);
+    expect(new Set(work.map((s) => s.setsInExercise))).toEqual(new Set([4]));
+    // One entry per set, without the "log on the last leg only" rule the split
+    // model needed to avoid five entries for one set.
+    expect(steps.filter(isLoggableStep)).toHaveLength(4);
   });
 
-  it("carries the rep leg's own count down the ramp", () => {
+  it("waits for you to start a sequence rather than auto-starting it", () => {
     const steps = buildSteps(holdAndPulseDay(), F);
-    const repLegs = steps.filter(
-      (s) => s.type === "work" && s.segment?.detail.kind === "reps",
+    const work = steps.find((s): s is WorkStep => s.type === "work")!;
+
+    // You have to be in position before a clock covering the whole set means
+    // anything — and starting it is the press that earns the lead-in.
+    expect(autoStartFor(work)).toBeUndefined();
+    expect(timedSecondsFor(work)).toBe(work.sequence!.seconds);
+  });
+
+  it("carries the rep part's own count down the ramp", () => {
+    const steps = buildSteps(holdAndPulseDay(), F);
+    const repCounts = steps
+      .filter((s): s is WorkStep => s.type === "work")
+      .map((step) => {
+        const part = step.sequence!.parts.find((p) => p.detail.kind === "reps");
+        return part?.detail.kind === "reps" ? part.detail.count : undefined;
+      });
+
+    expect(repCounts).toEqual(REP_LEGS);
+  });
+
+  it("describes each part by what it is, not as bare reps", () => {
+    const steps = buildSteps(holdAndPulseDay(), F);
+    const first = steps.find((s): s is WorkStep => s.type === "work")!;
+    const labels = first.sequence!.parts.map((part) =>
+      formatSegment(part.detail, F),
     );
-    expect(repLegs.map((s) => s.type === "work" && s.reps)).toEqual(REP_LEGS);
-  });
 
-  it("describes a leg by what it is, not as bare reps", () => {
-    const steps = buildSteps(holdAndPulseDay(), F);
-    const work = steps.filter((s) => s.type === "work");
     // Pulses and reps are both counts; only the wording separates them, which
     // is the whole reason a segment describes itself.
-    expect(describeStep(work[0] as WorkStep, F)).toBe("10s hold");
-    expect(describeStep(work[1] as WorkStep, F)).toBe("12 pulses");
-    expect(describeStep(work[2] as WorkStep, F)).toBe("12 reps, pulse each");
+    expect(labels).toEqual([
+      "10s hold",
+      "12 pulses",
+      "12 reps, pulse each",
+      "10s hold",
+      "12 pulses",
+    ]);
+    // The step itself answers with the whole run, since that's now what one
+    // step is.
+    expect(describeStep(first, F)).toBe(labels.join(" → "));
+  });
+});
+
+describe("the sequence timeline", () => {
+  /**
+   * A hold is exact because the routine gave it a duration; pulses and reps
+   * carry a *count*, so they're paced. Pinned rather than left implicit: these
+   * numbers decide how fast the player pulls you through a set, and a change to
+   * one should be a change someone made on purpose.
+   */
+  it("times holds exactly and paces the counted parts", () => {
+    const sequence = buildSequence([
+      { kind: "hold", seconds: 10 },
+      { kind: "pulses", count: 12 },
+      { kind: "reps", count: 12, pulsePerRep: true },
+      { kind: "reps", count: 12 },
+    ]);
+
+    expect(sequence.parts.map((p) => p.seconds)).toEqual([10, 10, 48, 36]);
+    expect(sequence.parts.map((p) => p.isTimed)).toEqual([
+      true,
+      false,
+      false,
+      false,
+    ]);
+    expect(sequence.seconds).toBe(104);
+  });
+
+  it("lays the parts end to end so the running one is a subtraction", () => {
+    const sequence = buildSequence([
+      { kind: "hold", seconds: 10 },
+      { kind: "pulses", count: 10 },
+      { kind: "hold", seconds: 5 },
+    ]);
+
+    expect(sequence.parts.map((p) => [p.startMs, p.endMs])).toEqual([
+      [0, 10_000],
+      [10_000, 18_000],
+      [18_000, 23_000],
+    ]);
+
+    expect(partAt(sequence, 0).index).toBe(1);
+    expect(partAt(sequence, 9_999).index).toBe(1);
+    expect(partAt(sequence, 10_000).index).toBe(2);
+    expect(partAt(sequence, 17_999).index).toBe(2);
+    expect(partAt(sequence, 18_000).index).toBe(3);
+    // Past the end it clamps rather than going undefined: a finished sequence
+    // still has to render something, and "the last part, done" is both true and
+    // what you want on screen while you rack the weight.
+    expect(partAt(sequence, 99_999).index).toBe(3);
+  });
+
+  /**
+   * The bug this pins, found by driving the real player: "+10s" was implemented
+   * as pushing the deadline out, which moves the *derived start* out with it —
+   * so elapsed time went down and pressing it with eight seconds left on a hold
+   * threw you back into the pulses you had already finished. One scalar can't
+   * insert time mid-sequence; the boundary of the part you're on has to move
+   * too, which is what the grant does.
+   */
+  it("grows the part you're on and shifts only what comes after it", () => {
+    const sequence = buildSequence([
+      { kind: "hold", seconds: 10 },
+      { kind: "pulses", count: 10 },
+      { kind: "hold", seconds: 5 },
+    ]);
+    const extended = extendSequence(sequence, { "2": 10_000 });
+
+    expect(extended.parts.map((p) => [p.startMs, p.endMs])).toEqual([
+      // Untouched: it already happened.
+      [0, 10_000],
+      // Ten seconds longer, and it still starts where it started — which is
+      // what keeps elapsed time pointing at the same part.
+      [10_000, 28_000],
+      // Pushed back by the same ten.
+      [28_000, 33_000],
+    ]);
+    expect(extended.seconds).toBe(33);
+
+    // 12s in is a second into part 2 either way; the grant must not move that.
+    expect(partAt(sequence, 12_000).index).toBe(2);
+    expect(partAt(extended, 12_000).index).toBe(2);
+  });
+
+  it("hands back the same sequence when nothing was granted", () => {
+    const sequence = buildSequence([
+      { kind: "hold", seconds: 10 },
+      { kind: "pulses", count: 10 },
+    ]);
+
+    // Identity, not just equality: the common case allocates nothing and keeps
+    // a stable reference for everything memoising on it.
+    expect(extendSequence(sequence, {})).toBe(sequence);
+  });
+
+  it("takes the upper bound of a range, so the pace plans for the longer set", () => {
+    const sequence = buildSequence([
+      { kind: "reps", count: [8, 12] },
+      { kind: "pulses", count: 12 },
+    ]);
+
+    expect(sequence.parts[0].seconds).toBe(36);
+  });
+});
+
+describe("where the load goes", () => {
+  function ramped(prescriptions: TrainingDay["exercises"][number]["prescriptions"]) {
+    return buildSteps(
+      {
+        dayNumber: 1,
+        label: "Chest",
+        isRest: false,
+        warmupRefs: [],
+        exercises: [
+          {
+            exerciseId: "flat-barbell-bench-press",
+            orAlternatives: [],
+            kind: "resistance",
+            isFinisher: false,
+            prescriptions,
+          },
+        ],
+      },
+      F,
+    ).filter((s): s is WorkStep => s.type === "work");
+  }
+
+  /**
+   * The complaint this answers: a ramp reached you as "8 reps" on set three,
+   * having been "10 reps" on set two, with nothing anywhere saying to put
+   * weight on the bar. The six transcribed programs state their ramps only as
+   * rep numbers, so inferring it is what makes them read correctly without
+   * being re-authored.
+   */
+  it("reads a falling rep target as a ramp", () => {
+    const work = ramped(
+      [10, 8, 6].map((reps) => ({ sets: 1, reps, restSeconds: 90 })),
+    );
+
+    expect(work.map((s) => s.load?.direction)).toEqual([
+      undefined,
+      "heavier",
+      "heavier",
+    ]);
+    expect(work[1].load?.stated).toBe(false);
+  });
+
+  it("reads a rising one as a back-off, and equal reps as nothing at all", () => {
+    expect(
+      ramped([6, 10].map((reps) => ({ sets: 1, reps, restSeconds: 90 }))).map(
+        (s) => s.load?.direction,
+      ),
+    ).toEqual([undefined, "lighter"]);
+
+    // Inferring "same weight" from equal reps would badge every straight set in
+    // the app with a fact you already knew.
+    expect(
+      ramped([{ sets: 3, reps: [8, 12], restSeconds: 90 }]).map((s) => s.load),
+    ).toEqual([undefined, undefined, undefined]);
+  });
+
+  it("lets the routine state it, on every set of the phase", () => {
+    const work = ramped([
+      { sets: 1, reps: 10, restSeconds: 90 },
+      { sets: 3, reps: 10, restSeconds: 90, load: "heavier" },
+    ]);
+
+    // Equal reps throughout, so nothing is inferred — and "these three sets get
+    // heavier" means each of them does, not just the first.
+    expect(work.map((s) => s.load?.direction)).toEqual([
+      undefined,
+      "heavier",
+      "heavier",
+      "heavier",
+    ]);
+    expect(work[1].load?.stated).toBe(true);
+  });
+
+  it("keeps a warmup ramp out of the working sets' progression", () => {
+    const work = ramped([
+      { sets: 1, reps: 10, restSeconds: 60, isWarmup: true },
+      { sets: 2, reps: [8, 12], restSeconds: 120 },
+    ]);
+
+    // 10 → 12 across the boundary would otherwise call the first working set a
+    // back-off, when it's the first set that counts at all.
+    expect(work.map((s) => s.load)).toEqual([undefined, undefined, undefined]);
+  });
+
+  /**
+   * "Set 2 of 4" says where you are and nothing about where you're going, so a
+   * ramp arrived one number at a time and never read as a ramp at all.
+   */
+  it("lays the exercise's whole plan out as a ladder", () => {
+    const steps: SessionStep[] = ramped(
+      [12, 10, 8].map((reps) => ({ sets: 1, reps, restSeconds: 90 })),
+    );
+    const work = steps.filter((s): s is WorkStep => s.type === "work");
+
+    expect(setLadder(steps, work[1], F)).toEqual([
+      { setNumber: 1, target: "12", load: undefined, isCurrent: false, isDone: true },
+      {
+        setNumber: 2,
+        target: "10",
+        load: { direction: "heavier", stated: false },
+        isCurrent: true,
+        isDone: false,
+      },
+      {
+        setNumber: 3,
+        target: "8",
+        load: { direction: "heavier", stated: false },
+        isCurrent: false,
+        isDone: false,
+      },
+    ]);
+  });
+});
+
+describe("saying what's next", () => {
+  const day: TrainingDay = {
+    dayNumber: 1,
+    label: "Chest",
+    isRest: false,
+    warmupRefs: [],
+    exercises: [
+      {
+        exerciseId: "flat-barbell-bench-press",
+        orAlternatives: [],
+        kind: "resistance",
+        isFinisher: false,
+        prescriptions: [{ sets: 2, reps: 10, restSeconds: 90 }],
+      },
+      {
+        exerciseId: "machine-chest-dip",
+        orAlternatives: [],
+        kind: "resistance",
+        isFinisher: false,
+        prescriptions: [{ sets: 1, reps: 10, restSeconds: 90 }],
+      },
+    ],
+  };
+
+  /**
+   * The difference between resting where you are and needing to go and find a
+   * machine — which is the thing you'd want to know *before* you sit down.
+   */
+  it("names the next exercise on the rest and set that lead into it", () => {
+    const steps = buildSteps(day, F);
+    const work = steps.filter((s): s is WorkStep => s.type === "work");
+    const rests = steps.filter((s) => s.type === "rest");
+
+    expect(work[0].nextExerciseName).toBeUndefined();
+    expect(work[1].nextExerciseName).toBe("Machine dip (chest)");
+    // The last set of the day has nothing after it.
+    expect(work[2].nextExerciseName).toBeUndefined();
+
+    expect(rests[0].nextExerciseName).toBeUndefined();
+    expect(rests[1].nextExerciseName).toBe("Machine dip (chest)");
+    expect(rests[1].nextLabel).toContain("Machine dip (chest)");
   });
 });
 

@@ -150,7 +150,13 @@ export function RecordsTable({
         // The exercise column keeps a slot but narrows to an indent: its value
         // is the heading above each run, and the column has to stay in the table
         // for the search to have something to match against.
-        virtual={{ gridTemplate: "1.75rem 6rem 10rem minmax(0, 1fr)" }}
+        // The three fixed tracks were sized against a laptop-width card. On a
+        // phone they add up to more than the card, leaving the date's `1fr`
+        // about 29px for a 77px date — which, being right-aligned, then hangs
+        // 48px back over the weight column. Narrowing them costs nothing on a
+        // wide screen, where the date is right-aligned to the far edge either
+        // way and the slack just moves into its track.
+        virtual={{ gridTemplate: "1.75rem 4rem 6.5rem minmax(0, 1fr)" }}
       />
 
       <ExerciseDetailSheet

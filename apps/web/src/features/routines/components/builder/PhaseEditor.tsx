@@ -69,6 +69,16 @@ export function PhaseEditor({
     { value: "high", label: t("intensity.high") },
   ];
 
+  // "" is not "same": leaving it unsaid lets the player read a ramp off a
+  // falling rep target, which is how the transcribed programs express one.
+  // Picking "same weight" is you overruling that.
+  const loads = [
+    { value: "", label: t("builder.load.unsaid") },
+    { value: "heavier", label: t("player.load.heavier") },
+    { value: "same", label: t("player.load.same") },
+    { value: "lighter", label: t("player.load.lighter") },
+  ];
+
   /** Which of the three shapes a phase is currently in. */
   const styleOf = (phase: DraftPhase) =>
     phase.segments !== undefined
@@ -235,6 +245,33 @@ export function PhaseEditor({
                 </div>
               </div>
             ) : null}
+
+            {/* What turns four separate phases into a ramp. The rep numbers
+                were always writable; the instruction that goes with them
+                ("and put weight on each time") had nowhere to live, so a
+                pyramid was indistinguishable from four sets you happened to
+                write out one at a time. */}
+            <div className={cn("flex flex-col gap-1", isCardio && "hidden")}>
+              <Label className="text-xs">{t("builder.load")}</Label>
+              <Select
+                items={loads}
+                value={phase.load}
+                onValueChange={(value) =>
+                  update(index, { load: value as DraftPhase["load"] })
+                }
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {loads.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             {/* A single cardio block has nothing to rest *between* — one
                 twenty-minute walk followed by "90s rest" is a number with no

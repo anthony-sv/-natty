@@ -263,7 +263,7 @@ export const en = {
   "builder.name": "Name",
   "builder.nameRequired": "Give it a name",
   "builder.style": "Style",
-  "builder.stylePlaceholder": "Push/pull/legs, upper/lower, whatever you call it",
+  "builder.stylePlaceholder": "Push/pull/legs, upper/lower…",
   "builder.days": "Days",
   "builder.addDay": "Add a day",
   "builder.dayLabel": "What it's for",
@@ -314,6 +314,10 @@ export const en = {
   "builder.restBetween": "Rest between (s)",
   "builder.intensity": "How hard",
   "builder.intensity.none": "Not stated",
+  "builder.load": "Load",
+  // Distinct from "same weight": unsaid lets the player read a ramp off a
+  // falling rep target, which is how most programs write one.
+  "builder.load.unsaid": "Don't say",
   "intensity.low": "Easy",
   "intensity.moderate": "Moderate",
   "intensity.high": "Hard",
@@ -591,6 +595,10 @@ export const en = {
     "Warmup sets are shown and timed but never logged. Two ramp-ups at half your working weight aren't a record and aren't volume, so they stay out of both — and out of the day's set count.",
   "about.player.p5":
     "If a routine lists substitutes, you can swap mid-session and the set is logged against the lift you actually did. The swap lasts the session only — someone being on the machine today isn't an edit to your program.",
+  "about.player.p6":
+    "A set written as a sequence — a hold, then pulses, then reps — runs itself. You cannot tap a phone between the parts of one set, so holds are timed exactly, counted parts are paced, and you get +10s, skip and pause if the pace isn't yours.",
+  "about.player.p7":
+    "Every hold counts you in with a 3-2-1 before it starts, and beeps when it ends. A hold whose clock starts while you're still getting into position is a hold you did for seven seconds, not ten.",
 
   "about.logging.title": "Logging sets and personal records",
   "about.logging.body":
@@ -1172,6 +1180,50 @@ export const en = {
   "player.stale.title": "Nothing left in this workout",
   "player.stale.body": "{day} — this session is further along than the day now goes.",
   "player.stale.action": "Clear it",
+  // The ramp: every set of the exercise, as the figures that change.
+  "player.plan": "The plan",
+  "player.load.heavier": "Go heavier",
+  "player.load.same": "Same weight",
+  "player.load.lighter": "Go lighter",
+  "player.loadStated": "The program asks for this.",
+  "player.loadInferred": "Read off the rep target falling from the last set.",
+  "player.afterThis": "After this:",
+  "player.nextExercise": "Next exercise",
+  // A set that runs as a sequence, and the clock that runs it.
+  "player.getSet": "Get set",
+  "player.startSequence": "Start the set",
+  "player.partOf": "Part {current} of {total}",
+  "player.partCount": "{count} parts · {clock}",
+  "player.pacedSeconds": "≈{count}s",
+  "player.sequenceIntro": "One set, runs itself — {clock}",
+  "player.sequenceDone": "Set complete.",
+  "player.lastPart": "Last part",
+  "player.paused": "Paused",
+  "player.pause": "Pause",
+  "player.resume": "Resume",
+  "player.nextPart": "Next part",
+  "player.cuesOn": "Sound and vibration on",
+  "player.cuesOff": "Sound and vibration off",
+  // Intensity techniques as instructions rather than labels. Lower-case and
+  // unpunctuated at the start because each one follows its own name and an
+  // em dash: "Drop set — at failure, strip …".
+  "player.techniqueOne": "How to run this set",
+  "player.techniqueOrder": "Run it in this order",
+  "player.logEachDrop": "Log each drop as its own entry.",
+  "modifier.ladderName": "Ladder",
+  "technique.forcedReps":
+    "at failure, a spotter helps you through two or three more.",
+  "technique.negatives":
+    "fight the lowering — three to four seconds down, every rep.",
+  "technique.partials":
+    "when full reps stop, keep going through the range you still have.",
+  "technique.staticHolds":
+    "hold the contracted position rather than passing through it.",
+  "technique.dropSet":
+    "at failure, strip about a quarter of the load and go straight back in — no rest.",
+  "technique.restPause":
+    "at failure, rack it, breathe for about fifteen seconds, then get more at the same weight.",
+  "technique.ladder": "one rep is the whole ladder: {positions}.",
 
   // ── Calculators ──────────────────────────────────────────────────────────
   "calc.title": "Calculators",
@@ -1322,6 +1374,9 @@ export const en = {
   "nutrition.carbs": "Carbs",
   "nutrition.fat": "Fat",
   "nutrition.fibre": "Fibre",
+  // The slider's accessible name. It read "Carbs in grams" in every language,
+  // because it was built by concatenation from a hard-coded English label.
+  "nutrition.gramsOf": "{macro} in grams",
   "nutrition.calories": "Calories",
   "nutrition.fibreAria": "Fibre in grams",
   "nutrition.resetToPlan": "Reset to plan",

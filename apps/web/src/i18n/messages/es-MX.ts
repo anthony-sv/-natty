@@ -263,7 +263,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.name": "Nombre",
   "builder.nameRequired": "Ponle un nombre",
   "builder.style": "Estilo",
-  "builder.stylePlaceholder": "Empuje/jal\u00f3n/pierna, torso/pierna, como le digas",
+  "builder.stylePlaceholder": "Empuje/jal\u00f3n/pierna, torso/pierna\u2026",
   "builder.days": "D\u00edas",
   "builder.addDay": "Agregar un d\u00eda",
   "builder.dayLabel": "De qu\u00e9 es",
@@ -313,6 +313,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.restBetween": "Descanso entre (s)",
   "builder.intensity": "Qué tan fuerte",
   "builder.intensity.none": "Sin especificar",
+  "builder.load": "Peso",
+  "builder.load.unsaid": "No decir",
   "intensity.low": "Suave",
   "intensity.moderate": "Moderado",
   "intensity.high": "Fuerte",
@@ -586,6 +588,10 @@ export const esMX: Record<keyof typeof en, string> = {
     "Los sets de calentamiento se muestran y se cronometran, pero nunca se registran. Dos series de aproximación a la mitad del peso no son un récord ni son volumen, así que quedan fuera de ambos — y de la cuenta de sets del día.",
   "about.player.p5":
     "Si una rutina lista sustitutos, puedes cambiar a media sesión y la serie se registra contra el ejercicio que de verdad hiciste. El cambio dura solo esa sesión — que alguien esté en la máquina hoy no es una edición a tu programa.",
+  "about.player.p6":
+    "Una serie escrita como secuencia — un aguante, luego pulsos, luego reps — se corre sola. No puedes andar tocando el teléfono entre las partes de una misma serie, así que los aguantes van cronometrados exactos, las partes contadas van a un ritmo estimado, y tienes +10s, saltar y pausa si el ritmo no es el tuyo.",
+  "about.player.p7":
+    "Todo aguante te cuenta 3-2-1 antes de empezar, y suena al terminar. Un aguante cuyo reloj arranca mientras todavía te estás acomodando es un aguante de siete segundos, no de diez.",
 
   "about.logging.title": "Registrar series y récords",
   "about.logging.body":
@@ -1165,6 +1171,46 @@ export const esMX: Record<keyof typeof en, string> = {
   "player.stale.title": "No queda nada en este entrenamiento",
   "player.stale.body": "{day} — esta sesión va más adelante de donde llega el día.",
   "player.stale.action": "Borrarla",
+  "player.plan": "El plan",
+  "player.load.heavier": "Sube el peso",
+  "player.load.same": "Mismo peso",
+  "player.load.lighter": "Baja el peso",
+  "player.loadStated": "El programa lo pide.",
+  "player.loadInferred":
+    "Deducido de las reps que bajan respecto a la serie anterior.",
+  "player.afterThis": "Después de esto:",
+  "player.nextExercise": "Siguiente ejercicio",
+  "player.getSet": "Prepárate",
+  "player.startSequence": "Empezar la serie",
+  "player.partOf": "Parte {current} de {total}",
+  "player.partCount": "{count} partes · {clock}",
+  "player.pacedSeconds": "≈{count}s",
+  "player.sequenceIntro": "Una serie, se corre sola — {clock}",
+  "player.sequenceDone": "Serie completa.",
+  "player.lastPart": "Última parte",
+  "player.paused": "En pausa",
+  "player.pause": "Pausar",
+  "player.resume": "Reanudar",
+  "player.nextPart": "Siguiente parte",
+  "player.cuesOn": "Sonido y vibración activados",
+  "player.cuesOff": "Sonido y vibración desactivados",
+  "player.techniqueOne": "Cómo hacer esta serie",
+  "player.techniqueOrder": "Hazlo en este orden",
+  "player.logEachDrop": "Registra cada bajada de peso por separado.",
+  "modifier.ladderName": "Escalera",
+  "technique.forcedReps":
+    "al fallo, alguien te ayuda a sacar dos o tres más.",
+  "technique.negatives":
+    "pelea la bajada — de tres a cuatro segundos, en cada rep.",
+  "technique.partials":
+    "cuando ya no salgan reps completas, sigue en el rango que te quede.",
+  "technique.staticHolds":
+    "sostén la posición contraída en vez de pasar por ella.",
+  "technique.dropSet":
+    "al fallo, quita como un cuarto del peso y entra de nuevo — sin descanso.",
+  "technique.restPause":
+    "al fallo, deja el peso, respira unos quince segundos y saca más con el mismo peso.",
+  "technique.ladder": "una rep es toda la escalera: {positions}.",
 
   // ── Calculators ──────────────────────────────────────────────────────────
   "calc.title": "Calculadoras",
@@ -1316,6 +1362,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "nutrition.carbs": "Carbohidratos",
   "nutrition.fat": "Grasa",
   "nutrition.fibre": "Fibra",
+  "nutrition.gramsOf": "{macro} en gramos",
   "nutrition.calories": "Calorías",
   "nutrition.fibreAria": "Fibra en gramos",
   "nutrition.resetToPlan": "Volver al plan",

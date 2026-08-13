@@ -14,6 +14,12 @@ export function TimerRing({
   label,
   caption,
   isComplete = false,
+  /**
+   * "lead" is the 3-2-1 before the clock proper — drawn empty and in the accent
+   * colour, so the one state where a big number is *not* time remaining can't
+   * be mistaken for one where it is.
+   */
+  tone = "default",
   size = 128,
 }: {
   percent: number;
@@ -21,6 +27,7 @@ export function TimerRing({
   label: string;
   caption?: string;
   isComplete?: boolean;
+  tone?: "default" | "lead" | "paused";
   size?: number;
 }) {
   const stroke = 10;
@@ -56,15 +63,21 @@ export function TimerRing({
           strokeDashoffset={circumference * (1 - remaining / 100)}
           className={cn(
             "transition-[stroke-dashoffset] duration-300",
-            isComplete ? "stroke-primary" : "stroke-foreground/70",
+            isComplete || tone === "lead"
+              ? "stroke-primary"
+              : tone === "paused"
+                ? "stroke-muted-foreground/50"
+                : "stroke-foreground/70",
           )}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span
           className={cn(
-            "text-4xl font-semibold tabular-nums",
-            isComplete && "text-primary",
+            "font-semibold tabular-nums",
+            tone === "lead" ? "text-6xl" : "text-4xl",
+            (isComplete || tone === "lead") && "text-primary",
+            tone === "paused" && "text-muted-foreground",
           )}
         >
           {label}

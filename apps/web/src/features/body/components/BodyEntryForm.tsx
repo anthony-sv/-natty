@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
-import { UNITS, weightUnitSchema, type WeightUnit } from "@/lib/units";
+import { UNITS, weightUnitSchema, type WeightUnit, formatWeightValue } from "@/lib/units";
 import { useDateFormat, useT, type Translate } from "@/i18n/use-t";
 import { logBodyEntry } from "../collection";
 import type { BodyEntry } from "../schema";
@@ -91,7 +91,7 @@ export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
         loading: t("body.logEntry.saving"),
         success: {
           title: t("body.logEntry.saved", {
-            weight: `${entry.weight}${entry.unit}`,
+            weight: `${formatWeightValue(entry.weight)}${entry.unit}`,
           }),
           description:
             entry.bodyFatPercent === undefined

@@ -192,22 +192,44 @@ leave the player, the day list and the time estimate to each guess which wins.
 `min(2)`, since a one-segment sequence is a plain prescription written long-hand.
 
 **The ramp needs no new structure**: four sets adding weight while the rep part
-falls 12/10/8/6 is four prescriptions of `sets: 1`.
+falls 12/10/8/6 is four prescriptions of `sets: 1`. What the *load* does across
+them is `Prescription.load` — see *Saying where the load goes* below.
 
-In the player, **each part is its own `WorkStep`** — not a new step type, since
-a hold is just `durationSeconds`, which is already how cardio gets its
-countdown. The load-bearing rule is that **every part of one set shares its
-`setNumber`**: "set 2 of 4" keeps counting sets, and `StepRef` still matches
-every part to the same logged entries, so provenance needed no migration.
-`isLoggableStep` puts the log control on the **last** part only — offering it on
-all five would read as five chances to log one set. A hold inside a set is the
-one work step that auto-starts (`autoStartSecondsFor`), the exact opposite of
-the cardio case that rule was written for: you're already loaded and in
-position.
+**One set is one `WorkStep`, carrying its whole sequence.** An earlier model
+gave every part its own step, which is defensible on paper and unusable in a
+gym: advancing a step is a tap, the parts of a sequence have no rest between
+them, and so it asked you to tap a phone four times mid-set with both hands
+loaded and your eyes shut. In practice the sequence got run from memory and the
+player was decoration.
 
-`summariseDay` counts sets at the part that *ends* them, and charges
-`WORK_SET_SECONDS` once per set rather than per part — counting steps reported
-three sets as fifteen and multiplied the estimate's only guess by five.
+`buildSequence()` lays the parts out on **one clock** instead — cumulative
+`startMs`/`endMs` offsets, so the running part is `partAt(sequence, elapsed)`,
+a subtraction rather than stored state that something has to advance. That's
+what makes the set run itself, and it survives a screen lock and a reload for
+free, the same way a stored deadline does.
+
+Holds are exact because the routine gave them a duration. Pulses and reps carry
+a *count*, so they're **paced** at fixed tempos (`PULSE_SECONDS`, `REP_SECONDS`,
+`PULSED_REP_SECONDS`); the UI says which is which, and the tempo is adjustable
+mid-set precisely because it's an assumption.
+
+Collapsing to one step per set also deleted three special cases that existed
+only to undo the split: logging on the last leg, counting sets at the leg that
+ended them, and charging the time estimate once per set rather than once per
+part. `summariseDay` now charges a sequence its own paced length, the way it
+already charged cardio — adding `WORK_SET_SECONDS` on top would count the same
+minute twice.
+
+**"+10s" mid-set is not a nudge to the deadline, and this is the trap.** The
+part boundaries are offsets from a start *derived* as `endsAt - totalSeconds`,
+so pushing the end out pushes the start out with it: elapsed time goes **down**,
+and "+10s" pressed with eight seconds left on a hold threw you back into the
+pulses you'd just finished. One scalar can't express "insert time here". So the
+grant is stored per part (`SessionState.partExtraMs`) and folded in by
+`extendSequence()`, which grows that part's boundary by the same amount the
+deadline moved — which is what holds elapsed still. Skipping *forward*
+(`skipAhead`) is symmetric and needs none of this. `session.test.ts` pins both
+directions.
 
 Because a phase covers a run of sets, **"drop set on the last set only" needs no
 new structure** — split the exercise into two phases:
@@ -221,6 +243,36 @@ prescriptions: [
 
 `ExerciseEntry.orAlternatives` holds equally acceptable substitutes — the docs'
 `/` names. `exerciseId` is the one written **first** in the source.
+
+### Saying where the load goes
+
+`Prescription.load` is `"heavier" | "same" | "lighter"`, optional. A ramp was
+always *expressible* — four one-set phases with falling reps — but nothing said
+so, so the instruction that goes with the numbers ("and put weight on each
+time") lived only in the author's head and a pyramid was indistinguishable from
+four sets written out separately.
+
+Three values, not a percentage or a kilo figure: what changes between two sets
+of a ramp is a decision made at the rack off what the last one felt like, and a
+number here would be one the routine doesn't know. The player pairs it with your
+last logged set, which is the half it *can* know.
+
+**`buildSteps` infers a direction when it's absent**, from the rep target
+falling (`heavier`) or rising (`lighter`) against the previous phase. That's what
+makes the six transcribed programs read correctly without being re-authored —
+they state their ramps only as rep numbers. `LoadCue.stated` keeps the two
+apart, because a stated ramp is an instruction and an inferred one is an
+observation about the numbers, and putting a guess in the program's voice is how
+you end up adding weight nobody asked for.
+
+Equal reps infer **nothing** — "same weight" is only ever stated, since deriving
+it would badge every straight set in the app with a fact you already knew. Warmup
+and working sets are separate progressions, so a 10-rep ramp-up into 8-12 working
+sets doesn't read as a back-off.
+
+`setLadder()` turns the whole exercise into the row the player draws: every set's
+bare figure with the load arrows between them. "Set 2 of 4" says where you are
+and nothing about where you're going.
 
 ### Poses
 
@@ -256,10 +308,26 @@ gets a real countdown rather than being a line of text on a set you've already
 finished. A pose without `holdSeconds` produces no step and stays a cue on the
 work step.
 
-`autoStartSecondsFor()` decides what begins counting on arrival: rest and pose
-holds auto-start when you tap done, cardio waits for an explicit Start. Trailing
-`rest` steps are trimmed (nothing to rest *for*), but a trailing `pose` is not —
-the last finisher set still ends on a hold.
+`autoStartFor()` decides what begins counting on arrival: rest and pose holds
+auto-start when you tap done — the tap *was* the start, and asking for a second
+one is the tap you can least spare — while work steps wait, because you have to
+get on the machine or into position first. Trailing `rest` steps are trimmed
+(nothing to rest *for*), but a trailing `pose` is not — the last finisher set
+still ends on a hold.
+
+Both `rest` and the last set of an exercise carry `nextExerciseName`, set only
+when the lift actually changes. That's the difference between resting where you
+are and needing to go and find a machine, and it's what lets you send someone for
+the bench while you finish.
+
+**Every hold gets a 3-2-1 first** (`LEAD_IN_SECONDS`). A pose hold used to begin
+the instant you tapped Done, while you were still finding the pose, so a
+prescribed 10s hold reliably measured about seven. Rest is exempt: you've just
+stopped, and a lead-in there would only make every rest three seconds longer.
+The lead is folded into the same stored deadline rather than tracked separately
+— the run proper begins at `endsAt - seconds`, so a deadline further out than
+the step is long *is* a countdown that hasn't started yet, and one interrupted by
+a locked phone resolves like everything else here.
 
 ### The player card
 
@@ -273,34 +341,71 @@ second interval, so a locked phone reports the ten minutes it lost.
 used to render its own `Button` at the end of its own content, so "Done" and
 "Start next set" landed at different heights and the card resized between a set
 and its rest — the control you press forty times a session moved under your
-thumb every other press. `primaryActionFor(step, session, steps, dayLabel)`
+thumb every other press. `primaryActionFor({step, session, steps, timer, …})`
 returns `{label, icon, onClick}` and the footer renders it; only the wording
-changes between steps.
+changes between steps. It's `h-14` and full width — pressed standing up, at
+arm's length, with chalk on your hands.
 
-**`min-h-80` on the stage is the other half of that.** Pinning the button last
-isn't enough when a rest step holds a third of what a work step does. The floor
-sits above the tallest body, verified by walking all 48 steps of a day at both
-1536px and 360px and asserting a single card height and button offset. Three
-things could otherwise breach it, and each is capped rather than left to grow:
-the reference block (`max-h-12`, scrolls), the "Logged today" block
-(`flex-1 min-h-0`, scrolls), and a rest step's "Next up" label
-(`line-clamp-2` — a long exercise name runs to three lines on a phone).
+**The stage is a fixed height, not a minimum one, and that is the whole layout
+rule.** A floor (`min-h-80`) was not enough and the button started moving again:
+the tallest bodies simply breach it — a set with technique cues, a long note and
+six logged sets is taller than a rest step — and every time one did, the card
+grew. With `h-[25rem] sm:h-[27rem] lg:h-[30rem]` the only thing that can vary is
+*inside* the stage, and exactly one zone is allowed to.
 
-Inside the stage a work step reads eyebrow (*which* exercise of the day —
-context the card never carried) → name → badges → `PrescriptionStrip` → logged
-sets → `SetLogControl`. The strip splits "Set 2 of 4 · 8-12 reps · then 90s
-rest" into three labelled cells, because as one muted sentence you have to parse
-a line to find the two numbers you act on. **"Logged today" is what fills the
-stage's slack** — with the button pinned and a floor set, a set with no notes
-left a visible hole, and "three sets in at 60kg" is what you want between sets
-anyway.
+**A fixed height contains nothing on its own**, which is the follow-on bug: a
+body that outgrows it doesn't shrink, it *overflows*, and lands on top of the
+footer — the log control printed straight through "Back". Two things stop that
+and both are load-bearing. `min-h-0` on the body's root, because a flex item's
+default `min-height: auto` makes it prefer overflowing its parent to letting the
+scroll zone inside it scroll. And `overflow-hidden` on `CardContent` as the
+backstop for the day something outside that zone grows. Measuring the button's
+position won't catch this — the button never moved; the content was painted over
+it — so check `stage.scrollHeight <= clientHeight` and that the body's bottom
+stays above the footer's top.
+
+So a work step is four zones, three of them pinned: **head** (eyebrow → name,
+`line-clamp-2` → badges in one `overflow-x-auto` row, so a long name with four
+modifiers occupies what a short one does), **numbers** (`PrescriptionStrip` +
+`SetLadderRow`), **the scrolling middle**, **log control**. Verified by walking
+every step of a day and asserting one distinct `(button top, stage height)` pair
+plus no overflow, at the phone geometry as well as the desktop one.
+
+The middle is ordered by **how soon you act on it** — technique cues, then the
+sequence preview, then reference, then logged sets, then the next-exercise hint
+— because on a phone it can be squeezed to a couple of lines and whatever is
+first is all you see without scrolling. The cues are instructions for the set
+you're about to do; everything under them is read once.
+
+The strip splits "Set 2 of 4 · 8-12 reps · then 90s rest" into three labelled
+cells, because as one muted sentence you have to parse a line to find the two
+numbers you act on.
+
+`TechniqueCueList` renders the modifiers as **things to do, in the order you do
+them** (`technique.ts`). Badges were all the card had: "Drop set" names the
+technique to someone who already knows it, and two badges side by side actively
+destroy the fact that one happens after the other — a set marked both rest-pause
+and drop set is one set with a sequence to it, and reads as a contradiction
+otherwise.
 
 Countdowns are a `TimerRing`, not a bar under a number: the remaining fraction
 belongs *around* the figure, and it's the affordance every gym timer already
-uses. Rest and pose share one `TimerStepBody`. A timer reached by pressing Back
-has no deadline (`autoStartSecondsFor` only fires going forward) and used to sit
-dead at 0:00 — it now shows the full duration and offers "Start the clock", in
-the same fixed-height slot that otherwise holds the "time's up" note.
+uses. Rest and pose share one `TimerStepBody`; `tone="lead"` is the 3-2-1, drawn
+empty and in the accent colour so the one state where a big number *isn't* time
+remaining can't be mistaken for one where it is. A timer reached by pressing Back
+has no deadline (`autoStartFor` only fires going forward) and used to sit dead at
+0:00 — it now shows the full duration and offers "Start the clock", in the same
+fixed-height slot that otherwise holds the "time's up" note.
+
+**The player beeps and buzzes** (`cues.ts`), because the premise of a guided
+session is that you are *not* looking at the phone. Four tones pitched apart
+rather than one at different volumes, synthesised via WebAudio rather than
+shipped as assets — an asset that fails to load fails silently at exactly the
+wrong moment. `useCue(cue, key)` fires on a key change where the key describes
+where the clock is (`lead-2`, `part-3`), so it stays a function of derived state
+and never sets any, which is what keeps it clear of `set-state-in-effect`. One
+mute switch for tone *and* vibration: they answer the same question, and it's in
+the card header rather than settings because the answer changes with the room.
 
 **Ending early is behind an `AlertDialog`**: it sits one mis-tap from Back and
 throws away your place in the day with no undo. Its icon is a stop sign, not a
@@ -1359,6 +1464,80 @@ The shadcn skill's rules are house rules here: `FieldGroup` + `Field` for form
 layout (never a bare `div` with gaps), `data-icon="inline-start"` on icons
 inside `Button`, `gap-*` over `space-y-*`, `size-*` when width equals height,
 semantic tokens over raw colours, and existing components before custom markup.
+
+## Responsive
+
+The app is used on a phone. Everything below came out of one audit at 393×852
+and each item is a bug that shipped.
+
+**Audit in Spanish.** English is the shortest language the app speaks, and a
+layout tested only in it is untested: `/routines` was clean in English and
+overflowed its cards by 60px in Spanish, because "8 weeks · 5 training days ·
+2 rest" fits where "ciclo de 7 días · 5 días de entrenamiento · 2 de descanso"
+does not. Same for `/progress`, where the tab strip went from 103px to 118px
+over. Seed `natty.locale.v1` before the app's first import.
+
+**Audit with data in it.** Empty states are short and wrap beautifully; tables,
+charts, heatmaps and logged-set rows only exist once there is something to
+render, so a fresh install shows the one version of each screen that was never
+going to break. Seed the collections (`{ [key]: { versionKey, data } }` per
+localStorage key) and re-run.
+
+**`min-w-0`, never `shrink-0`, on a flex child holding text.** A flex item that
+refuses to shrink takes its max-content width *even on a line of its own* after
+wrapping, so it doesn't clip — it paints over whatever is beside it. That's what
+put the routine meta line through the card border.
+
+**Three different failures, three different fixes.** Text past the right edge of
+the *screen* needs the page to stop being wider than the device. Text cut off
+inside a box needs either room or a scroll container. Text wider than its own
+parent with nothing clipping it just prints over the neighbour, and is the one
+you cannot see in a screenshot without looking for it — check
+`el.scrollWidth > el.clientWidth` and `rect.right > parent.right` separately.
+
+**A `TabsList` doesn't scroll.** shadcn's is `inline-flex w-fit`: seven tabs fit
+a laptop and made every `/progress` screen 95px wider than the phone, with the
+last two unreachable — and an eight-week program's week strip did the same to
+its own page. `components/scrolling-tabs-list.tsx` wraps it — outside `ui/`,
+like `data-table.tsx`, because that directory is vendored. It's `w-max
+min-w-full`: the strip spans the content width where the tabs fit, so five tabs
+read as a bar rather than a pill floating at the left of the page, and keeps its
+natural width and scrolls where they don't. **Use it for every tab strip**; a
+plain `TabsList` is one label translation away from overflowing.
+
+**Audit every route, including the parameterised ones.** The week strip shipped
+broken because the audit list had `/routines` and a day page but no *program*
+page, and an eight-week program is the widest thing in the app.
+
+**Wrap fixed-width cards in a grid, not `flex-wrap`.** Eleven 128px plate cards
+fit two to a phone and left the rest of the row empty; on a desktop they left a
+ragged tail. `grid-cols-[repeat(auto-fill,minmax(7rem,1fr))]` shares the row out
+evenly at every width. It's load-bearing rather than tidy for the plate picker,
+where a disc's drawn size scales with its weight — under `flex-wrap` every
+button was a different width and no two rows lined up.
+
+**A wrapped flex row needs `justify-center` if one line won't fill.** The macro
+donut sat hard against the left edge of a card it doesn't fill, once the legend
+wrapped below it. On a wide screen the legend's `flex-1` eats the slack and the
+property does nothing, so it costs nothing to set.
+
+**A horizontal scroll container opens at the left, which is usually wrong.** The
+heatmap's leftmost column is a year ago; the run you're on is the point of the
+graph and was the part off screen. It pins `scrollLeft` to the end on mount.
+
+**Fixed-width label columns break on translation.** `w-20` was sized to "Carbs"
+and "Carbohidratos" is half again as wide. Full width on mobile, fixed column
+from `sm:` up — the fixed column exists only to line controls up with each
+other, which is worth having only once they're side by side.
+
+**Seven direct labels don't fit a phone.** The FFMI meter's bands truncated to
+"Sobre el…" across the board, which is worse than no labels and quietly removed
+what the multi-hue palette was leaning on. Below `sm` the track carries no text
+and the band you're in is named under it; the numbered axis carries the rest.
+
+**Never render a stored number raw.** `formatWeightValue` in `lib/units.ts`
+exists because the weigh-in history printed `83.60000000000001 kg` — binary
+floats don't hold 83.6, and a converted or imported value will find that out.
 
 ## UI components (shadcn/ui)
 

@@ -15,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollingTabsList } from "@/components/scrolling-tabs-list";
 import { diets } from "@/data/diets";
 import { MacroCalculatorPanel } from "@/features/nutrition/components/MacroCalculatorPanel";
 import { PlanPanel } from "@/features/nutrition/components/PlanPanel";
@@ -160,13 +161,13 @@ function NutritionPage() {
           the pantry owns a Dialog, and Base UI keeps an inactive panel mounted
           so it would stay open across a tab switch. */}
       <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
-        <TabsList>
+        <ScrollingTabsList>
           <TabsTrigger value="today">{t("intake.tab")}</TabsTrigger>
           <TabsTrigger value="trends">{t("trends.tab")}</TabsTrigger>
           <TabsTrigger value="plan">{t("nutrition.tab.plan")}</TabsTrigger>
           <TabsTrigger value="macros">{t("nutrition.tab.macros")}</TabsTrigger>
           <TabsTrigger value="pantry">{t("pantry.tab")}</TabsTrigger>
-        </TabsList>
+        </ScrollingTabsList>
         <TabsContent value="today">
           {tab === "today" ? <TodayPanel key={plan.slug} plan={plan} /> : null}
         </TabsContent>

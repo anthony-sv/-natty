@@ -3,9 +3,9 @@ import { Page } from "@/components/page";
 import {
   Tabs,
   TabsContent,
-  TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { ScrollingTabsList } from "@/components/scrolling-tabs-list";
 import { OneRepMaxPanel } from "@/features/calculator/components/OneRepMaxPanel";
 import { PotentialPanel } from "@/features/calculator/components/PotentialPanel";
 import { RpePanel } from "@/features/calculator/components/RpePanel";
@@ -33,11 +33,11 @@ function CalculatorPage() {
       </div>
 
       <Tabs defaultValue="max">
-        <TabsList>
+        <ScrollingTabsList>
           <TabsTrigger value="max">{t("calc.tab.oneRepMax")}</TabsTrigger>
           <TabsTrigger value="rpe">{t("calc.tab.rpe")}</TabsTrigger>
           <TabsTrigger value="potential">{t("calc.tab.potential")}</TabsTrigger>
-        </TabsList>
+        </ScrollingTabsList>
         <TabsContent value="max">
           <OneRepMaxPanel />
         </TabsContent>

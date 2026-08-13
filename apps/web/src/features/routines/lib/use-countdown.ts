@@ -46,29 +46,89 @@ function getClockNow(): number {
 const noopSubscribe = () => () => {};
 
 /**
- * Remaining time until an absolute deadline.
+ * The shared clock, or a frozen substitute for it.
+ *
+ * `frozenAt` is how a pause works everywhere downstream: nothing tracks a
+ * separate "remaining while paused", it just stops asking what time it is. It
+ * also stops the interval, since a paused card has nothing to redraw.
+ */
+export function useNow(active: boolean, frozenAt: number | null = null): number {
+  const live = active && frozenAt === null;
+  const subscribe = useCallback(
+    (onChange: () => void) =>
+      live ? subscribeToClock(onChange) : noopSubscribe(),
+    [live],
+  );
+
+  const now = useSyncExternalStore(subscribe, getClockNow);
+  return frozenAt ?? now;
+}
+
+/** Where a countdown is: not started, counting you in, running, or done. */
+export type TimerPhase = "idle" | "lead" | "running" | "complete";
+
+export interface TimerState {
+  phase: TimerPhase;
+  /** Until the run proper begins. Zero outside the lead-in. */
+  leadRemainingMs: number;
+  /** Until the run ends. Zero before it starts and once it's over. */
+  remainingMs: number;
+  /** Since the run began — what a sequence reads its current part off. */
+  elapsedMs: number;
+  isPaused: boolean;
+}
+
+/**
+ * A step's countdown, resolved from the one stored deadline.
  *
  * Derived as `endsAt - now` on every tick rather than decremented, so interval
  * drift and background-tab throttling can't desync it — a tab throttled for
  * two minutes reports the correct (smaller) remainder on its next tick, and a
  * deadline that passed while the phone was locked comes back already at zero.
+ *
+ * The lead-in falls out of the same subtraction: the run begins at
+ * `endsAt - totalSeconds`, so a deadline set further out than the step is long
+ * *is* a countdown that hasn't started yet. Nothing extra is stored, and a
+ * lead-in interrupted by a locked phone resolves like everything else here.
  */
-export function useCountdown(endsAt: number | null): {
-  remainingMs: number;
-  isComplete: boolean;
-} {
-  // No deadline, no ticking — the shared interval stops when the last
-  // countdown unsubscribes.
-  const subscribe = useCallback(
-    (onChange: () => void) =>
-      endsAt === null ? noopSubscribe() : subscribeToClock(onChange),
-    [endsAt],
-  );
+export function useTimerState(
+  session: { timerEndsAt: number | null; pausedAt: number | null },
+  totalSeconds: number,
+): TimerState {
+  const { timerEndsAt, pausedAt } = session;
+  const now = useNow(timerEndsAt !== null, pausedAt);
 
-  const now = useSyncExternalStore(subscribe, getClockNow);
-  const remainingMs = endsAt === null ? 0 : Math.max(0, endsAt - now);
+  if (timerEndsAt === null) {
+    return {
+      phase: "idle",
+      leadRemainingMs: 0,
+      remainingMs: totalSeconds * 1000,
+      elapsedMs: 0,
+      isPaused: false,
+    };
+  }
 
-  return { remainingMs, isComplete: endsAt !== null && remainingMs <= 0 };
+  const startsAt = timerEndsAt - totalSeconds * 1000;
+  const isPaused = pausedAt !== null;
+
+  if (now < startsAt) {
+    return {
+      phase: "lead",
+      leadRemainingMs: startsAt - now,
+      remainingMs: totalSeconds * 1000,
+      elapsedMs: 0,
+      isPaused,
+    };
+  }
+
+  const remainingMs = Math.max(0, timerEndsAt - now);
+  return {
+    phase: remainingMs <= 0 ? "complete" : "running",
+    leadRemainingMs: 0,
+    remainingMs,
+    elapsedMs: now - startsAt,
+    isPaused,
+  };
 }
 
 /**

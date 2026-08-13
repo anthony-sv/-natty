@@ -18,3 +18,6 @@ apps/*/.tanstack/
 
 # Private source reference material — attributed to a third party, not shipped in the app
 gym-docs/
+
+# Screenshots and report from the layout checks in apps/web/tools.
+apps/*/.audit/

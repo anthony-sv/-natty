@@ -1,3 +1,4 @@
+import { formatWeightValue } from "@/lib/units";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useLiveQuery } from "@tanstack/react-db";
@@ -162,7 +163,7 @@ function BodyCard() {
       title={t("home.body")}
       to="/progress"
       search={{ tab: "body" }}
-      headline={`${latest.weight} ${latest.unit}`}
+      headline={`${formatWeightValue(latest.weight)} ${latest.unit}`}
       // Each line is dropped rather than shown as a dash: a card of "—" is
       // worse than a shorter card, and body fat is genuinely optional.
       lines={[

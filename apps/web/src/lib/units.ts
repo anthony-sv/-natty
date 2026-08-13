@@ -47,6 +47,23 @@ export function convertWeight(
 }
 
 /**
+ * A weight as a person would write it.
+ *
+ * Every screen printed the stored number raw, which is fine right up until the
+ * number didn't come from a keyboard: the weigh-in history rendered
+ * `83.60000000000001 kg`, because binary floats don't hold 83.6 and nothing
+ * asked them to round before being shown. A converted load, an imported one, or
+ * any arithmetic on a stored value can produce that, and it reads as the app
+ * being broken rather than as IEEE 754 being itself.
+ *
+ * Two decimals is past anything a scale or a plate reports, and trailing zeros
+ * are dropped so 84 stays 84 rather than becoming 84.00.
+ */
+export function formatWeightValue(weight: number): string {
+  return String(Number(weight.toFixed(2)));
+}
+
+/**
  * Length units, for girth measurements.
  *
  * The same trio as weight and for the same reasons: stored as entered, so a

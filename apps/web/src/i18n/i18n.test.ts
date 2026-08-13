@@ -189,6 +189,8 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "routines.summary.finishers.other",
       "player.set",
       "player.pose",
+      // "≈{count}s" — a symbol, a number and the SI unit.
+      "player.pacedSeconds",
       "nutrition.tab.plan",
       "nutrition.tab.macros",
       "nutrition.tdee",

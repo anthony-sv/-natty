@@ -14,6 +14,14 @@ import type { Profile } from "@/features/profile/profile-store";
  * decoration over an already-readable scale rather than the sole encoding —
  * which is the condition that makes it defensible.
  *
+ * **On a phone that condition needs a different answer.** Seven bands across
+ * 313px is 45px each, and "Sobre el promedio" in 45px is "Sobre el…" — every
+ * label truncated to nothing, which is worse than no labels at all and quietly
+ * removes the thing the palette was leaning on. Below `sm` the track carries no
+ * text and the band you're actually in is named under it instead, with its
+ * range. The numbered axis stays either way, so the scale is still readable
+ * without colour: position, numbers, and the band you're in by name.
+ *
  * Labels are white with a dark shadow so they stay legible over every hue,
  * including the yellows where white alone would fail.
  */
@@ -35,6 +43,12 @@ export function FfmiMeter({
 
   const ticks: number[] = [];
   for (let tick = scale.min; tick <= scale.max; tick += 1) ticks.push(tick);
+
+  // The band the marker actually falls in — the one thing worth saying when
+  // there's no room to say all seven.
+  const active =
+    scale.bands.find((band) => clamped >= band.from && clamped < band.to) ??
+    scale.bands[scale.bands.length - 1];
 
   return (
     <figure className="m-0 flex flex-col gap-1">
@@ -61,7 +75,7 @@ export function FfmiMeter({
               style={{ flexGrow: band.to - band.from }}
             >
               <span
-                className="truncate px-1 text-[11px] font-semibold text-white"
+                className="hidden truncate px-1 text-[11px] font-semibold text-white sm:inline"
                 // A shadow rather than a per-band ink: the track is a
                 // continuous gradient, so there is no one flat colour behind
                 // any label to contrast against.
@@ -85,6 +99,14 @@ export function FfmiMeter({
           </span>
         ))}
       </div>
+
+      {/* Only where the in-band labels aren't. */}
+      <p className="text-xs sm:hidden">
+        <span className="font-medium">{names.text(active.label)}</span>{" "}
+        <span className="tabular-nums text-muted-foreground">
+          {active.from}–{active.to}
+        </span>
+      </p>
 
       <figcaption className="text-xs text-muted-foreground">
         {t("body.chart.ffmiCaption", {

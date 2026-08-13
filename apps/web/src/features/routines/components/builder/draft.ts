@@ -95,6 +95,12 @@ export interface DraftPhase {
   intensity: "" | "low" | "moderate" | "high";
   /** Ramp-up sets: not logged, not counted as working sets. */
   isWarmup: boolean;
+  /**
+   * Where the load goes against the set before. "" means you didn't say, which
+   * the player reads differently from "same" — it falls back to inferring a
+   * ramp from the rep target, where "same" is you overruling that.
+   */
+  load: "" | "heavier" | "same" | "lighter";
   /** Present means the set runs as a sequence; `reps` is ignored then. */
   segments?: DraftSegment[];
   modifiers: {
@@ -125,6 +131,7 @@ export function emptyPhase(): DraftPhase {
     durationUnit: "min",
     intensity: "",
     isWarmup: false,
+    load: "",
     modifiers: {
       forcedReps: false,
       negatives: false,
@@ -203,6 +210,9 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
   // Same rule: "" means you didn't say, which is different from "moderate".
   const intensity =
     phase.intensity === "" ? undefined : { intensity: phase.intensity };
+  // And again: unsaid leaves the player free to infer a ramp from the rep
+  // target, where "same" is you telling it not to.
+  const load = phase.load === "" ? undefined : { load: phase.load };
 
   if (phase.segments !== undefined) {
     const segments = phase.segments
@@ -212,7 +222,7 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
     // keeps the failure a "this phase is incomplete" rather than a parse error
     // pointing at an index nobody can see.
     if (segments.length < 2) return undefined;
-    return { sets, segments, restSeconds, ...withModifiers, ...warmup };
+    return { sets, segments, restSeconds, ...load, ...withModifiers, ...warmup };
   }
 
   // Timed and repped are exclusive, the same either/or `prescriptionSchema`
@@ -233,6 +243,7 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
       durationSeconds,
       restSeconds,
       ...intensity,
+      ...load,
       ...withModifiers,
       ...warmup,
     };
@@ -243,7 +254,7 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
   const to = num(phase.repsTo);
   const reps = to !== undefined && to > from ? ([from, to] as [number, number]) : from;
 
-  return { sets, reps, restSeconds, ...withModifiers, ...warmup };
+  return { sets, reps, restSeconds, ...load, ...withModifiers, ...warmup };
 }
 
 /**
@@ -383,6 +394,7 @@ export function toDraft(routine: Routine): DraftRoutine {
                   : p.durationSeconds,
             ),
             intensity: p.intensity ?? "",
+            load: p.load ?? "",
             restSeconds:
               p.restSeconds !== undefined ? String(p.restSeconds) : "",
             segments: p.segments?.map((segment) => ({
