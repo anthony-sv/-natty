@@ -350,16 +350,32 @@ arm's length, with chalk on your hands.
 rule.** A floor (`min-h-80`) was not enough and the button started moving again:
 the tallest bodies simply breach it — a set with technique cues, a long note and
 six logged sets is taller than a rest step — and every time one did, the card
-grew. With `h-[23rem] sm:h-[27rem]` the only thing that can vary is *inside* the
-stage, and exactly one zone is allowed to.
+grew. With `h-[25rem] sm:h-[27rem] lg:h-[30rem]` the only thing that can vary is
+*inside* the stage, and exactly one zone is allowed to.
+
+**A fixed height contains nothing on its own**, which is the follow-on bug: a
+body that outgrows it doesn't shrink, it *overflows*, and lands on top of the
+footer — the log control printed straight through "Back". Two things stop that
+and both are load-bearing. `min-h-0` on the body's root, because a flex item's
+default `min-height: auto` makes it prefer overflowing its parent to letting the
+scroll zone inside it scroll. And `overflow-hidden` on `CardContent` as the
+backstop for the day something outside that zone grows. Measuring the button's
+position won't catch this — the button never moved; the content was painted over
+it — so check `stage.scrollHeight <= clientHeight` and that the body's bottom
+stays above the footer's top.
 
 So a work step is four zones, three of them pinned: **head** (eyebrow → name,
 `line-clamp-2` → badges in one `overflow-x-auto` row, so a long name with four
 modifiers occupies what a short one does), **numbers** (`PrescriptionStrip` +
-`SetLadderRow`), **the scrolling middle** (sequence preview, technique cues,
-reference, logged sets, next-exercise hint), **log control**. Verified by walking
+`SetLadderRow`), **the scrolling middle**, **log control**. Verified by walking
 every step of a day and asserting one distinct `(button top, stage height)` pair
-— currently `720/432` across all 28.
+plus no overflow, at the phone geometry as well as the desktop one.
+
+The middle is ordered by **how soon you act on it** — technique cues, then the
+sequence preview, then reference, then logged sets, then the next-exercise hint
+— because on a phone it can be squeezed to a couple of lines and whatever is
+first is all you see without scrolling. The cues are instructions for the set
+you're about to do; everything under them is read once.
 
 The strip splits "Set 2 of 4 · 8-12 reps · then 90s rest" into three labelled
 cells, because as one muted sentence you have to parse a line to find the two

@@ -203,8 +203,14 @@ function PlayerCard({
         </CardDescription>
       </CardHeader>
 
-      {/* The stage. Fixed, so nothing inside it can move the button below. */}
-      <CardContent className="flex h-[23rem] flex-col py-5 sm:h-[27rem]">
+      {/* The stage. Fixed, so nothing inside it can move the button below —
+          and clipped, so nothing inside it can *paint over* the button either.
+          A fixed height alone doesn't contain anything: a body that outgrows it
+          overflows visibly and lands on top of the footer, which is how the
+          log control ended up printed through "Atrás". The scroll zone inside
+          is what should absorb that, and `overflow-hidden` here is the backstop
+          for the day something outside that zone grows. */}
+      <CardContent className="flex h-[25rem] flex-col overflow-hidden py-5 sm:h-[27rem] lg:h-[30rem]">
         {step.type === "work" ? (
           // Keyed so moving to the next set remounts the log form, which reads
           // its prefill into `defaultValues` on mount -- without it React
@@ -563,7 +569,11 @@ function WorkStepBody({
   const badges = formatModifiers(step.modifiers ?? {}, f);
 
   return (
-    <div className="flex flex-1 flex-col gap-3">
+    // `min-h-0` is doing real work here and is easy to drop: a flex item's
+    // default `min-height: auto` means this would rather *overflow* its fixed
+    // parent than shrink, so the scroll zone below never got the chance to
+    // scroll and the whole body spilled over the footer instead.
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       {/* Zone 1 — who and what. Fixed: the title is clamped to two lines and
           the badges to one scrolling row, so a long exercise name with four
           modifiers occupies exactly what a short one does. */}
@@ -676,11 +686,16 @@ function WorkStepBody({
               rest of the set, which is why it sits below the numbers rather
               than between them. */}
           <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+            {/* Ordered by how soon you act on it, because on a phone this zone
+                can be squeezed to a couple of lines and whatever is first is
+                the only thing you'll see without scrolling. The techniques are
+                instructions for the set you're about to do; the sequence
+                preview and the notes are things you read once. */}
+            <TechniqueCueList modifiers={step.modifiers} />
+
             {sequence !== undefined ? (
               <SequencePreview sequence={sequence} />
             ) : null}
-
-            <TechniqueCueList modifiers={step.modifiers} />
 
             {step.alternatives || step.pose || step.notes ? (
               <div className="flex flex-col gap-1 text-sm text-muted-foreground">
