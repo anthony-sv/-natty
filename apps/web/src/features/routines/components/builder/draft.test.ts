@@ -24,6 +24,7 @@ function holdAndPulseDraft(): DraftRoutine {
   return {
     name: "Glute day",
     style: "",
+    notes: [],
     weeks: [{ days: [
       {
         label: "Glutes",
@@ -515,5 +516,20 @@ describe("multi-week routines", () => {
     copy.days[0].exercises[0].phases[0].repsFrom = "99";
 
     expect(week.days[0].exercises[0].phases[0].repsFrom).toBe("10");
+  });
+});
+
+describe("plan-level notes", () => {
+  it("survives a trip through the editor", () => {
+    // The diet builder used to drop these on save, which meant editing a
+    // plan's name deleted them. Routines gained notes with that already
+    // known, so this pins it from the start.
+    const routine = toRoutine(
+      { ...holdAndPulseDraft(), notes: ["Deload every fourth week.", "  "] },
+      "r",
+    )!;
+    // The blank row is dropped rather than saved as an empty bullet.
+    expect(routine.notes).toEqual(["Deload every fourth week."]);
+    expect(toRoutine(toDraft(routine), "r")!.notes).toEqual(routine.notes);
   });
 });

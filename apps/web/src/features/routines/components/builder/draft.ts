@@ -35,6 +35,8 @@ export interface DraftRoutine {
    * transcribed programs actually do.
    */
   weeks: DraftWeek[];
+  /** Free lines under the program — editable, one per row. */
+  notes: string[];
 }
 
 export interface DraftWeek {
@@ -156,7 +158,7 @@ export function emptyWeek(): DraftWeek {
 }
 
 export function emptyDraft(): DraftRoutine {
-  return { name: "", style: "", weeks: [emptyWeek()] };
+  return { name: "", style: "", weeks: [emptyWeek()], notes: [] };
 }
 
 /**
@@ -288,6 +290,11 @@ export function toRoutine(
     name: draft.name.trim(),
     style: draft.style.trim() === "" ? undefined : draft.style.trim(),
     weeks,
+    // Blank rows are dropped rather than saved, as in the diet builder: an
+    // empty note renders as an empty bullet, which reads as a failure to load.
+    notes: draft.notes
+      .map((note) => note.trim())
+      .filter((note) => note !== ""),
   };
 }
 
@@ -365,6 +372,7 @@ export function toDraft(routine: Routine): DraftRoutine {
   return {
     name: routine.name,
     style: routine.style ?? "",
+    notes: [...(routine.notes ?? [])],
     weeks: routine.weeks.map((week) => ({
       days: week.days.map((day) => ({
         label: day.label,

@@ -22,9 +22,14 @@ import {
 } from "@/components/ui/item";
 import { Tabs, TabsContent, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollingTabsList } from "@/components/scrolling-tabs-list";
-import { backupFilename } from "@/features/backup/backup";
-import { downloadBackup, exportRoutine } from "@/features/backup/use-backup";
-import { toast } from "@/components/ui/toast";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { exportRoutine } from "@/features/backup/use-backup";
+import { useShare } from "@/features/backup/use-share";
 import { useRoutine } from "@/features/routines/use-routines";
 import {
   exerciseDisplayName,
@@ -85,6 +90,7 @@ function RoutineBody({
   isOverridden: boolean;
 }) {
   const t = useT();
+  const share = useShare();
   const f = useFormatting();
   const summary = summariseRoutine(routine, f);
   const routineName = f.names.routine(routine.slug, routine.name);
@@ -152,13 +158,7 @@ function RoutineBody({
             variant="outline"
             size="sm"
             onClick={() => {
-              void (async () => {
-                const now = Date.now();
-                const backup = await exportRoutine(routine.slug, now);
-                if (backup === undefined) return;
-                downloadBackup(backup, backupFilename(now, "routine"));
-                toast.add({ title: t("data.shared"), type: "success" });
-              })();
+              void share((now) => exportRoutine(routine.slug, now), "routine");
             }}
           >
             <Share2Icon data-icon="inline-start" />
@@ -197,6 +197,23 @@ function RoutineBody({
       ) : (
         <WeekDayList routineSlug={routine.slug} week={routine.weeks[0]} />
       )}
+
+      {/* After the days, not before them: a note is read once and the split is
+          what you came for. Same placement the diet plan gives its own. */}
+      {routine.notes !== undefined && routine.notes.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("dietBuilder.notes")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="flex list-disc flex-col gap-2 pl-4 text-sm text-muted-foreground">
+              {routine.notes.map((note) => (
+                <li key={note}>{f.names.text(note)}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      ) : null}
     </Page>
   );
 }

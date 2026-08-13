@@ -395,6 +395,7 @@ export const en = {
     "For a set that runs as a fixed sequence \u2014 a hold, then pulses, then reps. Each part becomes its own step in the player, and holds get a countdown.",
   "builder.needTwoSegments": "A sequence needs at least two parts",
   "builder.modifiers": "Intensity techniques",
+  "builder.notePlaceholder": "Anything worth remembering about this program",
   "builder.save": "Save routine",
   "builder.saving": "Saving\u2026",
   "builder.saved": "Saved {name}",
@@ -949,6 +950,8 @@ export const en = {
   "data.kind.intake": "Meals eaten",
   "data.kind.profile": "Your profile",
   "data.share": "Share",
+  "data.shareMissing": "Couldn't find that to share",
+  "data.shareError": "Couldn't build the file",
   "data.shared": "File downloaded",
 
   "split.push": "Push",

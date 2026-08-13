@@ -392,6 +392,7 @@ export const esMX: Record<keyof typeof en, string> = {
     "Para un set que corre como una secuencia fija \u2014 un aguante, luego pulsos, luego reps. Cada parte es su propio paso en el reproductor, y los aguantes llevan cron\u00f3metro.",
   "builder.needTwoSegments": "Una secuencia necesita al menos dos partes",
   "builder.modifiers": "T\u00e9cnicas de intensidad",
+  "builder.notePlaceholder": "Algo que valga la pena recordar de este programa",
   "builder.save": "Guardar rutina",
   "builder.saving": "Guardando\u2026",
   "builder.saved": "Se guard\u00f3 {name}",
@@ -940,6 +941,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "data.kind.intake": "Comidas registradas",
   "data.kind.profile": "Tu perfil",
   "data.share": "Compartir",
+  "data.shareMissing": "No se encontró eso para compartir",
+  "data.shareError": "No se pudo crear el archivo",
   "data.shared": "Archivo descargado",
 
   "split.push": "Empuje",
