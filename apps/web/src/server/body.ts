@@ -31,7 +31,7 @@ function toEntry(row: typeof bodyEntries.$inferSelect): BodyEntry {
 export const fetchBodyEntries = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<Array<BodyEntry>> => {
-    const rows = await db
+    const rows = await db()
       .select()
       .from(bodyEntries)
       .where(eq(bodyEntries.userId, context.userId));
@@ -42,7 +42,7 @@ export const upsertBodyEntries = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator(z.array(bodyEntrySchema).min(1))
   .handler(async ({ context, data }) => {
-    await db
+    await db()
       .insert(bodyEntries)
       .values(
         data.map((entry) => ({
@@ -71,7 +71,7 @@ export const deleteBodyEntries = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator(z.array(z.string()).min(1))
   .handler(async ({ context, data }) => {
-    await db
+    await db()
       .delete(bodyEntries)
       .where(
         and(eq(bodyEntries.userId, context.userId), inArray(bodyEntries.id, data)),

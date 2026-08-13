@@ -13,7 +13,7 @@ import { profiles } from "./db/schema";
 export const fetchProfile = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<Profile | null> => {
-    const [row] = await db
+    const [row] = await db()
       .select()
       .from(profiles)
       .where(eq(profiles.userId, context.userId));
@@ -28,7 +28,7 @@ export const saveProfile = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator(profileSchema)
   .handler(async ({ context, data }) => {
-    await db
+    await db()
       .insert(profiles)
       .values({ userId: context.userId, data })
       .onConflictDoUpdate({

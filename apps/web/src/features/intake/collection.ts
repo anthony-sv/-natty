@@ -2,6 +2,8 @@ import {
   createCollection,
   localStorageCollectionOptions,
 } from "@tanstack/react-db";
+import { forkCollection } from "@/lib/synced-collection";
+import { deleteIntake, fetchIntake, upsertIntake } from "@/server/intake";
 import { startOfDay } from "@/lib/week";
 import { intakeEntrySchema, type IntakeEntry, type IntakeSource } from "./schema";
 
@@ -12,13 +14,25 @@ import { intakeEntrySchema, type IntakeEntry, type IntakeSource } from "./schema
  * plan is a document you wrote, this is a record of what happened, and nothing
  * queries across them beyond `resolveIntake` reading both.
  */
-export const intakeEntries = createCollection(
+const localIntakeEntries = createCollection(
   localStorageCollectionOptions({
     storageKey: "natty.intake.v1",
     getKey: (entry) => entry.id,
     schema: intakeEntrySchema,
   }),
 );
+
+export const intakeEntriesFork = forkCollection({
+  queryKey: "intake-entries",
+  local: localIntakeEntries,
+  getKey: (entry) => entry.id,
+  fetch: () => fetchIntake(),
+  upsert: (rows) => upsertIntake({ data: rows }),
+  remove: (ids) => deleteIntake({ data: ids }),
+});
+
+/** Whichever collection backs the app right now — see `forkCollection`. */
+export const intakeEntries = () => intakeEntriesFork.active();
 
 /**
  * Every entry, read straight from the collection.
@@ -29,7 +43,7 @@ export const intakeEntries = createCollection(
  * from a stale render would log a duplicate.
  */
 export function allIntake(): IntakeEntry[] {
-  return [...intakeEntries.values()];
+  return [...intakeEntries().values()];
 }
 
 function insert(day: number, source: IntakeSource) {
@@ -39,7 +53,7 @@ function insert(day: number, source: IntakeSource) {
     source,
     loggedAt: Date.now(),
   };
-  return { entry, transaction: intakeEntries.insert(entry) };
+  return { entry, transaction: intakeEntries().insert(entry) };
 }
 
 export function logMeal(
@@ -57,14 +71,14 @@ export function logItem(day: number, foodId: string, amount: number) {
 
 /** Returns the row so a toast can offer Undo, the way `deleteSet` does. */
 export function removeIntake(id: string): IntakeEntry | undefined {
-  const entry = intakeEntries.get(id);
+  const entry = intakeEntries().get(id);
   if (entry === undefined) return undefined;
-  intakeEntries.delete(id);
+  intakeEntries().delete(id);
   return entry;
 }
 
 export function restoreIntake(entry: IntakeEntry) {
-  return intakeEntries.insert(entry);
+  return intakeEntries().insert(entry);
 }
 
 /**
@@ -74,7 +88,7 @@ export function restoreIntake(entry: IntakeEntry) {
  * row's place in the day — survives changing your mind.
  */
 export function setMealOption(id: string, optionIndex: number) {
-  return intakeEntries.update(id, (draft) => {
+  return intakeEntries().update(id, (draft) => {
     if (draft.source.kind === "meal") draft.source.optionIndex = optionIndex;
   });
 }

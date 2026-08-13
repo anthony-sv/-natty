@@ -2,31 +2,38 @@ import {
   createCollection,
   localStorageCollectionOptions,
 } from "@tanstack/react-db";
-import { z } from "zod";
-import { routineSchema, routines, type Routine } from "@/data/routines";
+import { forkCollection } from "@/lib/synced-collection";
+import {
+  deleteDocuments,
+  fetchDocuments,
+  upsertDocuments,
+} from "@/server/documents";
+import { routines, type Routine } from "@/data/routines";
+import { userRoutineSchema, type UserRoutine } from "./schema";
 
-/**
- * A routine you wrote yourself.
- *
- * `routineSchema` verbatim plus two timestamps, which is the whole trick: a
- * user routine **is** a `Routine`, so `buildSteps`, `summariseRoutine`,
- * `summariseDay`, the day page, the player and the log's provenance all work on
- * it with no change at all. Anything less faithful would have meant a second
- * renderer for every one of those.
- */
-export const userRoutineSchema = routineSchema.extend({
-  createdAt: z.number(),
-  updatedAt: z.number(),
-});
-export type UserRoutine = z.infer<typeof userRoutineSchema>;
+// Re-exported so the many existing importers don't all have to move.
+export { userRoutineSchema, type UserRoutine };
 
-export const userRoutines = createCollection(
+const localUserRoutines = createCollection(
   localStorageCollectionOptions({
     storageKey: "natty.routines.v1",
     getKey: (routine) => routine.slug,
     schema: userRoutineSchema,
   }),
 );
+
+export const userRoutinesFork = forkCollection({
+  queryKey: "routines",
+  local: localUserRoutines,
+  getKey: (routine) => routine.slug,
+  fetch: async () =>
+    (await fetchDocuments({ data: { kind: "routine" } })) as UserRoutine[],
+  upsert: (rows) => upsertDocuments({ data: { kind: "routine", rows } }),
+  remove: (ids) => deleteDocuments({ data: { kind: "routine", ids } }),
+});
+
+/** Whichever collection backs the app right now — see `forkCollection`. */
+export const userRoutines = () => userRoutinesFork.active();
 
 /** Slugs the built-in programs already own. */
 const BUILT_IN_SLUGS = new Set(routines.map((routine) => routine.slug));
@@ -52,7 +59,7 @@ export function slugFor(name: string): string {
       .slice(0, 40) || "routine";
 
   let slug = `${base}-${crypto.randomUUID().slice(0, 6)}`;
-  while (BUILT_IN_SLUGS.has(slug) || userRoutines.get(slug) !== undefined) {
+  while (BUILT_IN_SLUGS.has(slug) || userRoutines().get(slug) !== undefined) {
     slug = `${base}-${crypto.randomUUID().slice(0, 6)}`;
   }
   return slug;
@@ -61,7 +68,7 @@ export function slugFor(name: string): string {
 export function createUserRoutine(routine: Routine) {
   const now = Date.now();
   const row: UserRoutine = { ...routine, createdAt: now, updatedAt: now };
-  return { routine: row, transaction: userRoutines.insert(row) };
+  return { routine: row, transaction: userRoutines().insert(row) };
 }
 
 /** Whether this slug belongs to one of the compiled-in programs. */
@@ -81,12 +88,12 @@ export function isBuiltInSlug(slug: string): boolean {
  * `isSessionFor` matches on it — which a fresh slug would quietly break.
  */
 export function saveBuiltInOverride(routine: Routine) {
-  const existing = userRoutines.get(routine.slug);
+  const existing = userRoutines().get(routine.slug);
   if (existing !== undefined) return updateUserRoutine(routine.slug, routine);
 
   const now = Date.now();
   const row: UserRoutine = { ...routine, createdAt: now, updatedAt: now };
-  return userRoutines.insert(row);
+  return userRoutines().insert(row);
 }
 
 /**
@@ -96,12 +103,12 @@ export function saveBuiltInOverride(routine: Routine) {
  * an override is one row in localStorage, so undoing it is deleting that row.
  */
 export function resetBuiltIn(slug: string) {
-  const routine = userRoutines.get(slug);
-  return { routine, transaction: userRoutines.delete(slug) };
+  const routine = userRoutines().get(slug);
+  return { routine, transaction: userRoutines().delete(slug) };
 }
 
 export function updateUserRoutine(slug: string, routine: Routine) {
-  return userRoutines.update(slug, (draft) => {
+  return userRoutines().update(slug, (draft) => {
     // The slug is the key and is provenance on every set already logged against
     // it, so renaming a routine keeps its url and its history.
     Object.assign(draft, routine, { slug, updatedAt: Date.now() });
@@ -110,10 +117,10 @@ export function updateUserRoutine(slug: string, routine: Routine) {
 
 /** Returns the row too, so the caller can offer an undo the way `deleteSet` does. */
 export function deleteUserRoutine(slug: string) {
-  const routine = userRoutines.get(slug);
-  return { routine, transaction: userRoutines.delete(slug) };
+  const routine = userRoutines().get(slug);
+  return { routine, transaction: userRoutines().delete(slug) };
 }
 
 export function restoreUserRoutine(routine: UserRoutine) {
-  return userRoutines.insert(routine);
+  return userRoutines().insert(routine);
 }

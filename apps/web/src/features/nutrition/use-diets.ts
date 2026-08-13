@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useLiveQuery } from "@tanstack/react-db";
 import { diets, getDietBySlug, type DietPlan } from "@/data/diets";
-import { userDiets } from "./collection";
+import { userDietsFork } from "./collection";
 
 /**
  * Every plan: the two built-in ones and anything you wrote.
@@ -18,7 +18,11 @@ export interface PlanEntry {
 }
 
 export function useDiets(): { plans: PlanEntry[]; isLoading: boolean } {
-  const { data, isLoading } = useLiveQuery((q) => q.from({ d: userDiets }));
+  const userDiets = userDietsFork.useActive();
+  const { data, isLoading } = useLiveQuery(
+    (q) => q.from({ d: userDiets }),
+    [userDiets],
+  );
 
   return useMemo(() => {
     const mine = data ?? [];
@@ -58,7 +62,11 @@ export function useDietPlan(slug: string): {
   /** A built-in you've edited — yours is showing, the shipped one is intact. */
   isOverridden: boolean;
 } {
-  const { data, isLoading } = useLiveQuery((q) => q.from({ d: userDiets }));
+  const userDiets = userDietsFork.useActive();
+  const { data, isLoading } = useLiveQuery(
+    (q) => q.from({ d: userDiets }),
+    [userDiets],
+  );
 
   return useMemo(() => {
     // Yours first, or an override would be saved and then never shown.

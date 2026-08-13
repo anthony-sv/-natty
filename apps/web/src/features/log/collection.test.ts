@@ -11,7 +11,7 @@ import {
 import { prFrontier } from "./pr";
 
 function clear() {
-  for (const set of [...loggedSets.values()]) loggedSets.delete(set.id);
+  for (const set of [...loggedSets().values()]) loggedSets().delete(set.id);
 }
 
 beforeEach(clear);
@@ -208,6 +208,6 @@ describe("correcting a logged set", () => {
     // A set logged against the wrong lift is a different set; moving it would
     // rewrite two exercises' histories at once.
     expect(setsFor("hack-squat")).toHaveLength(1);
-    expect(loggedSets.get(logged.set.id)?.exerciseId).toBe("hack-squat");
+    expect(loggedSets().get(logged.set.id)?.exerciseId).toBe("hack-squat");
   });
 });

@@ -46,13 +46,14 @@ export const esMX: Record<keyof typeof en, string> = {
   "account.signInError": "No se pudo iniciar sesión",
   "account.signUpError": "No se pudo crear la cuenta",
   "account.signOutError": "No se pudo cerrar sesión",
-  "account.upload.pending.one":
-    "{count} pesaje de este dispositivo aún no está en tu cuenta",
-  "account.upload.pending.other":
-    "{count} pesajes de este dispositivo aún no están en tu cuenta",
+  "account.upload.title": "Los datos de este dispositivo",
+  "account.upload.body":
+    "Copia a tu cuenta lo que este dispositivo tenga y allá falte. Puedes presionarlo dos veces sin problema — no se duplica nada, y no se borra nada de este dispositivo.",
   "account.upload.action": "Subir a mi cuenta",
   "account.upload.uploading": "Subiendo...",
-  "account.upload.done": "Pesajes subidos",
+  "account.upload.done.one": "{count} elemento subido",
+  "account.upload.done.other": "{count} elementos subidos",
+  "account.upload.none": "Tu cuenta ya tiene todo lo de este dispositivo",
   "account.upload.error": "No se pudo subir",
 
   "palette.placeholder": "Busca páginas y rutinas...",

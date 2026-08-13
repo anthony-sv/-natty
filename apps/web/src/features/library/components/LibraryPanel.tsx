@@ -39,7 +39,7 @@ import {
   archiveUserExercise,
   deleteUserExercise,
   restoreUserExercise,
-  userExercises,
+  userExercisesFork,
 } from "../collection";
 import type { UserExercise } from "../schema";
 import { UserExerciseForm } from "./UserExerciseForm";
@@ -51,7 +51,11 @@ export function LibraryPanel() {
   const [editing, setEditing] = useState<UserExercise | undefined>(undefined);
   const [isAdding, setIsAdding] = useState(false);
 
-  const { data } = useLiveQuery((q) => q.from({ e: userExercises }));
+  const userExercises = userExercisesFork.useActive();
+  const { data } = useLiveQuery(
+    (q) => q.from({ e: userExercises }),
+    [userExercises],
+  );
   const all = data ?? [];
   const visible = all
     .filter((e) => showArchived || e.archivedAt === undefined)

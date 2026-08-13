@@ -18,7 +18,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDateFormat, useT } from "@/i18n/use-t";
 import { addDays } from "@/lib/week";
-import { loggedSets } from "../collection";
+import { loggedSetsFork } from "../collection";
 import { toCalendar, type CalendarDay } from "../heatmap";
 import { LoggedSetList } from "./LoggedSetList";
 import { TrainingHeatmap } from "./TrainingHeatmap";
@@ -42,7 +42,11 @@ export function HistoryPanel() {
   const [now] = useState(() => Date.now());
   const [selected, setSelected] = useState<CalendarDay | undefined>(undefined);
 
-  const { data, isLoading } = useLiveQuery((q) => q.from({ set: loggedSets }));
+  const loggedSets = loggedSetsFork.useActive();
+  const { data, isLoading } = useLiveQuery(
+    (q) => q.from({ set: loggedSets }),
+    [loggedSets],
+  );
   const sets = useMemo(() => data ?? [], [data]);
   const calendar = useMemo(
     () => toCalendar(sets, { weeks: WEEKS, now }),

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useLiveQuery } from "@tanstack/react-db";
 import { getRoutineBySlug, routines, type Routine } from "@/data/routines";
-import { userRoutines } from "./collection";
+import { userRoutinesFork } from "./collection";
 
 /**
  * Every program: the six built-in ones and anything you wrote.
@@ -30,7 +30,11 @@ export function overrides(userRoutines: Routine[]): Set<string> {
 }
 
 export function useRoutines(): { routines: Routine[]; isLoading: boolean } {
-  const { data, isLoading } = useLiveQuery((q) => q.from({ r: userRoutines }));
+  const userRoutines = userRoutinesFork.useActive();
+  const { data, isLoading } = useLiveQuery(
+    (q) => q.from({ r: userRoutines }),
+    [userRoutines],
+  );
 
   return useMemo(() => {
     const mine = data ?? [];
@@ -65,7 +69,11 @@ export function useRoutine(slug: string): {
    */
   isOverridden: boolean;
 } {
-  const { data, isLoading } = useLiveQuery((q) => q.from({ r: userRoutines }));
+  const userRoutines = userRoutinesFork.useActive();
+  const { data, isLoading } = useLiveQuery(
+    (q) => q.from({ r: userRoutines }),
+    [userRoutines],
+  );
 
   return useMemo(() => {
     // **Yours is checked first**, which is the whole override mechanism. The

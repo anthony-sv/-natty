@@ -43,13 +43,14 @@ export const en = {
   "account.signInError": "Couldn't sign in",
   "account.signUpError": "Couldn't create the account",
   "account.signOutError": "Couldn't sign out",
-  "account.upload.pending.one":
-    "{count} weigh-in on this device isn't in your account yet",
-  "account.upload.pending.other":
-    "{count} weigh-ins on this device aren't in your account yet",
+  "account.upload.title": "This device's data",
+  "account.upload.body":
+    "Copy anything on this device that isn't in your account yet. Safe to press twice — nothing is duplicated, and nothing is removed from this device.",
   "account.upload.action": "Upload to my account",
   "account.upload.uploading": "Uploading...",
-  "account.upload.done": "Weigh-ins uploaded",
+  "account.upload.done.one": "{count} item uploaded",
+  "account.upload.done.other": "{count} items uploaded",
+  "account.upload.none": "Your account already has everything on this device",
   "account.upload.error": "Upload failed",
 
   "palette.placeholder": "Search pages and routines...",

@@ -2,6 +2,12 @@ import {
   createCollection,
   localStorageCollectionOptions,
 } from "@tanstack/react-db";
+import { forkCollection } from "@/lib/synced-collection";
+import {
+  deleteDocuments,
+  fetchDocuments,
+  upsertDocuments,
+} from "@/server/documents";
 import { userExerciseSchema, type UserExercise, type UserExerciseInput } from "./schema";
 
 /**
@@ -11,13 +17,26 @@ import { userExerciseSchema, type UserExercise, type UserExerciseInput } from ".
  * library: `src/data/exercises/` is compiled-in and indexed into module-scope
  * `Map`s at import time, and it stays that way. Nothing here writes to it.
  */
-export const userExercises = createCollection(
+const localUserExercises = createCollection(
   localStorageCollectionOptions({
     storageKey: "natty.exercises.v1",
     getKey: (exercise) => exercise.id,
     schema: userExerciseSchema,
   }),
 );
+
+export const userExercisesFork = forkCollection({
+  queryKey: "exercises",
+  local: localUserExercises,
+  getKey: (exercise) => exercise.id,
+  fetch: async () =>
+    (await fetchDocuments({ data: { kind: "exercise" } })) as UserExercise[],
+  upsert: (rows) => upsertDocuments({ data: { kind: "exercise", rows } }),
+  remove: (ids) => deleteDocuments({ data: { kind: "exercise", ids } }),
+});
+
+/** Whichever collection backs the app right now — see `forkCollection`. */
+export const userExercises = () => userExercisesFork.active();
 
 /**
  * Every custom exercise, read straight from the collection.
@@ -27,11 +46,11 @@ export const userExercises = createCollection(
  * collection, and the same bug if it's ignored.
  */
 export function allUserExercises(): UserExercise[] {
-  return [...userExercises.values()];
+  return [...userExercises().values()];
 }
 
 export function getUserExercise(id: string): UserExercise | undefined {
-  return userExercises.get(id);
+  return userExercises().get(id);
 }
 
 export function createUserExercise(input: UserExerciseInput) {
@@ -40,11 +59,11 @@ export function createUserExercise(input: UserExerciseInput) {
     id: `user:${crypto.randomUUID()}`,
     createdAt: Date.now(),
   };
-  return { exercise, transaction: userExercises.insert(exercise) };
+  return { exercise, transaction: userExercises().insert(exercise) };
 }
 
 export function updateUserExercise(id: string, patch: UserExerciseInput) {
-  return userExercises.update(id, (draft) => {
+  return userExercises().update(id, (draft) => {
     draft.name = patch.name;
     draft.aliases = patch.aliases;
     draft.pattern = patch.pattern;
@@ -56,13 +75,13 @@ export function updateUserExercise(id: string, patch: UserExerciseInput) {
 
 /** Hide it from the pickers, keeping every set already logged against it readable. */
 export function archiveUserExercise(id: string) {
-  return userExercises.update(id, (draft) => {
+  return userExercises().update(id, (draft) => {
     draft.archivedAt = Date.now();
   });
 }
 
 export function restoreUserExercise(id: string) {
-  return userExercises.update(id, (draft) => {
+  return userExercises().update(id, (draft) => {
     draft.archivedAt = undefined;
   });
 }
@@ -76,6 +95,6 @@ export function restoreUserExercise(id: string) {
  * just a name.
  */
 export function deleteUserExercise(id: string) {
-  const exercise = userExercises.get(id);
-  return { exercise, transaction: userExercises.delete(id) };
+  const exercise = userExercises().get(id);
+  return { exercise, transaction: userExercises().delete(id) };
 }

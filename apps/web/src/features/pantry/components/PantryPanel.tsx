@@ -43,8 +43,8 @@ import {
   deleteUserFood,
   restoreRecipe,
   restoreUserFood,
-  userFoods,
-  userRecipes,
+  userFoodsFork,
+  userRecipesFork,
 } from "../collection";
 import { recipeAsFood } from "../pantry";
 import type { Recipe, UserFood } from "../schema";
@@ -61,8 +61,16 @@ export function PantryPanel() {
   const [adding, setAdding] = useState<"food" | "recipe" | undefined>();
 
   const pantry = usePantry();
-  const { data: foodRows } = useLiveQuery((q) => q.from({ f: userFoods }));
-  const { data: recipeRows } = useLiveQuery((q) => q.from({ r: userRecipes }));
+  const userFoods = userFoodsFork.useActive();
+  const userRecipes = userRecipesFork.useActive();
+  const { data: foodRows } = useLiveQuery(
+    (q) => q.from({ f: userFoods }),
+    [userFoods],
+  );
+  const { data: recipeRows } = useLiveQuery(
+    (q) => q.from({ r: userRecipes }),
+    [userRecipes],
+  );
 
   const foods = (foodRows ?? []).filter(
     (f) => showArchived || f.archivedAt === undefined,

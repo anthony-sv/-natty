@@ -1109,8 +1109,8 @@ duplicate.
 ## Accounts and sync (`src/features/auth/`, `src/server/`)
 
 Optional Supabase accounts — the app is fully usable signed out, and that is a
-design commitment, not a transition state. Weigh-ins are the **pilot synced
-collection**; every collection that follows copies this shape.
+design commitment, not a transition state. **All nine collections sync**, plus
+the profile; theme, locale and `session-store` stay local by design.
 
 - **Auth is cookie-based on purpose.** `features/auth/client.ts` creates the
   browser client lazily (module scope would run in the shell prerender) via
@@ -1147,19 +1147,51 @@ collection**; every collection that follows copies this shape.
   per user; tables key on `(user_id, id)` for the same reason.
 - **The DB layer is Drizzle over Supabase Postgres** (`server/db/`), reached
   through the transaction pooler (`prepare: false` is required, not tuning).
-  `drizzle.config.ts` pins `schemaFilter: ["public"]` so drizzle-kit never
-  touches Supabase's own schemas; `pnpm db:push` applies schema changes.
   Tables carry `.enableRLS()` even though the Data API is disabled at the
   project level — deny-all costs nothing and survives someone re-enabling it.
   Column types stay permissive: the client's own Zod schema revalidates at the
   server boundary (`.validator(...)`), and two sources of rules would drift.
-- **The collection forks, the interface doesn't.** `features/body/collection.ts`
-  keeps the localStorage collection and adds a lazily-created query collection
-  (`queryCollectionOptions` + server-function handlers); `activeBodyEntries()`
-  picks by session state, and every consumer goes through `useBodyEntries` /
-  `logBodyEntry` unchanged. Local data is never migrated or cleared on
-  sign-in — the account page offers the explicit, idempotent upload (upsert on
-  the composite key), and signing out shows this device's own data again.
+  - `db()` is a **function, connected on first query**. A module that throws
+    while being imported takes down everything that imports it — the
+    data-layer tests import a collection, which imports its server functions,
+    and a test run has no database and needs none.
+  - Shared column groups are **functions** (`...owned()`). Column builders are
+    stateful, so spreading one shared object into several tables hands them
+    the same instances; it fails inside drizzle-kit, not at the call site.
+  - **`pnpm db:push` does not work against this Postgres version** —
+    drizzle-kit 0.31.10 crashes introspecting the not-null CHECK constraints
+    the server reports. Generate the DDL with `npx drizzle-kit generate`,
+    strip the `auth.users` block and anything already applied, and run it in
+    the Supabase SQL editor. Applied SQL is kept in `drizzle/manual/`.
+- **The collection forks, the interface doesn't** — `lib/synced-collection.ts`,
+  and this is the shape to copy. `forkCollection` keeps the localStorage
+  collection and adds a lazily-created query collection (lazy because eager
+  creation fires an unauthenticated fetch on every boot), then exposes
+  `active()` for plain functions and `useActive()` for components. Every
+  consumer goes through those and sees only the collection interface — which
+  is why the whole derivation layer moved to a server without one pure
+  function changing.
+  - **A `useLiveQuery` over a forked collection needs the collection in its
+    dep array**, or it keeps querying the backing that was active when the
+    component first rendered and signing in appears to do nothing.
+  - Exported accessors are **functions** (`loggedSets()`, `userDiets()`), not
+    consts — which backing is right changes while the app runs.
+  - It holds one deliberate cast, in `forkCollection` rather than at the call
+    sites: the two adapters differ only in generics nothing here touches, and
+    typing both as the local collection's type keeps `active()` a single type
+    instead of a union every consumer would narrow.
+- **Local data is never migrated or cleared on sign-in.** `features/auth/
+  upload.ts` is the explicit version: it diffs each collection's local rows
+  against the account's by key and uploads what's missing. Idempotent twice
+  over — skipped by key, and upserted on the composite key server-side. It
+  preloads *both* sides first, for the reason `loadAll()` exists in the backup
+  feature: an unloaded collection reads back empty, which here would mean
+  uploading nothing or re-uploading everything. Signing out shows this
+  device's own data again, untouched.
+- **The diff runs on press, not continuously.** Answering "what's missing"
+  across nine collections needs both sides of each awake, and doing that on
+  every render of the account page would fetch the whole account to draw one
+  number.
 - **The profile syncs, but not as a collection.** It's one always-present
   record, so `features/profile/sync.ts` mirrors the localStorage store to a
   `profiles` row (jsonb — read whole, never queried across users) while

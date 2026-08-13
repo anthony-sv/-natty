@@ -1,12 +1,8 @@
-import { useMemo } from "react";
+import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { useLiveQuery } from "@tanstack/react-db";
 import { LogInIcon, LogOutIcon, UploadIcon, UserPlusIcon } from "lucide-react";
 import { z } from "zod";
-import {
-  localBodyEntries,
-  syncedBodyEntries,
-} from "@/features/body/collection";
+import { uploadLocalData } from "../upload";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -93,7 +89,7 @@ export function AccountPanel() {
             </Button>
           </CardContent>
         </Card>
-        <UploadWeighInsCard />
+        <UploadCard />
       </>
     );
   }
@@ -102,53 +98,53 @@ export function AccountPanel() {
 }
 
 /**
- * The migration path for this device's data, one collection at a time —
- * weigh-ins are the pilot. Local rows are never cleared: signed out, this
- * device still shows its own data, and the upload is idempotent (upsert on
- * `(user_id, id)`), so pressing it twice is harmless.
+ * Putting this device's data into the account.
+ *
+ * The diff runs when you press it rather than continuously: answering "what's
+ * missing" for nine collections needs both sides of each awake, and doing
+ * that on every render of the account page would fetch the whole account to
+ * draw one number. Pressing it is already the moment you want the answer, and
+ * the result says exactly what moved.
  */
-function UploadWeighInsCard() {
+function UploadCard() {
   const t = useT();
-  const synced = syncedBodyEntries();
-  const { data: localRows } = useLiveQuery((q) =>
-    q.from({ entry: localBodyEntries }),
-  );
-  const { data: syncedRows, isLoading } = useLiveQuery(
-    (q) => q.from({ entry: synced }),
-    [synced],
-  );
-
-  const pending = useMemo(() => {
-    const uploaded = new Set((syncedRows ?? []).map((row) => row.id));
-    return (localRows ?? []).filter((row) => !uploaded.has(row.id));
-  }, [localRows, syncedRows]);
-
-  // Until the synced side has loaded there's no honest count to show, and a
-  // device with nothing new has nothing to say.
-  if (isLoading || pending.length === 0) return null;
+  const [busy, setBusy] = useState(false);
 
   return (
     <Card>
       <CardHeader>
-        <CardDescription>
-          {t.plural("account.upload.pending", pending.length, {
-            count: pending.length,
-          })}
-        </CardDescription>
+        <CardTitle>{t("account.upload.title")}</CardTitle>
+        <CardDescription>{t("account.upload.body")}</CardDescription>
       </CardHeader>
       <CardContent>
         <Button
+          disabled={busy}
           onClick={() => {
-            const transaction = synced.insert(pending);
-            void toast.promise(transaction.isPersisted.promise, {
-              loading: t("account.upload.uploading"),
-              success: { title: t("account.upload.done"), type: "success" },
-              error: { title: t("account.upload.error"), type: "error" },
-            });
+            setBusy(true);
+            void uploadLocalData()
+              .then((result) => {
+                if (result.total === 0) {
+                  toast.add({ title: t("account.upload.none"), type: "info" });
+                  return;
+                }
+                toast.add({
+                  title: t.plural("account.upload.done", result.total, {
+                    count: result.total,
+                  }),
+                  description: result.uploaded
+                    .map((row) => `${t(row.labelKey)}: ${row.count}`)
+                    .join(" · "),
+                  type: "success",
+                });
+              })
+              .catch(() => {
+                toast.add({ title: t("account.upload.error"), type: "error" });
+              })
+              .finally(() => setBusy(false));
           }}
         >
           <UploadIcon data-icon="inline-start" />
-          {t("account.upload.action")}
+          {busy ? t("account.upload.uploading") : t("account.upload.action")}
         </Button>
       </CardContent>
     </Card>

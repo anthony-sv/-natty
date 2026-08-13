@@ -5,7 +5,7 @@ import { dominantMacro } from "@/features/nutrition/macros";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 import { matchesAllWords } from "@/lib/search";
-import { userFoods, userRecipes } from "./collection";
+import { userFoodsFork, userRecipesFork } from "./collection";
 import { mergePantry, type Pantry } from "./pantry";
 
 /**
@@ -16,11 +16,15 @@ import { mergePantry, type Pantry } from "./pantry";
  * every meal of every day on any unrelated change.
  */
 export function usePantry(): Pantry & { isLoading: boolean } {
-  const { data: foodRows, isLoading: foodsLoading } = useLiveQuery((q) =>
-    q.from({ f: userFoods }),
+  const userFoods = userFoodsFork.useActive();
+  const { data: foodRows, isLoading: foodsLoading } = useLiveQuery(
+    (q) => q.from({ f: userFoods }),
+    [userFoods],
   );
-  const { data: recipeRows, isLoading: recipesLoading } = useLiveQuery((q) =>
-    q.from({ r: userRecipes }),
+  const userRecipes = userRecipesFork.useActive();
+  const { data: recipeRows, isLoading: recipesLoading } = useLiveQuery(
+    (q) => q.from({ r: userRecipes }),
+    [userRecipes],
   );
 
   const merged = useMemo(
