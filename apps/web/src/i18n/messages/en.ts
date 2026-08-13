@@ -35,6 +35,8 @@ export const en = {
   "account.signedInAs": "Signed in as {email}",
   "account.signedOut": "Signed out",
   "account.checkEmail": "Check your inbox to confirm your account",
+  "account.unavailable":
+    "Accounts aren't set up in this build. Everything still works — your data stays on this device.",
   "account.signInError": "Couldn't sign in",
   "account.signUpError": "Couldn't create the account",
   "account.signOutError": "Couldn't sign out",

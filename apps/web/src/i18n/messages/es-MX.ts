@@ -38,6 +38,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "account.signedInAs": "Sesión iniciada como {email}",
   "account.signedOut": "Sesión cerrada",
   "account.checkEmail": "Revisa tu correo para confirmar tu cuenta",
+  "account.unavailable":
+    "Esta versión no tiene cuentas configuradas. Todo sigue funcionando — tus datos se quedan en este dispositivo.",
   "account.signInError": "No se pudo iniciar sesión",
   "account.signUpError": "No se pudo crear la cuenta",
   "account.signOutError": "No se pudo cerrar sesión",

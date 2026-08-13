@@ -1,6 +1,20 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+const url = import.meta.env.VITE_SUPABASE_URL;
+const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+/**
+ * Whether this build has a Supabase project to talk to at all.
+ *
+ * **Check this before reaching for the client.** Accounts are optional by
+ * design, so a build without the keys must still run — every screen works,
+ * you simply can't sign in. Letting the client throw instead took the whole
+ * app down with a router error boundary on a deploy whose env vars hadn't
+ * landed yet, which is the opposite of "usable signed out".
+ */
+export const isSupabaseConfigured = Boolean(url && key);
+
 let client: SupabaseClient | null = null;
 
 /**
@@ -11,9 +25,9 @@ let client: SupabaseClient | null = null;
  * it (server/supabase.ts reads the same cookies).
  */
 export function getSupabaseBrowserClient(): SupabaseClient {
-  client ??= createBrowserClient(
-    import.meta.env.VITE_SUPABASE_URL as string,
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
-  );
+  if (!isSupabaseConfigured) {
+    throw new Error("Supabase is not configured in this build");
+  }
+  client ??= createBrowserClient(url, key);
   return client;
 }

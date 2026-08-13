@@ -1,13 +1,40 @@
 import path from "path";
 // vitest/config re-exports Vite's defineConfig with the `test` block typed.
 import { defineConfig } from "vitest/config";
+// ...but not `loadEnv`, which comes from Vite itself.
+import { loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { nitro } from "nitro/vite";
 import { devtools } from "@tanstack/devtools-vite";
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  /**
+   * The Supabase project's *public* URL and key, under whichever name they
+   * arrive: `VITE_`-prefixed from a local `.env`, or unprefixed from the
+   * Supabase↔Vercel integration, which writes `SUPABASE_URL` /
+   * `SUPABASE_ANON_KEY` and cannot be told to add a Vite prefix. Resolving
+   * both here means the integration alone is enough to deploy, with no
+   * hand-maintained duplicates in the Vercel dashboard.
+   *
+   * Only these two names are ever `define`d. The empty prefix makes
+   * `loadEnv` return *everything* including `DATABASE_URL`, which must never
+   * reach the bundle — so nothing here spreads that object.
+   */
+  const env = loadEnv(mode, import.meta.dirname, "");
+  const supabaseUrl = env.VITE_SUPABASE_URL || env.SUPABASE_URL || "";
+  const supabaseKey =
+    env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+    env.SUPABASE_PUBLISHABLE_KEY ||
+    env.SUPABASE_ANON_KEY ||
+    "";
+
+  return {
+  define: {
+    "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(supabaseUrl),
+    "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(supabaseKey),
+  },
   plugins: [
     // AST-strips every `@tanstack/*-devtools` shell import and the JSX it
     // produces on build, which is what removes the panels in `__root.tsx`
@@ -63,4 +90,5 @@ export default defineConfig(({ mode }) => ({
     environment: "node",
     include: ["src/**/*.test.ts"],
   },
-}));
+  };
+});

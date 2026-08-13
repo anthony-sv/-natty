@@ -24,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
 import { useT, type Translate } from "@/i18n/use-t";
-import { getSupabaseBrowserClient } from "../client";
+import { getSupabaseBrowserClient, isSupabaseConfigured } from "../client";
 import { useSession } from "../session-store";
 
 /** Built per locale — Zod bakes messages into the schema. */
@@ -38,6 +38,19 @@ const buildSchema = (t: Translate) =>
 export function AccountPanel() {
   const t = useT();
   const session = useSession();
+
+  // A build with no Supabase project still runs — it just has no accounts to
+  // offer, and says so rather than showing a form that can't work.
+  if (!isSupabaseConfigured) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("account.title")}</CardTitle>
+          <CardDescription>{t("account.unavailable")}</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   if (session.status === "loading") return null;
 

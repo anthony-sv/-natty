@@ -1,7 +1,7 @@
 import { Store } from "@tanstack/store";
 import { useStore } from "@tanstack/react-store";
 import type { Session } from "@supabase/supabase-js";
-import { getSupabaseBrowserClient } from "./client";
+import { getSupabaseBrowserClient, isSupabaseConfigured } from "./client";
 
 /**
  * Who is signed in, as a plain store — the same shape as `theme-store` and
@@ -38,11 +38,17 @@ function apply(session: Session | null): void {
 }
 
 // Seeded at import time, browser only — the SPA-shell prerender evaluates
-// this module in Node, where there is no session to resolve.
+// this module in Node, where there is no session to resolve. A build with no
+// Supabase project settles straight to signed-out, so every collection reads
+// its local backing and the app is exactly what it was before accounts.
 if (typeof document !== "undefined") {
-  const supabase = getSupabaseBrowserClient();
-  void supabase.auth.getSession().then(({ data }) => apply(data.session));
-  supabase.auth.onAuthStateChange((_event, session) => apply(session));
+  if (isSupabaseConfigured) {
+    const supabase = getSupabaseBrowserClient();
+    void supabase.auth.getSession().then(({ data }) => apply(data.session));
+    supabase.auth.onAuthStateChange((_event, session) => apply(session));
+  } else {
+    apply(null);
+  }
 }
 
 export function useSession(): SessionState {
