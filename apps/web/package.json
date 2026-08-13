@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "audit:responsive": "node tools/responsive-audit.mjs",
+    "audit:tabs": "node tools/tab-strips.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
