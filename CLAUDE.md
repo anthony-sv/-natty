@@ -1208,6 +1208,24 @@ the profile; theme, locale and `session-store` stay local by design.
     sites: the two adapters differ only in generics nothing here touches, and
     typing both as the local collection's type keeps `active()` a single type
     instead of a union every consumer would narrow.
+- **Deleting an account does not use the service-role key** (`server/
+  account.ts`). Supabase's admin API would need it, and that key bypasses
+  every policy in the project — a bad thing to put in the runtime so someone
+  can remove their own row. The Drizzle connection already authenticates as
+  the database owner, so it deletes the `auth.users` row directly and the
+  cascades follow. The per-table deletes run anyway, in the same transaction:
+  a cascade is a property of the schema, so a future table added without
+  `onDelete: "cascade"` would quietly stop being covered while that list is
+  what a reviewer reads. One transaction, so a permissions failure leaves the
+  account whole rather than half-deleted.
+- **The upload counts before it writes.** On a shared device the local data
+  belongs to whoever used it last, and a single press would pour their
+  training history into whichever account is signed in. The confirmation
+  lists what would move — a year of someone else's training is unmistakable
+  as a list of counts — and `natty.upload.owner.v1` adds a stronger warning
+  when the device is *known* to have been claimed by another account. That
+  key is deliberately **not** `natty.profile.owner.v1`, which is rewritten on
+  every sign-in and so can only say who is here, never whose data this is.
 - **Local data is never migrated or cleared on sign-in.** `features/auth/
   upload.ts` is the explicit version: it diffs each collection's local rows
   against the account's by key and uploads what's missing. Idempotent twice
