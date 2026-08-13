@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 // @ts-expect-error — tools/ is plain JS outside the app's tsconfig include.
 import { buildSeedBackup } from "../../../tools/seed-backup.mjs";
 import { exercises } from "@/data/exercises";
+import { foods as builtInFoods } from "@/data/diets";
 import { readBackup } from "./backup";
 
 /**
@@ -70,6 +71,7 @@ describe("the seed backup", () => {
     if (!result.ok) throw new Error("unreadable");
     const { foods, recipes, diets } = result.backup.data;
     const known = new Set([
+      ...builtInFoods.map((food) => food.id),
       ...foods.map((food) => food.id),
       ...recipes.map((recipe) => recipe.id),
     ]);

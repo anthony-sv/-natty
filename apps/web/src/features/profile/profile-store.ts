@@ -11,6 +11,21 @@ const STORAGE_KEY = "natty.profile.v1";
  * doesn't want a queryable collection.
  */
 export const profileSchema = z.object({
+  /**
+   * What to call you.
+   *
+   * A display name, not an identity — nothing keys on it and nothing checks
+   * it's unique, because two people picking "anthony" costs nothing when the
+   * account is already keyed by an id nobody types. Seeded from the provider
+   * on an OAuth sign-in, asked for on an email one, and editable after.
+   */
+  username: z.string().min(1).max(40).optional(),
+  /**
+   * A provider's avatar, when it gave one. Never uploaded by the app: hosting
+   * user images is a whole feature, and initials in a circle answer the same
+   * question — which account am I looking at.
+   */
+  avatarUrl: z.string().url().optional(),
   /** Centimetres. Required for FFMI, which is mass over height squared. */
   heightCm: z.number().positive().optional(),
   /**

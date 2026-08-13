@@ -1,6 +1,7 @@
 import { Store } from "@tanstack/store";
 import { useStore } from "@tanstack/react-store";
 import type { Session } from "@supabase/supabase-js";
+import { adoptProviderIdentity } from "@/features/profile/identity";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "./client";
 
 /**
@@ -35,6 +36,23 @@ function apply(session: Session | null): void {
         }
       : { status: "signed-out", userId: null, email: null },
   );
+
+  if (session) {
+    // Google hands back a name and a picture; the email form hands back
+    // neither and the local part of the address stands in. Only fills what's
+    // empty, so signing in again never undoes a name you changed.
+    const meta = session.user.user_metadata as {
+      full_name?: string;
+      name?: string;
+      avatar_url?: string;
+      picture?: string;
+    };
+    adoptProviderIdentity({
+      email: session.user.email ?? null,
+      name: meta.full_name ?? meta.name,
+      avatarUrl: meta.avatar_url ?? meta.picture,
+    });
+  }
 }
 
 /**

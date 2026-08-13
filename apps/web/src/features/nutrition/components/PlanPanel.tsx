@@ -45,6 +45,12 @@ import {
   hydrationOptions,
   type HydrationRow,
 } from "../hydration";
+import {
+  creatineDose,
+  LOADING_DAYS,
+  LOADING_SPLIT,
+  SIMPLE_DOSE_G,
+} from "../creatine";
 import { MacroSplit } from "./MacroSplit";
 import { usePantry } from "@/features/pantry/use-pantry";
 import { MealCard } from "./MealCard";
@@ -80,6 +86,13 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
   // `proteinPerKg` — so this needed no new plumbing.
   const water =
     bodyWeightKg !== undefined ? hydrationOptions(bodyWeightKg) : undefined;
+
+  // Same weigh-in, and the body-fat reading off it when there is one — which
+  // is what lets the dose scale by the mass that actually stores creatine.
+  const creatine =
+    bodyWeightKg !== undefined
+      ? creatineDose(bodyWeightKg, latest?.bodyFatPercent)
+      : undefined;
 
   // Only the macros the plan names, each as its own phrase — built here rather
   // than as one message with three holes, because a plan may fill any subset.
@@ -275,6 +288,69 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
                   creatine: CREATINE_ML,
                   perHour: ML_PER_TRAINING_HOUR,
                 })}
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PillIcon className="size-4 text-muted-foreground" />{" "}
+            {t("nutrition.creatine")}
+          </CardTitle>
+          <CardDescription>{t("nutrition.creatineSimple", {
+            grams: SIMPLE_DOSE_G,
+          })}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* The easy answer is the description above, so this stays useful
+              with no weigh-in — it just can't personalise. */}
+          {creatine === undefined ? (
+            <Empty>
+              <EmptyTitle>{t("nutrition.creatineNoWeight")}</EmptyTitle>
+              <EmptyDescription>
+                <Link to="/progress">{t("nutrition.hydrationLogWeight")}</Link>
+              </EmptyDescription>
+            </Empty>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("nutrition.creatineDaily")}
+                  </span>
+                  <span className="text-2xl font-semibold tabular-nums">
+                    {creatine.maintenanceG} g
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("nutrition.creatineLoading")}
+                  </span>
+                  <span className="text-2xl font-semibold tabular-nums">
+                    {creatine.loadingG} g
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {t("nutrition.creatineLoadingNote", {
+                      perDose: creatine.loadingPerDoseG,
+                      doses: LOADING_SPLIT,
+                      days: LOADING_DAYS,
+                    })}
+                  </span>
+                </div>
+              </div>
+              {/* Which mass it scaled from, because "3.4 g from your lean
+                  mass" and "3.4 g from your weight" are different claims. */}
+              <p className="text-xs text-muted-foreground">
+                {creatine.basis === "fat-free-mass"
+                  ? t("nutrition.creatineFromLean", {
+                      mass: creatine.basisKg.toFixed(1),
+                    })
+                  : t("nutrition.creatineFromWeight", {
+                      mass: creatine.basisKg.toFixed(1),
+                    })}
               </p>
             </div>
           )}

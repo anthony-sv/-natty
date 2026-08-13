@@ -41,6 +41,10 @@ export const esMX: Record<keyof typeof en, string> = {
   "account.continueGoogle": "Continuar con Google",
   "account.or": "o",
   "account.providerError": "No se pudo iniciar el acceso",
+  "account.username": "Nombre visible",
+  "account.usernamePlaceholder": "¿Cómo te llamamos?",
+  "account.usernameHelp":
+    "Sólo tú lo ves. Te sigue a tus otros dispositivos junto con tu cuenta.",
   "account.unavailable":
     "Esta versión no tiene cuentas configuradas. Todo sigue funcionando — tus datos se quedan en este dispositivo.",
   "account.signInError": "No se pudo iniciar sesión",
@@ -1391,6 +1395,18 @@ export const esMX: Record<keyof typeof en, string> = {
   "nutrition.hydrationHours": "asume {hours} hora de entrenamiento",
   "nutrition.hydrationFormula":
     "{perKg}ml por kg, más {creatine}ml por la creatina, más {perHour}ml por cada hora de entrenamiento. Es una regla general — el calor y lo que sudes lo mueven bastante.",
+  "nutrition.creatine": "Creatina",
+  "nutrition.creatineSimple":
+    "Con {grams} g al día le alcanza a casi cualquiera — lo demás sólo vale la pena si estás lejos del promedio.",
+  "nutrition.creatineDaily": "Tu dosis diaria",
+  "nutrition.creatineLoading": "Carga, si te animas",
+  "nutrition.creatineLoadingNote":
+    "{perDose} g × {doses} al día por {days} días, y luego bajas a la dosis diaria. Saltártela sólo significa saturar unas semanas después.",
+  "nutrition.creatineFromLean":
+    "Calculado con {mass} kg de masa libre de grasa — la creatina se almacena en el músculo, así que es la parte que vale la pena usar.",
+  "nutrition.creatineFromWeight":
+    "Calculado con {mass} kg de peso corporal. Registra tu porcentaje de grasa y usará tu masa libre de grasa, que es la que realmente la almacena.",
+  "nutrition.creatineNoWeight": "Todavía no hay pesaje",
   "nutrition.kcalPerDay": "kcal/día",
   "nutrition.kgPerWeek": "kg/semana",
   "nutrition.tdee": "TDEE",

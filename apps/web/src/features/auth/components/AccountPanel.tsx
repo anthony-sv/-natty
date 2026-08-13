@@ -2,7 +2,12 @@ import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { LogInIcon, LogOutIcon, UploadIcon, UserPlusIcon } from "lucide-react";
 import { z } from "zod";
+import { useStore } from "@tanstack/react-store";
+import { Input as TextInput } from "@/components/ui/input";
+import { displayName } from "@/features/profile/identity";
+import { profileStore, setProfile } from "@/features/profile/profile-store";
 import { uploadLocalData } from "../upload";
+import { UserAvatar } from "./UserMenu";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -55,46 +61,92 @@ export function AccountPanel() {
   if (session.status === "signed-in") {
     return (
       <>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("account.title")}</CardTitle>
-            <CardDescription>
-              {t("account.signedInAs", { email: session.email ?? "" })}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="outline"
-              onClick={() => {
-                void getSupabaseBrowserClient()
-                  .auth.signOut()
-                  .then(({ error }) => {
-                    if (error) {
-                      toast.add({
-                        title: t("account.signOutError"),
-                        description: error.message,
-                        type: "error",
-                      });
-                    } else {
-                      toast.add({
-                        title: t("account.signedOut"),
-                        type: "success",
-                      });
-                    }
-                  });
-              }}
-            >
-              <LogOutIcon data-icon="inline-start" />
-              {t("account.signOut")}
-            </Button>
-          </CardContent>
-        </Card>
+        <ProfileCard email={session.email} />
         <UploadCard />
       </>
     );
   }
 
   return <SignInCard />;
+}
+
+/**
+ * Who you are, and the way out.
+ *
+ * The username is written through on change like `ProfileFields` — no submit
+ * button, because a single field behind one is a button you press to confirm
+ * you meant the thing you just typed. It syncs with the rest of the profile.
+ */
+function ProfileCard({ email }: { email: string | null }) {
+  const t = useT();
+  const profile = useStore(profileStore);
+  const name = displayName(profile.username, email) ?? "";
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("account.title")}</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <UserAvatar
+            name={name}
+            avatarUrl={profile.avatarUrl}
+            className="size-12"
+          />
+          <div className="grid min-w-0 flex-1 leading-tight">
+            <span className="truncate font-medium">{name}</span>
+            <span className="truncate text-sm text-muted-foreground">
+              {email}
+            </span>
+          </div>
+        </div>
+
+        <Field>
+          <FieldLabel htmlFor="account-username">
+            {t("account.username")}
+          </FieldLabel>
+          <TextInput
+            id="account-username"
+            value={profile.username ?? ""}
+            maxLength={40}
+            placeholder={t("account.usernamePlaceholder")}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Empty clears it rather than storing "", so the fallback chain
+              // takes over again instead of showing a blank name.
+              setProfile({ username: value.trim() === "" ? undefined : value });
+            }}
+          />
+          <FieldDescription>{t("account.usernameHelp")}</FieldDescription>
+        </Field>
+
+        <div>
+          <Button
+            variant="outline"
+            onClick={() => {
+              void getSupabaseBrowserClient()
+                .auth.signOut()
+                .then(({ error }) => {
+                  toast.add(
+                    error
+                      ? {
+                          title: t("account.signOutError"),
+                          description: error.message,
+                          type: "error",
+                        }
+                      : { title: t("account.signedOut"), type: "success" },
+                  );
+                });
+            }}
+          >
+            <LogOutIcon data-icon="inline-start" />
+            {t("account.signOut")}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 /**

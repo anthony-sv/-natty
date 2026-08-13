@@ -290,39 +290,16 @@ const routines = [
 ];
 
 const foods = [
+  // One genuinely local product — the kind of thing you'd type off a packet,
+  // and the reason custom foods exist. The plan below otherwise references
+  // built-in foods, which are the ones the catalog translates.
   {
-    id: "food:seed-carne-asada",
-    name: "Carne asada, raw",
-    unit: "g",
-    macros: { protein: 21.5, fat: 8.2, carbs: 0 },
-    state: "raw",
-    category: "meat-fish",
-    createdAt: NOW - 300 * DAY,
-  },
-  {
-    id: "food:seed-corn-tortilla",
-    name: "Corn tortilla",
+    id: "food:seed-protein-tortilla",
+    name: "Tortilla proteica",
     unit: "unit",
-    macros: { protein: 1.4, fat: 0.7, carbs: 10.7 },
+    macros: { protein: 5.2, fat: 1.1, carbs: 12.4 },
     category: "grains",
-    unitNote: "One 26g tortilla",
-    createdAt: NOW - 300 * DAY,
-  },
-  {
-    id: "food:seed-whey",
-    name: "Whey isolate",
-    unit: "g",
-    macros: { protein: 82, fat: 3.5, carbs: 6 },
-    category: "supplements",
-    createdAt: NOW - 260 * DAY,
-  },
-  {
-    id: "food:seed-white-rice-cooked",
-    name: "White rice, cooked",
-    unit: "g",
-    macros: { protein: 2.7, fat: 0.3, carbs: 28 },
-    state: "cooked",
-    category: "grains",
+    unitNote: "One 40g tortilla",
     createdAt: NOW - 260 * DAY,
   },
 ];
@@ -332,8 +309,8 @@ const recipes = [
     id: "recipe:seed-asada-bowl",
     name: "Asada rice bowl",
     ingredients: [
-      { foodId: "food:seed-carne-asada", amount: 200 },
-      { foodId: "food:seed-white-rice-cooked", amount: 250 },
+      { foodId: "carne-asada-raw", amount: 200 },
+      { foodId: "white-rice-cooked", amount: 250 },
     ],
     method: "grill",
     // Measured on the scale after cooking, never derived — water leaves and
@@ -356,7 +333,7 @@ const diets = [
     createdAt: NOW - 100 * DAY,
     updatedAt: NOW - 10 * DAY,
     supplements: [],
-    notes: ["Creatine 5g daily, whenever."],
+    notes: [],
     meals: [
       {
         name: "Breakfast",
@@ -365,8 +342,8 @@ const diets = [
             options: [
               {
                 items: [
-                  { foodId: "food:seed-whey", amount: 40 },
-                  { foodId: "food:seed-corn-tortilla", amount: 3 },
+                  { foodId: "whey-protein", amount: 40 },
+                  { foodId: "food:seed-protein-tortilla", amount: 3 },
                 ],
               },
             ],
@@ -382,8 +359,8 @@ const diets = [
               {
                 label: "Tacos",
                 items: [
-                  { foodId: "food:seed-carne-asada", amount: 180 },
-                  { foodId: "food:seed-corn-tortilla", amount: 4 },
+                  { foodId: "carne-asada-raw", amount: 180 },
+                  { foodId: "corn-tortilla", amount: 4 },
                 ],
               },
             ],
@@ -397,8 +374,8 @@ const diets = [
             options: [
               {
                 items: [
-                  { foodId: "food:seed-carne-asada", amount: 200 },
-                  { foodId: "food:seed-white-rice-cooked", amount: 200 },
+                  { foodId: "carne-asada-raw", amount: 200 },
+                  { foodId: "white-rice-cooked", amount: 200 },
                 ],
               },
             ],

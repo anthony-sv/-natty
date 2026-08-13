@@ -38,6 +38,10 @@ export const en = {
   "account.continueGoogle": "Continue with Google",
   "account.or": "or",
   "account.providerError": "Couldn't start sign-in",
+  "account.username": "Display name",
+  "account.usernamePlaceholder": "What should we call you?",
+  "account.usernameHelp":
+    "Only shown to you. It follows your account to your other devices.",
   "account.unavailable":
     "Accounts aren't set up in this build. Everything still works — your data stays on this device.",
   "account.signInError": "Couldn't sign in",
@@ -1403,6 +1407,18 @@ export const en = {
   "nutrition.hydrationHours": "assumes {hours} hour of training",
   "nutrition.hydrationFormula":
     "{perKg}ml per kg, plus {creatine}ml for creatine, plus {perHour}ml per hour of training. A rule of thumb — heat and how much you sweat move it a lot.",
+  "nutrition.creatine": "Creatine",
+  "nutrition.creatineSimple":
+    "{grams} g a day covers almost everyone — the rest of this is only worth reading if you're far from average.",
+  "nutrition.creatineDaily": "Your daily dose",
+  "nutrition.creatineLoading": "Loading, if you bother",
+  "nutrition.creatineLoadingNote":
+    "{perDose} g × {doses} a day for {days} days, then drop to the daily dose. Skipping it only means saturating a few weeks later.",
+  "nutrition.creatineFromLean":
+    "Scaled from {mass} kg of fat-free mass — creatine is stored in muscle, so that's the part worth scaling by.",
+  "nutrition.creatineFromWeight":
+    "Scaled from {mass} kg of bodyweight. Log a body-fat percentage and this uses your fat-free mass instead, which is what actually stores it.",
+  "nutrition.creatineNoWeight": "No weigh-in yet",
   "nutrition.kcalPerDay": "kcal/day",
   "nutrition.kgPerWeek": "kg/week",
   "nutrition.tdee": "TDEE",
