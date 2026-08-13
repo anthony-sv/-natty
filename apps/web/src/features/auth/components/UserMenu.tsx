@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -92,19 +93,24 @@ export function UserMenu() {
             align="start"
             className="w-(--anchor-width) min-w-56"
           >
-            <DropdownMenuLabel className="flex items-center gap-2 font-normal">
-              <UserAvatar
-                name={name}
-                avatarUrl={profile.avatarUrl}
-                className="size-8 rounded-lg"
-              />
-              <div className="grid min-w-0 flex-1 text-left leading-tight">
-                <span className="truncate text-sm font-medium">{name}</span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {session.email}
-                </span>
-              </div>
-            </DropdownMenuLabel>
+            {/* The Group is required, not decoration: `DropdownMenuLabel` is
+                Base UI's `GroupLabel`, and one outside a Group throws — the
+                same trap `SessionPlayer` documents. */}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="flex items-center gap-2 font-normal">
+                <UserAvatar
+                  name={name}
+                  avatarUrl={profile.avatarUrl}
+                  className="size-8 rounded-lg"
+                />
+                <div className="grid min-w-0 flex-1 text-left leading-tight">
+                  <span className="truncate text-sm font-medium">{name}</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {session.email}
+                  </span>
+                </div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem render={<Link to="/account" />}>
               <UserIcon />
