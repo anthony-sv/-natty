@@ -806,6 +806,8 @@ export const en = {
   "data.wrongVersion": "That file is version {version}, which this build doesn't read",
   "data.invalid": "That file didn't validate \u2014 {detail}",
   "data.empty": "There's nothing in it",
+  "data.countNow": "Now",
+  "data.countAfter": "After",
   "data.restoreEmpty":
     "There's nothing in this file. Restoring it would leave you with nothing.",
   "data.notABackup":

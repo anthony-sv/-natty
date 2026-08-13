@@ -217,6 +217,17 @@ export function scopeMatchesIntent(
  * reassurance.
  */
 export function summarise(data: BackupData): { key: keyof BackupData; count: number }[] {
+  return countsOf(data).filter(({ count }) => count > 0);
+}
+
+/**
+ * Every countable thing in a backup, zeroes included.
+ *
+ * One list so `summarise` and `compareCounts` can't disagree about what a
+ * backup contains — a key added to one and forgotten in the other would go
+ * missing from exactly one of the two dialogs.
+ */
+function countsOf(data: BackupData): { key: keyof BackupData; count: number }[] {
   return (
     [
       ["sets", data.sets.length],
@@ -230,9 +241,30 @@ export function summarise(data: BackupData): { key: keyof BackupData; count: num
       ["intake", data.intake.length],
       ["profile", data.profile === undefined ? 0 : 1],
     ] as const
-  )
-    .filter(([, count]) => count > 0)
-    .map(([key, count]) => ({ key: key as keyof BackupData, count }));
+  ).map(([key, count]) => ({ key: key as keyof BackupData, count }));
+}
+
+/**
+ * What a restore would actually do to you, row by row.
+ *
+ * **Listing the file's contents was never the question a restore asks.** That
+ * dialog replaces everything, so the number that matters is the one you're
+ * about to lose — and a file with 3 routines and no logged sets rendered as
+ * "Your routines 3", which is a true sentence that leaves out the year of sets
+ * going with it.
+ *
+ * A row survives if *either* side is non-zero, which is the whole point: the
+ * interesting rows are precisely the ones the file has nothing for. Rows where
+ * both are zero are dropped, since neither having nor gaining any is news.
+ */
+export function compareCounts(
+  current: BackupData,
+  incoming: BackupData,
+): { key: keyof BackupData; from: number; to: number }[] {
+  const after = new Map(countsOf(incoming).map(({ key, count }) => [key, count]));
+  return countsOf(current)
+    .map(({ key, count }) => ({ key, from: count, to: after.get(key) ?? 0 }))
+    .filter(({ from, to }) => from > 0 || to > 0);
 }
 
 /** A filename that sorts by date and says what it is. */

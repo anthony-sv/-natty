@@ -9,6 +9,7 @@ import {
   backupFilename,
   backupSchema,
   buildBackup,
+  compareCounts,
   readBackup,
   scopeMatchesIntent,
   summarise,
@@ -41,6 +42,10 @@ function emptyData(): BackupData {
     intake: [],
   };
 }
+
+/** One of each, for counting. Reused rather than re-typed per assertion. */
+const FOOD = sharedData().foods[0]!;
+const ROUTINE = { ...routines[0]!, createdAt: AT, updatedAt: AT };
 
 /** A pantry that shares one food between a recipe and a plan. */
 function sharedData(): BackupData {
@@ -186,6 +191,33 @@ describe("the envelope", () => {
     expect(
       summarise({ ...emptyData(), profile: { heightCm: 179 } }).map((r) => r.key),
     ).toEqual(["profile"]);
+  });
+
+  describe("compareCounts", () => {
+    it("keeps a row the file has nothing for, which is the point", () => {
+      // The dialog's job is to say what a restore *removes*. A file with one
+      // routine and no sets must not render as "1 routine" while a year of
+      // logged sets goes quietly.
+      const current: BackupData = {
+        ...emptyData(),
+        routines: [ROUTINE],
+        profile: { heightCm: 179 },
+      };
+      const incoming: BackupData = { ...emptyData(), foods: [FOOD] };
+
+      expect(compareCounts(current, incoming)).toEqual([
+        { key: "routines", from: 1, to: 0 },
+        { key: "foods", from: 0, to: 1 },
+        { key: "profile", from: 1, to: 0 },
+      ]);
+    });
+
+    it("drops rows that are zero on both sides", () => {
+      expect(compareCounts(emptyData(), emptyData())).toEqual([]);
+      // ...and says nothing about collections neither side has.
+      const rows = compareCounts({ ...emptyData(), foods: [FOOD] }, emptyData());
+      expect(rows.map((r) => r.key)).toEqual(["foods"]);
+    });
   });
 
   describe("scopeMatchesIntent", () => {

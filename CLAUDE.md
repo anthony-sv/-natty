@@ -1015,8 +1015,24 @@ Relatedly, **`summarise` counts `profile`** even though it isn't a collection.
 It was the one field left out while every array was listed, so a file carrying
 only a profile — or nothing at all — previewed as "there's nothing in it"
 directly above a button that replaces everything. A preview that under-reports
-is worse than none: it reads as reassurance. An empty file is now a plain note
-on a merge and a `text-destructive` warning on a restore.
+is worse than none: it reads as reassurance. An empty file is a plain note on a
+merge and a `text-destructive` warning on a restore.
+
+**The two dialogs ask different questions, so they show different things.** A
+merge lists what's arriving, because it takes nothing away. A restore renders
+`compareCounts(await currentData(), incoming)` as a now → after table, since
+listing the file's contents answers the wrong question there: a file with three
+routines and no sets is truthfully "3 routines" while a year of logged sets
+goes with it. A row survives if *either* side is non-zero — the interesting
+rows are exactly the ones the file has nothing for — and a falling number is
+marked `text-destructive`. `countsOf` backs both `summarise` and
+`compareCounts` so they can't disagree about what a backup contains.
+
+The current counts are read in `onFile`, which is already async, rather than in
+an effect: `react-hooks/set-state-in-effect` is enforced outside `ui/`. They go
+through `currentData()`, which wakes every collection first — reading them cold
+reports zero across the board and would make the dialog claim there's nothing
+to lose.
 
 **Imported items are re-keyed** (`rekey.ts`), and that isn't tidiness: a slug
 is provenance in `LoggedSet.routineSlug`, so adopting the exporter's would

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { DownloadIcon, UploadIcon } from "lucide-react";
 import {
   AlertDialog,
@@ -22,6 +22,7 @@ import { toast } from "@/components/ui/toast";
 import { useT } from "@/i18n/use-t";
 import {
   backupFilename,
+  compareCounts,
   readBackup,
   scopeMatchesIntent,
   summarise,
@@ -29,6 +30,7 @@ import {
   type ImportIntent,
 } from "../backup";
 import {
+  currentData,
   downloadBackup,
   exportEverything,
   importAdditive,
@@ -57,7 +59,16 @@ export function DataPanel() {
   // Held until confirmed: nothing is written before you've seen what's in the
   // file, because one of the two paths replaces everything you have.
   const [pending, setPending] = useState<
-    { backup: Backup; intent: ImportIntent } | undefined
+    | {
+        backup: Backup;
+        intent: ImportIntent;
+        /**
+         * Restores only. Read once here rather than in an effect — `onFile` is
+         * already async, and `set-state-in-effect` is enforced outside `ui/`.
+         */
+        comparison?: ReturnType<typeof compareCounts>;
+      }
+    | undefined
   >();
 
   function pick(next: ImportIntent) {
@@ -109,10 +120,20 @@ export function DataPanel() {
       return;
     }
 
-    setPending({ backup: result.backup, intent: chosen });
+    // A restore is asked about in terms of what it *removes*, so it needs the
+    // current counts too. `currentData` wakes every collection first — reading
+    // them cold would report zero across the board and make the dialog claim
+    // there's nothing to lose.
+    const comparison =
+      chosen === "restore"
+        ? compareCounts(await currentData(), result.backup.data)
+        : undefined;
+
+    setPending({ backup: result.backup, intent: chosen, comparison });
   }
 
   const rows = pending ? summarise(pending.backup.data) : [];
+  const comparison = pending?.comparison;
   // Decided by the button, never by the file — see `scopeMatchesIntent`.
   const isRestore = pending?.intent === "restore";
 
@@ -173,24 +194,58 @@ export function DataPanel() {
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          {/* What's actually in the file, before anything is written. */}
-          <ul className="flex flex-col gap-1 text-sm tabular-nums">
-            {rows.map(({ key, count }) => (
-              <li key={key} className="flex justify-between gap-4">
-                <span>{t(`data.kind.${key}` as never)}</span>
-                <span className="text-muted-foreground">{count}</span>
-              </li>
-            ))}
-            {/* An empty file is a neutral fact on a merge and a warning on a
-                restore: "there's nothing in it" sat directly above a button
-                that clears every collection, which read as reassurance at the
-                exact moment it should alarm. */}
-            {rows.length === 0 ? (
-              <li className={isRestore ? "text-destructive" : "text-muted-foreground"}>
-                {isRestore ? t("data.restoreEmpty") : t("data.empty")}
-              </li>
-            ) : null}
-          </ul>
+          {/* A restore is asked about as a before-and-after, because listing
+              only the file's contents answers the wrong question: the dialog
+              replaces everything, so the number that matters is the one you
+              lose. A merge takes nothing away, so there it really is just
+              what's arriving. */}
+          {comparison ? (
+            // Nothing on either side: a header row over no rows is worse than
+            // the sentence, which is the one case that says more than a table.
+            comparison.length === 0 ? (
+              <p className="text-sm text-destructive">{t("data.restoreEmpty")}</p>
+            ) : (
+              <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-1 text-sm tabular-nums">
+                <span />
+                <span className="text-right text-xs text-muted-foreground">
+                  {t("data.countNow")}
+                </span>
+                <span />
+                <span className="text-right text-xs text-muted-foreground">
+                  {t("data.countAfter")}
+                </span>
+                {comparison.map(({ key, from, to }) => (
+                  <Fragment key={key}>
+                    <span>{t(`data.kind.${key}` as never)}</span>
+                    <span className="text-right text-muted-foreground">{from}</span>
+                    <span className="text-muted-foreground">→</span>
+                    {/* Losing rows are marked. A restore that drops 74 sets to
+                        0 shouldn't read the same as one that leaves them
+                        alone. */}
+                    <span
+                      className={
+                        to < from ? "text-right text-destructive" : "text-right"
+                      }
+                    >
+                      {to}
+                    </span>
+                  </Fragment>
+                ))}
+              </div>
+            )
+          ) : (
+            <ul className="flex flex-col gap-1 text-sm tabular-nums">
+              {rows.map(({ key, count }) => (
+                <li key={key} className="flex justify-between gap-4">
+                  <span>{t(`data.kind.${key}` as never)}</span>
+                  <span className="text-muted-foreground">{count}</span>
+                </li>
+              ))}
+              {rows.length === 0 ? (
+                <li className="text-muted-foreground">{t("data.empty")}</li>
+              ) : null}
+            </ul>
+          )}
 
           <AlertDialogFooter>
             <AlertDialogCancel>{t("data.cancel")}</AlertDialogCancel>

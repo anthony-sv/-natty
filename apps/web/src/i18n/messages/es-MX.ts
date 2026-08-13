@@ -800,6 +800,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "data.wrongVersion": "Ese archivo es versi\u00f3n {version}, y esta build no la lee",
   "data.invalid": "Ese archivo no pas\u00f3 la validaci\u00f3n \u2014 {detail}",
   "data.empty": "No trae nada",
+  "data.countNow": "Ahora",
+  "data.countAfter": "Después",
   "data.restoreEmpty":
     "Este archivo no trae nada. Restaurarlo te dejaría sin nada.",
   "data.notABackup":
