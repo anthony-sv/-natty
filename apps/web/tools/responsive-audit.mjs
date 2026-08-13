@@ -42,6 +42,7 @@ const VIEWPORTS = [
  */
 const ROUTES = [
   ["index", "/"],
+  ["account", "/account"],
   ["routines", "/routines"],
   ["routines-new", "/routines/new"],
   ["program-8wk", "/routines/cutting-program"],
