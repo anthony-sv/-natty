@@ -164,6 +164,30 @@ export const prescriptionSchema = z
      * the optionality stops at the model.
      */
     isWarmup: z.boolean().optional(),
+    /**
+     * How the load moves for these sets, against the set before them.
+     *
+     * A ramp is already expressible — four sets adding weight while the rep
+     * target falls 12/10/8/6 is four one-set phases — but nothing *said* so.
+     * The rep numbers were on screen and the instruction that goes with them
+     * ("and put weight on each time") lived only in the author's head, which
+     * made a ramp indistinguishable from four sets you happened to write
+     * separately.
+     *
+     * Three values rather than a percentage or a kilo figure: what changes
+     * between two sets of a ramp is a decision you make at the rack off what
+     * the last one felt like, and a number here would be a number the routine
+     * doesn't know. The player pairs it with your last logged set, which is the
+     * half it *can* know.
+     *
+     * Optional, and `buildSteps` infers a direction from a falling rep target
+     * when it's absent — so the transcribed programs, which state their ramps
+     * only as rep numbers, read correctly without being re-authored. An
+     * explicit value always wins over the inference, and is the only way to say
+     * "same weight" (inferring that from equal reps would badge every straight
+     * set in the app).
+     */
+    load: z.enum(["heavier", "same", "lighter"]).optional(),
     /** Intensity techniques for these sets. Absent means straight sets. */
     modifiers: setModifiersSchema.optional(),
   })

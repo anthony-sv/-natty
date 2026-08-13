@@ -16,6 +16,35 @@ const sessionStateSchema = z.object({
    * while the phone was locked comes back already finished.
    */
   timerEndsAt: z.number().nullable(),
+  /**
+   * The wall clock, frozen — set while a countdown is paused and null while it
+   * runs. Every reader takes `pausedAt ?? Date.now()` as "now", so pausing is
+   * one substitution rather than a second representation of remaining time, and
+   * `resumeTimer` just pushes the deadline out by however long you stood still.
+   *
+   * Defaulted so a session persisted before this existed still parses. It's
+   * scratch state that `endSession()` throws away, but losing a workout in
+   * progress to a schema change is exactly the sort of thing you'd only find
+   * out about mid-session.
+   */
+  pausedAt: z.number().nullable().default(null),
+  /**
+   * Extra milliseconds granted to individual parts of the sequence set you're
+   * on, keyed by the part's 1-based index.
+   *
+   * This exists because a sequence's part boundaries are fixed offsets from one
+   * stored deadline, and **pushing that deadline out does not lengthen a part —
+   * it rewinds you into the one before.** Moving `endsAt` later moves the
+   * derived start later too, so elapsed time goes *down* and a "+10s" pressed
+   * with eight seconds left on a hold threw you back into the pulses you'd
+   * already done. One scalar genuinely can't express "insert time here"; the
+   * boundaries after the insertion have to move and the ones before it must
+   * not.
+   *
+   * Scoped to the current step and cleared whenever the timer is set, so it
+   * never outlives the set it was granted to.
+   */
+  partExtraMs: z.record(z.string(), z.number()).default({}),
   startedAt: z.number(),
   /**
    * Exercises you've swapped for one of their listed alternatives, keyed by
@@ -67,6 +96,8 @@ export function startSession(target: {
     ...target,
     stepIndex: 0,
     timerEndsAt: null,
+    pausedAt: null,
+    partExtraMs: {},
     startedAt: Date.now(),
     swaps: {},
   }));
@@ -103,31 +134,128 @@ export function effectiveExerciseId(
 }
 
 /**
- * Move to `stepIndex`, clearing any running timer. `autoStartSeconds` starts
- * the next step's countdown immediately — rest steps begin the moment you tap
- * done, whereas cardio waits for an explicit Start.
+ * Move to `stepIndex`, clearing any running timer. `autoStart` starts the next
+ * step's countdown immediately — rest begins the moment you tap done, whereas
+ * anything you have to get into position for waits for an explicit Start.
  */
-export function goToStep(stepIndex: number, autoStartSeconds?: number): void {
+export function goToStep(
+  stepIndex: number,
+  autoStart?: { seconds: number; leadSeconds: number },
+): void {
   sessionStore.setState((state) =>
     state === null
       ? null
       : {
           ...state,
           stepIndex,
+          pausedAt: null,
+          partExtraMs: {},
           timerEndsAt:
-            autoStartSeconds === undefined
+            autoStart === undefined
               ? null
-              : Date.now() + autoStartSeconds * 1000,
+              : Date.now() +
+                (autoStart.seconds + autoStart.leadSeconds) * 1000,
         },
   );
 }
 
-/** Start (or restart) the current step's countdown — used by cardio blocks. */
-export function startTimer(seconds: number): void {
+/**
+ * Start (or restart) the current step's countdown.
+ *
+ * `leadSeconds` is counted *into* the same deadline rather than tracked
+ * separately: the run proper begins at `endsAt - seconds`, which every reader
+ * can work out from the step it's already holding. One stored number stays one
+ * stored number, and a lead-in that elapsed while the phone was locked resolves
+ * the same way a finished rest does.
+ */
+export function startTimer(seconds: number, leadSeconds = 0): void {
   sessionStore.setState((state) =>
     state === null
       ? null
-      : { ...state, timerEndsAt: Date.now() + seconds * 1000 },
+      : {
+          ...state,
+          pausedAt: null,
+          partExtraMs: {},
+          timerEndsAt: Date.now() + (seconds + leadSeconds) * 1000,
+        },
+  );
+}
+
+/**
+ * Cut the rest of the current part short, landing exactly on the next boundary.
+ *
+ * Pulling the deadline in by what's left shortens the whole run by the same
+ * amount, which pushes the derived start earlier and so moves elapsed time
+ * *forward* by exactly that much — onto the boundary. The opposite direction
+ * does not work symmetrically, which is what `extendPart` is for.
+ *
+ * Never earlier than now, so skipping the last part lands on "finished" rather
+ * than somewhere in the past.
+ */
+export function skipAhead(seconds: number): void {
+  sessionStore.setState((state) => {
+    if (state === null || state.timerEndsAt === null) return state;
+    const now = state.pausedAt ?? Date.now();
+    return {
+      ...state,
+      timerEndsAt: Math.max(now, state.timerEndsAt - seconds * 1000),
+    };
+  });
+}
+
+/**
+ * Give the part you're on `seconds` more, and push everything after it back.
+ *
+ * Both halves are required and neither works alone. The deadline moves so the
+ * set really does run longer; the per-part grant moves that part's *boundary*
+ * by the same amount, which is what keeps elapsed time where it was. Moving
+ * only the deadline lengthens the run while leaving the boundaries fixed, and
+ * the arithmetic comes out as ten seconds of rewind.
+ */
+export function extendPart(partIndex: number, seconds: number): void {
+  sessionStore.setState((state) => {
+    if (state === null || state.timerEndsAt === null) return state;
+    const key = String(partIndex);
+    return {
+      ...state,
+      timerEndsAt: state.timerEndsAt + seconds * 1000,
+      partExtraMs: {
+        ...state.partExtraMs,
+        [key]: (state.partExtraMs[key] ?? 0) + seconds * 1000,
+      },
+    };
+  });
+}
+
+/** Freeze the countdown where it is — someone needs the machine, or you do. */
+export function pauseTimer(): void {
+  sessionStore.setState((state) =>
+    state === null || state.timerEndsAt === null || state.pausedAt !== null
+      ? state
+      : { ...state, pausedAt: Date.now() },
+  );
+}
+
+/** Resume, having lost exactly the time you stood still. */
+export function resumeTimer(): void {
+  sessionStore.setState((state) => {
+    if (state === null || state.pausedAt === null) return state;
+    const paused = Date.now() - state.pausedAt;
+    return {
+      ...state,
+      pausedAt: null,
+      timerEndsAt:
+        state.timerEndsAt === null ? null : state.timerEndsAt + paused,
+    };
+  });
+}
+
+/** Drop back to "not started" — the way out of a sequence you began too early. */
+export function clearTimer(): void {
+  sessionStore.setState((state) =>
+    state === null
+      ? null
+      : { ...state, timerEndsAt: null, pausedAt: null, partExtraMs: {} },
   );
 }
 

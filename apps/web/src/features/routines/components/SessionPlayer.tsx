@@ -1,16 +1,20 @@
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { useStore } from "@tanstack/react-store";
 import {
   ArrowLeftRightIcon,
+  ArrowRightIcon,
   CheckIcon,
   ChevronLeftIcon,
   CircleStopIcon,
   ClockIcon,
   FlagIcon,
+  ListOrderedIcon,
   PlayIcon,
   Repeat2Icon,
   TargetIcon,
   TimerIcon,
+  Volume2Icon,
+  VolumeXIcon,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -50,22 +54,29 @@ import { useExerciseLog } from "@/features/log/queries";
 import { formatSet } from "@/features/log/pr";
 import { SetLogControl } from "@/features/log/components/SetLogControl";
 import { cn } from "@/lib/utils";
+import { playerPrefs, toggleCues, useCue } from "../lib/cues";
 import {
   formatClock,
   formatElapsed,
   formatModifiers,
   formatPose,
-  formatSegment,
   type Formatting,
 } from "../lib/format";
 import {
-  autoStartSecondsFor,
+  autoStartFor,
   describeStep,
   isLoggableStep,
+  LEAD_IN_SECONDS,
+  extendSequence,
+  setLadder,
+  timedSecondsFor,
+  type PoseStep,
+  type RestStep,
   type SessionStep,
+  type SetSequence,
   type WorkStep,
 } from "../lib/session";
-import { useCountdown, useElapsed } from "../lib/use-countdown";
+import { useElapsed, useTimerState, type TimerState } from "../lib/use-countdown";
 import {
   effectiveExerciseId,
   endSession,
@@ -75,6 +86,10 @@ import {
   swapExercise,
   type SessionState,
 } from "../session-store";
+import { Eyebrow, LoadBadge, PrescriptionStrip } from "./PlayerChrome";
+import { SequencePreview, SequenceStage } from "./SequenceStage";
+import { SetLadderRow } from "./SetLadderRow";
+import { TechniqueCueList } from "./TechniqueCueList";
 import { TimerRing } from "./TimerRing";
 
 /**
@@ -84,13 +99,13 @@ import { TimerRing } from "./TimerRing";
  * you've been at it, how far through), **stage** (what this step is), **action
  * bar** (the one button that moves you on, then the two you rarely press).
  *
- * The zones are fixed on purpose. An earlier version let each step body render
- * its own primary button at the end of its own content, so "Done" and "Start
- * next set" landed at different heights and the card resized between a work set
- * and its rest — the button you press forty times in a session moved under your
- * thumb every other press. The stage carries a `min-h` for the same reason: a
- * rest step holds far less than a work step, and without a floor the card would
- * still breathe even with the button pinned last.
+ * The stage is a **fixed height**, not a minimum one, and that is the whole
+ * layout rule. A floor was not enough: the tallest bodies breached it — a set
+ * with technique cues, a long note and six logged sets is simply taller than a
+ * rest step — and every time one did, the card grew and the button you press
+ * forty times a session moved under your thumb. With a fixed stage the only
+ * thing that can vary is *inside* it, and exactly one zone is allowed to: the
+ * scrolling middle. Everything else is pinned.
  */
 export function SessionPlayer({
   steps,
@@ -100,18 +115,63 @@ export function SessionPlayer({
   dayLabel: string;
 }) {
   const session = useStore(sessionStore, (s) => s);
-  const t = useT();
-  const f = useFormatting();
   if (session === null) return null;
 
   const step = steps[session.stepIndex];
   // The stored index can outrun the day if program data changed under a
   // persisted session — offer a way out rather than crashing.
-  if (step === undefined) {
-    return <StaleSession dayLabel={dayLabel} />;
-  }
+  if (step === undefined) return <StaleSession dayLabel={dayLabel} />;
 
-  const action = primaryActionFor(step, session, steps, dayLabel, t, f);
+  // Split here so everything below can use hooks unconditionally: the two exits
+  // above are the reason the card is its own component rather than the rest of
+  // this one.
+  return (
+    <PlayerCard
+      session={session}
+      step={step}
+      steps={steps}
+      dayLabel={dayLabel}
+    />
+  );
+}
+
+function PlayerCard({
+  session,
+  step,
+  steps,
+  dayLabel,
+}: {
+  session: SessionState;
+  step: SessionStep;
+  steps: SessionStep[];
+  dayLabel: string;
+}) {
+  const t = useT();
+  const f = useFormatting();
+
+  // Resolved here rather than in the body, because the timer has to be built
+  // from the *extended* length: "+10s" mid-set makes the set genuinely longer,
+  // and a clock still counting the authored length would finish early.
+  const sequence =
+    step.type === "work" && step.sequence !== undefined
+      ? extendSequence(step.sequence, session.partExtraMs)
+      : undefined;
+  const totalSeconds = sequence?.seconds ?? timedSecondsFor(step) ?? 0;
+
+  // One subscription for the whole card. The bodies take the resolved timer as
+  // a prop rather than each resolving it, so the ring, the button's wording and
+  // the audible cues can never disagree about what the clock is doing.
+  const timer = useTimerState(session, totalSeconds);
+  const action = primaryActionFor({
+    step,
+    session,
+    steps,
+    dayLabel,
+    t,
+    f,
+    timer,
+    totalSeconds,
+  });
   const ActionIcon = action.icon;
 
   return (
@@ -126,7 +186,10 @@ export function SessionPlayer({
             </span>
             {dayLabel}
           </span>
-          <Elapsed since={session.startedAt} />
+          <span className="flex items-center gap-1">
+            <Elapsed since={session.startedAt} />
+            <CueToggle />
+          </span>
         </CardTitle>
         <CardDescription className="flex flex-col gap-1.5">
           <Progress value={(session.stepIndex / steps.length) * 100} />
@@ -140,11 +203,8 @@ export function SessionPlayer({
         </CardDescription>
       </CardHeader>
 
-      {/* The stage. `min-h` is the floor that keeps the card one size; bodies
-          that fill less than it centre themselves inside it. It's set above the
-          tallest body (a pose hold: eyebrow, name, ring, "time's up", next up)
-          so nothing in a normal set-rest-set cycle ever reaches it. */}
-      <CardContent className="flex min-h-80 flex-col py-5">
+      {/* The stage. Fixed, so nothing inside it can move the button below. */}
+      <CardContent className="flex h-[23rem] flex-col py-5 sm:h-[27rem]">
         {step.type === "work" ? (
           // Keyed so moving to the next set remounts the log form, which reads
           // its prefill into `defaultValues` on mount -- without it React
@@ -154,23 +214,31 @@ export function SessionPlayer({
             step={step}
             session={session}
             steps={steps}
+            timer={timer}
+            sequence={sequence}
+            totalSeconds={totalSeconds}
           />
         ) : step.type === "pose" ? (
-          <PoseStepBody step={step} session={session} steps={steps} />
+          <PoseStepBody step={step} steps={steps} session={session} timer={timer} />
         ) : (
-          <RestStepBody step={step} session={session} />
+          <RestStepBody step={step} timer={timer} />
         )}
       </CardContent>
 
-      <CardFooter className="flex-col items-stretch gap-2">
-        <Button size="lg" className="w-full" onClick={action.onClick}>
+      <CardFooter className="flex-col items-stretch gap-3 pt-4">
+        {/* Taller than a standard button and full width: this is pressed
+            standing up, at arm's length, with chalk on your hands. */}
+        <Button
+          size="lg"
+          className="h-14 w-full text-base"
+          onClick={action.onClick}
+        >
           <ActionIcon data-icon="inline-start" />
           {action.label}
         </Button>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
-            size="sm"
             disabled={session.stepIndex === 0}
             onClick={() => goToStep(session.stepIndex - 1)}
           >
@@ -201,14 +269,25 @@ interface PrimaryAction {
  * changes between steps is the wording and the icon, which is exactly what a
  * descriptor is for.
  */
-function primaryActionFor(
-  step: SessionStep,
-  session: SessionState,
-  steps: SessionStep[],
-  dayLabel: string,
-  t: Translate,
-  f: Formatting,
-): PrimaryAction {
+function primaryActionFor({
+  step,
+  session,
+  steps,
+  dayLabel,
+  t,
+  f,
+  timer,
+  totalSeconds,
+}: {
+  step: SessionStep;
+  session: SessionState;
+  steps: SessionStep[];
+  dayLabel: string;
+  t: Translate;
+  f: Formatting;
+  timer: TimerState;
+  totalSeconds: number;
+}): PrimaryAction {
   const next = steps[session.stepIndex + 1];
 
   // Advancing never logs. Logging is an explicit submit in the popover --
@@ -216,20 +295,24 @@ function primaryActionFor(
   // through a workout would record sets you never entered.
   const advance = () => {
     if (finishIfLast(next, dayLabel, t)) return;
-    goToStep(session.stepIndex + 1, autoStartSecondsFor(next));
+    goToStep(session.stepIndex + 1, autoStartFor(next));
   };
 
-  // Cardio waits for an explicit Start — you have to get on the machine first.
+  // Work you have to be in position for starts on a press — you have to get on
+  // the machine, or set up under the load, first — and then spends its opening
+  // seconds counting you in rather than counting the hold.
   if (
     step.type === "work" &&
-    step.durationSeconds !== undefined &&
-    session.timerEndsAt === null
+    timer.phase === "idle" &&
+    timedSecondsFor(step) !== undefined
   ) {
-    const seconds = step.durationSeconds;
     return {
-      label: t("player.startTimed", { label: describeStep(step, f) }),
+      label:
+        step.sequence !== undefined
+          ? t("player.startSequence")
+          : t("player.startTimed", { label: describeStep(step, f) }),
       icon: PlayIcon,
-      onClick: () => startTimer(seconds),
+      onClick: () => startTimer(totalSeconds, LEAD_IN_SECONDS),
     };
   }
 
@@ -267,6 +350,37 @@ function Elapsed({ since }: { since: number }) {
 }
 
 /**
+ * Mute the beeps and the buzz.
+ *
+ * In the header rather than in settings because the answer changes with the
+ * room: earbuds in, it's the only way to run a hold without watching the
+ * screen; in a quiet gym at 6am it's the first thing you'd want off, and a
+ * preference you have to leave the session to find is one you'd rather just
+ * silence the phone for.
+ */
+function CueToggle() {
+  const t = useT();
+  const cues = useStore(playerPrefs, (s) => s.cues);
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-pressed={cues}
+      aria-label={t(cues ? "player.cuesOn" : "player.cuesOff")}
+      title={t(cues ? "player.cuesOn" : "player.cuesOff")}
+      onClick={toggleCues}
+    >
+      {cues ? (
+        <Volume2Icon className="size-4" />
+      ) : (
+        <VolumeXIcon className="size-4 text-muted-foreground" />
+      )}
+    </Button>
+  );
+}
+
+/**
  * Ending early, behind a confirmation.
  *
  * It sits next to Back, one mis-tap from the control you press most, and it
@@ -293,7 +407,6 @@ function EndWorkoutButton({
     <>
       <Button
         variant="ghost"
-        size="sm"
         className="ml-auto text-muted-foreground"
         onClick={() => setOpen(true)}
       >
@@ -356,61 +469,29 @@ function finishIfLast(
   return true;
 }
 
-/** The small caps line above a step's title — what kind of step this is. */
-function Eyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-      {children}
-    </p>
-  );
-}
-
-/**
- * The set's prescription as three labelled cells rather than a run of prose.
- *
- * "Set 2 of 4 · 8-12 reps" in one muted sentence makes you parse a line to find
- * the two numbers you actually act on. Split and labelled, each is findable
- * without reading — and the strip is a fixed height, which is half of why the
- * card no longer resizes between sets.
- */
-function PrescriptionStrip({
-  items,
-}: {
-  items: { icon: LucideIcon; label: string; value: string }[];
-}) {
-  return (
-    <div className="grid grid-cols-3 divide-x rounded-lg border bg-muted/40">
-      {items.map(({ icon: Icon, label, value }) => (
-        <div key={label} className="flex flex-col gap-0.5 px-3 py-2">
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Icon className="size-3.5" />
-            {label}
-          </span>
-          <span className="text-sm font-semibold tabular-nums">{value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function WorkStepBody({
   step,
   session,
   steps,
+  timer,
+  sequence,
+  totalSeconds,
 }: {
-  step: Extract<SessionStep, { type: "work" }>;
+  step: WorkStep;
   session: SessionState;
   steps: SessionStep[];
+  timer: TimerState;
+  /** `step.sequence` with any mid-set "+10s" folded in. */
+  sequence: SetSequence | undefined;
+  totalSeconds: number;
 }) {
   const t = useT();
   const f = useFormatting();
-  const { remainingMs, isComplete } = useCountdown(session.timerEndsAt);
-  const isTimed = step.durationSeconds !== undefined;
-  const timerRunning = session.timerEndsAt !== null;
+  const isTimed = timedSecondsFor(step) !== undefined;
+  const isCounting = isTimed && timer.phase !== "idle";
 
   // Cardio already carries its own duration; there is no weight or rep count
-  // worth recording for it. A segmented set logs once, on its last leg — see
-  // `isLoggableStep`.
+  // worth recording for it.
   const isLoggable = isLoggableStep(step);
 
   /**
@@ -430,8 +511,6 @@ function WorkStepBody({
     ? f.names.exercise(exerciseId)
     : step.exerciseName;
 
-  // The "logged today" list still belongs on every leg: it's what fills the
-  // stage, and hiding it for four of five steps would make the card jump.
   const showsLog = step.kind !== "cardio";
   const { sets, frontier, last, isLoading } = useExerciseLog(
     showsLog ? exerciseId : undefined,
@@ -444,8 +523,7 @@ function WorkStepBody({
     dayNumber: session.dayNumber,
     setNumber: step.setNumber,
   };
-  // Everything recorded against this exercise in *this* session, which is what
-  // fills the stage between the prescription and the log control. Derived from
+  // Everything recorded against this exercise in *this* session. Derived from
   // the live query rather than component state so it survives stepping Back and
   // forward again.
   const loggedToday = sets
@@ -467,24 +545,6 @@ function WorkStepBody({
     (logged) => logged.setNumber === step.setNumber,
   );
 
-  // The other legs of this set, read back off the step list rather than copied
-  // onto every step: they're already there, keyed by the same setNumber, and
-  // duplicating the array five times per set to save a filter is the wrong
-  // trade.
-  const segmentSequence = step.segment
-    ? steps
-        .filter(
-          (other) =>
-            other.type === "work" &&
-            other.exerciseIndex === step.exerciseIndex &&
-            other.setNumber === step.setNumber &&
-            other.segment !== undefined,
-        )
-        .map((other) =>
-          formatSegment((other as WorkStep).segment!.detail, f),
-        )
-    : [];
-
   const next = steps[session.stepIndex + 1];
   // Rest is its own step, so what follows this set is what tells you how long
   // you get — it belongs on the set you're about to do, not only after it.
@@ -500,10 +560,14 @@ function WorkStepBody({
   // Which exercise of the day this is — context the card never carried, and the
   // one thing "set 2 of 4" can't tell you.
   const exerciseCount = steps[steps.length - 1].exerciseIndex + 1;
+  const badges = formatModifiers(step.modifiers ?? {}, f);
 
   return (
     <div className="flex flex-1 flex-col gap-3">
-      <div className="flex flex-col gap-1.5">
+      {/* Zone 1 — who and what. Fixed: the title is clamped to two lines and
+          the badges to one scrolling row, so a long exercise name with four
+          modifiers occupies exactly what a short one does. */}
+      <div className="flex shrink-0 flex-col gap-1.5">
         <Eyebrow>
           {t("player.exerciseOf", {
             current: step.exerciseIndex + 1,
@@ -511,186 +575,181 @@ function WorkStepBody({
           })}
         </Eyebrow>
         <div className="flex items-start gap-2">
-          <h2 className="min-w-0 flex-1 text-2xl font-semibold leading-tight tracking-tight">
+          <h2 className="line-clamp-2 min-w-0 flex-1 text-2xl font-semibold leading-tight tracking-tight">
             {exerciseName}
           </h2>
           {/* Only when the routine actually named substitutes. A picker on
               every exercise would offer a choice that isn't there. */}
           {step.alternativeIds.length > 0 ? (
-            <SwapControl
-              step={step}
-              current={exerciseId}
-              isSwapped={isSwapped}
-            />
+            <SwapControl step={step} current={exerciseId} isSwapped={isSwapped} />
           ) : null}
         </div>
         {isSwapped ||
         step.isWarmup ||
         step.isFinisher ||
+        step.load ||
         step.kind === "cardio" ||
         step.intensity ||
-        step.modifiers ? (
-          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+        badges.length > 0 ? (
+          <div className="flex items-center gap-1.5 overflow-x-auto pt-0.5">
             {/* So a glance at the card says you're off-plan today, and which
                 lift the numbers below belong to. */}
             {isSwapped ? (
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="shrink-0">
                 {t("player.swappedFrom", { name: step.exerciseName })}
               </Badge>
             ) : null}
             {/* First, because it changes what the whole card means: this set
                 isn't one you're trying to beat, and there's no log control. */}
             {step.isWarmup ? (
-              <Badge variant="outline">{t("routines.warmupSet")}</Badge>
+              <Badge variant="outline" className="shrink-0">
+                {t("routines.warmupSet")}
+              </Badge>
             ) : null}
-            {step.isFinisher ? <Badge>{t("common.finisher")}</Badge> : null}
+            {/* Beside the badges rather than in the strip below, because it's
+                the one thing on the card that is about the *last* set. */}
+            {step.load ? <LoadBadge load={step.load} className="shrink-0" /> : null}
+            {step.isFinisher ? (
+              <Badge className="shrink-0">{t("common.finisher")}</Badge>
+            ) : null}
             {step.kind === "cardio" ? (
-              <Badge variant="outline">{t("common.cardio")}</Badge>
+              <Badge variant="outline" className="shrink-0">
+                {t("common.cardio")}
+              </Badge>
             ) : null}
             {/* On the card because it's what you act on: the clock says how
                 long, this says how hard. */}
             {step.intensity ? (
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="shrink-0">
                 {t(`intensity.${step.intensity}` as never)}
               </Badge>
             ) : null}
-            {step.modifiers
-              ? formatModifiers(step.modifiers, f).map((label) => (
-                  <Badge key={label} variant="destructive">
-                    {label}
-                  </Badge>
-                ))
-              : null}
+            {badges.map((label) => (
+              <Badge key={label} variant="destructive" className="shrink-0">
+                {label}
+              </Badge>
+            ))}
           </div>
         ) : null}
       </div>
 
-      {isTimed && timerRunning ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2">
-          <TimerRing
-            percent={
-              ((step.durationSeconds! * 1000 - remainingMs) /
-                (step.durationSeconds! * 1000)) *
-              100
-            }
-            label={formatClock(remainingMs)}
-            isComplete={isComplete}
-          />
-          {isComplete ? (
-            <p className="text-sm font-medium text-primary">
-              {t("player.timesUp")}
-            </p>
-          ) : null}
-        </div>
+      {isCounting ? (
+        sequence !== undefined ? (
+          <SequenceStage sequence={sequence} timer={timer} />
+        ) : (
+          <TimedWorkStage timer={timer} seconds={totalSeconds} />
+        )
       ) : (
-        <PrescriptionStrip
-          items={[
-            {
-              icon: Repeat2Icon,
-              // The cell's label carries the distinction, so the value stays
-              // the two numbers you act on rather than growing a word.
-              label: step.isWarmup ? t("routines.warmupSet") : t("player.set"),
-              value: t("player.setValue", {
-                number: step.setNumber,
-                total: step.setsInExercise,
-              }),
-            },
-            {
-              icon: TargetIcon,
-              label: t("player.target"),
-              value: describeStep(step, f),
-            },
-            { icon: TimerIcon, label: t("player.then"), value: thenValue },
-          ]}
-        />
+        <>
+          {/* Zone 2 — the numbers, fixed height. */}
+          <PrescriptionStrip
+            items={[
+              {
+                icon: Repeat2Icon,
+                // The cell's label carries the distinction, so the value stays
+                // the two numbers you act on rather than growing a word.
+                label: step.isWarmup ? t("routines.warmupSet") : t("player.set"),
+                value: t("player.setValue", {
+                  number: step.setNumber,
+                  total: step.setsInExercise,
+                }),
+              },
+              {
+                icon: sequence !== undefined ? ListOrderedIcon : TargetIcon,
+                label: t("player.target"),
+                value:
+                  sequence !== undefined
+                    ? t("player.partCount", {
+                        count: sequence.parts.length,
+                        clock: formatClock(sequence.seconds * 1000),
+                      })
+                    : describeStep(step, f),
+              },
+              { icon: TimerIcon, label: t("player.then"), value: thenValue },
+            ]}
+          />
+
+          <SetLadderRow rungs={setLadder(steps, step, f)} />
+
+          {/* Zone 3 — the only zone allowed to vary, and it scrolls rather than
+              growing. Everything here is read once and then ignored for the
+              rest of the set, which is why it sits below the numbers rather
+              than between them. */}
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
+            {sequence !== undefined ? (
+              <SequencePreview sequence={sequence} />
+            ) : null}
+
+            <TechniqueCueList modifiers={step.modifiers} />
+
+            {step.alternatives || step.pose || step.notes ? (
+              <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                {step.alternatives ? <p>{step.alternatives}</p> : null}
+                {step.pose ? (
+                  <p>
+                    {t("player.pose")}:{" "}
+                    <span className="text-foreground">
+                      {formatPose(step.pose, f)}
+                    </span>
+                  </p>
+                ) : null}
+                {step.notes ? <p>{step.notes}</p> : null}
+              </div>
+            ) : null}
+
+            {/* What you've already done on this lift today — "three sets in at
+                60kg" is the thing you actually want to see between sets. */}
+            {showsLog ? (
+              <div className="flex flex-col gap-1.5">
+                <Eyebrow>{t("player.loggedToday")}</Eyebrow>
+                {loggedToday.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("player.nothingLoggedYet")}
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {loggedToday.map((logged) => (
+                      <span
+                        key={logged.id}
+                        className={cn(
+                          "rounded-md border px-2 py-1 text-xs tabular-nums",
+                          logged.setNumber === step.setNumber
+                            ? "border-primary/40 bg-primary/10 font-medium"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        <span className="text-muted-foreground">
+                          {logged.setNumber}.{" "}
+                        </span>
+                        {formatSet(logged)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+            {/* Present only on the last set of an exercise, which is exactly
+                when it's actionable: it's how you know to send someone for the
+                bench while you finish. */}
+            {step.nextExerciseName ? (
+              <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <ArrowRightIcon className="size-3.5 shrink-0" />
+                {t("player.afterThis")}{" "}
+                <span className="font-medium text-foreground">
+                  {step.nextExerciseName}
+                </span>
+              </p>
+            ) : null}
+          </div>
+        </>
       )}
 
-      {/* Reference material — read once, then ignored for the rest of the set,
-          so it sits below the numbers rather than between them. It's the only
-          part of the card allowed to scroll: a long note on one exercise would
-          otherwise push the card past the stage's floor and start the buttons
-          moving again, which is the thing this layout exists to stop. */}
-      {/* The whole sequence, with the leg you're on marked. A segmented set is
-          five steps that all say the same exercise name, so without this the
-          card gives you no way to tell "hold, then pulses" from "pulses, then
-          another hold" — and you can't see what's coming. Its own row above the
-          reference block, since it's live state rather than something you read
-          once. */}
-      {step.segment ? (
-        <div className="flex shrink-0 flex-wrap items-center gap-1 text-xs">
-          {segmentSequence.map((label, index) => (
-            <Fragment key={index}>
-              {index > 0 ? (
-                <span className="text-muted-foreground/50">→</span>
-              ) : null}
-              <span
-                className={cn(
-                  "rounded px-1.5 py-0.5 tabular-nums",
-                  index + 1 === step.segment!.index
-                    ? "bg-primary/15 font-medium text-foreground"
-                    : index + 1 < step.segment!.index
-                      ? "text-muted-foreground/60 line-through"
-                      : "text-muted-foreground",
-                )}
-              >
-                {label}
-              </span>
-            </Fragment>
-          ))}
-        </div>
-      ) : null}
-
-      {step.alternatives || step.pose || step.notes ? (
-        <div className="flex max-h-12 shrink-0 flex-col gap-1 overflow-y-auto text-sm text-muted-foreground">
-          {step.alternatives ? <p>{step.alternatives}</p> : null}
-          {step.pose ? (
-            <p>
-              {t("player.pose")}:{" "}
-              <span className="text-foreground">{formatPose(step.pose, f)}</span>
-            </p>
-          ) : null}
-          {step.notes ? <p>{step.notes}</p> : null}
-        </div>
-      ) : null}
-
-      {/* What you've already done on this lift today. It takes the stage's
-          slack, which is the point: the floor that keeps the card one size
-          otherwise leaves a hole on a set with no notes, and "three sets in at
-          60kg" is the thing you actually want to see between sets. */}
-      {showsLog ? (
-        <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto">
-          <Eyebrow>{t("player.loggedToday")}</Eyebrow>
-          {loggedToday.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              {t("player.nothingLoggedYet")}
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              {loggedToday.map((logged) => (
-                <span
-                  key={logged.id}
-                  className={cn(
-                    "rounded-md border px-2 py-1 text-xs tabular-nums",
-                    logged.setNumber === step.setNumber
-                      ? "border-primary/40 bg-primary/10 font-medium"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  <span className="text-muted-foreground">
-                    {logged.setNumber}.{" "}
-                  </span>
-                  {formatSet(logged)}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      ) : null}
-
-      {/* Held back until the log has loaded: the form seeds its defaults from
-          `last` on mount, so mounting early would prefill from nothing. */}
+      {/* Zone 4 — pinned last, so the distance from the log control to the
+          button below it never changes. Held back until the log has loaded:
+          the form seeds its defaults from `last` on mount. */}
       {isLoggable && !isLoading ? (
-        <div className="flex flex-col gap-3">
+        <div className="flex shrink-0 flex-col gap-3">
           <Separator />
           <SetLogControl
             frontier={frontier}
@@ -702,6 +761,50 @@ function WorkStepBody({
           />
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * A work step that is simply a clock — a cardio block, a stretch hold.
+ *
+ * The card's head already says which exercise and which set, so this is the
+ * ring and nothing else. It still gets the lead-in: a stretch you're counting
+ * down should start when you're in the stretch.
+ */
+function TimedWorkStage({
+  timer,
+  seconds,
+}: {
+  timer: TimerState;
+  seconds: number;
+}) {
+  const t = useT();
+  const leadSeconds = Math.ceil(timer.leadRemainingMs / 1000);
+  const totalMs = seconds * 1000;
+
+  useCue(timer.phase === "lead" ? "tick" : undefined, `lead-${leadSeconds}`);
+  useCue(timer.phase === "complete" ? "end" : undefined, timer.phase);
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2">
+      {timer.phase === "lead" ? (
+        <TimerRing
+          tone="lead"
+          percent={0}
+          label={String(Math.max(1, leadSeconds))}
+          caption={t("player.getSet")}
+        />
+      ) : (
+        <TimerRing
+          percent={((totalMs - timer.remainingMs) / totalMs) * 100}
+          label={formatClock(timer.remainingMs)}
+          isComplete={timer.phase === "complete"}
+        />
+      )}
+      <p className="flex h-5 items-center text-sm font-medium text-primary">
+        {timer.phase === "complete" ? t("player.timesUp") : ""}
+      </p>
     </div>
   );
 }
@@ -723,7 +826,7 @@ function SwapControl({
   current,
   isSwapped,
 }: {
-  step: Extract<SessionStep, { type: "work" }>;
+  step: WorkStep;
   current: string;
   isSwapped: boolean;
 }) {
@@ -779,53 +882,86 @@ function SwapControl({
 function TimerStepBody({
   eyebrow,
   title,
+  subtitle,
   seconds,
-  timerEndsAt,
+  timer,
   completeNote,
   nextLabel,
+  nextExerciseName,
 }: {
   eyebrow: string;
   title?: string;
+  subtitle?: string;
   seconds: number;
-  timerEndsAt: number | null;
+  timer: TimerState;
   completeNote: string;
   nextLabel?: string;
+  nextExerciseName?: string;
 }) {
   const t = useT();
-  const { remainingMs, isComplete } = useCountdown(timerEndsAt);
-  // Arriving here from "Done" auto-starts the clock; arriving by pressing Back
-  // doesn't, and used to leave a dead 0:00 with no way to run it again.
-  const isRunning = timerEndsAt !== null;
+  const leadSeconds = Math.ceil(timer.leadRemainingMs / 1000);
   const totalMs = seconds * 1000;
 
+  useCue(timer.phase === "lead" ? "tick" : undefined, `lead-${leadSeconds}`);
+  useCue(timer.phase === "complete" ? "end" : undefined, timer.phase);
+
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
-      <Eyebrow>{eyebrow}</Eyebrow>
-      {title ? (
-        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
-      ) : null}
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto text-center">
+      <div className="flex flex-col gap-0.5">
+        <Eyebrow>{eyebrow}</Eyebrow>
+        {title ? (
+          <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+        ) : null}
+        {subtitle ? (
+          <p className="text-xs text-muted-foreground">{subtitle}</p>
+        ) : null}
+      </div>
 
-      <TimerRing
-        percent={isRunning ? ((totalMs - remainingMs) / totalMs) * 100 : 0}
-        label={formatClock(isRunning ? remainingMs : totalMs)}
-        isComplete={isComplete}
-      />
+      {timer.phase === "lead" ? (
+        <TimerRing
+          tone="lead"
+          percent={0}
+          label={String(Math.max(1, leadSeconds))}
+          caption={t("player.getSet")}
+        />
+      ) : (
+        <TimerRing
+          percent={
+            timer.phase === "idle"
+              ? 0
+              : ((totalMs - timer.remainingMs) / totalMs) * 100
+          }
+          label={formatClock(timer.phase === "idle" ? totalMs : timer.remainingMs)}
+          isComplete={timer.phase === "complete"}
+        />
+      )}
 
-      {/* One fixed-height slot for all three states, so the note appearing at
+      {/* One fixed-height slot for all the states, so the note appearing at
           zero can't nudge the card. */}
       <div className="flex h-8 items-center">
-        {!isRunning ? (
-          <Button variant="ghost" size="sm" onClick={() => startTimer(seconds)}>
+        {/* Arriving here from "Done" auto-starts the clock; arriving by pressing
+            Back doesn't, and used to leave a dead 0:00 with no way to run it
+            again. */}
+        {timer.phase === "idle" ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => startTimer(seconds, LEAD_IN_SECONDS)}
+          >
             <PlayIcon data-icon="inline-start" /> {t("player.startClock")}
           </Button>
-        ) : isComplete ? (
+        ) : timer.phase === "complete" ? (
           <p className="text-sm font-medium text-primary">{completeNote}</p>
         ) : null}
       </div>
 
       {nextLabel ? (
         <div className="flex flex-col gap-0.5">
-          <Eyebrow>{t("player.nextUp")}</Eyebrow>
+          <Eyebrow>
+            {/* A rest before a *different* lift is the one that decides whether
+                you stay at this machine, so it's labelled differently. */}
+            {nextExerciseName ? t("player.nextExercise") : t("player.nextUp")}
+          </Eyebrow>
           {/* Clamped rather than wrapped freely: on a phone a long exercise
               name runs to three lines and pushes the body past the stage's
               floor, which is the one way this layout can still resize. */}
@@ -838,12 +974,14 @@ function TimerStepBody({
 
 function PoseStepBody({
   step,
-  session,
   steps,
+  session,
+  timer,
 }: {
-  step: Extract<SessionStep, { type: "pose" }>;
-  session: SessionState;
+  step: PoseStep;
   steps: SessionStep[];
+  session: SessionState;
+  timer: TimerState;
 }) {
   const t = useT();
   const { names } = useFormatting();
@@ -863,30 +1001,29 @@ function PoseStepBody({
     <TimerStepBody
       eyebrow={t("player.hold")}
       title={names.pose(step.pose.poseId)}
+      subtitle={`${step.exerciseName} — ${t("routines.setOf", {
+        number: step.setNumber,
+        total: step.setsInExercise,
+      })}`}
       seconds={step.seconds}
-      timerEndsAt={session.timerEndsAt}
+      timer={timer}
       completeNote={t("player.holdComplete")}
       nextLabel={nextLabel}
     />
   );
 }
 
-function RestStepBody({
-  step,
-  session,
-}: {
-  step: Extract<SessionStep, { type: "rest" }>;
-  session: SessionState;
-}) {
+function RestStepBody({ step, timer }: { step: RestStep; timer: TimerState }) {
   const t = useT();
 
   return (
     <TimerStepBody
       eyebrow={t("player.rest")}
       seconds={step.seconds}
-      timerEndsAt={session.timerEndsAt}
+      timer={timer}
       completeNote={t("player.restComplete")}
       nextLabel={step.nextLabel || undefined}
+      nextExerciseName={step.nextExerciseName}
     />
   );
 }

@@ -360,11 +360,13 @@ describe("what the player gets", () => {
     const work = steps.filter((s) => s.type === "work");
 
     // The end-to-end claim: a routine authored in the UI produces exactly the
-    // 20 steps the schema-level test pins by hand.
-    expect(work).toHaveLength(20);
-    expect(work.map((s) => s.setNumber)).toEqual([
-      1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
-    ]);
+    // four steps the schema-level test pins by hand, each carrying its whole
+    // five-part sequence.
+    expect(work).toHaveLength(4);
+    expect(work.map((s) => s.setNumber)).toEqual([1, 2, 3, 4]);
+    for (const step of work) {
+      expect(step.type === "work" && step.sequence?.parts).toHaveLength(5);
+    }
     expect(steps.filter(isLoggableStep)).toHaveLength(4);
   });
 });

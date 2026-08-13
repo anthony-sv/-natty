@@ -205,15 +205,18 @@ describe("a day with segmented sets", () => {
     ],
   };
 
-  it("counts sets, not the legs they run in", () => {
-    // The strip said fifteen for three sets before this: it was counting work
-    // steps, and a sequence is five of them.
+  it("counts sets, not the parts they run in", () => {
+    // The strip said fifteen for three sets when a sequence was five work
+    // steps. One step per set is what made that arithmetic go away rather than
+    // needing to be corrected for.
     expect(summariseDay(day, F).workingSets).toBe(3);
   });
 
-  it("charges the per-set guess once per set, plus the real holds", () => {
-    // 3 × (45s guess + two 10s holds) + 2 × 90s rest. The trailing rest is
-    // trimmed by `buildSteps`, which is why it's two and not three.
-    expect(summariseDay(day, F).estimatedSeconds).toBe(3 * 65 + 180);
+  it("charges a sequence its own paced length, not the per-set guess", () => {
+    // A sequence is paced end to end (10s hold + 12 pulses + 12 pulsed reps +
+    // 10s hold + 12 pulses = 88s), so it reports a real duration the way a
+    // cardio block does. Adding the 45s guess on top would count the same
+    // minute twice. Plus 2 × 90s rest — the trailing one is trimmed.
+    expect(summariseDay(day, F).estimatedSeconds).toBe(3 * 88 + 180);
   });
 });
