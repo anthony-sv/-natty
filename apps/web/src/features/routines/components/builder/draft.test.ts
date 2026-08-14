@@ -10,11 +10,15 @@ import {
   emptyPhase,
   emptySegment,
   finisherKindOf,
+  isLinkedToPrevious,
+  linkToPrevious,
+  unlinkFromPrevious,
   finisherPhase,
   moveDay,
   toDraft,
   toRoutine,
   applyFinisher,
+  type DraftExercise,
   type DraftPhase,
   type DraftRoutine,
 } from "./draft";
@@ -379,6 +383,113 @@ describe("what the player gets", () => {
   });
 });
 
+describe("supersets", () => {
+  let counter = 0;
+  const newId = () => `g${++counter}`;
+
+  function twoExercises(): DraftExercise[] {
+    return [
+      {
+        exerciseId: "flat-barbell-bench-press",
+        orAlternatives: [],
+        kind: "resistance",
+        isFinisher: false,
+        phases: [emptyPhase()],
+      },
+      {
+        exerciseId: "rope-pushdown",
+        orAlternatives: [],
+        kind: "resistance",
+        isFinisher: false,
+        phases: [emptyPhase()],
+      },
+    ];
+  }
+
+  it("links an exercise to the one above it", () => {
+    const linked = linkToPrevious(twoExercises(), 1, newId);
+
+    expect(linked[0].groupId).toBeDefined();
+    expect(linked[1].groupId).toBe(linked[0].groupId);
+    expect(isLinkedToPrevious(linked, 1)).toBe(true);
+  });
+
+  it("chains a third onto an existing pair rather than starting a new group", () => {
+    let exercises = linkToPrevious(twoExercises(), 1, newId);
+    exercises = [...exercises, { ...twoExercises()[0], exerciseId: "lat-pulldown-wide" }];
+    exercises = linkToPrevious(exercises, 2, newId);
+
+    expect(new Set(exercises.map((e) => e.groupId)).size).toBe(1);
+  });
+
+  it("splits a circuit of three into two groups when the middle is unlinked", () => {
+    // Clearing one id instead would leave the first and third sharing one
+    // while no longer adjacent — a group that silently stopped working.
+    let exercises = linkToPrevious(twoExercises(), 1, newId);
+    exercises = [...exercises, { ...twoExercises()[0], exerciseId: "lat-pulldown-wide" }];
+    exercises = linkToPrevious(exercises, 2, newId);
+    exercises = unlinkFromPrevious(exercises, 1, newId);
+
+    expect(exercises[0].groupId).not.toBe(exercises[1].groupId);
+    expect(exercises[1].groupId).toBe(exercises[2].groupId);
+  });
+
+  it("writes the group out, and the transition on the entry before the gap", () => {
+    const draft = emptyDraft();
+    draft.name = "Push";
+    const linked = linkToPrevious(twoExercises(), 1, newId);
+    linked[0].transitionSeconds = "15";
+    draft.weeks[0].days[0].exercises = linked;
+
+    const routine = toRoutine(draft, "s")!;
+    expect(routineSchema.safeParse(routine).success).toBe(true);
+
+    const [a, b] = routine.weeks[0].days[0].exercises;
+    expect(a.group?.id).toBe(b.group?.id);
+    expect(a.group?.transitionSeconds).toBe(15);
+    expect(b.group?.transitionSeconds).toBeUndefined();
+  });
+
+  it("drops a group left with one member", () => {
+    // Delete the partner and what remains is a plain exercise, not a rotation
+    // of one carrying an id nothing in the editor can show you.
+    const draft = emptyDraft();
+    draft.name = "Push";
+    const linked = linkToPrevious(twoExercises(), 1, newId);
+    draft.weeks[0].days[0].exercises = [linked[0]];
+
+    expect(
+      toRoutine(draft, "s")!.weeks[0].days[0].exercises[0].group,
+    ).toBeUndefined();
+  });
+
+  it("round-trips through the editor unchanged", () => {
+    const draft = emptyDraft();
+    draft.name = "Push";
+    const linked = linkToPrevious(twoExercises(), 1, newId);
+    linked[0].transitionSeconds = "15";
+    draft.weeks[0].days[0].exercises = linked;
+
+    const original = toRoutine(draft, "s")!;
+    expect(toRoutine(toDraft(original), "s")).toEqual(original);
+  });
+
+  it("produces a rotation the player actually runs", () => {
+    const draft = emptyDraft();
+    draft.name = "Push";
+    draft.weeks[0].days[0].exercises = linkToPrevious(twoExercises(), 1, newId);
+
+    const routine = toRoutine(draft, "s")!;
+    const work = buildSteps(routine.weeks[0].days[0], F).filter(
+      (s) => s.type === "work",
+    );
+
+    // Three sets each, alternating — not one lift and then the other.
+    expect(work.map((s) => s.exerciseIndex)).toEqual([0, 1, 0, 1, 0, 1]);
+  });
+});
+
+
 describe("finishers", () => {
   /** One exercise, straight out of the picker — nothing typed into it yet. */
   function freshDraft(): DraftRoutine {
@@ -386,7 +497,7 @@ describe("finishers", () => {
     draft.name = "Arms";
     draft.weeks[0].days[0].exercises = [
       {
-        exerciseId: "cable-triceps-pushdown",
+        exerciseId: "rope-pushdown",
         orAlternatives: [],
         kind: "resistance",
         isFinisher: false,

@@ -53,6 +53,21 @@ export interface DraftDay {
 export interface DraftExercise {
   exerciseId: string;
   /**
+   * Shared with the entries it is run in rotation with — a superset, or a
+   * circuit past two. Members are the *consecutive* run sharing an id, so the
+   * builder only ever links an exercise to the one directly above it and a
+   * circuit is built by chaining.
+   */
+  groupId?: string;
+  /**
+   * Seconds between this exercise and the next one in the rotation.
+   *
+   * On the entry *before* the gap, which is what lets the editor put the field
+   * in the link row that represents that gap. Blank is the ordinary case and
+   * the whole point: you go straight into the next lift.
+   */
+  transitionSeconds?: string;
+  /**
    * Lifts you'd equally accept, in your own order of preference.
    *
    * Ids rather than free text, so the player can offer them as a swap and log
@@ -357,6 +372,59 @@ export function moveDay(
   return next;
 }
 
+/** Whether this exercise is run in rotation with the one directly above it. */
+export function isLinkedToPrevious(
+  exercises: DraftExercise[],
+  index: number,
+): boolean {
+  if (index <= 0) return false;
+  const id = exercises[index].groupId;
+  return id !== undefined && id === exercises[index - 1].groupId;
+}
+
+/**
+ * Run this exercise in rotation with the one above it.
+ *
+ * Linking to the *previous* one rather than picking members from a list is
+ * what keeps the model an adjacency: a circuit is built by chaining, and there
+ * is no way to express a group whose members aren't next to each other —
+ * which is not a group you could run anyway.
+ */
+export function linkToPrevious(
+  exercises: DraftExercise[],
+  index: number,
+  newId: () => string,
+): DraftExercise[] {
+  if (index <= 0) return exercises;
+  const id = exercises[index - 1].groupId ?? newId();
+  return exercises.map((exercise, i) =>
+    i === index || i === index - 1 ? { ...exercise, groupId: id } : exercise,
+  );
+}
+
+/**
+ * Break the rotation at this exercise.
+ *
+ * The *tail* gets a fresh id rather than this entry simply losing one, because
+ * unlinking the middle of a circuit of three has to leave two groups — and
+ * clearing one id would leave the first and third sharing one while no longer
+ * adjacent, which reads as a group that silently stopped working.
+ */
+export function unlinkFromPrevious(
+  exercises: DraftExercise[],
+  index: number,
+  newId: () => string,
+): DraftExercise[] {
+  if (!isLinkedToPrevious(exercises, index)) return exercises;
+  const id = exercises[index].groupId;
+  const fresh = newId();
+  return exercises.map((exercise, i) =>
+    i >= index && exercise.groupId === id
+      ? { ...exercise, groupId: fresh }
+      : exercise,
+  );
+}
+
 /**
  * A copy of a week, ready to be changed.
  *
@@ -529,8 +597,19 @@ function toDays(week: DraftWeek): TrainingDay[] {
             if (exercise.exerciseId === "" || prescriptions.length === 0) {
               return undefined;
             }
+            const transition = num(exercise.transitionSeconds ?? "");
             const entry: ExerciseEntry = {
               exerciseId: exercise.exerciseId,
+              ...(exercise.groupId === undefined
+                ? {}
+                : {
+                    group: {
+                      id: exercise.groupId,
+                      ...(transition === undefined
+                        ? {}
+                        : { transitionSeconds: transition }),
+                    },
+                  }),
               // Anything that ended up empty or duplicated is dropped rather
               // than saved: an alternative pointing at the exercise itself
               // would render as "or <the same lift>".
@@ -549,13 +628,30 @@ function toDays(week: DraftWeek): TrainingDay[] {
           })
           .filter((entry): entry is ExerciseEntry => entry !== undefined);
 
+    // A group that ended up with one member isn't one — the partner was
+    // deleted, or dropped for having no lift picked. Written out it would be a
+    // rotation of one, which `buildSteps` already ignores; dropped here it
+    // can't come back as a stale id nobody can see in the editor.
+    const alone = new Set(
+      [...new Set(exercises.map((entry) => entry.group?.id))]
+        .filter((id): id is string => id !== undefined)
+        .filter(
+          (id) => exercises.filter((entry) => entry.group?.id === id).length < 2,
+        ),
+    );
+    const grouped = exercises.map((entry) =>
+      entry.group !== undefined && alone.has(entry.group.id)
+        ? { ...entry, group: undefined }
+        : entry,
+    );
+
     return {
       dayNumber: index + 1,
       // A day with no label still needs one to render; its number is the
       // honest fallback rather than an empty heading.
       label: day.label.trim() === "" ? `Day ${index + 1}` : day.label.trim(),
       isRest: day.isRest,
-      exercises,
+      exercises: grouped,
       // Warmups are resolved from the built-in label vocabulary and a routine
       // you wrote uses your own words, so there's nothing to match against.
       warmupRefs: [],
@@ -598,6 +694,11 @@ export function toDraft(routine: Routine): DraftRoutine {
         isRest: day.isRest,
         exercises: day.exercises.map((exercise) => ({
           exerciseId: exercise.exerciseId,
+          groupId: exercise.group?.id,
+          transitionSeconds:
+            exercise.group?.transitionSeconds !== undefined
+              ? String(exercise.group.transitionSeconds)
+              : undefined,
           orAlternatives: exercise.orAlternatives,
           kind: exercise.kind,
           isFinisher: exercise.isFinisher,

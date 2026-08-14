@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronDownIcon,
   ChevronUpIcon,
   CopyIcon,
   FilePlusIcon,
+  Link2OffIcon,
+  LinkIcon,
   PlusIcon,
   XIcon,
 } from "lucide-react";
@@ -77,6 +79,9 @@ import {
   emptyWeek,
   applyFinisher,
   finisherKindOf,
+  isLinkedToPrevious,
+  linkToPrevious,
+  unlinkFromPrevious,
   moveDay,
   toRoutine,
   type DraftDay,
@@ -508,16 +513,28 @@ function DayEditor({
           ) : null}
 
           {day.exercises.map((exercise, i) => (
-            <ExerciseEditor
-              key={i}
-              exercise={exercise}
-              onChange={(patch) => updateExercise(i, patch)}
-              onRemove={() =>
-                onChange({
-                  exercises: day.exercises.filter((_, j) => j !== i),
-                })
-              }
-            />
+            <Fragment key={i}>
+              {/* The gap between two exercises is where a superset lives, so
+                  the control sits there rather than inside either card — and
+                  the transition it owns belongs to the exercise *above* it,
+                  which is the one you're leaving. */}
+              {i > 0 ? (
+                <LinkRow
+                  exercises={day.exercises}
+                  index={i}
+                  onChange={(exercises) => onChange({ exercises })}
+                />
+              ) : null}
+              <ExerciseEditor
+                exercise={exercise}
+                onChange={(patch) => updateExercise(i, patch)}
+                onRemove={() =>
+                  onChange({
+                    exercises: day.exercises.filter((_, j) => j !== i),
+                  })
+                }
+              />
+            </Fragment>
           ))}
 
           <Button
@@ -546,6 +563,88 @@ function DayEditor({
         </CardContent>
       )}
     </Card>
+  );
+}
+
+/**
+ * "Run this one straight after the one above" — the superset control.
+ *
+ * A row in the gap rather than a field on either card, because that gap is
+ * exactly what a superset changes: the rest that would have gone there stops
+ * being emitted. It also gives the transition an obvious home, since the pause
+ * between two stations belongs to neither exercise on its own.
+ */
+function LinkRow({
+  exercises,
+  index,
+  onChange,
+}: {
+  exercises: DraftExercise[];
+  index: number;
+  onChange: (next: DraftExercise[]) => void;
+}) {
+  const t = useT();
+  const linked = isLinkedToPrevious(exercises, index);
+  const previous = exercises[index - 1];
+
+  if (!linked) {
+    return (
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="self-center text-muted-foreground"
+        onClick={() =>
+          onChange(linkToPrevious(exercises, index, () => crypto.randomUUID()))
+        }
+      >
+        <LinkIcon data-icon="inline-start" />
+        {t("builder.linkSuperset")}
+      </Button>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2 rounded-md border border-dashed px-3 py-2">
+      <span className="flex items-center gap-1.5 text-sm font-medium">
+        <LinkIcon className="size-3.5" />
+        {t("routines.superset")}
+      </span>
+      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        {t("builder.transition")}
+        <Input
+          type="number"
+          min="0"
+          className="h-8 w-16"
+          placeholder="0"
+          aria-label={t("builder.transition")}
+          value={previous.transitionSeconds ?? ""}
+          onChange={(e) =>
+            onChange(
+              exercises.map((exercise, i) =>
+                i === index - 1
+                  ? { ...exercise, transitionSeconds: e.target.value }
+                  : exercise,
+              ),
+            )
+          }
+        />
+      </span>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="text-muted-foreground"
+        onClick={() =>
+          onChange(
+            unlinkFromPrevious(exercises, index, () => crypto.randomUUID()),
+          )
+        }
+      >
+        <Link2OffIcon data-icon="inline-start" />
+        {t("builder.unlink")}
+      </Button>
+    </div>
   );
 }
 

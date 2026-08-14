@@ -320,6 +320,57 @@ sourced from — not in code, comments, tests, or UI. `gym-docs/` itself is
 gitignored; describe conventions generically ("finisher sets", "the source
 docs").
 
+### Supersets and circuits
+
+`ExerciseEntry.group` is `{ id, transitionSeconds? }`, and members are the
+**consecutive** run of entries sharing an id — two, or more for a circuit.
+
+**A shared id on adjacent entries, not a nested block.** Everything downstream
+reads `day.exercises` as a flat list — the day page, `summariseDay`, the
+player's `activeExerciseIndex`, the log's provenance — and nesting would have
+rewritten all of it to express what is, at heart, an adjacency. Adjacency is
+also the rule rather than a convention: two entries with one id either side of
+a third lift are not a superset you could run.
+
+**The rest is the round's, not the set's.** `buildSteps` interleaves by round
+and emits rest only after the member that *ends* a round — the earlier members'
+`restSeconds` are deliberately dropped, since resting after each one is exactly
+what a superset isn't. `transitionSeconds` sits on the entry *before* the gap,
+which is what makes a circuit with a walk between stations expressible without
+a second structure, and what lets the builder put the field in the link row
+representing that gap. Rounds are the longest member's set count, so an uneven
+superset runs its last round alone — which is what happens in a gym.
+
+**A run of one is an ordinary exercise**, whatever id it carries: deleting half
+a superset leaves one behind and it should read as the plain lift it now is.
+`toRoutine` also strips a group left with a single member rather than saving an
+id nothing in the editor can show you.
+
+`SetUnit` exists for this: `unitsFor` builds a set with its rest still a
+*number* rather than a step, because inside a rotation that decision belongs
+one level up. Ungrouped work is then the degenerate case of a rotation of one
+and both run the same code. `emit`'s `restSeconds` is **required, not defaulted
+to the unit's own** — "no rest here" is passed as `undefined`, and a default
+turned every transition back into a full rest, which is the one bug this
+feature exists to prevent.
+
+`WorkStep.group` carries round and position; `setNumber` still counts the
+exercise's own sets, because the ladder, the PR line and the log's provenance
+are all per exercise. In the player the eyebrow says "Superset · round 2 of 3"
+rather than "exercise 3 of 8" — that counter bounces between 3 and 4 all the
+way through a rotation and reads as the app losing its place.
+`groupMembership()` is exported so `DayExerciseList` brackets the same runs the
+player interleaves, rather than deriving "what counts as grouped" a second
+time.
+
+In the builder it's a **link row in the gap between two exercises**, not a
+field on either card: that gap is what a superset changes. You only ever link
+to the one directly above, so a circuit is built by chaining and there is no
+way to express a group whose members aren't adjacent. Unlinking the middle of a
+circuit gives the *tail* a fresh id — clearing one id instead would leave the
+first and third sharing one while no longer adjacent, which reads as a group
+that silently stopped working.
+
 ### Session steps
 
 `buildSteps()` flattens a day into three step types — `work`, `pose`, `rest` —

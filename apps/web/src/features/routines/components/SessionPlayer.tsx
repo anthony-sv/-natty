@@ -578,11 +578,21 @@ function WorkStepBody({
           the badges to one scrolling row, so a long exercise name with four
           modifiers occupies exactly what a short one does. */}
       <div className="flex shrink-0 flex-col gap-1.5">
+        {/* In a rotation the eyebrow says where you are in the *round*, not
+            "exercise 3 of 8" — that counter bounces between 3 and 4 all the
+            way through a superset and reads as the app losing its place. */}
         <Eyebrow>
-          {t("player.exerciseOf", {
-            current: step.exerciseIndex + 1,
-            total: exerciseCount,
-          })}
+          {step.group !== undefined
+            ? t(
+                step.group.size > 2
+                  ? "player.circuitRound"
+                  : "player.supersetRound",
+                { round: step.group.round, total: step.group.rounds },
+              )
+            : t("player.exerciseOf", {
+                current: step.exerciseIndex + 1,
+                total: exerciseCount,
+              })}
         </Eyebrow>
         <div className="flex items-start gap-2">
           <h2 className="line-clamp-2 min-w-0 flex-1 text-2xl font-semibold leading-tight tracking-tight">
