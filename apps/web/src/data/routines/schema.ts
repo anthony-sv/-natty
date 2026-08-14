@@ -227,6 +227,31 @@ export const exerciseEntrySchema = z.object({
   /** Finisher set: high reps, short rest, a posing cue. */
   isFinisher: z.boolean().default(false),
   prescriptions: z.array(prescriptionSchema).min(1),
+  /**
+   * This exercise is run in rotation with its neighbours rather than to
+   * completion — a superset, or a circuit when there are more than two.
+   *
+   * **A shared id on adjacent entries, not a nested list.** Everything
+   * downstream reads `day.exercises` as a flat list — the day page, the
+   * summary, the player's `activeExerciseIndex`, the log's provenance — and a
+   * nested block would have rewritten all of it to express something that is,
+   * at heart, an adjacency. Members are the *consecutive* run of entries
+   * sharing an id; `buildSteps` interleaves them by round.
+   *
+   * `transitionSeconds` is per entry rather than per group, which is what makes
+   * a circuit with a walk between stations expressible without a second
+   * structure. Absent means no rest step at all, and that absence is the whole
+   * definition: you go straight into the next lift. The round's own rest is
+   * the *last* member's `restSeconds` — the earlier members' rests are
+   * deliberately not emitted, since resting after each one is exactly what a
+   * superset isn't.
+   */
+  group: z
+    .object({
+      id: z.string(),
+      transitionSeconds: z.number().int().nonnegative().optional(),
+    })
+    .optional(),
   notes: z.string().optional(),
 });
 export type ExerciseEntry = z.infer<typeof exerciseEntrySchema>;

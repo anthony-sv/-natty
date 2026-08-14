@@ -160,6 +160,27 @@ export interface WorkStep {
    * of the session to the day list.
    */
   nextExerciseName?: string;
+  /** Where this set sits in a superset or circuit. Absent on ordinary work. */
+  group?: GroupCue;
+}
+
+/**
+ * A set's place in a superset or circuit.
+ *
+ * `setNumber` still counts this exercise's own sets, because the ladder, the
+ * PR line and the log's provenance are all per exercise. The round is the
+ * other axis and the card needs both: "set 2 of 3" answers how much of *this*
+ * lift is left, and "round 2 of 3 · 1 of 2" answers where you are in the
+ * rotation you're actually running.
+ */
+export interface GroupCue {
+  id: string;
+  /** 1-based position within one round. */
+  position: number;
+  /** How many exercises are in the rotation. Two is a superset. */
+  size: number;
+  round: number;
+  rounds: number;
 }
 
 /**
@@ -340,96 +361,263 @@ function loadCueFor(
  * Naming is injected rather than resolved here, so the steps a player runs on
  * carry names in the reader's language without this module importing a store.
  */
-export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
-  const steps: SessionStep[] = [];
+/**
+ * One set and everything that hangs off it, before anything decides where it
+ * lands in the day.
+ *
+ * The rest is a *number* here rather than a step, which is the whole reason
+ * this exists: inside a superset the rest after a set is not that set's
+ * business — it belongs to the round — so the decision has to be made one
+ * level up. Ungrouped work is then just the degenerate case of a rotation of
+ * one, and both paths run the same code.
+ */
+interface SetUnit {
+  work: WorkStep;
+  pose?: PoseStep;
+  restSeconds?: number;
+}
 
-  day.exercises.forEach((exercise, exerciseIndex) => {
-    // Two totals, two counters: a warmup is "warmup 1 of 2" and the working
-    // sets still run 1..n. Sharing one counter would renumber every set of
-    // every routine that gained a warmup.
-    const totals = { warmup: 0, work: 0 };
-    for (const p of exercise.prescriptions) {
-      totals[p.isWarmup === true ? "warmup" : "work"] += p.sets;
+/**
+ * Consecutive entries sharing a group id, as runs.
+ *
+ * Adjacency is the rule, not merely a convention: two entries with the same id
+ * either side of a third lift are not a superset you could run, and treating
+ * them as one would reorder the day under the author.
+ */
+function groupRuns(
+  exercises: ExerciseEntry[],
+): Array<Array<{ exercise: ExerciseEntry; index: number }>> {
+  const runs: Array<Array<{ exercise: ExerciseEntry; index: number }>> = [];
+
+  exercises.forEach((exercise, index) => {
+    const previous = runs[runs.length - 1];
+    const id = exercise.group?.id;
+    const previousId =
+      previous === undefined
+        ? undefined
+        : previous[previous.length - 1].exercise.group?.id;
+
+    if (id !== undefined && previous !== undefined && id === previousId) {
+      previous.push({ exercise, index });
+    } else {
+      runs.push([{ exercise, index }]);
     }
-    const counters = { warmup: 0, work: 0 };
-    // Tracked per bucket for the same reason the counters are: a light ramp-up
-    // and the working sets are two separate progressions, and reading one
-    // against the other would call the first working set a back-off.
-    const lastTarget: { warmup?: number; work?: number } = {};
+  });
 
-    for (const p of exercise.prescriptions) {
-      const bucket = p.isWarmup === true ? "warmup" : "work";
-      // Only the first set of a phase can differ from what came before it —
-      // the rest are the phase repeating. A *stated* load applies to all of
-      // them, since "these four sets get heavier" means each one does.
-      const opening = loadCueFor(p, lastTarget[bucket]);
-      const sequence =
-        p.segments === undefined ? undefined : buildSequence(p.segments);
+  return runs;
+}
 
-      for (let i = 0; i < p.sets; i++) {
-        counters[bucket]++;
-        const setNumber = counters[bucket];
+/** Where each entry sits in its rotation, aligned to `day.exercises`. */
+export interface GroupMembership {
+  position: number;
+  size: number;
+  isFirst: boolean;
+  isLast: boolean;
+}
 
-        steps.push({
-          type: "work",
-          exerciseIndex,
-          exerciseId: exercise.exerciseId,
-          exerciseName: exerciseDisplayName(exercise, f),
-          kind: exercise.kind,
-          isFinisher: exercise.isFinisher,
-          setNumber,
-          setsInExercise: totals[bucket],
-          isWarmup: bucket === "warmup",
-          perSide: p.perSide,
-          notes: exercise.notes,
-          modifiers: p.modifiers,
-          intensity: p.intensity,
-          alternatives: formatAlternatives(exercise, f),
-          alternativeIds: exercise.orAlternatives,
-          // The bucket is in the id because the two counters both start at 1 —
-          // without it a warmup's first set and a working first set would share
-          // a key, and React would reuse one for the other.
-          id: `${exerciseIndex}-${bucket}${setNumber}-work`,
-          reps: p.reps,
-          durationSeconds:
-            p.durationSeconds === undefined
-              ? undefined
-              : countdownSeconds(p.durationSeconds),
-          pose: p.pose,
-          sequence,
-          load: i === 0 || opening?.stated === true ? opening : undefined,
-        });
+/**
+ * The same runs `buildSteps` works from, for anything that draws the day.
+ *
+ * Exported so the day list can bracket a superset without re-deriving what
+ * counts as one — two readings of "which entries are grouped" is two readings
+ * to disagree, and the list would be the one that looked wrong.
+ */
+export function groupMembership(
+  exercises: ExerciseEntry[],
+): Array<GroupMembership | undefined> {
+  const membership: Array<GroupMembership | undefined> = exercises.map(
+    () => undefined,
+  );
 
+  for (const run of groupRuns(exercises)) {
+    // A run of one is an ordinary exercise, whatever id it carries.
+    if (run.length === 1) continue;
+    run.forEach((member, position) => {
+      membership[member.index] = {
+        position: position + 1,
+        size: run.length,
+        isFirst: position === 0,
+        isLast: position === run.length - 1,
+      };
+    });
+  }
+
+  return membership;
+}
+
+/** Every set of one exercise, in order, each with its rest still detached. */
+function unitsFor(
+  exercise: ExerciseEntry,
+  exerciseIndex: number,
+  f: Formatting,
+): SetUnit[] {
+  const units: SetUnit[] = [];
+
+  // Two totals, two counters: a warmup is "warmup 1 of 2" and the working
+  // sets still run 1..n. Sharing one counter would renumber every set of
+  // every routine that gained a warmup.
+  const totals = { warmup: 0, work: 0 };
+  for (const p of exercise.prescriptions) {
+    totals[p.isWarmup === true ? "warmup" : "work"] += p.sets;
+  }
+  const counters = { warmup: 0, work: 0 };
+  // Tracked per bucket for the same reason the counters are: a light ramp-up
+  // and the working sets are two separate progressions, and reading one
+  // against the other would call the first working set a back-off.
+  const lastTarget: { warmup?: number; work?: number } = {};
+
+  for (const p of exercise.prescriptions) {
+    const bucket = p.isWarmup === true ? "warmup" : "work";
+    // Only the first set of a phase can differ from what came before it —
+    // the rest are the phase repeating. A *stated* load applies to all of
+    // them, since "these four sets get heavier" means each one does.
+    const opening = loadCueFor(p, lastTarget[bucket]);
+    const sequence =
+      p.segments === undefined ? undefined : buildSequence(p.segments);
+
+    for (let i = 0; i < p.sets; i++) {
+      counters[bucket]++;
+      const setNumber = counters[bucket];
+
+      const work: WorkStep = {
+        type: "work",
+        exerciseIndex,
+        exerciseId: exercise.exerciseId,
+        exerciseName: exerciseDisplayName(exercise, f),
+        kind: exercise.kind,
+        isFinisher: exercise.isFinisher,
+        setNumber,
+        setsInExercise: totals[bucket],
+        isWarmup: bucket === "warmup",
+        perSide: p.perSide,
+        notes: exercise.notes,
+        modifiers: p.modifiers,
+        intensity: p.intensity,
+        alternatives: formatAlternatives(exercise, f),
+        alternativeIds: exercise.orAlternatives,
+        // The bucket is in the id because the two counters both start at 1 —
+        // without it a warmup's first set and a working first set would share
+        // a key, and React would reuse one for the other.
+        id: `${exerciseIndex}-${bucket}${setNumber}-work`,
+        reps: p.reps,
+        durationSeconds:
+          p.durationSeconds === undefined
+            ? undefined
+            : countdownSeconds(p.durationSeconds),
+        pose: p.pose,
+        sequence,
+        load: i === 0 || opening?.stated === true ? opening : undefined,
+      };
+
+      units.push({
+        work,
         // The hold belongs between the set and its rest: you finish the reps,
         // hold the pose, then rest. A pose with no `holdSeconds` is a cue to
         // strike rather than something to time, so it stays on the work step.
-        if (p.pose?.holdSeconds !== undefined) {
-          steps.push({
-            type: "pose",
-            id: `${exerciseIndex}-${bucket}${setNumber}-pose`,
-            exerciseIndex,
-            seconds: p.pose.holdSeconds,
-            pose: p.pose,
-            exerciseName: exerciseDisplayName(exercise, f),
-            setNumber,
-            setsInExercise: totals[bucket],
-          });
-        }
-
-        if (p.restSeconds !== undefined && p.restSeconds > 0) {
-          steps.push({
-            type: "rest",
-            id: `${exerciseIndex}-${bucket}${setNumber}-rest`,
-            seconds: p.restSeconds,
-            exerciseIndex,
-            nextLabel: "",
-          });
-        }
-      }
-
-      lastTarget[bucket] = repTargetOf(p) ?? lastTarget[bucket];
+        pose:
+          p.pose?.holdSeconds === undefined
+            ? undefined
+            : {
+                type: "pose",
+                id: `${exerciseIndex}-${bucket}${setNumber}-pose`,
+                exerciseIndex,
+                seconds: p.pose.holdSeconds,
+                pose: p.pose,
+                exerciseName: exerciseDisplayName(exercise, f),
+                setNumber,
+                setsInExercise: totals[bucket],
+              },
+        restSeconds: p.restSeconds,
+      });
     }
-  });
+
+    lastTarget[bucket] = repTargetOf(p) ?? lastTarget[bucket];
+  }
+
+  return units;
+}
+
+/**
+ * A unit as steps, with the rest the caller decided on.
+ *
+ * `restSeconds` is required rather than defaulted to the unit's own, because
+ * "no rest here" is passed as `undefined` and a default would quietly turn
+ * every superset transition back into the member's full rest — which is
+ * precisely the behaviour this feature exists to stop.
+ */
+function emit(
+  unit: SetUnit,
+  exerciseIndex: number,
+  restSeconds: number | undefined,
+): SessionStep[] {
+  const steps: SessionStep[] = [unit.work];
+  if (unit.pose !== undefined) steps.push(unit.pose);
+  if (restSeconds !== undefined && restSeconds > 0) {
+    steps.push({
+      type: "rest",
+      id: `${unit.work.id.replace(/-work$/, "")}-rest`,
+      seconds: restSeconds,
+      exerciseIndex,
+      nextLabel: "",
+    });
+  }
+  return steps;
+}
+
+export function buildSteps(day: TrainingDay, f: Formatting): SessionStep[] {
+  const steps: SessionStep[] = [];
+
+  for (const run of groupRuns(day.exercises)) {
+    const units = run.map(({ exercise, index }) => unitsFor(exercise, index, f));
+
+    // A run of one is an ordinary exercise, whether or not it carries a group
+    // id — deleting the other half of a superset leaves one behind, and it
+    // should read as the plain lift it now is rather than as a rotation of one.
+    if (run.length === 1) {
+      for (const unit of units[0]) {
+        steps.push(...emit(unit, run[0].index, unit.restSeconds));
+      }
+      continue;
+    }
+
+    // The rotation. Rounds are the longest member's set count: an uneven
+    // superset (3 sets of one, 4 of the other) runs its last round alone,
+    // which is what actually happens in a gym.
+    const rounds = Math.max(...units.map((forMember) => forMember.length));
+    for (let round = 0; round < rounds; round++) {
+      // Members that still have a set this round, so the last of *them* takes
+      // the round's rest rather than a member that has already finished.
+      const present = run
+        .map((member, position) => ({ member, position }))
+        .filter(({ position }) => units[position][round] !== undefined);
+
+      present.forEach(({ member, position }, order) => {
+        const unit = units[position][round];
+        unit.work.group = {
+          id: member.exercise.group?.id ?? "",
+          position: position + 1,
+          size: run.length,
+          round: round + 1,
+          rounds,
+        };
+
+        const isLastOfRound = order === present.length - 1;
+        steps.push(
+          ...emit(
+            unit,
+            member.index,
+            // Between stations you go straight on, unless the entry states a
+            // transition — and after the last one you take that member's own
+            // rest, which is the round's rest. The earlier members' rests are
+            // deliberately dropped: resting after each is what a superset isn't.
+            isLastOfRound
+              ? unit.restSeconds
+              : member.exercise.group?.transitionSeconds,
+          ),
+        );
+      });
+    }
+  }
 
   // A rest step that ended up last has nothing to rest *for* — drop it.
   while (steps.length > 0 && steps[steps.length - 1].type === "rest") {

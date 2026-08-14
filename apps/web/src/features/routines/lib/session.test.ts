@@ -33,6 +33,152 @@ function dayWithFinisher(): TrainingDay {
   throw new Error("no finisher day found");
 }
 
+describe("supersets and circuits", () => {
+  /** Two lifts run in rotation, three rounds each. */
+  function pairedDay(over: {
+    sets?: [number, number];
+    transition?: number;
+    rest?: number;
+  } = {}): TrainingDay {
+    const [a, b] = over.sets ?? [3, 3];
+    return {
+      dayNumber: 1,
+      label: "Push",
+      isRest: false,
+      warmupRefs: [],
+      exercises: [
+        {
+          exerciseId: "flat-barbell-bench-press",
+          orAlternatives: [],
+          kind: "resistance",
+          isFinisher: false,
+          group: { id: "g1", transitionSeconds: over.transition },
+          // A rest that must NOT be emitted: resting here is what a superset
+          // isn't, and the pair's rest is the second member's.
+          prescriptions: [{ sets: a, reps: 10, restSeconds: 120 }],
+        },
+        {
+          exerciseId: "rope-pushdown",
+          orAlternatives: [],
+          kind: "resistance",
+          isFinisher: false,
+          group: { id: "g1" },
+          prescriptions: [{ sets: b, reps: 12, restSeconds: over.rest ?? 90 }],
+        },
+      ],
+    };
+  }
+
+  it("alternates the two lifts instead of running each to completion", () => {
+    const work = buildSteps(pairedDay(), F).filter(
+      (s): s is WorkStep => s.type === "work",
+    );
+
+    expect(work.map((s) => s.exerciseIndex)).toEqual([0, 1, 0, 1, 0, 1]);
+    // Each lift still counts its own sets: the ladder, the PR line and the
+    // log's provenance are all per exercise.
+    expect(work.map((s) => s.setNumber)).toEqual([1, 1, 2, 2, 3, 3]);
+    expect(work.map((s) => s.group?.round)).toEqual([1, 1, 2, 2, 3, 3]);
+    expect(work.map((s) => s.group?.position)).toEqual([1, 2, 1, 2, 1, 2]);
+    expect(work.every((s) => s.group?.size === 2)).toBe(true);
+  });
+
+  it("rests after the round, not between the lifts", () => {
+    const steps = buildSteps(pairedDay(), F);
+    const kinds = steps.map((s) => s.type);
+
+    // work → work → rest, three times over, with the trailing rest trimmed.
+    expect(kinds).toEqual([
+      "work", "work", "rest",
+      "work", "work", "rest",
+      "work", "work",
+    ]);
+    // The pair's rest is the last member's 90s. The first member's 120s is
+    // dropped rather than averaged or preferred — see the schema.
+    expect(
+      steps.filter((s) => s.type === "rest").map((s) => s.seconds),
+    ).toEqual([90, 90]);
+  });
+
+  it("puts a stated transition between the stations", () => {
+    // What makes a circuit with a walk between machines expressible without a
+    // second structure.
+    const steps = buildSteps(pairedDay({ transition: 15 }), F);
+
+    expect(steps.map((s) => s.type)).toEqual([
+      "work", "rest", "work", "rest",
+      "work", "rest", "work", "rest",
+      "work", "rest", "work",
+    ]);
+    expect(steps.filter((s) => s.type === "rest").map((s) => s.seconds)).toEqual([
+      15, 90, 15, 90, 15,
+    ]);
+  });
+
+  it("runs the last round alone when one lift has more sets", () => {
+    const work = buildSteps(pairedDay({ sets: [4, 3] }), F).filter(
+      (s): s is WorkStep => s.type === "work",
+    );
+
+    expect(work.map((s) => s.exerciseIndex)).toEqual([0, 1, 0, 1, 0, 1, 0]);
+    expect(work.every((s) => s.group?.rounds === 4)).toBe(true);
+  });
+
+  it("gives the round's rest to whichever member actually ends it", () => {
+    // Round 4 is the first lift alone, so its own 120s rest applies — the
+    // member that would have taken it has run out.
+    const steps = buildSteps(pairedDay({ sets: [4, 3] }), F);
+    const rests = steps.filter((s) => s.type === "rest").map((s) => s.seconds);
+    expect(rests).toEqual([90, 90, 90]);
+  });
+
+  it("names the other lift as what's next, on every set", () => {
+    const work = buildSteps(pairedDay(), F).filter(
+      (s): s is WorkStep => s.type === "work",
+    );
+    // The question the card answers between stations: the machine you're
+    // walking to. Ungrouped work only says this on the last set of a lift.
+    expect(work[0].nextExerciseName).toBeDefined();
+    expect(work[0].nextExerciseName).not.toBe(work[0].exerciseName);
+  });
+
+  it("treats a run of one as an ordinary exercise", () => {
+    // Deleting the other half of a superset leaves one behind, and it should
+    // read as the plain lift it now is.
+    const day = pairedDay();
+    day.exercises = [day.exercises[0]];
+    const steps = buildSteps(day, F);
+
+    expect(steps.filter((s) => s.type === "work").every((s) => s.group === undefined)).toBe(true);
+    // And its own rest comes back, since nothing else is going to take it.
+    expect(steps.filter((s) => s.type === "rest").map((s) => s.seconds)).toEqual([120, 120]);
+  });
+
+  it("only groups entries that are actually adjacent", () => {
+    // Two entries sharing an id either side of a third lift are not a superset
+    // you could run, and treating them as one would reorder the day.
+    const day = pairedDay();
+    day.exercises = [
+      day.exercises[0],
+      {
+        exerciseId: "lat-pulldown-wide",
+        orAlternatives: [],
+        kind: "resistance",
+        isFinisher: false,
+        prescriptions: [{ sets: 1, reps: 10, restSeconds: 60 }],
+      },
+      day.exercises[1],
+    ];
+
+    const work = buildSteps(day, F).filter(
+      (s): s is WorkStep => s.type === "work",
+    );
+    expect(work.map((s) => s.exerciseIndex)).toEqual([0, 0, 0, 1, 2, 2, 2]);
+    expect(work.every((s) => s.group === undefined)).toBe(true);
+  });
+});
+
+
 describe("pose hold steps", () => {
   it("puts the hold between the set and its rest", () => {
     const steps = buildSteps(dayWithFinisher(), F);

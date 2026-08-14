@@ -341,6 +341,9 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.removeDay": "Quitar el d\u00eda {number}",
   "builder.noDays": "Todav\u00eda no hay d\u00edas. Agrega uno para empezar.",
   "builder.exercises": "Ejercicios",
+  "builder.linkSuperset": "Biserie con la de arriba",
+  "builder.unlink": "Separarlas",
+  "builder.transition": "Entre (s)",
   "builder.addExercise": "Agregar un ejercicio",
   "builder.removeExercise": "Quitar {name}",
   "builder.noExercises": "Todav\u00eda no hay nada en este d\u00eda.",
@@ -724,6 +727,8 @@ export const esMX: Record<keyof typeof en, string> = {
     "El cardio es tiempo en vez de reps, en minutos o segundos, con qué tan fuerte ir. Un segundo bloque lo vuelve intervalos.",
   "about.builder.p5":
     "Escribe un ejercicio que el buscador no conozca y te ofrece crearlo ahí mismo. Si le pones sustitutos a un ejercicio, el reproductor te deja cambiar a media sesión y registra el que de verdad hiciste.",
+  "about.builder.p6":
+    "«Biserie con la de arriba» une dos ejercicios en una rotación; con un tercero se vuelve un circuito. El descanso entre ellos deja de existir, que es justo lo que es una biserie; el descanso de la ronda es el del último.",
   "about.builder.link": "Escribir una rutina",
 
   "about.progress.title": "Progreso",
@@ -1285,6 +1290,10 @@ export const esMX: Record<keyof typeof en, string> = {
   "routines.summary.finishers.other": "Finishers",
   "routines.setOf": "set {number} de {total}",
   "routines.warmupSetOf": "calentamiento {number} de {total}",
+  "routines.superset": "Biserie",
+  "routines.circuitOf": "Circuito de {count}",
+  "player.supersetRound": "Biserie · ronda {round} de {total}",
+  "player.circuitRound": "Circuito · ronda {round} de {total}",
   "routines.warmupSet": "Calentamiento",
   "routines.warmupSets.one": "Set de calentamiento",
   "routines.warmupSets.other": "Sets de calentamiento",

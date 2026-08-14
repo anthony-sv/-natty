@@ -341,6 +341,9 @@ export const en = {
   "builder.removeDay": "Remove day {number}",
   "builder.noDays": "No days yet. Add one to start.",
   "builder.exercises": "Exercises",
+  "builder.linkSuperset": "Superset with the one above",
+  "builder.unlink": "Break it up",
+  "builder.transition": "Between (s)",
   "builder.addExercise": "Add an exercise",
   "builder.removeExercise": "Remove {name}",
   "builder.noExercises": "Nothing on this day yet.",
@@ -732,6 +735,8 @@ export const en = {
     "Cardio is a duration rather than reps, in minutes or seconds, with how hard to go. A second block makes it intervals.",
   "about.builder.p5":
     "Type a lift the picker doesn't know and it offers to create it there and then. Name substitutes on an exercise and the player lets you swap mid-session, logging against whichever you actually did.",
+  "about.builder.p6":
+    "\"Superset with the one above\" links two exercises into a rotation — a third makes it a circuit. The rest between them stops being prescribed, which is what a superset is; the round's rest is the last one's.",
   "about.builder.link": "Write a routine",
 
   "about.progress.title": "Progress",
@@ -1292,6 +1297,10 @@ export const en = {
   "routines.warmupSetOf": "warmup {number} of {total}",
   // Distinct from `routines.warmup`, which is the day's mobility block. This
   // is a light set of the lift you're about to do properly.
+  "routines.superset": "Superset",
+  "routines.circuitOf": "Circuit of {count}",
+  "player.supersetRound": "Superset · round {round} of {total}",
+  "player.circuitRound": "Circuit · round {round} of {total}",
   "routines.warmupSet": "Warmup",
   // The plural form alone: on the day strip the count is the tile's value, so
   // interpolating it here would print it twice. Same shape as

@@ -134,6 +134,7 @@ const GUIDE: Section[] = [
       "about.builder.p3",
       "about.builder.p4",
       "about.builder.p5",
+      "about.builder.p6",
     ],
     to: "/routines/new",
     linkKey: "about.builder.link",

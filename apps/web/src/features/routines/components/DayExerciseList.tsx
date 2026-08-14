@@ -16,6 +16,7 @@ import type { ExerciseEntry } from "@/data/routines";
 import { useFormatting } from "@/i18n/use-formatting";
 import { useT, type MessageKey } from "@/i18n/use-t";
 import { exerciseDisplayName, formatAlternatives } from "../lib/format";
+import { groupMembership } from "../lib/session";
 import { PrescriptionBadges } from "./PrescriptionBadges";
 import { SetDots } from "./SetDots";
 
@@ -43,6 +44,9 @@ export function DayExerciseList({
   }
 
   const phases = groupIntoPhases(exercises);
+  // The same runs the player interleaves, so the list and the session can't
+  // disagree about what a superset is.
+  const membership = groupMembership(exercises);
 
   return (
     <ItemGroup>
@@ -57,6 +61,7 @@ export function DayExerciseList({
           ) : null}
           {phase.entries.map(({ exercise, index: i }) => {
             const isActive = i === activeExerciseIndex;
+            const group = membership[i];
             return (
           <Item
             key={i}
@@ -64,6 +69,12 @@ export function DayExerciseList({
             className={cn(
               "items-start gap-x-3",
               isActive && "bg-muted/60 ring-2 ring-primary",
+              // A bracket down the left, and the rows pulled together: a
+              // superset is one block of work, and two rows spaced like any
+              // other pair is exactly what made it invisible.
+              group !== undefined &&
+                "border-l-2 border-l-primary/60 rounded-l-none",
+              group !== undefined && !group.isFirst && "mt-0",
             )}
           >
             {/* Position in the day. Small, but it gives the list a spine and
@@ -83,6 +94,16 @@ export function DayExerciseList({
             <ItemContent className="gap-1">
               <ItemTitle className="flex-wrap">
                 {exerciseDisplayName(exercise, f)}
+                {/* Named once, on the row that opens it — a badge on every
+                    member would say the same thing three times and still not
+                    say where the block starts. */}
+                {group?.isFirst === true ? (
+                  <Badge variant="secondary">
+                    {group.size > 2
+                      ? t("routines.circuitOf", { count: group.size })
+                      : t("routines.superset")}
+                  </Badge>
+                ) : null}
                 {exercise.isFinisher ? (
                   <Badge variant="default">{t("common.finisher")}</Badge>
                 ) : null}
