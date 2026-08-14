@@ -7,6 +7,11 @@ import { loggedSetsFork } from "./collection";
 import { lastSetFor, prFrontier } from "./pr";
 import { toRecordRows, type RecordRow } from "./records";
 import {
+  tonnageFor,
+  type TonnageScope,
+  type TonnageTotals,
+} from "./tonnage";
+import {
   muscleGaps,
   weeklyVolume,
   type MuscleGap,
@@ -117,4 +122,31 @@ export function useVolume(
   );
 
   return { weeks, gaps, isLoading, loggedSetCount: data?.length ?? 0 };
+}
+
+/**
+ * Total tonnage over a window, per muscle.
+ *
+ * Its own hook rather than a field on `useVolume`: that one buckets every set
+ * into weeks whatever you asked for, and re-running it because a scope select
+ * changed would redo a year of grouping to answer a question about one month.
+ */
+export function useTonnage(
+  scope: TonnageScope,
+  /** Read once by the caller, so nothing reads the clock during render. */
+  now: number,
+): { totals: TonnageTotals; isLoading: boolean } {
+  const loggedSets = loggedSetsFork.useActive();
+  const { data, isLoading } = useLiveQuery(
+    (q) => q.from({ set: loggedSets }),
+    [loggedSets],
+  );
+  const { anatomy } = useLibrary();
+
+  const totals = useMemo(
+    () => tonnageFor(data ?? [], anatomy, scope, now),
+    [data, anatomy, scope, now],
+  );
+
+  return { totals, isLoading };
 }

@@ -235,6 +235,10 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       // "Cookies" is the word Spanish uses for them as well — the loanword
       // won, and "galletas" would be a different food.
       "privacy.cookies.title",
+      // A placeholder and an SI unit symbol. "kg" and "t" are the same in
+      // every language that uses the metric system, which is the point of it.
+      "tonnage.kg",
+      "tonnage.tonnes",
     ]);
 
     const unexplained = Object.keys(en).filter(
