@@ -11,9 +11,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ExerciseEntry } from "@/data/routines";
+import { poses } from "@/data/poses";
+import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 import { cn } from "@/lib/utils";
-import { emptyPhase, emptySegment, type DraftPhase } from "./draft";
+import {
+  emptyPhase,
+  emptySegment,
+  finisherPhase,
+  type DraftPhase,
+} from "./draft";
 import { SegmentEditor } from "./SegmentEditor";
 
 const MODIFIERS = [
@@ -36,6 +43,7 @@ const MODIFIERS = [
 export function PhaseEditor({
   phases,
   kind,
+  isFinisher,
   onChange,
 }: {
   phases: DraftPhase[];
@@ -46,10 +54,23 @@ export function PhaseEditor({
    * offer anyway.
    */
   kind: ExerciseEntry["kind"];
+  /** Whether a phase added here should start as a finisher set. */
+  isFinisher: boolean;
   onChange: (next: DraftPhase[]) => void;
 }) {
   const t = useT();
+  const names = useNames();
   const isCardio = kind === "cardio";
+
+  // Translated and sorted per locale: an alphabetical list of English pose
+  // names is not alphabetical in Spanish, and `SelectValue` renders the
+  // *item's* label, so the closed trigger reads from here too.
+  const poseItems = [
+    { value: "", label: t("builder.pose.none") },
+    ...poses
+      .map((pose) => ({ value: pose.id, label: names.pose(pose.id) }))
+      .sort((a, b) => a.label.localeCompare(b.label, t.locale)),
+  ];
 
   const styles = [
     { value: "plain", label: t("builder.setStyle.plain") },
@@ -292,6 +313,63 @@ export function PhaseEditor({
               </div>
             )}
 
+            {/* The half of a finisher that does something. The flag alone is a
+                badge; this is what makes the player run work → pose → rest
+                with a real countdown on the hold, rather than printing "pose"
+                on a set you have already finished. */}
+            {phase.pose !== undefined ? (
+              <>
+                <div className="flex flex-col gap-1">
+                  <Label className="text-xs">{t("builder.pose")}</Label>
+                  <Select
+                    items={poseItems}
+                    value={phase.pose.poseId}
+                    onValueChange={(value) =>
+                      update(index, {
+                        pose: {
+                          poseId: value as string,
+                          holdSeconds: phase.pose?.holdSeconds ?? "",
+                        },
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-44">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {poseItems.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Blank is a real answer — `poseCueSchema` treats a missing
+                    hold as "strike the pose", which is a cue rather than a
+                    timed step. Ten is what every transcribed finisher uses. */}
+                <div className="flex flex-col gap-1">
+                  <Label className="text-xs">{t("builder.holdSeconds")}</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    className="w-20"
+                    placeholder="—"
+                    value={phase.pose.holdSeconds}
+                    onChange={(e) =>
+                      update(index, {
+                        pose: {
+                          poseId: phase.pose?.poseId ?? "",
+                          holdSeconds: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </div>
+              </>
+            ) : null}
+
             {/* On the phase, not the exercise: "two light sets, then three
                 working ones" is two phases, which is the same shape a ramp
                 already uses. */}
@@ -391,7 +469,9 @@ export function PhaseEditor({
           className="self-start"
           // A second cardio block is an interval, so it starts timed. A repped
           // one would render with its duration field hidden and no way to fill
-          // it in — a phase you couldn't complete.
+          // it in — a phase you couldn't complete. And a phase added to a
+          // finisher is a finisher set, or it arrives with no pose slot at all
+          // and looks like the switch stopped working.
           onClick={() =>
             onChange([
               ...phases,
@@ -403,7 +483,9 @@ export function PhaseEditor({
                     durationUnit: "min",
                     restSeconds: "",
                   }
-                : emptyPhase(),
+                : isFinisher
+                  ? finisherPhase()
+                  : emptyPhase(),
             ])
           }
         >

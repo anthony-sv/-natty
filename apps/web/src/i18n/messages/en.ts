@@ -395,6 +395,11 @@ export const en = {
   "builder.reps": "Reps",
   "builder.repsTo": "to",
   "builder.rest": "Rest (s)",
+  "builder.pose": "Pose",
+  // "Not chosen" rather than "None": a finisher without a pose isn't a
+  // finisher, so this reads as a gap to fill rather than a valid answer.
+  "builder.pose.none": "Not chosen",
+  "builder.holdSeconds": "Hold (s)",
   "builder.phases": "Phases",
   "builder.addPhase": "Add a phase",
   "builder.removePhase": "Remove phase {number}",

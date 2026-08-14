@@ -189,6 +189,9 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "routines.summary.finishers.other",
       "player.set",
       "player.pose",
+      // "Pose" is the Spanish word too — `player.pose` is already up here for
+      // the same reason, and this is the builder's label for the same thing.
+      "builder.pose",
       // "≈{count}s" — a symbol, a number and the SI unit.
       "player.pacedSeconds",
       "nutrition.tab.plan",

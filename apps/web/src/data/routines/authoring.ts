@@ -93,12 +93,24 @@ export function ramp(
 }
 
 /**
+ * What a finisher is, as numbers.
+ *
  * Every finisher closes on a 10-second hold. The Bulking and Cutting
  * docs spell this out on all 86 of their finisher lines ("Most muscular flex
  * 10 secs"); the four per-muscle program docs omit it the same way they omit the
  * 7-set count, so the convention fills both in.
+ *
+ * Exported because the routine builder seeds the same shape when you flip an
+ * exercise to a finisher. Two copies of "7 sets, 30s rest, a 10s hold" would
+ * drift, and the one that drifted would be the one nobody reads — a routine you
+ * wrote yourself, sitting beside six transcribed ones that disagree with it.
  */
-const FINISHER_HOLD_SECONDS = 10;
+export const FINISHER_CONVENTION = {
+  sets: 7,
+  reps: [15, 20] as [number, number],
+  restSeconds: 30,
+  holdSeconds: 10,
+} as const;
 
 /**
  * A high-rep "finisher" set done at the end of a muscle group's work: a
@@ -111,8 +123,8 @@ const FINISHER_HOLD_SECONDS = 10;
 export function finisher(
   name: string,
   poseName: string,
-  reps: NumOrRange = [15, 20],
-  holdSeconds: number = FINISHER_HOLD_SECONDS,
+  reps: NumOrRange = FINISHER_CONVENTION.reps,
+  holdSeconds: number = FINISHER_CONVENTION.holdSeconds,
 ): ExerciseEntry {
   const pose = resolvePoseName(poseName);
   if (!pose) {
@@ -127,9 +139,9 @@ export function finisher(
     isFinisher: true,
     prescriptions: [
       {
-        sets: 7,
+        sets: FINISHER_CONVENTION.sets,
         reps,
-        restSeconds: 30,
+        restSeconds: FINISHER_CONVENTION.restSeconds,
         pose: { poseId: pose.id, holdSeconds },
       },
     ],

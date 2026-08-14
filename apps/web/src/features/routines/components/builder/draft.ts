@@ -5,6 +5,7 @@ import type {
   SetSegment,
   TrainingDay,
 } from "@/data/routines";
+import { FINISHER_CONVENTION } from "@/data/routines/authoring";
 
 /**
  * The builder's working copy.
@@ -105,6 +106,20 @@ export interface DraftPhase {
   load: "" | "heavier" | "same" | "lighter";
   /** Present means the set runs as a sequence; `reps` is ignored then. */
   segments?: DraftSegment[];
+  /**
+   * The pose this set ends on, and how long it's held.
+   *
+   * This is the half of a finisher that does something. `isFinisher` is a
+   * badge and a count; the pose is what makes `buildSteps` emit a
+   * `work → pose → rest` triple, which is the 10-second hold with its own
+   * countdown that the transcribed programs prescribe.
+   *
+   * Present-but-blank is a real state and not the same as absent: flipping the
+   * switch on gives every phase the slot so the picker has something to bind
+   * to, and a phase whose `poseId` is still "" saves without a pose rather
+   * than blocking the whole routine on a field you haven't reached yet.
+   */
+  pose?: DraftPose;
   modifiers: {
     forcedReps: boolean;
     negatives: boolean;
@@ -113,6 +128,13 @@ export interface DraftPhase {
     dropSet: boolean;
     restPause: boolean;
   };
+}
+
+export interface DraftPose {
+  /** A `data/poses` id, or "" for "not chosen yet". */
+  poseId: string;
+  /** Blank means strike the pose with no timed hold, per `poseCueSchema`. */
+  holdSeconds: string;
 }
 
 export interface DraftSegment {
@@ -143,6 +165,67 @@ export function emptyPhase(): DraftPhase {
       restPause: false,
     },
   };
+}
+
+/**
+ * A finisher set, as the six transcribed programs write one: seven sets of
+ * 15-20, thirty seconds' rest, ending on a ten-second pose hold.
+ *
+ * The numbers come from `FINISHER_CONVENTION`, the same constant `finisher()`
+ * authors the built-ins with, so a finisher you write and one that shipped are
+ * the same thing. The pose is left unchosen — there are eight and no default
+ * that isn't a guess at which muscle you just trained.
+ */
+export function finisherPhase(): DraftPhase {
+  return {
+    ...emptyPhase(),
+    sets: String(FINISHER_CONVENTION.sets),
+    repsFrom: String(FINISHER_CONVENTION.reps[0]),
+    repsTo: String(FINISHER_CONVENTION.reps[1]),
+    restSeconds: String(FINISHER_CONVENTION.restSeconds),
+    pose: { poseId: "", holdSeconds: String(FINISHER_CONVENTION.holdSeconds) },
+  };
+}
+
+/**
+ * Apply — or remove — the finisher shape across an exercise's phases.
+ *
+ * **A phase you have typed into is yours.** Flipping the switch on an untouched
+ * exercise writes the convention, because that is what you asked for and an
+ * empty 3×8-12 is not something anyone will miss. Flipping it on an exercise
+ * you have already filled in only *adds* the pose slot: rewriting four
+ * hand-entered phases to 7×15-20 because a switch moved would be the editor
+ * throwing away work to make a point.
+ *
+ * Turning it off drops the poses and leaves every number alone. The set counts
+ * are then just set counts, which is exactly what they are once the pose that
+ * made them a finisher is gone.
+ */
+export function withFinisher(
+  phases: DraftPhase[],
+  isFinisher: boolean,
+): DraftPhase[] {
+  if (!isFinisher) {
+    return phases.map((phase) => {
+      const next = { ...phase };
+      // Deleted rather than set to undefined: `toDraft` writes the key only
+      // when the prescription had one, and the round-trip test compares the
+      // objects.
+      delete next.pose;
+      return next;
+    });
+  }
+  const untouched =
+    phases.length === 1 &&
+    JSON.stringify(phases[0]) === JSON.stringify(emptyPhase());
+  if (untouched) return [finisherPhase()];
+  return phases.map((phase) => ({
+    ...phase,
+    pose: phase.pose ?? {
+      poseId: "",
+      holdSeconds: String(FINISHER_CONVENTION.holdSeconds),
+    },
+  }));
 }
 
 export function emptySegment(kind: SetSegment["kind"]): DraftSegment {
@@ -242,6 +325,20 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
   // And again: unsaid leaves the player free to infer a ramp from the rep
   // target, where "same" is you telling it not to.
   const load = phase.load === "" ? undefined : { load: phase.load };
+  // An unchosen pose writes nothing rather than a cue with an empty id, which
+  // would resolve to no pose and render as a blank line in the player.
+  // `holdSeconds` is genuinely optional in the schema — omitted means "strike
+  // the pose", so a blank field drops the key instead of writing 0.
+  const hold = num(phase.pose?.holdSeconds ?? "");
+  const pose =
+    phase.pose !== undefined && phase.pose.poseId !== ""
+      ? {
+          pose: {
+            poseId: phase.pose.poseId,
+            ...(hold !== undefined ? { holdSeconds: hold } : {}),
+          },
+        }
+      : undefined;
 
   if (phase.segments !== undefined) {
     const segments = phase.segments
@@ -251,7 +348,15 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
     // keeps the failure a "this phase is incomplete" rather than a parse error
     // pointing at an index nobody can see.
     if (segments.length < 2) return undefined;
-    return { sets, segments, restSeconds, ...load, ...withModifiers, ...warmup };
+    return {
+      sets,
+      segments,
+      restSeconds,
+      ...load,
+      ...pose,
+      ...withModifiers,
+      ...warmup,
+    };
   }
 
   // Timed and repped are exclusive, the same either/or `prescriptionSchema`
@@ -273,6 +378,7 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
       restSeconds,
       ...intensity,
       ...load,
+      ...pose,
       ...withModifiers,
       ...warmup,
     };
@@ -283,7 +389,7 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
   const to = num(phase.repsTo);
   const reps = to !== undefined && to > from ? ([from, to] as [number, number]) : from;
 
-  return { sets, reps, restSeconds, ...load, ...withModifiers, ...warmup };
+  return { sets, reps, restSeconds, ...load, ...pose, ...withModifiers, ...warmup };
 }
 
 /**
@@ -432,6 +538,19 @@ export function toDraft(routine: Routine): DraftRoutine {
             load: p.load ?? "",
             restSeconds:
               p.restSeconds !== undefined ? String(p.restSeconds) : "",
+            // Absent stays absent: a phase with no pose gets no slot, which is
+            // what keeps the picker off every ordinary set — and what makes
+            // the round trip write back exactly what it read.
+            pose:
+              p.pose === undefined
+                ? undefined
+                : {
+                    poseId: p.pose.poseId,
+                    holdSeconds:
+                      p.pose.holdSeconds !== undefined
+                        ? String(p.pose.holdSeconds)
+                        : "",
+                  },
             segments: p.segments?.map((segment) => ({
               kind: segment.kind,
               count: segment.kind === "hold" ? "12" : String(segment.count),

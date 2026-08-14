@@ -746,6 +746,24 @@ loading a routine into the editor and saving it must not quietly rewrite it.
 Typing a lift the picker doesn't know offers to create it inline, because that's
 the moment you discover it's missing.
 
+**A finisher is a pose, not a flag.** The builder's Finisher switch sets
+`isFinisher` *and* rewrites the phases through `withFinisher`, because the flag
+alone is a badge and a count — `buildSteps` emits the `work → pose → rest`
+triple off `prescriptions[].pose`, so a toggle that only set the flag changed
+nothing you could see, which is exactly how it shipped once. The numbers come
+from `FINISHER_CONVENTION` in `data/routines/authoring.ts`, the same constant
+`finisher()` authors the six transcribed programs with: 7 sets, 15-20, 30s rest,
+a 10s hold. Two copies of that would drift, and the one that drifted would be
+the routine you wrote yourself.
+
+Flipping it on an **untouched** exercise writes the whole convention; flipping
+it on phases you've already filled in only adds the pose slot, since rewriting
+four hand-entered phases because a switch moved is the editor throwing away
+work. The pose itself is left unchosen — there are eight and no default that
+isn't a guess at which muscle you just trained — and a phase whose `poseId` is
+still blank saves *without* a pose rather than blocking the routine on a field
+you haven't reached.
+
 ## Body measurements (`src/features/body/`)
 
 Weigh-ins — weight, optional body-fat percentage — in their own localStorage

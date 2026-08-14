@@ -77,6 +77,7 @@ import {
   emptyWeek,
   moveDay,
   toRoutine,
+  withFinisher,
   type DraftDay,
   type DraftExercise,
   type DraftPhase,
@@ -696,7 +697,14 @@ function ExerciseEditor({
             flag it arrived with and there was no way to add or clear one.
             Cardio can't be a finisher: a finisher is the pose-and-hold at the
             end of a lifting set, and `buildSteps` only reads the flag for
-            resistance work. */}
+            resistance work.
+
+            The switch changes the *phases*, not just the flag. On its own the
+            flag is a badge and a count — it shipped that way, and the toggle
+            it belonged to did nothing you could see. `withFinisher` writes the
+            shape the transcribed programs use, which is the answer to "seven
+            sets of 15-20, thirty seconds' rest, ten-second hold: where is
+            that". */}
         {exercise.kind !== "cardio" ? (
           <div className="flex flex-col gap-1">
             <Label className="text-xs">{t("common.finisher")}</Label>
@@ -704,7 +712,12 @@ function ExerciseEditor({
               <Switch
                 id={`finisher-${exercise.exerciseId || "new"}`}
                 checked={exercise.isFinisher}
-                onCheckedChange={(checked) => onChange({ isFinisher: checked })}
+                onCheckedChange={(checked) =>
+                  onChange({
+                    isFinisher: checked,
+                    phases: withFinisher(exercise.phases, checked),
+                  })
+                }
                 aria-label={t("common.finisher")}
               />
             </div>
@@ -745,6 +758,7 @@ function ExerciseEditor({
       <PhaseEditor
         phases={exercise.phases}
         kind={exercise.kind}
+        isFinisher={exercise.isFinisher}
         onChange={(phases) => onChange({ phases })}
       />
     </div>
