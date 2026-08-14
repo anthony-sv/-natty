@@ -25,7 +25,12 @@ import { useT } from "@/i18n/use-t";
  */
 export function AppHeader() {
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
+    // Sticky rather than static: the sidebar trigger, the theme and the
+    // account are how you leave the page you're on, and on a long one — the
+    // guide, a program, /progress with a year in it — they scrolled away and
+    // getting back meant scrolling to the top first. `bg-background` is
+    // load-bearing now that content passes underneath.
+    <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-2 border-b bg-background px-4">
       <SidebarTrigger />
       {/* Pushes the controls right, and is what keeps the bar usable as the
           page title lands here later. */}

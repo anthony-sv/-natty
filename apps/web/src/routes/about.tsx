@@ -11,6 +11,7 @@ import {
   ListIcon,
   PlayIcon,
   RulerIcon,
+  PillIcon,
   ShoppingBasketIcon,
   TrendingUpIcon,
   TrophyIcon,
@@ -190,6 +191,20 @@ const GUIDE: Section[] = [
     to: "/nutrition",
     search: { tab: "trends" },
     linkKey: "about.trends.link",
+  },
+  {
+    id: "supplements",
+    icon: PillIcon,
+    titleKey: "about.supplements.title",
+    bodyKey: "about.supplements.body",
+    points: [
+      "about.supplements.p1",
+      "about.supplements.p2",
+      "about.supplements.p3",
+    ],
+    to: "/nutrition",
+    search: { tab: "today" },
+    linkKey: "about.supplements.link",
   },
   {
     id: "pantry",

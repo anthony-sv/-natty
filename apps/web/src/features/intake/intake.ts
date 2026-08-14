@@ -135,7 +135,7 @@ export function resolveIntake(
         kcal: kcalOf(macros),
         isOrphaned: items === undefined,
       });
-    } else {
+    } else if (entry.source.kind === "item") {
       const food = foods.get(entry.source.foodId);
       const macros =
         food === undefined ? ZERO : macrosForAmount(food, entry.source.amount);
@@ -148,6 +148,10 @@ export function resolveIntake(
         kcal: kcalOf(macros),
       });
     }
+    // A `supplement` entry falls through deliberately: it belongs to the day
+    // but not to its macros, and `SupplementChecklist` reads those rows
+    // directly. Listing it here at zero would put a line in the food totals
+    // that always says nothing.
   }
 
   const totals = [...meals, ...extras].reduce(

@@ -36,6 +36,7 @@ function emptyData(): BackupData {
     measurements: [],
     exercises: [],
     routines: [],
+    supplements: [],
     foods: [],
     recipes: [],
     diets: [],

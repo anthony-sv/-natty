@@ -113,8 +113,16 @@ export function rekey(data: BackupData, source: IdSource): BackupData {
     };
   });
 
+  /** The stack, whose ids the ticks below have to follow. */
+  const supplementIds = new Map<string, string>();
+  const supplements = data.supplements.map((supplement) => {
+    const id = source.id("supplement");
+    supplementIds.set(supplement.id, id);
+    return { ...supplement, id };
+  });
+
   /**
-   * An intake entry names a plan and a food, so both have to follow.
+   * An intake entry names a plan, a food or a supplement, so each has to follow.
    *
    * It rides along on a merged *full* backup — no share carries intake — and
    * without this the day you logged would point at the plan slug it had on the
@@ -129,12 +137,20 @@ export function rekey(data: BackupData, source: IdSource): BackupData {
             ...entry.source,
             planSlug: dietSlugs.get(entry.source.planSlug) ?? entry.source.planSlug,
           }
-        : { ...entry.source, foodId: remapFoodId(entry.source.foodId) },
+        : entry.source.kind === "supplement"
+          ? {
+              ...entry.source,
+              supplementId:
+                supplementIds.get(entry.source.supplementId) ??
+                entry.source.supplementId,
+            }
+          : { ...entry.source, foodId: remapFoodId(entry.source.foodId) },
   }));
 
   return {
     ...data,
     intake,
+    supplements,
     foods,
     exercises,
     recipes,

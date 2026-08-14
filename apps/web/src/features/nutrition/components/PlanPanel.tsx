@@ -51,6 +51,7 @@ import {
   LOADING_SPLIT,
   SIMPLE_DOSE_G,
 } from "../creatine";
+import { TrackCreatineButton } from "@/features/supplements/components/TrackCreatineButton";
 import { MacroSplit } from "./MacroSplit";
 import { usePantry } from "@/features/pantry/use-pantry";
 import { MealCard } from "./MealCard";
@@ -357,6 +358,13 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
                       mass: creatine.basisKg.toFixed(1),
                     })}
               </p>
+
+              {/* The card works out the dose; ticking it off happens on the
+                  Today tab with everything else you take. One place to tick
+                  beats two, so this adds it to the stack rather than growing
+                  a checkbox of its own — seeded with the number above, which
+                  is the part you'd otherwise have to copy across. */}
+              <TrackCreatineButton grams={creatine.maintenanceG} />
             </div>
           )}
         </CardContent>

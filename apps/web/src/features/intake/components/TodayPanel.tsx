@@ -45,6 +45,7 @@ import {
 } from "@/features/nutrition/macros";
 import { MacroSplit } from "@/features/nutrition/components/MacroSplit";
 import { ComboboxOptionGroup } from "@/components/combobox-option-group";
+import { SupplementChecklist } from "@/features/supplements/components/SupplementChecklist";
 import {
   filterFoodOption,
   useFoodOptions,
@@ -309,6 +310,11 @@ export function TodayPanel({ plan }: { plan: DietPlan }) {
           <AddExtra day={day} />
         </CardContent>
       </Card>
+
+      {/* Last, because it's the shortest thing on the tab and the one you tick
+          without reading. It shares this tab's day, its collection and its
+          nothing-auto-logs rule; what it doesn't share is macros. */}
+      <SupplementChecklist day={day} />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { measurementsFork } from "@/features/measurements/collection";
 import { userDietsFork } from "@/features/nutrition/collection";
 import { userFoodsFork, userRecipesFork } from "@/features/pantry/collection";
 import { userRoutinesFork } from "@/features/routines/collection";
+import { supplementsFork } from "@/features/supplements/collection";
 
 /**
  * Putting this device's data into your account.
@@ -100,6 +101,10 @@ const TARGETS: Array<{ labelKey: MessageKey; fork: AnyFork }> = [
   { labelKey: "data.kind.recipes", fork: userRecipesFork as unknown as AnyFork },
   { labelKey: "data.kind.diets", fork: userDietsFork as unknown as AnyFork },
   { labelKey: "data.kind.intake", fork: intakeEntriesFork as unknown as AnyFork },
+  {
+    labelKey: "data.kind.supplements",
+    fork: supplementsFork as unknown as AnyFork,
+  },
 ];
 
 export interface PendingUpload {

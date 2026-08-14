@@ -47,6 +47,25 @@ export const intakeEntrySchema = z.object({
       foodId: z.string(),
       amount: z.number().positive(),
     }),
+    /**
+     * A supplement you took.
+     *
+     * Here rather than in a table of its own, because it is the same question
+     * the other two answer — what went in, on which local day — and it
+     * inherits the day bucketing, the sync, the undo and the
+     * nothing-auto-logs rule for free. What it does *not* inherit is macros:
+     * a supplement contributes zero, which is why `resolveIntake` counts it
+     * in neither list. Three fish-oil capsules have calories on paper and
+     * nobody tracks them; what you want to know is whether you took them.
+     *
+     * Provenance, not a copy — the same call `meal` makes: editing the dose
+     * on your stack corrects what every past day says you took, which is
+     * right for a standing instruction you follow.
+     */
+    z.object({
+      kind: z.literal("supplement"),
+      supplementId: z.string(),
+    }),
   ]),
   loggedAt: z.number(),
 });
