@@ -1229,6 +1229,11 @@ export const esMX: Record<keyof typeof en, string> = {
   "body.history.needSex":
     "Define tu sexo arriba para ver dónde cae la cifra normalizada frente a las normas poblacionales.",
   "body.history.empty": "Todavía no hay pesajes registrados.",
+  "body.history.editEntry": "Editar {weight}",
+  "body.history.editTitle": "Corregir este pesaje",
+  "body.history.deleteEntry": "Eliminar {weight}",
+  "body.history.deleted": "Eliminado",
+  "body.history.saved": "Pesaje actualizado",
   "body.chart.notEnough.title": "Todavía no hay pesajes suficientes",
   "body.chart.notEnough.body": "Registra un segundo y aquí aparece la tendencia.",
   "body.chart.weightAria":

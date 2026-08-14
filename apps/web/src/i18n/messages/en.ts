@@ -1235,6 +1235,11 @@ export const en = {
   "body.history.needSex":
     "Set your sex above to see where a normalized figure sits against population norms.",
   "body.history.empty": "No weigh-ins logged yet.",
+  "body.history.editEntry": "Edit {weight}",
+  "body.history.editTitle": "Correct this weigh-in",
+  "body.history.deleteEntry": "Delete {weight}",
+  "body.history.deleted": "Deleted",
+  "body.history.saved": "Weigh-in updated",
   "body.chart.notEnough.title": "Not enough weigh-ins yet",
   "body.chart.notEnough.body": "Log a second one and the trend shows up here.",
   "body.chart.weightAria": "Body weight in {unit} over time, with the weekly average",

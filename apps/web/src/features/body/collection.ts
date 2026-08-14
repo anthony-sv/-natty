@@ -46,6 +46,36 @@ export function logBodyEntry(input: BodyEntryInput) {
   return { entry, transaction };
 }
 
+/**
+ * Correct a weigh-in — weight, unit, body fat, or the date it happened.
+ *
+ * The date is editable on purpose (`schema.ts` says so) — a weigh-in entered
+ * a day late should be dated to when it happened, not to when you typed it,
+ * or the heatmap and the weekly averages both file it under the wrong day.
+ */
+export function updateBodyEntry(id: string, patch: BodyEntryInput): void {
+  activeBodyEntries().update(id, (draft) => Object.assign(draft, patch));
+}
+
+/**
+ * Remove one, handing back the row so a toast can offer Undo.
+ *
+ * Immediate rather than behind a confirm — the same call `deleteMeasurement`
+ * and `deleteSet` make: small, frequent and fully reversible, so a dialog
+ * would only add friction undo already covers. Nothing needs fixing up
+ * afterwards either — FFMI, the weekly average and the heatmap are all
+ * derived from the rows on each read, never stored.
+ */
+export function deleteBodyEntry(id: string): BodyEntry | undefined {
+  const entry = activeBodyEntries().get(id);
+  if (entry !== undefined) activeBodyEntries().delete(id);
+  return entry;
+}
+
+export function restoreBodyEntry(entry: BodyEntry): void {
+  activeBodyEntries().insert(entry);
+}
+
 /** Every weigh-in, most recent first. */
 export function useBodyEntries(): {
   entries: BodyEntry[];

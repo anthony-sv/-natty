@@ -948,6 +948,27 @@ against both card surfaces.
 A single weigh-in is a dot, not a trend, so under two points the chart is
 replaced by an `Empty`.
 
+### Correcting a weigh-in
+
+`updateBodyEntry` / `deleteBodyEntry` / `restoreBodyEntry` in `collection.ts`,
+surfaced by `BodyHistoryTable`'s actions column — the same three-function shape
+`LoggedSetList` and `deleteMeasurement` already use, and the same reason it's
+safe: FFMI, the weekly average, the heatmap-shaped bits and the carried body
+fat are all derived from the rows on every read, never stored, so fixing a
+mistyped weight or dropping a bad entry needs nothing fixed up afterward.
+
+**The date is editable, not just weight and body fat** — `bodyEntrySchema`
+said so from the start ("Editable, so a weigh-in can be dated to when it
+happened"), but nothing ever exposed it until this. Backdating an entry
+re-files it under the right local day for the heatmap and the weekly average,
+the same way editing a logged set's timestamp would.
+
+Delete is immediate with an Undo on the toast, not a confirm dialog — small,
+frequent, fully reversible, the standing rule every correction list in the app
+follows. This is also the only way to test `hasLoggedToday`-driven UI (the
+card-order swap on `/progress → body`, the index card's "Not logged today"
+hint) without waiting for tomorrow: delete today's entry and both update.
+
 ## Calculators (`src/features/calculator/`)
 
 `/calculator` is three tabs, all pure arithmetic — nothing here reads or writes
