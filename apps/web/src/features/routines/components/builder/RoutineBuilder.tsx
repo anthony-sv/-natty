@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { CopyIcon, FilePlusIcon, PlusIcon, XIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  CopyIcon,
+  FilePlusIcon,
+  PlusIcon,
+  XIcon,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -68,6 +75,7 @@ import {
   emptyDay,
   emptyPhase,
   emptyWeek,
+  moveDay,
   toRoutine,
   type DraftDay,
   type DraftExercise,
@@ -215,7 +223,9 @@ export function RoutineBuilder({
             key={`${activeWeek}-${index}`}
             day={day}
             index={index}
+            dayCount={days.length}
             onChange={(patch) => updateDay(index, patch)}
+            onMove={(to) => updateDays(moveDay(days, index, to))}
             onRemove={() => updateDays(days.filter((_, i) => i !== index))}
           />
         ))}
@@ -402,12 +412,16 @@ function WeekBar({
 function DayEditor({
   day,
   index,
+  dayCount,
   onChange,
+  onMove,
   onRemove,
 }: {
   day: DraftDay;
   index: number;
+  dayCount: number;
   onChange: (patch: Partial<DraftDay>) => void;
+  onMove: (to: number) => void;
   onRemove: () => void;
 }) {
   const t = useT();
@@ -441,16 +455,44 @@ function DayEditor({
               {t("builder.restDay")}
             </Label>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="ml-auto text-muted-foreground"
-            aria-label={t("builder.removeDay", { number: index + 1 })}
-            onClick={onRemove}
-          >
-            <XIcon />
-          </Button>
+          {/* Buttons rather than drag-and-drop, and not as a stopgap: a
+              week is five to seven rows and each one is a tall card, so a
+              drag is a scroll-while-holding on the phone this is used on.
+              Two taps move a day anywhere in the week. */}
+          <div className="ml-auto flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground"
+              disabled={index === 0}
+              aria-label={t("builder.moveDayUp", { number: index + 1 })}
+              onClick={() => onMove(index - 1)}
+            >
+              <ChevronUpIcon />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground"
+              disabled={index === dayCount - 1}
+              aria-label={t("builder.moveDayDown", { number: index + 1 })}
+              onClick={() => onMove(index + 1)}
+            >
+              <ChevronDownIcon />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground"
+              aria-label={t("builder.removeDay", { number: index + 1 })}
+              onClick={onRemove}
+            >
+              <XIcon />
+            </Button>
+          </div>
         </div>
       </CardHeader>
 
@@ -648,6 +690,26 @@ function ExerciseEditor({
             </SelectContent>
           </Select>
         </div>
+
+        {/* `isFinisher` round-tripped through the editor from the day this
+            existed, but nothing could *set* it — a copied routine kept the
+            flag it arrived with and there was no way to add or clear one.
+            Cardio can't be a finisher: a finisher is the pose-and-hold at the
+            end of a lifting set, and `buildSteps` only reads the flag for
+            resistance work. */}
+        {exercise.kind !== "cardio" ? (
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs">{t("common.finisher")}</Label>
+            <div className="flex h-9 items-center">
+              <Switch
+                id={`finisher-${exercise.exerciseId || "new"}`}
+                checked={exercise.isFinisher}
+                onCheckedChange={(checked) => onChange({ isFinisher: checked })}
+                aria-label={t("common.finisher")}
+              />
+            </div>
+          </div>
+        ) : null}
 
         <Button
           type="button"

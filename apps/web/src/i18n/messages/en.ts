@@ -336,6 +336,8 @@ export const en = {
   "builder.dayLabel": "What it's for",
   "builder.dayLabelPlaceholder": "Glutes, Chest, Pull\u2026",
   "builder.restDay": "Rest day",
+  "builder.moveDayUp": "Move day {number} earlier",
+  "builder.moveDayDown": "Move day {number} later",
   "builder.removeDay": "Remove day {number}",
   "builder.noDays": "No days yet. Add one to start.",
   "builder.exercises": "Exercises",

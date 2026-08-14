@@ -5,8 +5,10 @@ import { buildSteps, isLoggableStep } from "../../lib/session";
 import {
   duplicateWeek,
   emptyDraft,
+  emptyDay,
   emptyPhase,
   emptySegment,
+  moveDay,
   toDraft,
   toRoutine,
   type DraftRoutine,
@@ -531,5 +533,50 @@ describe("plan-level notes", () => {
     // The blank row is dropped rather than saved as an empty bullet.
     expect(routine.notes).toEqual(["Deload every fourth week."]);
     expect(toRoutine(toDraft(routine), "r")!.notes).toEqual(routine.notes);
+  });
+});
+
+describe("moveDay", () => {
+  const week = (labels: string[]) =>
+    labels.map((label) => ({ ...emptyDay(), label }));
+
+  it("swaps two days without touching what is in them", () => {
+    // The case this exists for: leg day on Wednesday, rest on Thursday, and
+    // you want them the other way round without retyping a day of exercises.
+    const days = week(["Legs", "Rest", "Push"]);
+    days[0].exercises = [
+      {
+        exerciseId: "back-squat",
+        orAlternatives: [],
+        kind: "resistance",
+        isFinisher: false,
+        phases: [emptyPhase()],
+      },
+    ];
+
+    const moved = moveDay(days, 0, 1);
+    expect(moved.map((d) => d.label)).toEqual(["Rest", "Legs", "Push"]);
+    // The exercises travelled with the day rather than staying at index 0.
+    expect(moved[1]!.exercises[0]!.exerciseId).toBe("back-squat");
+  });
+
+  it("moves a day across the week, not just one step", () => {
+    expect(
+      moveDay(week(["A", "B", "C", "D"]), 3, 0).map((d) => d.label),
+    ).toEqual(["D", "A", "B", "C"]);
+  });
+
+  it("refuses to move off either end rather than losing the day", () => {
+    const days = week(["A", "B"]);
+    expect(moveDay(days, 0, -1)).toBe(days);
+    expect(moveDay(days, 1, 2)).toBe(days);
+    // Every day survives whatever it is asked to do.
+    expect(moveDay(days, 0, -1)).toHaveLength(2);
+  });
+
+  it("leaves the original array alone", () => {
+    const days = week(["A", "B"]);
+    moveDay(days, 0, 1);
+    expect(days.map((d) => d.label)).toEqual(["A", "B"]);
   });
 });
