@@ -14,6 +14,7 @@ import { useDateFormat, useT } from "@/i18n/use-t";
 import { useVolume } from "../queries";
 import { RESISTANCE_SPLITS, totalsFor, type MuscleGapReason } from "../volume";
 import { MuscleVolumeBars } from "./MuscleVolumeBars";
+import { TonnageCard } from "./TonnageCard";
 import { SplitTrendChart } from "./SplitTrendChart";
 
 /** Long enough to see a pattern, short enough that old habits don't skew it. */
@@ -69,6 +70,10 @@ export function VolumePanel() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Tonnage leads: it's the number people come to look at, and the set
+          counts below are the ones that actually inform training. */}
+      <TonnageCard />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">

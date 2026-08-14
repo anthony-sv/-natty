@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/card";
 import { exportRoutine } from "@/features/backup/use-backup";
 import { useShare } from "@/features/backup/use-share";
+import { DeleteRoutineButton } from "@/features/routines/components/DeleteRoutineButton";
 import { useRoutine } from "@/features/routines/use-routines";
 import {
   exerciseDisplayName,
@@ -164,6 +165,18 @@ function RoutineBody({
             <Share2Icon data-icon="inline-start" />
             {t("data.share")}
           </Button>
+          {/* Deleting used to live only inside the editor, so getting rid of a
+              routine meant opening the one page you'd open to keep it. An
+              untouched built-in shows nothing here: it isn't yours to delete,
+              and there's no edit of it to reset. */}
+          {isCustom || isOverridden ? (
+            <DeleteRoutineButton
+              routineSlug={routine.slug}
+              name={routineName}
+              isOverridden={isOverridden}
+              size="sm"
+            />
+          ) : null}
           {routine.source ? <Badge variant="outline">{routine.source}</Badge> : null}
           {routine.style ? (
             <Badge variant="secondary">{f.names.text(routine.style)}</Badge>

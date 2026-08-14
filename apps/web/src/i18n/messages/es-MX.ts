@@ -392,6 +392,19 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.reps": "Reps",
   "builder.repsTo": "a",
   "builder.rest": "Descanso (s)",
+  "builder.finisher.none": "No es finisher",
+  "builder.finisher.noneBody":
+    "Un ejercicio normal. Sus sets son los que tú escribas.",
+  "builder.finisher.pose": "Pose sostenida",
+  "builder.finisher.poseBody":
+    "7 sets de 15-20, 30s de descanso, cerrando con una pose de 10 segundos. Elige la pose abajo.",
+  "builder.finisher.ramp": "Aguante y pulsos",
+  "builder.finisher.rampBody":
+    "4 sets, cada uno: aguante de 10s → 12 pulsos → 12 reps con pulso → aguante de 10s → 12 pulsos. Las reps bajan 12/10/8/6 mientras sube el peso.",
+  "builder.finisher.overwrites": "Esto reemplaza los sets que escribiste.",
+  "builder.pose": "Pose",
+  "builder.pose.none": "Sin elegir",
+  "builder.holdSeconds": "Aguante (s)",
   "builder.phases": "Fases",
   "builder.addPhase": "Agregar una fase",
   "builder.removePhase": "Quitar la fase {number}",
@@ -1587,4 +1600,40 @@ export const esMX: Record<keyof typeof en, string> = {
   "terms.changes.title": "Cambios",
   "terms.changes.p1":
     "Estos términos y el aviso de privacidad pueden cambiar conforme cambie la app. La fecha de arriba es la última vez que lo hicieron.",
+
+  // ── Tonelaje ─────────────────────────────────────────────────────────────
+  "tonnage.title": "Total levantado",
+  "tonnage.body": "Cada kilo que de verdad has movido.",
+  "tonnage.scopeLabel": "Periodo",
+  "tonnage.scope.week": "Esta semana",
+  "tonnage.scope.month": "Este mes",
+  "tonnage.scope.year": "Este año",
+  "tonnage.scope.all": "Desde siempre",
+  "tonnage.kg": "{value} kg",
+  "tonnage.tonnes": "{value} t",
+  "tonnage.context": "en {sets} sets y {reps} repeticiones",
+  "tonnage.comparisonsToggle": "A cuánto equivale",
+  "tonnage.muscle": "Músculo",
+  "tonnage.direct": "Directo",
+  "tonnage.indirect": "Indirecto",
+  "tonnage.doesNotSum":
+    "Un set de sentadillas es trabajo para tus cuádriceps y para tus glúteos, así que esto cuenta lo que le llegó a cada músculo en vez de repartir el total entre ellos — suman más que la cifra de arriba, a propósito.",
+  "tonnage.unweighted.one":
+    "{count} set no llevaba peso, así que aquí no cuenta",
+  "tonnage.unweighted.other":
+    "{count} sets no llevaban peso, así que aquí no cuentan",
+  "tonnage.like.piano.one": "Como {count} piano de cola",
+  "tonnage.like.piano.other": "Como {count} pianos de cola",
+  "tonnage.like.horse.one": "Como {count} caballo",
+  "tonnage.like.horse.other": "Como {count} caballos",
+  "tonnage.like.car.one": "Como {count} coche",
+  "tonnage.like.car.other": "Como {count} coches",
+  "tonnage.like.elephant.one": "Como {count} elefante",
+  "tonnage.like.elephant.other": "Como {count} elefantes",
+  "tonnage.like.bus.one": "Como {count} camión de dos pisos",
+  "tonnage.like.bus.other": "Como {count} camiones de dos pisos",
+  "tonnage.like.whale.one": "Como {count} ballena azul",
+  "tonnage.like.whale.other": "Como {count} ballenas azules",
+  "tonnage.like.eiffel.one": "Como {count} Torre Eiffel",
+  "tonnage.like.eiffel.other": "Como {count} Torres Eiffel",
 };

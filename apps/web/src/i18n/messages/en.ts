@@ -395,6 +395,20 @@ export const en = {
   "builder.reps": "Reps",
   "builder.repsTo": "to",
   "builder.rest": "Rest (s)",
+  "builder.finisher.none": "Not a finisher",
+  "builder.finisher.noneBody": "An ordinary exercise. Its sets are whatever you write.",
+  "builder.finisher.pose": "Pose hold",
+  "builder.finisher.poseBody":
+    "7 sets of 15-20, 30s rest, ending on a 10-second pose. Pick the pose below.",
+  "builder.finisher.ramp": "Hold and pulse",
+  "builder.finisher.rampBody":
+    "4 sets, each a 10s hold → 12 pulses → 12 reps with a pulse → 10s hold → 12 pulses. The reps fall 12/10/8/6 as the weight goes up.",
+  "builder.finisher.overwrites": "This replaces the sets you've entered.",
+  "builder.pose": "Pose",
+  // "Not chosen" rather than "None": a finisher without a pose isn't a
+  // finisher, so this reads as a gap to fill rather than a valid answer.
+  "builder.pose.none": "Not chosen",
+  "builder.holdSeconds": "Hold (s)",
   "builder.phases": "Phases",
   "builder.addPhase": "Add a phase",
   "builder.removePhase": "Remove phase {number}",
@@ -1604,4 +1618,40 @@ export const en = {
   "terms.changes.title": "Changes",
   "terms.changes.p1":
     "These terms and the privacy policy may change as the app does. The date at the top is when they last did.",
+
+  // ── Tonnage ──────────────────────────────────────────────────────────────
+  "tonnage.title": "Total lifted",
+  "tonnage.body": "Every kilogram you've actually moved.",
+  "tonnage.scopeLabel": "Period",
+  "tonnage.scope.week": "This week",
+  "tonnage.scope.month": "This month",
+  "tonnage.scope.year": "This year",
+  "tonnage.scope.all": "All time",
+  "tonnage.kg": "{value} kg",
+  "tonnage.tonnes": "{value} t",
+  "tonnage.context": "across {sets} sets and {reps} reps",
+  "tonnage.comparisonsToggle": "What that's like",
+  "tonnage.muscle": "Muscle",
+  "tonnage.direct": "Direct",
+  "tonnage.indirect": "Indirect",
+  "tonnage.doesNotSum":
+    "One set of squats is work for your quads and your glutes, so these count what reached each muscle rather than dividing the total between them — they add up to more than the figure above, on purpose.",
+  "tonnage.unweighted.one":
+    "{count} set carried no weight, so it counts for nothing here",
+  "tonnage.unweighted.other":
+    "{count} sets carried no weight, so they count for nothing here",
+  "tonnage.like.piano.one": "About {count} grand piano",
+  "tonnage.like.piano.other": "About {count} grand pianos",
+  "tonnage.like.horse.one": "About {count} horse",
+  "tonnage.like.horse.other": "About {count} horses",
+  "tonnage.like.car.one": "About {count} car",
+  "tonnage.like.car.other": "About {count} cars",
+  "tonnage.like.elephant.one": "About {count} elephant",
+  "tonnage.like.elephant.other": "About {count} elephants",
+  "tonnage.like.bus.one": "About {count} double-decker bus",
+  "tonnage.like.bus.other": "About {count} double-decker buses",
+  "tonnage.like.whale.one": "About {count} blue whale",
+  "tonnage.like.whale.other": "About {count} blue whales",
+  "tonnage.like.eiffel.one": "About {count} Eiffel Tower",
+  "tonnage.like.eiffel.other": "About {count} Eiffel Towers",
 } as const;

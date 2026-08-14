@@ -746,6 +746,48 @@ loading a routine into the editor and saving it must not quietly rewrite it.
 Typing a lift the picker doesn't know offers to create it inline, because that's
 the moment you discover it's missing.
 
+**A finisher is a pose, not a flag.** Picking one in the builder sets
+`isFinisher` *and* rewrites the phases through `applyFinisher`, because the flag
+alone is a badge and a count — `buildSteps` emits the `work → pose → rest`
+triple off `prescriptions[].pose`, so a toggle that only set the flag changed
+nothing you could see, which is exactly how it shipped once.
+
+**A popover with three options, not a switch**, because there turned out to be
+two kinds and a switch can only say yes. Each option states what it *writes*,
+since that is the whole reason to pick one:
+
+- **Pose hold** — `FINISHER_CONVENTION` in `data/routines/authoring.ts`, the
+  same constant `finisher()` authors the six transcribed programs with: 7 sets,
+  15-20, 30s rest, a 10s hold. Two copies of those numbers would drift, and the
+  one that drifted would be the routine you wrote yourself.
+- **Hold and pulse** — four one-set sequences, each `10s hold → 12 pulses → N
+  reps with a pulse → 10s hold → 12 pulses`, with N falling 12/10/8/6 and
+  `load: "heavier"` from the second set on (unsaid on the first, since `load`
+  is the step from the set *before*). Nothing in `src/data/` authors one, so
+  unlike the pose convention it has no counterpart to agree with; it exists
+  because by hand it is four sets of five parts and twenty-odd fields.
+
+Picking the pose finisher on an **untouched** exercise writes the whole
+convention; picking it on phases you've filled in only adds the pose slot, since
+rewriting hand-entered sets because a control moved is the editor throwing away
+work. The ramp has no such half-measure and always replaces — a pose is a
+property you can hang on sets you wrote, the ramp *is* the sets — and the
+picker says so before you choose it. **`isUntouched` counts a loaded preset as
+untouched**, or switching from one kind to the other would leave the first
+one's phases in place and merely decorate them.
+
+The pose itself is left unchosen — there are eight and no default that isn't a
+guess at which muscle you just trained — and a phase whose `poseId` is still
+blank saves *without* a pose rather than blocking the routine on a field you
+haven't reached.
+
+**Deleting a routine lives on the program page**, not only in the editor, via
+`DeleteRoutineButton` — one component in two homes, like `LoggedSetList`.
+Getting rid of a routine used to mean opening the one page you'd open to keep
+it. Reset and delete share the component because they're the same gesture on
+different things (your edit of a built-in, versus something that only ever
+existed here), and two copies of a confirm dialog is two wordings to drift.
+
 ## Body measurements (`src/features/body/`)
 
 Weigh-ins — weight, optional body-fat percentage — in their own localStorage

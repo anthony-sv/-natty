@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { routines, routineSchema } from "@/data/routines";
+import { routines, routineSchema, type Routine } from "@/data/routines";
+import { FINISHER_CONVENTION } from "@/data/routines/authoring";
 import { formattingFor } from "@/i18n/test-formatting";
 import { buildSteps, isLoggableStep } from "../../lib/session";
 import {
@@ -8,9 +9,13 @@ import {
   emptyDay,
   emptyPhase,
   emptySegment,
+  finisherKindOf,
+  finisherPhase,
   moveDay,
   toDraft,
   toRoutine,
+  applyFinisher,
+  type DraftPhase,
   type DraftRoutine,
 } from "./draft";
 
@@ -371,6 +376,224 @@ describe("what the player gets", () => {
       expect(step.type === "work" && step.sequence?.parts).toHaveLength(5);
     }
     expect(steps.filter(isLoggableStep)).toHaveLength(4);
+  });
+});
+
+describe("finishers", () => {
+  /** One exercise, straight out of the picker — nothing typed into it yet. */
+  function freshDraft(): DraftRoutine {
+    const draft = emptyDraft();
+    draft.name = "Arms";
+    draft.weeks[0].days[0].exercises = [
+      {
+        exerciseId: "cable-triceps-pushdown",
+        orAlternatives: [],
+        kind: "resistance",
+        isFinisher: false,
+        phases: [emptyPhase()],
+      },
+    ];
+    return draft;
+  }
+
+  it("writes the convention onto an exercise you haven't touched", () => {
+    const phases = applyFinisher([emptyPhase()], "pose");
+    expect(phases).toHaveLength(1);
+    expect(phases[0].sets).toBe("7");
+    expect(phases[0].repsFrom).toBe("15");
+    expect(phases[0].repsTo).toBe("20");
+    expect(phases[0].restSeconds).toBe("30");
+    expect(phases[0].pose?.holdSeconds).toBe("10");
+  });
+
+  it("agrees with what the transcribed programs are authored from", () => {
+    // Two copies of "7 sets, 30s rest, a 10s hold" would drift, and the one
+    // that drifted would be the routine you wrote yourself.
+    const phase = finisherPhase();
+    expect(phase.sets).toBe(String(FINISHER_CONVENTION.sets));
+    expect(phase.restSeconds).toBe(String(FINISHER_CONVENTION.restSeconds));
+    expect(phase.pose?.holdSeconds).toBe(
+      String(FINISHER_CONVENTION.holdSeconds),
+    );
+  });
+
+  it("leaves phases you have filled in alone, and only adds the pose slot", () => {
+    // The switch is not a licence to throw away four hand-entered phases.
+    const typed: DraftPhase[] = [
+      { ...emptyPhase(), sets: "4", repsFrom: "6", restSeconds: "180" },
+      { ...emptyPhase(), sets: "2", repsFrom: "10" },
+    ];
+    const phases = applyFinisher(typed, "pose");
+    expect(phases.map((p) => p.sets)).toEqual(["4", "2"]);
+    expect(phases.map((p) => p.repsFrom)).toEqual(["6", "10"]);
+    expect(phases[0].restSeconds).toBe("180");
+    for (const phase of phases) expect(phase.pose).toBeDefined();
+  });
+
+  it("drops the poses when you turn it off", () => {
+    const on = applyFinisher([emptyPhase()], "pose");
+    const off = applyFinisher(on, "none");
+    for (const phase of off) expect(phase.pose).toBeUndefined();
+    // The numbers stay: they're just set counts once the pose is gone.
+    expect(off[0].sets).toBe("7");
+  });
+
+  it("gives the player a pose step with a real hold", () => {
+    // The whole complaint this fixes: the flag alone changed nothing you could
+    // see, because `buildSteps` emits the hold off the *pose*, not the flag.
+    const draft = freshDraft();
+    const exercise = draft.weeks[0].days[0].exercises[0];
+    exercise.isFinisher = true;
+    exercise.phases = applyFinisher(exercise.phases, "pose").map((phase) => ({
+      ...phase,
+      pose: { poseId: "most-muscular", holdSeconds: "10" },
+    }));
+
+    const routine = toRoutine(draft, "s")!;
+    expect(routineSchema.safeParse(routine).success).toBe(true);
+
+    const steps = buildSteps(routine.weeks[0].days[0], F);
+    const work = steps.filter((s) => s.type === "work");
+    const holds = steps.filter((s) => s.type === "pose");
+
+    // Seven sets, each closing on its own ten-second hold.
+    expect(work).toHaveLength(7);
+    expect(holds).toHaveLength(7);
+    for (const hold of holds) {
+      expect(hold.type === "pose" && hold.seconds).toBe(10);
+    }
+  });
+
+  it("saves without a pose rather than blocking on one you haven't picked", () => {
+    // Present-but-blank is a real state: the slot exists so the picker has
+    // something to bind to, and an unfinished routine still saves.
+    const draft = freshDraft();
+    const exercise = draft.weeks[0].days[0].exercises[0];
+    exercise.isFinisher = true;
+    exercise.phases = applyFinisher(exercise.phases, "pose");
+
+    const routine = toRoutine(draft, "s")!;
+    expect(routineSchema.safeParse(routine).success).toBe(true);
+    expect(
+      routine.weeks[0].days[0].exercises[0].prescriptions[0].pose,
+    ).toBeUndefined();
+  });
+
+  it("writes the hold-and-pulse ramp as four laddered sequences", () => {
+    // The reason this is a preset at all: by hand it is four sets of five
+    // parts each, twenty-odd fields, and the only thing that changes between
+    // them is one number.
+    const phases = applyFinisher([emptyPhase()], "ramp");
+
+    expect(phases).toHaveLength(4);
+    expect(phases.map((p) => p.sets)).toEqual(["1", "1", "1", "1"]);
+    expect(phases.map((p) => p.segments?.length)).toEqual([5, 5, 5, 5]);
+    // The rep part falls; everything around it repeats.
+    expect(phases.map((p) => p.segments?.[2].count)).toEqual([
+      "12",
+      "10",
+      "8",
+      "6",
+    ]);
+    for (const phase of phases) {
+      expect(phase.segments?.map((s) => s.kind)).toEqual([
+        "hold",
+        "pulses",
+        "reps",
+        "hold",
+        "pulses",
+      ]);
+      expect(phase.segments?.[2].pulsePerRep).toBe(true);
+    }
+
+    // `load` is the step from the set *before*, so the opening set states
+    // nothing — telling you to add weight to nothing is worse than silence.
+    expect(phases.map((p) => p.load)).toEqual([
+      "",
+      "heavier",
+      "heavier",
+      "heavier",
+    ]);
+  });
+
+  it("gives the player one step per ramp set, carrying its whole sequence", () => {
+    const draft = freshDraft();
+    const exercise = draft.weeks[0].days[0].exercises[0];
+    exercise.isFinisher = true;
+    exercise.phases = applyFinisher(exercise.phases, "ramp");
+
+    const routine = toRoutine(draft, "s")!;
+    expect(routineSchema.safeParse(routine).success).toBe(true);
+
+    const work = buildSteps(routine.weeks[0].days[0], F).filter(
+      (s) => s.type === "work",
+    );
+    // Four sets, not twenty steps: one set is one tap, whatever it is made of.
+    expect(work).toHaveLength(4);
+    for (const step of work) {
+      expect(step.type === "work" && step.sequence?.parts).toHaveLength(5);
+    }
+  });
+
+  it("swaps one preset for the other rather than merging them", () => {
+    // The "don't throw away your typing" rule must not protect typing nobody
+    // did: picking pose while the ramp preset is loaded left four sequences in
+    // place and hung a pose on each.
+    const ramp = applyFinisher([emptyPhase()], "ramp");
+    const pose = applyFinisher(ramp, "pose");
+
+    expect(pose).toHaveLength(1);
+    expect(pose[0].sets).toBe("7");
+    expect(pose[0].segments).toBeUndefined();
+
+    // And back again.
+    expect(applyFinisher(pose, "ramp")).toHaveLength(4);
+  });
+
+  it("reads back which kind an exercise is written as", () => {
+    // Derived from the phases rather than stored, so hand-editing them can't
+    // leave the picker claiming something the sets don't say.
+    const base = freshDraft().weeks[0].days[0].exercises[0];
+    expect(finisherKindOf(base)).toBe("none");
+    expect(
+      finisherKindOf({
+        ...base,
+        isFinisher: true,
+        phases: applyFinisher(base.phases, "pose"),
+      }),
+    ).toBe("pose");
+    expect(
+      finisherKindOf({
+        ...base,
+        isFinisher: true,
+        phases: applyFinisher(base.phases, "ramp"),
+      }),
+    ).toBe("ramp");
+  });
+
+  it("round-trips every built-in finisher's pose and hold", () => {
+    // Compared prescription by prescription rather than whole-routine, for the
+    // same reason the multi-week round trip is: `warmupRefs` is resolved from
+    // a built-in vocabulary the editor deliberately drops.
+    const posesOf = (routine: Routine) =>
+      routine.weeks.flatMap((week) =>
+        week.days.flatMap((day) =>
+          day.exercises.flatMap((exercise) =>
+            exercise.prescriptions.map((p) => p.pose),
+          ),
+        ),
+      );
+
+    for (const routine of routines) {
+      const back = toRoutine(toDraft(routine), routine.slug)!;
+      expect(posesOf(back)).toEqual(posesOf(routine));
+    }
+
+    // And there is something to compare — a green test over an empty list
+    // would pass just as well with the pose field deleted.
+    expect(
+      routines.flatMap(posesOf).filter((pose) => pose !== undefined).length,
+    ).toBeGreaterThan(0);
   });
 });
 
