@@ -863,6 +863,36 @@ nothing in common and nothing queries across them.
 adjusts to a 1.8 m reference with the standard `+ 6.1 × (1.8 − h)` correction
 because raw FFMI still drifts with height.
 
+**A weigh-in with no body-fat reading carries the last one forward, rather
+than deleting FFMI.** `leanMassKg`/`ffmi`/`normalizedFfmi` all read
+`entry.bodyFatPercent` directly, and every card that shows them used to read
+straight off `latest` — so logging a bare weight, which is most mornings,
+silently blanked FFMI, lean mass and the meter until the next caliper reading.
+`lastBodyFat()` finds the most recent entry that actually carries one, and
+`withCarriedBodyFat(latest, entries)` returns `latest` with that percentage
+filled in (never the weight — that's always this morning's) plus whether it
+was carried and from when. `BodyPanel` and the index's `BodyCard` both build
+their stats off the result rather than off `latest` directly, so the two can't
+disagree, and both say when the number shown isn't from today's entry. Never
+logging a body-fat reading at all is the one case with nothing honest to
+carry, and stays exactly as blank as before.
+
+**The profile card collapses once height and sex are both set.** It used to be
+a full card of two inputs and two hint lines at the very top of the tab, every
+single time, for values that are correct for months at a stretch — ahead of
+the thing you actually opened the tab to do. `ProfileFields` starts collapsed
+to one summary line with an edit button once both fields are set, and stays
+open — the same as an onboarding prompt — while either is missing, since
+that's the one state where filling them in actually is the next thing to do.
+
+**The log-entry and weekly-average cards swap order on whether you've weighed
+in today.** `hasLoggedToday(entries, now)` (in `weekly.ts`, local-day bucketed
+like the heatmap) decides which one leads: log first when there's nothing
+today, so the card you need is the one you see; average first once there is,
+since the trend is more interesting than a form you've already filled in. The
+index's `BodyCard` says so too — `headlineHint` reads "Not logged today"
+rather than silently showing a weigh-in that could be several days stale.
+
 **Standing facts live on the profile, not the entry** — see
 `src/features/profile/profile-store.ts`, a plain TanStack Store persisted to
 localStorage in the same shape as `session-store.ts`, since a single
@@ -1244,6 +1274,31 @@ silently would make the day read one short.
 The dose is a number plus a unit from a closed set rather than free text, which
 is what makes "3 pills" translatable while a sentence you typed isn't — names
 and timings are yours and are not translation targets, like custom exercises.
+The Select that picks the unit is built off the `.other` plural form of its
+message key, always — not the amount-specific one — so the trigger's label
+doesn't need to shift as you retype the dose. It used to be built off a bare
+`supplements.unit.pill` key that doesn't exist (only `.one`/`.other` do),
+pushed through `as never` to suppress the type error; `t()` returned
+`undefined` for every unit and the Select rendered no label at all, trigger and
+open list alike — which is what "the units don't display" was.
+
+**`amount` is the dose of one serving; `servingsPerDay` is how many times a
+day you take it — and they're deliberately not folded into one number.** Two
+magnesium pills taken together are one serving; three fish-oil capsules taken
+across the day are three. One field for "3 a day" would either round three
+real doses down to a single tick, or make someone who takes theirs together
+tick twice for nothing. `supplementDay` draws one checkbox per serving
+(`SupplementRow.slots`), and ticking one calls `logSupplementServing` — an
+insert, not a toggle, because a supplement can legitimately be ticked more
+than once a day. Unticking is `removeIntake` on that row's own id, which is
+already generic; there is nothing supplement-specific about taking a row away.
+`slots` is never fewer than what's actually logged — if `servingsPerDay` was
+lowered after some of today's servings were ticked, those rows stay real and
+tickable rather than silently disappearing. The boxes read as a fill-level
+counter rather than as N independently-identified toggles: which specific
+entry a click removes is irrelevant, since two servings of the same supplement
+carry no distinguishing data — only how many are checked matters, and that's
+what renders.
 
 The creatine card doesn't grow a checkbox of its own: it offers to add itself
 to the stack at the dose it just worked out, so there stays **one place you

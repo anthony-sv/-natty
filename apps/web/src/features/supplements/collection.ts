@@ -71,6 +71,7 @@ export function updateSupplement(id: string, patch: SupplementInput) {
     draft.name = patch.name;
     draft.amount = patch.amount;
     draft.unit = patch.unit;
+    draft.servingsPerDay = patch.servingsPerDay;
     draft.timing = patch.timing;
   });
 }

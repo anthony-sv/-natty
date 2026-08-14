@@ -23,8 +23,20 @@ export const supplementSchema = z.object({
    */
   id: z.string().startsWith("supplement:"),
   name: z.string().min(1),
+  /** The dose of one serving — not the day's total. */
   amount: z.number().positive(),
   unit: supplementUnitSchema,
+  /**
+   * How many times a day you take that dose.
+   *
+   * **Split from `amount` because two people's "3 a day" mean different
+   * things to tick off.** Two magnesium pills taken together are one serving;
+   * three fish-oil capsules taken across the day are three. Folding both into
+   * one number and one tick would either round three real doses down to one
+   * checkbox, or force someone taking a single 2-pill dose to tick twice for
+   * no reason — `supplementDay` renders exactly this many checkboxes.
+   */
+  servingsPerDay: z.number().int().min(1).max(12).default(1),
   /** "With breakfast", "pre-workout" — your words, so not translated. */
   timing: z.string().optional(),
   /**

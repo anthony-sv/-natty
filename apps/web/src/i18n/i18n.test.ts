@@ -252,6 +252,8 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "supplements.unit.ml.one",
       "supplements.unit.ml.other",
       "supplements.dose",
+      // A placeholder and the metric unit symbol — nothing in it to translate.
+      "body.profile.heightSummary",
     ]);
 
     const unexplained = Object.keys(en).filter(

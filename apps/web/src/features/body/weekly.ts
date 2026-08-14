@@ -1,10 +1,22 @@
 import { convertWeight, type WeightUnit } from "@/lib/units";
-import { addDays, DAYS_IN_WEEK, startOfWeek } from "@/lib/week";
+import { addDays, DAYS_IN_WEEK, startOfDay, startOfWeek } from "@/lib/week";
 import type { BodyEntry } from "./schema";
 
 // Re-exported because callers of this module already import them from here,
 // and because "how long is a week" belongs with the weekly figures that use it.
 export { DAYS_IN_WEEK, startOfWeek };
+
+/**
+ * Whether today already has a weigh-in.
+ *
+ * Local day, the same as the heatmap and the weekly averages: a late weigh-in
+ * logged at 23:50 belongs to that evening, and a UTC bucket would file it under
+ * tomorrow for anyone west of Greenwich.
+ */
+export function hasLoggedToday(entries: BodyEntry[], now: number): boolean {
+  const today = startOfDay(now);
+  return entries.some((entry) => startOfDay(entry.measuredAt) === today);
+}
 
 /**
  * Weigh-ins collapsed to one number a week.

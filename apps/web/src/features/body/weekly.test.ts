@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { WeightUnit } from "@/lib/units";
 import type { BodyEntry } from "./schema";
-import { weeklyAverages, weekOverWeek } from "./weekly";
+import { hasLoggedToday, weeklyAverages, weekOverWeek } from "./weekly";
 
 /**
  * Local-time helpers, so nothing here depends on the machine's timezone.
@@ -35,6 +35,26 @@ function entry(
 }
 
 const THURSDAY = 4;
+
+describe("hasLoggedToday", () => {
+  const now = at(2026, 8, 12, 9, 0);
+
+  it("is true when today already has a weigh-in", () => {
+    expect(hasLoggedToday([entry(at(2026, 8, 12, 7, 30), 82)], now)).toBe(true);
+  });
+
+  it("is true for a late-evening entry the same local day", () => {
+    expect(hasLoggedToday([entry(at(2026, 8, 12, 23, 50), 82)], now)).toBe(true);
+  });
+
+  it("is false when the last weigh-in was yesterday", () => {
+    expect(hasLoggedToday([entry(at(2026, 8, 11, 9, 0), 82)], now)).toBe(false);
+  });
+
+  it("is false with no entries at all", () => {
+    expect(hasLoggedToday([], now)).toBe(false);
+  });
+});
 
 describe("weeklyAverages", () => {
   const now = at(2026, 8, 12); // Wednesday of the week starting the 10th.
