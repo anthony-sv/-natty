@@ -188,24 +188,112 @@ export function finisherPhase(): DraftPhase {
 }
 
 /**
- * Apply — or remove — the finisher shape across an exercise's phases.
+ * The other way a muscle group gets finished: one set run as a sequence, laddered.
  *
- * **A phase you have typed into is yours.** Flipping the switch on an untouched
- * exercise writes the convention, because that is what you asked for and an
- * empty 3×8-12 is not something anyone will miss. Flipping it on an exercise
- * you have already filled in only *adds* the pose slot: rewriting four
- * hand-entered phases to 7×15-20 because a switch moved would be the editor
- * throwing away work to make a point.
- *
- * Turning it off drops the poses and leaves every number alone. The set counts
- * are then just set counts, which is exactly what they are once the pose that
- * made them a finisher is gone.
+ * A 10-second hold, twelve pulses, twelve reps each ending in a pulse, another
+ * hold and more pulses — then weight on, and the rep part falls to 10, 8, 6.
+ * Nothing in `src/data/` authors one (the transcribed programs don't use it),
+ * so unlike `FINISHER_CONVENTION` this constant has no counterpart to agree
+ * with; it exists because writing it by hand is twenty-odd fields per set and
+ * four sets of it, which is exactly the sort of thing a preset is for.
  */
-export function withFinisher(
+const HOLD_PULSE_RAMP = {
+  /** The rep part, set by set. Everything else repeats unchanged. */
+  reps: [12, 10, 8, 6],
+  holdSeconds: 10,
+  pulses: 12,
+  restSeconds: 90,
+} as const;
+
+/** Which shape of finisher an exercise is written as, if any. */
+export type FinisherKind = "none" | "pose" | "ramp";
+
+/**
+ * One set of the hold-and-pulse ramp: a sequence, so `reps` plays no part.
+ *
+ * `load: "heavier"` from the second set on and unsaid on the first —
+ * `Prescription.load` describes the step *from the set before*, so stating it
+ * on the opening set would have the player telling you to add weight to
+ * nothing.
+ */
+function rampPhase(reps: number, index: number): DraftPhase {
+  return {
+    ...emptyPhase(),
+    sets: "1",
+    restSeconds: String(HOLD_PULSE_RAMP.restSeconds),
+    load: index === 0 ? "" : "heavier",
+    segments: [
+      { ...emptySegment("hold"), seconds: String(HOLD_PULSE_RAMP.holdSeconds) },
+      { ...emptySegment("pulses"), count: String(HOLD_PULSE_RAMP.pulses) },
+      { ...emptySegment("reps"), count: String(reps), pulsePerRep: true },
+      { ...emptySegment("hold"), seconds: String(HOLD_PULSE_RAMP.holdSeconds) },
+      { ...emptySegment("pulses"), count: String(HOLD_PULSE_RAMP.pulses) },
+    ],
+  };
+}
+
+export function rampPhases(): DraftPhase[] {
+  return HOLD_PULSE_RAMP.reps.map(rampPhase);
+}
+
+/**
+ * Nothing of yours is in these phases, so a preset can overwrite them freely.
+ *
+ * Two cases, and the second is easy to miss: an untouched exercise, and one
+ * holding a preset you just picked and are now picking away from. Without the
+ * second, switching from the ramp to the pose finisher left the four sequences
+ * sitting there and merely hung a pose on each — a "don't throw away your
+ * typing" rule protecting typing nobody did.
+ */
+export function isUntouched(phases: DraftPhase[]): boolean {
+  const same = (a: DraftPhase[]) => JSON.stringify(a) === JSON.stringify(phases);
+  return same([emptyPhase()]) || same(rampPhases()) || same([finisherPhase()]);
+}
+
+/**
+ * Which of the two an exercise is currently written as.
+ *
+ * Read off the phases rather than stored, for the same reason `isRecord` is
+ * derived: a second field saying which preset was picked would be one more
+ * thing to keep true after the phases are edited by hand.
+ */
+export function finisherKindOf(exercise: DraftExercise): FinisherKind {
+  if (!exercise.isFinisher) return "none";
+  if (exercise.phases.some((phase) => phase.pose !== undefined)) return "pose";
+  if (
+    exercise.phases.length > 0 &&
+    exercise.phases.every((phase) => phase.segments !== undefined)
+  ) {
+    return "ramp";
+  }
+  return "pose";
+}
+
+/**
+ * Write one of the finisher shapes across an exercise's phases.
+ *
+ * **A phase you have typed into is yours — where that means anything.** Picking
+ * the pose finisher on an untouched exercise writes the convention, because an
+ * empty 3×8-12 is not something anyone will miss; picking it on phases you have
+ * filled in only *adds* the pose slot, since rewriting hand-entered sets
+ * because a control moved would be the editor throwing away work to make a
+ * point.
+ *
+ * The ramp has no such half-measure and always replaces: a pose is a property
+ * you can hang on sets you wrote, while the ramp *is* the sets. The picker says
+ * so before you choose it, which is where that warning belongs.
+ *
+ * "None" drops the poses and leaves every number alone. The set counts are
+ * then just set counts, which is what they are once the pose is gone — the
+ * ramp's sequences stay too, for the same reason.
+ */
+export function applyFinisher(
   phases: DraftPhase[],
-  isFinisher: boolean,
+  kind: FinisherKind,
 ): DraftPhase[] {
-  if (!isFinisher) {
+  if (kind === "ramp") return rampPhases();
+
+  if (kind === "none") {
     return phases.map((phase) => {
       const next = { ...phase };
       // Deleted rather than set to undefined: `toDraft` writes the key only
@@ -215,10 +303,8 @@ export function withFinisher(
       return next;
     });
   }
-  const untouched =
-    phases.length === 1 &&
-    JSON.stringify(phases[0]) === JSON.stringify(emptyPhase());
-  if (untouched) return [finisherPhase()];
+
+  if (isUntouched(phases)) return [finisherPhase()];
   return phases.map((phase) => ({
     ...phase,
     pose: phase.pose ?? {

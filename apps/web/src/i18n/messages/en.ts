@@ -395,6 +395,15 @@ export const en = {
   "builder.reps": "Reps",
   "builder.repsTo": "to",
   "builder.rest": "Rest (s)",
+  "builder.finisher.none": "Not a finisher",
+  "builder.finisher.noneBody": "An ordinary exercise. Its sets are whatever you write.",
+  "builder.finisher.pose": "Pose hold",
+  "builder.finisher.poseBody":
+    "7 sets of 15-20, 30s rest, ending on a 10-second pose. Pick the pose below.",
+  "builder.finisher.ramp": "Hold and pulse",
+  "builder.finisher.rampBody":
+    "4 sets, each a 10s hold → 12 pulses → 12 reps with a pulse → 10s hold → 12 pulses. The reps fall 12/10/8/6 as the weight goes up.",
+  "builder.finisher.overwrites": "This replaces the sets you've entered.",
   "builder.pose": "Pose",
   // "Not chosen" rather than "None": a finisher without a pose isn't a
   // finisher, so this reads as a gap to fill rather than a valid answer.

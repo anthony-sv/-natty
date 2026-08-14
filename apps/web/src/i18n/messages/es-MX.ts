@@ -392,6 +392,16 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.reps": "Reps",
   "builder.repsTo": "a",
   "builder.rest": "Descanso (s)",
+  "builder.finisher.none": "No es finisher",
+  "builder.finisher.noneBody":
+    "Un ejercicio normal. Sus sets son los que tú escribas.",
+  "builder.finisher.pose": "Pose sostenida",
+  "builder.finisher.poseBody":
+    "7 sets de 15-20, 30s de descanso, cerrando con una pose de 10 segundos. Elige la pose abajo.",
+  "builder.finisher.ramp": "Aguante y pulsos",
+  "builder.finisher.rampBody":
+    "4 sets, cada uno: aguante de 10s → 12 pulsos → 12 reps con pulso → aguante de 10s → 12 pulsos. Las reps bajan 12/10/8/6 mientras sube el peso.",
+  "builder.finisher.overwrites": "Esto reemplaza los sets que escribiste.",
   "builder.pose": "Pose",
   "builder.pose.none": "Sin elegir",
   "builder.holdSeconds": "Aguante (s)",

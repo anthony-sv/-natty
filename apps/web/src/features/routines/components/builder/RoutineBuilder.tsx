@@ -75,15 +75,17 @@ import {
   emptyDay,
   emptyPhase,
   emptyWeek,
+  applyFinisher,
+  finisherKindOf,
   moveDay,
   toRoutine,
-  withFinisher,
   type DraftDay,
   type DraftExercise,
   type DraftPhase,
   type DraftRoutine,
   type DraftWeek,
 } from "./draft";
+import { FinisherPicker } from "./FinisherPicker";
 import { PhaseEditor } from "./PhaseEditor";
 
 /**
@@ -695,33 +697,24 @@ function ExerciseEditor({
         {/* `isFinisher` round-tripped through the editor from the day this
             existed, but nothing could *set* it — a copied routine kept the
             flag it arrived with and there was no way to add or clear one.
-            Cardio can't be a finisher: a finisher is the pose-and-hold at the
-            end of a lifting set, and `buildSteps` only reads the flag for
-            resistance work.
+            Cardio can't be a finisher: a finisher is what closes a lifting
+            muscle group, and `buildSteps` only reads the flag for resistance
+            work.
 
-            The switch changes the *phases*, not just the flag. On its own the
-            flag is a badge and a count — it shipped that way, and the toggle
-            it belonged to did nothing you could see. `withFinisher` writes the
-            shape the transcribed programs use, which is the answer to "seven
-            sets of 15-20, thirty seconds' rest, ten-second hold: where is
-            that". */}
+            Picking one changes the *phases*, not just the flag. On its own the
+            flag is a badge and a count — it shipped that way once, and the
+            toggle it belonged to did nothing you could see. */}
         {exercise.kind !== "cardio" ? (
-          <div className="flex flex-col gap-1">
-            <Label className="text-xs">{t("common.finisher")}</Label>
-            <div className="flex h-9 items-center">
-              <Switch
-                id={`finisher-${exercise.exerciseId || "new"}`}
-                checked={exercise.isFinisher}
-                onCheckedChange={(checked) =>
-                  onChange({
-                    isFinisher: checked,
-                    phases: withFinisher(exercise.phases, checked),
-                  })
-                }
-                aria-label={t("common.finisher")}
-              />
-            </div>
-          </div>
+          <FinisherPicker
+            value={finisherKindOf(exercise)}
+            phases={exercise.phases}
+            onChange={(kind) =>
+              onChange({
+                isFinisher: kind !== "none",
+                phases: applyFinisher(exercise.phases, kind),
+              })
+            }
+          />
         ) : null}
 
         <Button
