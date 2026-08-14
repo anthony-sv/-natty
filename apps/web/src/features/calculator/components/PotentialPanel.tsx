@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useStore } from "@tanstack/react-store";
 import {
   Card,
@@ -12,7 +13,7 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useBodyEntries } from "@/features/body/collection";
 import { leanMassKg } from "@/features/body/ffmi";
-import { profileStore, setProfile } from "@/features/profile/profile-store";
+import { profileStore } from "@/features/profile/profile-store";
 import { potentialFor } from "../casey-butt";
 import { PotentialResults } from "./PotentialResults";
 import { parseMeasurement } from "../parse";
@@ -24,10 +25,12 @@ export function PotentialPanel() {
   const profile = useStore(profileStore, (s) => s);
   const { latest } = useBodyEntries();
 
-  // Height, wrist and ankle persist on the profile — they're standing facts,
-  // and nobody wants to re-measure their wrist to reload a page. Body fat is
-  // local: it's the one input that moves, and the weigh-in log already owns
-  // the real history of it, so this is a what-if dial rather than a record.
+  // Height, wrist and ankle are read from the profile rather than typed here
+  // — they used to be a second copy of the same three fields the body tab
+  // asked for, and a typo fixed on one page left the other one wrong. Body
+  // fat stays local: it's the one input that moves, and the weigh-in log
+  // already owns the real history of it, so this is a what-if dial rather
+  // than a record.
   const currentBodyFat = latest?.bodyFatPercent;
   const [bodyFat, setBodyFat] = useState(
     currentBodyFat === undefined ? "" : String(currentBodyFat),
@@ -41,6 +44,10 @@ export function PotentialPanel() {
   });
 
   const currentLean = latest ? leanMassKg(latest) : undefined;
+  const framePresent =
+    profile.heightCm !== undefined &&
+    profile.wristCm !== undefined &&
+    profile.ankleCm !== undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,55 +59,34 @@ export function PotentialPanel() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-start gap-4">
-          <Field className="w-40">
-            <FieldLabel htmlFor="calc-height">{t("common.heightCm")}</FieldLabel>
-            <Input
-              id="calc-height"
-              type="number"
-              inputMode="decimal"
-              min="1"
-              step="0.5"
-              placeholder={t("calc.potential.exampleHeight")}
-              value={profile.heightCm ?? ""}
-              onChange={(e) =>
-                setProfile({ heightCm: parseMeasurement(e.target.value) })
-              }
-            />
-          </Field>
-
-          <Field className="w-40">
-            <FieldLabel htmlFor="calc-wrist">{t("calc.potential.wristCm")}</FieldLabel>
-            <Input
-              id="calc-wrist"
-              type="number"
-              inputMode="decimal"
-              min="1"
-              step="0.1"
-              placeholder={t("calc.potential.exampleWrist")}
-              value={profile.wristCm ?? ""}
-              onChange={(e) =>
-                setProfile({ wristCm: parseMeasurement(e.target.value) })
-              }
-            />
-            <FieldDescription>{t("calc.potential.wristHint")}</FieldDescription>
-          </Field>
-
-          <Field className="w-40">
-            <FieldLabel htmlFor="calc-ankle">{t("calc.potential.ankleCm")}</FieldLabel>
-            <Input
-              id="calc-ankle"
-              type="number"
-              inputMode="decimal"
-              min="1"
-              step="0.1"
-              placeholder={t("calc.potential.exampleAnkle")}
-              value={profile.ankleCm ?? ""}
-              onChange={(e) =>
-                setProfile({ ankleCm: parseMeasurement(e.target.value) })
-              }
-            />
-            <FieldDescription>{t("calc.potential.ankleHint")}</FieldDescription>
-          </Field>
+          {/* Height, wrist and ankle are read-only here — one edit surface on
+              /profile, not two forms that can quietly disagree. */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+            <span>
+              <span className="text-muted-foreground">{t("common.heightCm")}: </span>
+              <span className="font-medium tabular-nums">
+                {profile.heightCm ?? t("common.none")}
+              </span>
+            </span>
+            <span>
+              <span className="text-muted-foreground">{t("profile.wristCm")}: </span>
+              <span className="font-medium tabular-nums">
+                {profile.wristCm ?? t("common.none")}
+              </span>
+            </span>
+            <span>
+              <span className="text-muted-foreground">{t("profile.ankleCm")}: </span>
+              <span className="font-medium tabular-nums">
+                {profile.ankleCm ?? t("common.none")}
+              </span>
+            </span>
+            <Link
+              to="/profile"
+              className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              {framePresent ? t("calc.potential.editFrame") : t("calc.potential.setFrame")}
+            </Link>
+          </div>
 
           <Field className="w-40">
             <FieldLabel htmlFor="calc-bodyfat">
@@ -136,8 +122,18 @@ export function PotentialPanel() {
             <Empty>
               <EmptyTitle>{t("calc.potential.fillAll")}</EmptyTitle>
               <EmptyDescription>
-                {t("calc.potential.fillAllBody")}
+                {framePresent
+                  ? t("calc.potential.fillAllBody")
+                  : t("calc.potential.needFrame")}
               </EmptyDescription>
+              {!framePresent ? (
+                <Link
+                  to="/profile"
+                  className="text-sm underline underline-offset-2 hover:text-foreground"
+                >
+                  {t("calc.potential.setFrame")}
+                </Link>
+              ) : null}
             </Empty>
           ) : (
             <PotentialResults

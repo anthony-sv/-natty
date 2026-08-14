@@ -19,15 +19,21 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/toast";
-import { allIntake, restoreIntake, toggleSupplement } from "@/features/intake/collection";
+import {
+  allIntake,
+  logSupplementServing,
+  removeIntake,
+  restoreIntake,
+} from "@/features/intake/collection";
 import { useIntake } from "@/features/intake/use-intake";
 import { useT } from "@/i18n/use-t";
+import { cn } from "@/lib/utils";
 import {
   archiveSupplement,
   deleteSupplement,
   restoreSupplement,
 } from "../collection";
-import { hasHistory, supplementDay } from "../supplements";
+import { hasHistory, supplementDay, type SupplementRow } from "../supplements";
 import { useSupplements } from "../use-supplements";
 import type { Supplement } from "../schema";
 import { SupplementForm } from "./SupplementForm";
@@ -50,22 +56,6 @@ export function SupplementChecklist({ day }: { day: number }) {
     () => supplementDay(supplements, entries, day, t.locale),
     [supplements, entries, day, t.locale],
   );
-
-  const toggle = (supplement: Supplement) => {
-    const result = toggleSupplement(day, supplement.id);
-    if (!("removed" in result)) return;
-    // Unticking gets an Undo rather than a confirm, like `deleteSet` and like
-    // unticking a meal: small, frequent, and completely reversible.
-    const removed = result.removed;
-    toast.add({
-      title: t("supplements.unticked", { name: supplement.name }),
-      type: "info",
-      actionProps: {
-        children: t("history.undo"),
-        onClick: () => restoreIntake(removed),
-      },
-    });
-  };
 
   const remove = (supplement: Supplement) => {
     // Archive once anything was ticked against it, the same rule a custom
@@ -117,66 +107,15 @@ export function SupplementChecklist({ day }: { day: number }) {
             {t("supplements.empty")}
           </p>
         ) : (
-          summary.rows.map(({ supplement, taken }) => (
-            <div
-              key={supplement.id}
-              className="flex flex-wrap items-center gap-3 rounded-md border p-3"
-            >
-              <Checkbox
-                id={`supp-${supplement.id}`}
-                checked={taken}
-                onCheckedChange={() => toggle(supplement)}
-              />
-              {/* `min-w-0`, never `shrink-0`: a flex child holding text that
-                  refuses to shrink prints over its neighbour rather than
-                  wrapping. */}
-              <Label
-                htmlFor={`supp-${supplement.id}`}
-                className="min-w-0 flex-1 flex-col items-start gap-0.5 font-normal"
-              >
-                <span className="font-medium">{supplement.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  {t("supplements.dose", {
-                    amount: supplement.amount.toLocaleString(),
-                    unit: t.plural(
-                      `supplements.unit.${supplement.unit}` as never,
-                      supplement.amount,
-                    ),
-                  })}
-                  {supplement.timing ? ` · ${supplement.timing}` : ""}
-                </span>
-              </Label>
-
-              {/* An archived one still shows on the days you took it, and says
-                  why it can't be ticked on any other. */}
-              {supplement.archivedAt !== undefined ? (
-                <Badge variant="secondary">{t("supplements.archivedTag")}</Badge>
-              ) : null}
-
-              <div className="ml-auto flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={t("supplements.edit", { name: supplement.name })}
-                  onClick={() => setEditing(supplement)}
-                >
-                  <PencilLineIcon />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="text-muted-foreground"
-                  aria-label={t("supplements.remove", { name: supplement.name })}
-                  onClick={() => remove(supplement)}
-                >
-                  {hasHistory(entries, supplement.id) ? (
-                    <ArchiveIcon />
-                  ) : (
-                    <Trash2Icon />
-                  )}
-                </Button>
-              </div>
-            </div>
+          summary.rows.map((row) => (
+            <SupplementRowView
+              key={row.supplement.id}
+              row={row}
+              day={day}
+              hasHistory={hasHistory(entries, row.supplement.id)}
+              onEdit={() => setEditing(row.supplement)}
+              onRemove={() => remove(row.supplement)}
+            />
           ))
         )}
 
@@ -216,5 +155,132 @@ export function SupplementChecklist({ day }: { day: number }) {
         </DialogContent>
       </Dialog>
     </Card>
+  );
+}
+
+/**
+ * One supplement's row: the name and its dose, then one checkbox per serving.
+ *
+ * **A row of boxes, not one box for the whole dose.** Two magnesium pills
+ * taken together are a single serving and tick as one; three fish-oil
+ * capsules taken across the day are three separate servings, and forcing them
+ * into one checkbox would either round three real doses down to a single tick
+ * or make someone who takes theirs together tick twice for nothing. `slots`
+ * already accounts for a day that logged more servings than the supplement
+ * currently prescribes, so a lowered `servingsPerDay` never orphans a real row.
+ */
+function SupplementRowView({
+  row,
+  day,
+  hasHistory,
+  onEdit,
+  onRemove,
+}: {
+  row: SupplementRow;
+  day: number;
+  hasHistory: boolean;
+  onEdit: () => void;
+  onRemove: () => void;
+}) {
+  const t = useT();
+  const { supplement, entryIds, slots } = row;
+
+  const tickServing = () => {
+    logSupplementServing(day, supplement.id);
+  };
+
+  const untickServing = (entryId: string) => {
+    const removed = removeIntake(entryId);
+    if (removed === undefined) return;
+    // Unticking gets an Undo rather than a confirm, like `deleteSet` and like
+    // unticking a meal: small, frequent, and completely reversible.
+    toast.add({
+      title: t("supplements.unticked", { name: supplement.name }),
+      type: "info",
+      actionProps: {
+        children: t("history.undo"),
+        onClick: () => restoreIntake(removed),
+      },
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-2 rounded-md border p-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {/* `min-w-0`, never `shrink-0`: a flex child holding text that refuses
+            to shrink prints over its neighbour rather than wrapping. */}
+        <span className="min-w-0 flex-1 truncate font-medium">
+          {supplement.name}
+        </span>
+        {/* An archived one still shows on the days you took it, and says why
+            it can't be ticked on any other. */}
+        {supplement.archivedAt !== undefined ? (
+          <Badge variant="secondary">{t("supplements.archivedTag")}</Badge>
+        ) : null}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={t("supplements.edit", { name: supplement.name })}
+            onClick={onEdit}
+          >
+            <PencilLineIcon />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground"
+            aria-label={t("supplements.remove", { name: supplement.name })}
+            onClick={onRemove}
+          >
+            {hasHistory ? <ArchiveIcon /> : <Trash2Icon />}
+          </Button>
+        </div>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        {t("supplements.dose", {
+          amount: supplement.amount.toLocaleString(),
+          unit: t.plural(`supplements.unit.${supplement.unit}`, supplement.amount),
+        })}
+        {supplement.timing ? ` · ${supplement.timing}` : ""}
+      </p>
+
+      {/* Each box is its own tap target — wrapped in a bordered pill rather
+          than a bare checkbox, which is what made a row of them read as
+          "hyper small" on a phone: nothing to distinguish one from the next
+          and barely anything to press. */}
+      <div className="flex flex-wrap items-center gap-2">
+        {Array.from({ length: slots }, (_, i) => {
+          const entryId = entryIds[i];
+          const taken = entryId !== undefined;
+          return (
+            <Label
+              key={i}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm font-normal",
+                taken && "border-primary bg-primary/10",
+              )}
+            >
+              <Checkbox
+                checked={taken}
+                aria-label={
+                  slots > 1
+                    ? t("supplements.servingOf", {
+                        number: i + 1,
+                        total: slots,
+                      })
+                    : t("supplements.taken", { name: supplement.name })
+                }
+                onCheckedChange={() =>
+                  taken ? untickServing(entryId) : tickServing()
+                }
+              />
+              {slots > 1 ? <span className="tabular-nums">{i + 1}</span> : null}
+            </Label>
+          );
+        })}
+      </div>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useStore } from "@tanstack/react-store";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -10,16 +11,22 @@ import {
 } from "@/components/ui/card";
 import { profileStore } from "@/features/profile/profile-store";
 import { useNames } from "@/i18n/names";
-import { useT } from "@/i18n/use-t";
+import { useDateFormat, useT } from "@/i18n/use-t";
 import { formatWeightValue, type WeightUnit } from "@/lib/units";
 import { useBodyEntries } from "../collection";
-import { describeFfmi, ffmi, formatIndex, leanMassKg, normalizedFfmi } from "../ffmi";
-import { weeklyAverages } from "../weekly";
+import {
+  describeFfmi,
+  ffmi,
+  formatIndex,
+  leanMassKg,
+  normalizedFfmi,
+  withCarriedBodyFat,
+} from "../ffmi";
+import { hasLoggedToday, weeklyAverages } from "../weekly";
 import { BodyCharts } from "./BodyCharts";
 import { BodyEntryForm } from "./BodyEntryForm";
 import { FfmiMeter } from "./FfmiMeter";
 import { BodyHistoryTable } from "./BodyHistoryTable";
-import { ProfileFields } from "./ProfileFields";
 import { WeeklyAverageCard } from "./WeeklyAverageCard";
 
 export function BodyPanel() {
@@ -27,17 +34,25 @@ export function BodyPanel() {
   const profile = useStore(profileStore, (s) => s);
   const t = useT();
   const names = useNames();
-
-  const normalized = latest ? normalizedFfmi(latest, profile.heightCm) : undefined;
-  // `describeFfmi` is pure and returns the English band; it's a closed set with
-  // no ids, so it translates by source string the way day labels do.
-  const band = names.text(describeFfmi(normalized, profile.sex));
-  const lean = latest ? leanMassKg(latest) : undefined;
+  const dateFormat = useDateFormat({ day: "numeric", month: "short" });
 
   // Read once on mount rather than during render: `react-hooks/purity` rejects
   // a mid-render clock read, and "which week is the current one" shouldn't
   // change under the card while you're looking at it.
   const [now] = useState(() => Date.now());
+
+  // `latest`'s own body fat if it has one, otherwise the last reading you did
+  // take — so logging a bare weight doesn't delete FFMI, lean mass and the
+  // meter until you next reach for the calipers.
+  const carried = latest ? withCarriedBodyFat(latest, entries) : undefined;
+  const display = carried?.entry;
+
+  const normalized = display ? normalizedFfmi(display, profile.heightCm) : undefined;
+  // `describeFfmi` is pure and returns the English band; it's a closed set with
+  // no ids, so it translates by source string the way day labels do.
+  const band = names.text(describeFfmi(normalized, profile.sex));
+  const lean = display ? leanMassKg(display) : undefined;
+
   // Averaged in the latest weigh-in's unit, the same one the chart plots in, so
   // the card and the line can't disagree.
   const unit: WeightUnit = latest?.unit ?? "kg";
@@ -46,44 +61,76 @@ export function BodyPanel() {
     [entries, unit, now],
   );
 
+  // Whichever card answers "what do I do right now": logging today's weight
+  // when you haven't, or reading the trend when you already have. Swapping
+  // their order is cheaper than a banner and doesn't add a card nobody asked
+  // for — it puts the one you'd use first.
+  const loggedToday = hasLoggedToday(entries, now);
+
+  const logCard = (
+    <Card key="log">
+      <CardHeader>
+        <CardTitle>{t("body.logEntry.title")}</CardTitle>
+        <CardDescription>
+          {loggedToday ? t("body.logEntry.body") : t("body.logEntry.notToday")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {/* Keyed on the latest entry so the prefill follows it rather than
+            staying on whatever was there when the form first mounted. */}
+        <BodyEntryForm key={latest?.id ?? "none"} latest={latest} />
+      </CardContent>
+    </Card>
+  );
+
+  const averageCard = (
+    <WeeklyAverageCard key="average" weekly={weekly} unit={unit} />
+  );
+
   return (
     <div className="flex flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("body.profile.title")}</CardTitle>
-          <CardDescription>{t("body.profile.body")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ProfileFields />
-        </CardContent>
-      </Card>
+      {loggedToday ? [averageCard, logCard] : [logCard, averageCard]}
 
-      <WeeklyAverageCard weekly={weekly} unit={unit} />
-
-      {latest ? (
+      {display ? (
         <Card>
           <CardHeader>
             <CardTitle>{t("body.latest.title")}</CardTitle>
             <CardDescription>
-              {profile.heightCm === undefined
-                ? t("body.latest.needHeight")
-                : latest.bodyFatPercent === undefined
+              {profile.heightCm === undefined ? (
+                <span className="flex flex-wrap items-center gap-x-1.5">
+                  {t("body.latest.needHeight")}
+                  <Link
+                    to="/profile"
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    {t("body.latest.needHeightLink")}
+                  </Link>
+                </span>
+              ) : display.bodyFatPercent === undefined
                   ? t("body.latest.needBodyFat")
-                  : t("body.latest.body")}
+                  : carried?.isCarried === true && carried.measuredAt !== undefined
+                    ? t("body.latest.carriedBodyFat", {
+                        date: dateFormat.format(new Date(carried.measuredAt)),
+                      })
+                    : t("body.latest.body")}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-x-10 gap-y-4">
             <Stat
               label={t("common.weight")}
-              value={`${formatWeightValue(latest.weight)} ${latest.unit}`}
+              value={`${formatWeightValue(display.weight)} ${display.unit}`}
             />
             <Stat
               label={t("body.stat.bodyFat")}
               value={
-                latest.bodyFatPercent === undefined
+                display.bodyFatPercent === undefined
                   ? t("common.none")
-                  : `${latest.bodyFatPercent}%`
+                  : `${display.bodyFatPercent}%`
               }
+              // Flags the number itself as carried, not just the card
+              // description above it — the stat is the one thing on the card
+              // someone might screenshot on its own.
+              badge={carried?.isCarried ? t("body.latest.carried") : undefined}
             />
             <Stat
               label={t("body.stat.leanMass")}
@@ -93,7 +140,7 @@ export function BodyPanel() {
             />
             <Stat
               label={t("body.stat.ffmi")}
-              value={formatIndex(ffmi(latest, profile.heightCm))}
+              value={formatIndex(ffmi(display, profile.heightCm))}
             />
             <Stat
               label={t("body.stat.normalized")}
@@ -108,18 +155,6 @@ export function BodyPanel() {
           ) : null}
         </Card>
       ) : null}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("body.logEntry.title")}</CardTitle>
-          <CardDescription>{t("body.logEntry.body")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Keyed on the latest entry so the prefill follows it rather than
-              staying on whatever was there when the form first mounted. */}
-          <BodyEntryForm key={latest?.id ?? "none"} latest={latest} />
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>

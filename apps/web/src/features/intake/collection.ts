@@ -70,29 +70,16 @@ export function logItem(day: number, foodId: string, amount: number) {
 }
 
 /**
- * Tick a supplement off, or untick it.
+ * Log one serving of a supplement taken.
  *
- * Reads `allIntake()` rather than a snapshot for the reason above — deciding
- * "is this already ticked" from a stale render writes a duplicate — and
- * returns the removed row so the caller can offer Undo, the way unticking a
- * meal and deleting a set both do.
+ * **Not a toggle.** A supplement can be taken more than once a day —
+ * `servingsPerDay` says how many — so each tap of an untaken box adds its own
+ * row rather than flipping a single one. Untaking a serving is `removeIntake`
+ * on that row's own id, the same function unticking a meal already uses;
+ * there's nothing supplement-specific about taking a row away.
  */
-export function toggleSupplement(
-  day: number,
-  supplementId: string,
-): { added: IntakeEntry } | { removed: IntakeEntry } {
-  const bucket = startOfDay(day);
-  const existing = allIntake().find(
-    (entry) =>
-      entry.day === bucket &&
-      entry.source.kind === "supplement" &&
-      entry.source.supplementId === supplementId,
-  );
-  if (existing !== undefined) {
-    intakeEntries().delete(existing.id);
-    return { removed: existing };
-  }
-  return { added: insert(day, { kind: "supplement", supplementId }).entry };
+export function logSupplementServing(day: number, supplementId: string) {
+  return insert(day, { kind: "supplement", supplementId });
 }
 
 /** Returns the row so a toast can offer Undo, the way `deleteSet` does. */

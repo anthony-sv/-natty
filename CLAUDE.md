@@ -852,6 +852,56 @@ it. Reset and delete share the component because they're the same gesture on
 different things (your edit of a built-in, versus something that only ever
 existed here), and two copies of a confirm dialog is two wordings to drift.
 
+## Profile (`src/features/profile/`)
+
+`/profile` — height, sex, wrist, ankle — is where every standing fact about
+your body lives, edited in one place rather than two.
+
+**Height and sex used to be a card on the Body tab; wrist and ankle used to be
+inline fields on the Casey Butt calculator tab.** Same `profileStore`
+underneath the whole time — moving them cost no data migration — but two
+edit surfaces for the same four numbers meant a typo fixed on one page left
+the other one wrong, and a card of inputs sat at the top of the Body tab every
+single time you opened it, for values that are correct for months at a
+stretch. `ProfileForm` is the one form now; `BodyPanel` and `PotentialPanel`
+both read the store and point here when something's missing.
+
+**Reachable with no account, which is what changed `UserMenu` rather than
+adding a new door.** The avatar corner used to render a bare "Sign in" link
+while signed out — no menu, so nothing behind it was ever reachable that way.
+FFMI and the potential estimate both work fully signed out, and hiding
+`/profile` behind signing in first would make it unconfigurable for most
+people, since accounts are optional by design. So the signed-out state is a
+menu now too: `UserAvatar` with no name (already the app's placeholder-person
+icon, nothing new to draw) opens **Profile** and **Sign in**. The signed-in
+menu gained a **Profile** item the same way. It isn't a sidebar row —
+`app-sidebar.tsx` deliberately has none for `/account` either, for the same
+reason: a nav row beside the avatar menu is two doors to one room. A build
+with no Supabase project at all skips the menu and goes straight to
+`/profile`, since there's no session to ever offer.
+
+**No submit button** — the calculators' own rule, reused here on purpose:
+`ProfileForm`'s fields write through `setProfile` on every change.
+
+**Display first, edit on request — not a form left permanently open.**
+`ProfileCard` wraps `ProfileForm` the way `LoggedSetList` and
+`BodyHistoryTable` treat a real row: something is either shown, with Edit and
+Clear, or being edited, never both. Starts in edit mode only while every field
+is empty (first visit, or right after clearing) — anything set at all shows
+the display instead, since edit mode needs no draft of its own beyond a
+toggle over the same live-writing fields. **Clear** snapshots the four values
+before writing them all to `undefined` and offers an Undo — a real action
+(FFMI and the potential estimate change immediately) but one small enough,
+and reversible enough, that a confirm dialog would only be friction, the same
+call every other correction list in the app makes.
+
+`profileStore` (`profile-store.ts`) is a plain TanStack Store persisted to
+localStorage in the same shape as `session-store.ts`, since a single
+always-present record with a handful of fields doesn't want a queryable
+collection. It also carries `displayName`, `avatarUrl`, `trackedSites` and
+`sidedSites` — account and measurement-form preferences that stay where they
+are; `/profile` only surfaces the body facts.
+
 ## Body measurements (`src/features/body/`)
 
 Weigh-ins — weight, optional body-fat percentage — in their own localStorage
@@ -863,15 +913,34 @@ nothing in common and nothing queries across them.
 adjusts to a 1.8 m reference with the standard `+ 6.1 × (1.8 − h)` correction
 because raw FFMI still drifts with height.
 
-**Standing facts live on the profile, not the entry** — see
-`src/features/profile/profile-store.ts`, a plain TanStack Store persisted to
-localStorage in the same shape as `session-store.ts`, since a single
-always-present record doesn't want a queryable collection. Height is the FFMI
-denominator; storing it once means correcting a typo recalculates every row.
-Sex only picks which population the reference band comes from — fat-free mass
-norms differ enough that one scale would misdescribe half its readers — and
-when it's unset the numbers still show, just without a band. `wristCm` and
-`ankleCm` are there for the same reason, and are only read by `/calculator`.
+**A weigh-in with no body-fat reading carries the last one forward, rather
+than deleting FFMI.** `leanMassKg`/`ffmi`/`normalizedFfmi` all read
+`entry.bodyFatPercent` directly, and every card that shows them used to read
+straight off `latest` — so logging a bare weight, which is most mornings,
+silently blanked FFMI, lean mass and the meter until the next caliper reading.
+`lastBodyFat()` finds the most recent entry that actually carries one, and
+`withCarriedBodyFat(latest, entries)` returns `latest` with that percentage
+filled in (never the weight — that's always this morning's) plus whether it
+was carried and from when. `BodyPanel` and the index's `BodyCard` both build
+their stats off the result rather than off `latest` directly, so the two can't
+disagree, and both say when the number shown isn't from today's entry. Never
+logging a body-fat reading at all is the one case with nothing honest to
+carry, and stays exactly as blank as before.
+
+**The log-entry and weekly-average cards swap order on whether you've weighed
+in today.** `hasLoggedToday(entries, now)` (in `weekly.ts`, local-day bucketed
+like the heatmap) decides which one leads: log first when there's nothing
+today, so the card you need is the one you see; average first once there is,
+since the trend is more interesting than a form you've already filled in. The
+index's `BodyCard` says so too — `headlineHint` reads "Not logged today"
+rather than silently showing a weigh-in that could be several days stale.
+
+**Standing facts live on the profile, not the entry** — see the `Profile`
+section below. Height is the FFMI denominator; storing it once means
+correcting a typo recalculates every row. Sex only picks which population the
+reference band comes from — fat-free mass norms differ enough that one scale
+would misdescribe half its readers — and when it's unset the numbers still
+show, just without a band.
 
 `FfmiMeter` plots the normalized figure against those bands, on the classic
 FFMI chart's spectrum track (`--ffmi-spectrum` in `styles.css`).
@@ -917,6 +986,27 @@ against both card surfaces.
 
 A single weigh-in is a dot, not a trend, so under two points the chart is
 replaced by an `Empty`.
+
+### Correcting a weigh-in
+
+`updateBodyEntry` / `deleteBodyEntry` / `restoreBodyEntry` in `collection.ts`,
+surfaced by `BodyHistoryTable`'s actions column — the same three-function shape
+`LoggedSetList` and `deleteMeasurement` already use, and the same reason it's
+safe: FFMI, the weekly average, the heatmap-shaped bits and the carried body
+fat are all derived from the rows on every read, never stored, so fixing a
+mistyped weight or dropping a bad entry needs nothing fixed up afterward.
+
+**The date is editable, not just weight and body fat** — `bodyEntrySchema`
+said so from the start ("Editable, so a weigh-in can be dated to when it
+happened"), but nothing ever exposed it until this. Backdating an entry
+re-files it under the right local day for the heatmap and the weekly average,
+the same way editing a logged set's timestamp would.
+
+Delete is immediate with an Undo on the toast, not a confirm dialog — small,
+frequent, fully reversible, the standing rule every correction list in the app
+follows. This is also the only way to test `hasLoggedToday`-driven UI (the
+card-order swap on `/progress → body`, the index card's "Not logged today"
+hint) without waiting for tomorrow: delete today's entry and both update.
 
 ## Calculators (`src/features/calculator/`)
 
@@ -974,10 +1064,12 @@ own numbers for 179cm / 18cm / 23cm / 12% — 83.2kg lean, and neck through calf
 A mistyped coefficient fails there instead of rendering a plausible wrong
 number. `REALISTIC_SHARE` is the conventional 95% quoted alongside each figure.
 
-Height/wrist/ankle write straight through to the profile store on change, the
-way `ProfileFields` does — no submit button, results recalculate live. Body fat
-is deliberately **local** state seeded from the latest weigh-in: the log owns
-the real history, so the field here is a what-if dial, not a record.
+Height, wrist and ankle are **read-only here** — a summary strip plus a link to
+`/profile`, which is where they're edited now. They used to be a second copy
+of the same three inputs the profile owns, and a typo fixed on one page left
+the other one wrong; see *Profile* above. Body fat stays **local** state
+seeded from the latest weigh-in: the log owns the real history, so the field
+here is a what-if dial, not a record.
 
 `potentialFor` returns undefined unless all four inputs are usable, so a
 half-filled form shows an `Empty` rather than "NaN kg". `percentOfPotential`
@@ -1244,6 +1336,31 @@ silently would make the day read one short.
 The dose is a number plus a unit from a closed set rather than free text, which
 is what makes "3 pills" translatable while a sentence you typed isn't — names
 and timings are yours and are not translation targets, like custom exercises.
+The Select that picks the unit is built off the `.other` plural form of its
+message key, always — not the amount-specific one — so the trigger's label
+doesn't need to shift as you retype the dose. It used to be built off a bare
+`supplements.unit.pill` key that doesn't exist (only `.one`/`.other` do),
+pushed through `as never` to suppress the type error; `t()` returned
+`undefined` for every unit and the Select rendered no label at all, trigger and
+open list alike — which is what "the units don't display" was.
+
+**`amount` is the dose of one serving; `servingsPerDay` is how many times a
+day you take it — and they're deliberately not folded into one number.** Two
+magnesium pills taken together are one serving; three fish-oil capsules taken
+across the day are three. One field for "3 a day" would either round three
+real doses down to a single tick, or make someone who takes theirs together
+tick twice for nothing. `supplementDay` draws one checkbox per serving
+(`SupplementRow.slots`), and ticking one calls `logSupplementServing` — an
+insert, not a toggle, because a supplement can legitimately be ticked more
+than once a day. Unticking is `removeIntake` on that row's own id, which is
+already generic; there is nothing supplement-specific about taking a row away.
+`slots` is never fewer than what's actually logged — if `servingsPerDay` was
+lowered after some of today's servings were ticked, those rows stay real and
+tickable rather than silently disappearing. The boxes read as a fill-level
+counter rather than as N independently-identified toggles: which specific
+entry a click removes is irrelevant, since two servings of the same supplement
+carry no distinguishing data — only how many are checked matters, and that's
+what renders.
 
 The creatine card doesn't grow a checkbox of its own: it offers to add itself
 to the stack at the dose it just worked out, so there stays **one place you

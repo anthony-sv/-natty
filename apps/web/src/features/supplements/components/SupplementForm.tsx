@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
-import { useT, type Translate } from "@/i18n/use-t";
+import { useT, type MessageKey, type Translate } from "@/i18n/use-t";
 import { createSupplement, updateSupplement } from "../collection";
 import { supplementUnitSchema, type Supplement } from "../schema";
 
@@ -32,6 +32,9 @@ const buildSchema = (t: Translate) =>
       message: t("supplements.amountRequired"),
     }),
     unit: supplementUnitSchema,
+    servingsPerDay: z.string().refine((value) => Number.isInteger(Number(value)) && Number(value) >= 1, {
+      message: t("supplements.servingsRequired"),
+    }),
     timing: z.string(),
   });
 
@@ -44,9 +47,16 @@ export function SupplementForm({
 }) {
   const t = useT();
 
+  // The `.other` plural form, always — this is the Select's generic label for
+  // the unit ("Pills"), not a count-specific one, so it doesn't need to shift
+  // as the amount field changes. The bug this replaces cast a bare
+  // `supplements.unit.pill` — a key that doesn't exist, only `.one`/`.other`
+  // do — through `as never`, which suppressed the type error and made `t()`
+  // return `undefined` for every unit: the Select rendered no label at all,
+  // trigger and open list alike.
   const units = supplementUnitSchema.options.map((value) => ({
     value,
-    label: t(`supplements.unit.${value}` as never),
+    label: t(`supplements.unit.${value}.other` as MessageKey),
   }));
 
   const form = useForm({
@@ -54,6 +64,8 @@ export function SupplementForm({
       name: existing?.name ?? "",
       amount: existing !== undefined ? String(existing.amount) : "1",
       unit: existing?.unit ?? ("pill" as const),
+      servingsPerDay:
+        existing !== undefined ? String(existing.servingsPerDay) : "1",
       timing: existing?.timing ?? "",
     },
     validators: { onChange: buildSchema(t) },
@@ -62,6 +74,7 @@ export function SupplementForm({
         name: value.name.trim(),
         amount: Number(value.amount),
         unit: value.unit,
+        servingsPerDay: Number(value.servingsPerDay),
         timing: value.timing.trim() === "" ? undefined : value.timing.trim(),
       };
 
@@ -160,6 +173,29 @@ export function SupplementForm({
             )}
           </form.Field>
         </div>
+
+        <form.Field name="servingsPerDay">
+          {(field) => (
+            <Field className="sm:w-40">
+              <FieldLabel htmlFor="supp-servings">
+                {t("supplements.servingsPerDay")}
+              </FieldLabel>
+              <Input
+                id="supp-servings"
+                type="number"
+                min="1"
+                step="1"
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+              />
+              <FieldDescription>
+                {t("supplements.servingsHint")}
+              </FieldDescription>
+              <FieldError errors={field.state.meta.errors} />
+            </Field>
+          )}
+        </form.Field>
 
         <form.Field name="timing">
           {(field) => (

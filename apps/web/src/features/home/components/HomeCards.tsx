@@ -12,8 +12,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useBodyEntries } from "@/features/body/collection";
-import { ffmi, formatIndex, leanMassKg } from "@/features/body/ffmi";
-import { weeklyAverages, weekOverWeek } from "@/features/body/weekly";
+import { ffmi, formatIndex, leanMassKg, withCarriedBodyFat } from "@/features/body/ffmi";
+import { hasLoggedToday, weeklyAverages, weekOverWeek } from "@/features/body/weekly";
 import { useIntake } from "@/features/intake/use-intake";
 import { resolveIntake, tickedMeals } from "@/features/intake/intake";
 import { loggedSetsFork } from "@/features/log/collection";
@@ -39,6 +39,7 @@ import { usePantry } from "@/features/pantry/use-pantry";
 import { profileStore } from "@/features/profile/profile-store";
 import { useT } from "@/i18n/use-t";
 import { startOfDay } from "@/lib/week";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 /**
@@ -155,8 +156,13 @@ function BodyCard() {
     );
   }
 
-  const index = ffmi(latest, profile.heightCm);
-  const lean = leanMassKg(latest);
+  // The last real body-fat reading, carried forward when today's weigh-in
+  // (or the latest one) didn't retake it — the same rule the body tab uses,
+  // so the two can't show different FFMIs off the same data.
+  const carried = withCarriedBodyFat(latest, entries);
+  const index = ffmi(carried.entry, profile.heightCm);
+  const lean = leanMassKg(carried.entry);
+  const loggedToday = hasLoggedToday(entries, now);
 
   return (
     <HomeCard
@@ -165,6 +171,10 @@ function BodyCard() {
       to="/progress"
       search={{ tab: "body" }}
       headline={`${formatWeightValue(latest.weight)} ${latest.unit}`}
+      // A badge in the title row, not a hint beside the number — otherwise a
+      // weigh-in from three days ago reads as this morning's, and the one word
+      // that says it isn't gets lost next to a big bold figure.
+      badge={loggedToday ? undefined : t("home.notLoggedToday")}
       // Each line is dropped rather than shown as a dash: a card of "—" is
       // worse than a shorter card, and body fat is genuinely optional.
       lines={[
@@ -174,9 +184,11 @@ function BodyCard() {
               weight: `${change.latest.weight.toFixed(1)} ${unit}`,
               delta: `${change.deltaWeight > 0 ? "+" : change.deltaWeight < 0 ? "−" : ""}${Math.abs(change.deltaWeight).toFixed(1)}`,
             }),
-        latest.bodyFatPercent === undefined
+        carried.entry.bodyFatPercent === undefined
           ? t("home.noBodyFat")
-          : t("home.bodyFat", { percent: latest.bodyFatPercent.toFixed(1) }),
+          : t("home.bodyFat", {
+              percent: carried.entry.bodyFatPercent.toFixed(1),
+            }),
         // FFMI needs a height, and says so rather than vanishing — it's one
         // field away and the card is where you'd find that out.
         index === undefined
@@ -337,6 +349,7 @@ function HomeCard({
   search,
   headline,
   headlineHint,
+  badge,
   lines,
   empty,
 }: {
@@ -347,6 +360,15 @@ function HomeCard({
   headline?: string;
   /** Sits beside the headline — which measurement it is, say. */
   headlineHint?: string;
+  /**
+   * A flag in the title row, beside the chevron — for something that needs
+   * *noticing*, not just footnoting. `headlineHint` sits next to a 2xl number
+   * and loses; the `TrainingCard`'s empty state reads clearly because it's the
+   * only text on the card. This is what gets the same clarity without losing
+   * the numbers underneath it — "Not logged today" over last Tuesday's weight
+   * has to be the first thing you see, not an aside squeezed beside the figure.
+   */
+  badge?: string;
   /** `undefined` entries are dropped, so a missing figure shortens the card. */
   lines?: (string | undefined)[];
   /** Shown instead of the numbers when there's nothing yet. */
@@ -366,7 +388,17 @@ function HomeCard({
       <div className="flex items-center gap-2">
         <Icon className="size-4 shrink-0 text-muted-foreground" />
         <span className="text-sm font-medium">{title}</span>
-        <ChevronRightIcon className="ml-auto size-4 shrink-0 text-muted-foreground" />
+        {badge !== undefined ? (
+          <Badge variant="outline" className="ml-auto shrink-0">
+            {badge}
+          </Badge>
+        ) : null}
+        <ChevronRightIcon
+          className={cn(
+            "size-4 shrink-0 text-muted-foreground",
+            badge === undefined && "ml-auto",
+          )}
+        />
       </div>
 
       {empty !== undefined ? (

@@ -15,6 +15,64 @@ export function leanMassKg(entry: BodyEntry): number | undefined {
 }
 
 /**
+ * The most recent reading that actually carries a body-fat percentage.
+ *
+ * A weigh-in with no caliper or scale reading is the common case — you don't
+ * measure body fat every morning — and until this existed, logging one made
+ * FFMI, lean mass and the meter vanish from the card: they were all read off
+ * `latest` alone, so the one field you didn't retype deleted three others.
+ * Carrying the last real reading forward is what "current body fat" means
+ * between remeasurements; it's undefined only when none was ever logged, which
+ * is the one case with nothing honest to carry.
+ */
+export function lastBodyFat(
+  entries: BodyEntry[],
+): { percent: number; measuredAt: number } | undefined {
+  const found = entries
+    .filter(
+      (entry): entry is BodyEntry & { bodyFatPercent: number } =>
+        entry.bodyFatPercent !== undefined,
+    )
+    .sort((a, b) => b.measuredAt - a.measuredAt)[0];
+  return found === undefined
+    ? undefined
+    : { percent: found.bodyFatPercent, measuredAt: found.measuredAt };
+}
+
+export interface CarriedBodyFat {
+  /** `latest` with a carried `bodyFatPercent` filled in, or unchanged. */
+  entry: BodyEntry;
+  /** True when the percentage isn't from `latest` itself. */
+  isCarried: boolean;
+  /** When the carried reading was actually taken — for saying so on screen. */
+  measuredAt?: number;
+}
+
+/**
+ * `latest`, with its body-fat reading filled in from history when it has none
+ * of its own.
+ *
+ * The weight is always `latest`'s own — that's what changed this morning —
+ * only the body-fat percentage is carried, and only because it's the one
+ * field that goes stale slower than the scale reading it rides alongside.
+ */
+export function withCarriedBodyFat(
+  latest: BodyEntry,
+  entries: BodyEntry[],
+): CarriedBodyFat {
+  if (latest.bodyFatPercent !== undefined) {
+    return { entry: latest, isCarried: false };
+  }
+  const carried = lastBodyFat(entries);
+  if (carried === undefined) return { entry: latest, isCarried: false };
+  return {
+    entry: { ...latest, bodyFatPercent: carried.percent },
+    isCarried: true,
+    measuredAt: carried.measuredAt,
+  };
+}
+
+/**
  * Fat-Free Mass Index: lean mass over height squared, the body-composition
  * analogue of BMI.
  *

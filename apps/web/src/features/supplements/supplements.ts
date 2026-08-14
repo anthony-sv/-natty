@@ -10,13 +10,26 @@ import type { Supplement } from "./schema";
 
 export interface SupplementRow {
   supplement: Supplement;
-  /** The entry that ticked it, so the row can untick and offer an undo. */
-  entryId: string | undefined;
-  taken: boolean;
+  /**
+   * This day's ticks for it, oldest first — one entry per serving actually
+   * logged, **not** padded or truncated to `servingsPerDay`.
+   */
+  entryIds: string[];
+  taken: number;
+  /**
+   * How many boxes the checklist draws for this row.
+   *
+   * Normally `supplement.servingsPerDay`, but never fewer than `taken`: if
+   * `servingsPerDay` was lowered after some of today's servings were already
+   * logged, or two devices raced and both logged one, those rows are real and
+   * stay tickable rather than becoming invisible, unremovable extras.
+   */
+  slots: number;
 }
 
 export interface SupplementDay {
   rows: SupplementRow[];
+  /** Supplements whose full servings are logged today. */
   taken: number;
   /** Rows on the list today. Archived ones you didn't take are not on it. */
   total: number;
@@ -30,20 +43,18 @@ export interface SupplementDay {
   orphaned: number;
 }
 
-/** Which supplement ids are ticked on this local day. */
+/** Every serving logged for each supplement on this local day, oldest first. */
 export function takenOn(
   entries: IntakeEntry[],
   day: number,
-): Map<string, string> {
-  const taken = new Map<string, string>();
+): Map<string, string[]> {
+  const taken = new Map<string, string[]>();
   for (const entry of entries) {
     if (entry.day !== day) continue;
     if (entry.source.kind !== "supplement") continue;
-    // First tick wins, so a duplicate row (two devices, one day) unticks to
-    // the one the list is showing rather than leaving a ghost behind.
-    if (!taken.has(entry.source.supplementId)) {
-      taken.set(entry.source.supplementId, entry.id);
-    }
+    const existing = taken.get(entry.source.supplementId);
+    if (existing) existing.push(entry.id);
+    else taken.set(entry.source.supplementId, [entry.id]);
   }
   return taken;
 }
@@ -73,8 +84,13 @@ export function supplementDay(
         supplement.archivedAt === undefined || taken.has(supplement.id),
     )
     .map((supplement): SupplementRow => {
-      const entryId = taken.get(supplement.id);
-      return { supplement, entryId, taken: entryId !== undefined };
+      const entryIds = taken.get(supplement.id) ?? [];
+      return {
+        supplement,
+        entryIds,
+        taken: entryIds.length,
+        slots: Math.max(supplement.servingsPerDay, entryIds.length),
+      };
     })
     .sort((a, b) =>
       a.supplement.name.localeCompare(b.supplement.name, locale),
@@ -84,7 +100,8 @@ export function supplementDay(
 
   return {
     rows,
-    taken: rows.filter((row) => row.taken).length,
+    taken: rows.filter((row) => row.taken >= row.supplement.servingsPerDay)
+      .length,
     total: rows.length,
     orphaned: [...taken.keys()].filter((id) => !known.has(id)).length,
   };

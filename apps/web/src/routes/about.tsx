@@ -15,6 +15,7 @@ import {
   ShoppingBasketIcon,
   TrendingUpIcon,
   TrophyIcon,
+  UserCircleIcon,
   UserIcon,
   UtensilsIcon,
 } from "lucide-react";
@@ -78,6 +79,15 @@ const GUIDE: Section[] = [
     points: ["about.account.p1", "about.account.p2", "about.account.p3"],
     to: "/account",
     linkKey: "about.account.link",
+  },
+  {
+    id: "profile",
+    icon: UserCircleIcon,
+    titleKey: "about.profile.title",
+    bodyKey: "about.profile.body",
+    points: ["about.profile.p1", "about.profile.p2"],
+    to: "/profile",
+    linkKey: "about.profile.link",
   },
   {
     id: "routines",

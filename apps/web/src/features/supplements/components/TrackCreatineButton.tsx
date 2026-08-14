@@ -55,6 +55,10 @@ export function TrackCreatineButton({ grams }: { grams: number }) {
           name: t("supplements.creatine"),
           amount: grams,
           unit: "g",
+          // Loading phases exist but this button seeds the maintenance dose,
+          // taken once — the card's own loading note stays informational
+          // rather than becoming a second checklist entry.
+          servingsPerDay: 1,
         });
         toast.add({
           title: t("supplements.saved", { name: supplement.name }),

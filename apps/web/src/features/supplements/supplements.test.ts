@@ -13,6 +13,7 @@ function supplement(name: string, over: Partial<Supplement> = {}): Supplement {
     name,
     amount: 3,
     unit: "pill",
+    servingsPerDay: 1,
     createdAt: 0,
     ...over,
   };
@@ -42,35 +43,103 @@ describe("takenOn", () => {
     expect([...takenOn(entries, DAY).keys()]).toEqual(["supplement:omega"]);
   });
 
-  it("resolves a duplicate tick to one row", () => {
-    // Two devices, one day. The list unticks the row it is showing rather
-    // than leaving a second one behind.
+  it("carries every serving logged that day, not just the first", () => {
+    // Three fish-oil capsules ticked one at a time — each is its own row, and
+    // none of them should quietly disappear into the others.
     const entries = [
       tick("supplement:omega", DAY, "first"),
       tick("supplement:omega", DAY, "second"),
+      tick("supplement:omega", DAY, "third"),
     ];
-    expect(takenOn(entries, DAY).get("supplement:omega")).toBe("first");
+    expect(takenOn(entries, DAY).get("supplement:omega")).toEqual([
+      "first",
+      "second",
+      "third",
+    ]);
   });
 });
 
 describe("supplementDay", () => {
-  const stack = [supplement("Omega 3"), supplement("Magnesium", { amount: 2 })];
+  const stack = [
+    supplement("Omega 3", { servingsPerDay: 3 }),
+    supplement("Magnesium", { amount: 2 }),
+  ];
 
   it("lists the whole stack, ticked or not", () => {
-    const day = supplementDay(stack, [tick("supplement:Omega 3", DAY)], DAY, "en");
+    const day = supplementDay(
+      stack,
+      [tick("supplement:Omega 3", DAY, "a"), tick("supplement:Omega 3", DAY, "b")],
+      DAY,
+      "en",
+    );
 
     expect(day.rows.map((row) => row.supplement.name)).toEqual([
       "Magnesium",
       "Omega 3",
     ]);
-    expect(day.rows.map((row) => row.taken)).toEqual([false, true]);
-    expect(day.taken).toBe(1);
+    expect(day.rows.map((row) => row.taken)).toEqual([0, 2]);
+    // Magnesium is fully taken at 0 of 1... it isn't, so neither counts here.
+    expect(day.taken).toBe(0);
     expect(day.total).toBe(2);
   });
 
-  it("carries the entry id, so a row can untick itself", () => {
-    const day = supplementDay(stack, [tick("supplement:Omega 3", DAY, "x")], DAY, "en");
-    expect(day.rows.find((row) => row.taken)?.entryId).toBe("x");
+  it("only counts a supplement as taken once every serving is logged", () => {
+    const partial = supplementDay(
+      stack,
+      [tick("supplement:Omega 3", DAY, "a"), tick("supplement:Magnesium", DAY, "b")],
+      DAY,
+      "en",
+    );
+    // Magnesium's one serving is done; Omega 3's three are not.
+    expect(partial.taken).toBe(1);
+
+    const full = supplementDay(
+      stack,
+      [
+        tick("supplement:Omega 3", DAY, "a"),
+        tick("supplement:Omega 3", DAY, "b"),
+        tick("supplement:Omega 3", DAY, "c"),
+        tick("supplement:Magnesium", DAY, "d"),
+      ],
+      DAY,
+      "en",
+    );
+    expect(full.taken).toBe(2);
+  });
+
+  it("carries the entry ids, so each serving can untick itself", () => {
+    const day = supplementDay(
+      stack,
+      [tick("supplement:Omega 3", DAY, "x"), tick("supplement:Omega 3", DAY, "y")],
+      DAY,
+      "en",
+    );
+    expect(day.rows.find((row) => row.supplement.name === "Omega 3")?.entryIds).toEqual([
+      "x",
+      "y",
+    ]);
+  });
+
+  it("draws a slot per serving, not just per supplement", () => {
+    const day = supplementDay(stack, [], DAY, "en");
+    const omega = day.rows.find((row) => row.supplement.name === "Omega 3")!;
+    const mag = day.rows.find((row) => row.supplement.name === "Magnesium")!;
+    expect(omega.slots).toBe(3);
+    expect(mag.slots).toBe(1);
+  });
+
+  it("keeps a slot open for a serving logged past the current count", () => {
+    // servingsPerDay was lowered to 1 after two servings were already ticked
+    // today — both stay real, tickable rows rather than becoming invisible.
+    const lowered = [supplement("Creatine", { servingsPerDay: 1 })];
+    const day = supplementDay(
+      lowered,
+      [tick("supplement:Creatine", DAY, "a"), tick("supplement:Creatine", DAY, "b")],
+      DAY,
+      "en",
+    );
+    expect(day.rows[0].taken).toBe(2);
+    expect(day.rows[0].slots).toBe(2);
   });
 
   it("keeps an archived supplement on the days you took it", () => {

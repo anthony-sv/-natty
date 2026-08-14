@@ -5,8 +5,10 @@ import {
   ffmi,
   ffmiScale,
   formatIndex,
+  lastBodyFat,
   leanMassKg,
   normalizedFfmi,
+  withCarriedBodyFat,
 } from "./ffmi";
 import type { BodyEntry } from "./schema";
 
@@ -14,8 +16,9 @@ function entry(
   weight: number,
   bodyFatPercent?: number,
   unit: WeightUnit = "kg",
+  measuredAt = 1,
 ): BodyEntry {
-  return { id: "b1", measuredAt: 1, weight, unit, bodyFatPercent };
+  return { id: `b${measuredAt}`, measuredAt, weight, unit, bodyFatPercent };
 }
 
 describe("leanMassKg", () => {
@@ -35,6 +38,57 @@ describe("leanMassKg", () => {
 
   it("treats 0% fat as a real reading, not a missing one", () => {
     expect(leanMassKg(entry(80, 0))).toBeCloseTo(80, 5);
+  });
+});
+
+describe("lastBodyFat", () => {
+  it("is undefined when body fat has never been logged", () => {
+    expect(lastBodyFat([entry(90, undefined, "kg", 1)])).toBeUndefined();
+  });
+
+  it("finds the most recent reading, not just the most recent entry", () => {
+    // Today's weigh-in has no caliper reading; last week's does.
+    const entries = [
+      entry(90, undefined, "kg", 20),
+      entry(91, 18, "kg", 10),
+      entry(92, 19, "kg", 1),
+    ];
+    expect(lastBodyFat(entries)).toEqual({ percent: 18, measuredAt: 10 });
+  });
+
+  it("ignores list order", () => {
+    const entries = [
+      entry(90, 20, "kg", 1),
+      entry(91, 18, "kg", 10),
+    ];
+    expect(lastBodyFat(entries)?.percent).toBe(18);
+  });
+});
+
+describe("withCarriedBodyFat", () => {
+  it("leaves an entry with its own reading untouched", () => {
+    const latest = entry(90, 20, "kg", 10);
+    const result = withCarriedBodyFat(latest, [latest]);
+    expect(result).toEqual({ entry: latest, isCarried: false });
+  });
+
+  it("fills in the last known reading when the latest has none", () => {
+    const latest = entry(90, undefined, "kg", 20);
+    const older = entry(88, 22, "kg", 10);
+    const result = withCarriedBodyFat(latest, [latest, older]);
+
+    // Today's weight, carried body fat.
+    expect(result.entry.weight).toBe(90);
+    expect(result.entry.bodyFatPercent).toBe(22);
+    expect(result.isCarried).toBe(true);
+    expect(result.measuredAt).toBe(10);
+  });
+
+  it("shows nothing when body fat has never been logged at all", () => {
+    const latest = entry(90, undefined, "kg", 20);
+    const result = withCarriedBodyFat(latest, [latest]);
+    expect(result.entry.bodyFatPercent).toBeUndefined();
+    expect(result.isCarried).toBe(false);
   });
 });
 

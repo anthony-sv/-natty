@@ -24,6 +24,26 @@ export const esMX: Record<keyof typeof en, string> = {
   "nav.language": "Idioma",
   "nav.darkMode": "Modo oscuro",
   "nav.account": "Cuenta",
+  "profile.title": "Perfil",
+  "profile.subtitle":
+    "Datos fijos de tu cuerpo — se usan para el FFMI y tu estimado de potencial natural. Funciona sin cuenta.",
+  "profile.cardTitle": "Sobre ti",
+  "profile.cardBody":
+    "Se guarda una vez y se aplica en todos lados donde se usa, así que corregir un error de dedo aquí recalcula el FFMI y el estimado de potencial juntos.",
+  "profile.heightHint": "Se necesita para el FFMI y el estimado de potencial.",
+  "profile.sex": "Sexo",
+  "profile.sexHint": "Solo elige la escala de referencia contra la que se lee el FFMI.",
+  "profile.sexUnset": "Sin definir",
+  "profile.male": "Hombre",
+  "profile.female": "Mujer",
+  "profile.wristCm": "Muñeca (cm)",
+  "profile.wristHint": "Debajo del hueso. Se usa en el estimado de potencial natural.",
+  "profile.ankleCm": "Tobillo (cm)",
+  "profile.ankleHint": "Arriba del hueso. Se usa en el estimado de potencial natural.",
+  "profile.edit": "Editar",
+  "profile.done": "Listo",
+  "profile.clear": "Borrar",
+  "profile.cleared": "Se borró tu perfil",
 
   "account.title": "Cuenta",
   "account.subtitle": "Inicia sesión para sincronizar tus datos entre dispositivos.",
@@ -186,6 +206,7 @@ export const esMX: Record<keyof typeof en, string> = {
     "Todavía no hay pesajes. Uno toma un segundo y lo demás sale solo.",
   "home.weekAverage": "Prom. semanal {weight} · {delta} vs la anterior",
   "home.bodyFat": "{percent}% de grasa",
+  "home.notLoggedToday": "No registrado hoy",
   "home.noBodyFat": "Sin medición de grasa",
   "home.ffmi": "FFMI {value}",
   "home.needHeight": "Pon tu estatura para el FFMI",
@@ -664,6 +685,14 @@ export const esMX: Record<keyof typeof en, string> = {
   "about.account.p3":
     "Los respaldos siguen funcionando con sesión iniciada — la exportación cubre lo que la app muestra en ese momento, así que también es tu salida del servidor.",
   "about.account.link": "Ir a tu cuenta",
+  "about.profile.title": "Perfil",
+  "about.profile.body":
+    "Estatura, sexo, muñeca y tobillo — los datos fijos que usan tanto el FFMI como el estimado de potencial natural.",
+  "about.profile.p1":
+    "Un solo lugar para editar, no dos: esto era un campo de estatura y sexo en la pestaña de cuerpo, y una segunda copia de estatura, muñeca y tobillo en la calculadora de potencial — corregir un error de dedo en un lado dejaba el otro mal.",
+  "about.profile.p2":
+    "Se llega desde el menú del avatar en el encabezado o la barra lateral, con o sin sesión iniciada — el FFMI no debería necesitar una cuenta para configurarse, así que el estado sin sesión ahora abre un menú en vez de ir directo a una página para iniciar sesión.",
+  "about.profile.link": "Abrir tu perfil",
 
   "about.routines.title": "Programas y días",
   "about.routines.body":
@@ -914,6 +943,10 @@ export const esMX: Record<keyof typeof en, string> = {
   "supplements.nameRequired": "Ponle un nombre",
   "supplements.amount": "Cuánto",
   "supplements.amountRequired": "Necesita un número mayor a cero",
+  "supplements.servingsPerDay": "Tomas al día",
+  "supplements.servingsHint":
+    "Cuántas veces al día tomas esta dosis. Dos pastillas juntas es una toma; tres cápsulas repartidas en el día son tres — cada una tiene su propia casilla.",
+  "supplements.servingsRequired": "Necesita un número entero de uno o más",
   "supplements.unit": "Unidad",
   "supplements.unit.pill.one": "pastilla",
   "supplements.unit.pill.other": "pastillas",
@@ -934,6 +967,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "supplements.saving": "Guardando…",
   "supplements.saved": "Se guardó {name}",
   "supplements.saveError": "No se pudo guardar",
+  "supplements.servingOf": "Toma {number} de {total}",
+  "supplements.taken": "{name} tomado",
   "supplements.unticked": "Se desmarcó {name}",
   "supplements.archived": "Se archivó {name}",
   "supplements.archivedTag": "Archivado",
@@ -1178,26 +1213,21 @@ export const esMX: Record<keyof typeof en, string> = {
   "log.countLogged": "{count} registrados",
 
   // ── Body ─────────────────────────────────────────────────────────────────
-  "body.profile.title": "Sobre ti",
-  "body.profile.body":
-    "Se guarda una vez y se aplica a cada pesaje, así que corregir un error aquí recalcula todo el historial.",
-  "body.profile.heightHint": "Necesaria para el FFMI.",
-  "body.profile.sex": "Sexo",
-  "body.profile.sexHint": "Solo elige la escala de referencia.",
-  "body.profile.sexUnset": "Sin definir",
-  "body.profile.male": "Hombre",
-  "body.profile.female": "Mujer",
   "body.latest.title": "Lo más reciente",
-  "body.latest.needHeight": "Agrega tu estatura arriba para ver el FFMI.",
+  "body.latest.needHeight": "Agrega tu estatura para ver el FFMI.",
+  "body.latest.needHeightLink": "Ponla en tu perfil",
   "body.latest.needBodyFat":
     "Agrega un porcentaje de grasa a un pesaje para ver el FFMI.",
   "body.latest.body":
     "Índice de masa libre de grasa — masa magra sobre estatura al cuadrado.",
+  "body.latest.carried": "Trasladado",
+  "body.latest.carriedBodyFat": "Grasa corporal trasladada de tu registro del {date}.",
   "body.stat.leanMass": "Masa magra",
   "body.stat.ffmi": "FFMI",
   "body.stat.normalized": "Normalizado",
   "body.stat.bodyFat": "Grasa corporal",
   "body.logEntry.title": "Registrar un pesaje",
+  "body.logEntry.notToday": "Todavía no registras nada hoy.",
   "body.logEntry.body":
     "La grasa corporal es opcional — el peso solo ya vale la pena registrarlo.",
   "body.logEntry.action": "Registrar pesaje",
@@ -1214,8 +1244,13 @@ export const esMX: Record<keyof typeof en, string> = {
   "body.history.title": "Historial",
   "body.history.body": "Del más reciente al más antiguo.",
   "body.history.needSex":
-    "Define tu sexo arriba para ver dónde cae la cifra normalizada frente a las normas poblacionales.",
+    "Define tu sexo en tu perfil para ver dónde cae la cifra normalizada frente a las normas poblacionales.",
   "body.history.empty": "Todavía no hay pesajes registrados.",
+  "body.history.editEntry": "Editar {weight}",
+  "body.history.editTitle": "Corregir este pesaje",
+  "body.history.deleteEntry": "Eliminar {weight}",
+  "body.history.deleted": "Eliminado",
+  "body.history.saved": "Pesaje actualizado",
   "body.chart.notEnough.title": "Todavía no hay pesajes suficientes",
   "body.chart.notEnough.body": "Registra un segundo y aquí aparece la tendencia.",
   "body.chart.weightAria":
@@ -1391,7 +1426,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "calc.orm.forGivenSetBody":
     "La misma fórmula al revés, sobre su propia estimación — así el renglón que corresponde al set que pusiste te devuelve el peso que levantaste.",
   "calc.potential.measurementsBody":
-    "Muñeca y tobillo en su punto más angosto. La estatura, la muñeca y el tobillo se guardan en tu perfil; la grasa corporal parte de tu último pesaje y la puedes mover para ver qué cambia.",
+    "La estatura, muñeca y tobillo vienen de tu perfil — muñeca y tobillo en su punto más angosto. La grasa corporal parte de tu último pesaje y puedes moverla para ver qué cambia.",
   "calc.potential.lastWeighIn": "Último pesaje: {percent}%.",
   "calc.potential.maxBody":
     "El modelo del Dr. Casey Butt, ajustado a las medidas de fisicoculturistas sin fármacos. La segunda cifra, más chica, es el 95% del máximo — la que suele describirse como realmente alcanzable.",
@@ -1440,20 +1475,16 @@ export const esMX: Record<keyof typeof en, string> = {
     "La estatura, la muñeca y el tobillo se guardan directo en tu perfil. La grasa corporal aquí es una perilla de simulación — el registro es el dueño del historial real.",
   "calc.potential.fillAllBody":
     "La estatura, la muñeca, el tobillo y la grasa corporal son todos entradas de la fórmula.",
+  "calc.potential.editFrame": "Editar en tu perfil",
+  "calc.potential.setFrame": "Ponlos en tu perfil",
+  "calc.potential.needFrame": "La estatura, muñeca y tobillo viven en tu perfil.",
   "calc.potential.leanMax": "Masa magra máxima",
   "calc.potential.realistic": "{value} kg realista",
   "calc.potential.needWeighIn":
     "Registra un pesaje con porcentaje de grasa para ver dónde estás frente a esto.",
   "calc.potential.standing":
     "Vas en {lean} kg de masa magra — {percent}% del máximo, {realistic}% de la cifra realista.",
-  "calc.potential.exampleHeight": "ej. 179",
-  "calc.potential.exampleWrist": "ej. 18",
-  "calc.potential.exampleAnkle": "ej. 23",
   "calc.potential.exampleBodyFat": "ej. 12",
-  "calc.potential.wristCm": "Muñeca (cm)",
-  "calc.potential.wristHint": "Debajo del hueso.",
-  "calc.potential.ankleCm": "Tobillo (cm)",
-  "calc.potential.ankleHint": "Arriba del hueso.",
   "calc.potential.noWeighIn": "Todavía no hay un pesaje del cual partir.",
   "calc.potential.max": "Tamaño máximo realista",
   "calc.potential.girths": "Perímetros a ese tamaño",
