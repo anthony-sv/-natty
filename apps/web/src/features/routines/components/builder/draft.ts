@@ -162,6 +162,33 @@ export function emptyDraft(): DraftRoutine {
 }
 
 /**
+ * Move a day to another position in its week, carrying everything in it.
+ *
+ * The reason this exists rather than "retype the other day": swapping leg day
+ * and a rest day meant deleting a day's worth of exercises and entering them
+ * again one position down. Nothing inside a day refers to its own position —
+ * `toDays` assigns `dayNumber` from array order on save — so moving the
+ * object is the entire operation.
+ *
+ * Out of range is a no-op rather than an error: the buttons are disabled at
+ * the ends, and a guard here means a caller that gets it wrong reorders
+ * nothing instead of dropping a day.
+ */
+export function moveDay(
+  days: DraftDay[],
+  from: number,
+  to: number,
+): DraftDay[] {
+  if (to < 0 || to >= days.length || from < 0 || from >= days.length) {
+    return days;
+  }
+  const next = [...days];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
+/**
  * A copy of a week, ready to be changed.
  *
  * How a second week is almost always written: the split stays, the numbers

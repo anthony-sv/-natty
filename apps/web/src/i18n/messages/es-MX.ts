@@ -336,6 +336,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.dayLabel": "De qu\u00e9 es",
   "builder.dayLabelPlaceholder": "Gl\u00fateo, Pecho, Jal\u00f3n\u2026",
   "builder.restDay": "D\u00eda de descanso",
+  "builder.moveDayUp": "Mover el día {number} antes",
+  "builder.moveDayDown": "Mover el día {number} después",
   "builder.removeDay": "Quitar el d\u00eda {number}",
   "builder.noDays": "Todav\u00eda no hay d\u00edas. Agrega uno para empezar.",
   "builder.exercises": "Ejercicios",
