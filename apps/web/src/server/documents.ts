@@ -16,6 +16,10 @@ import {
   userRoutineSchema,
   type UserRoutine,
 } from "@/features/routines/schema";
+import {
+  supplementSchema,
+  type Supplement,
+} from "@/features/supplements/schema";
 import { authMiddleware } from "./auth";
 import { db } from "./db/client";
 import { userDocuments } from "./db/schema";
@@ -40,6 +44,10 @@ const KINDS = {
   food: { schema: userFoodSchema, keyField: "id" },
   recipe: { schema: recipeSchema, keyField: "id" },
   diet: { schema: userDietPlanSchema, keyField: "slug" },
+  // The sixth kind, and the one that proves the shape: it needed no migration,
+  // no table and no new endpoint — which is what sharing one document table
+  // was for.
+  supplement: { schema: supplementSchema, keyField: "id" },
 } as const;
 
 /**
@@ -55,7 +63,8 @@ export type DocumentRow =
   | UserRoutine
   | UserFood
   | Recipe
-  | UserDietPlan;
+  | UserDietPlan
+  | Supplement;
 
 export type DocumentKind = keyof typeof KINDS;
 const documentKindSchema = z.enum(

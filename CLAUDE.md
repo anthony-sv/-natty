@@ -649,9 +649,22 @@ band behind the track is captioned as a rule of thumb, not a target.
 weeks in the middle of a year read as a layoff by shape alone.
 
 Local calendar days via `startOfDay`, same reasoning as the weekly averages: a
-UTC bucket files a late-evening session under tomorrow. **`currentStreak` counts
-back from today, not from the last day trained**, so a broken streak reads 0
-rather than flattering you with its old length.
+UTC bucket files a late-evening session under tomorrow.
+
+**A streak counts training days and tolerates a gap; rest days are prescribed,
+not missed.** `MAX_GAP_DAYS = 3` — up to two rest days between sessions, which
+covers the Saturday-and-Sunday weekend that is the longest gap any of the six
+programs prescribes. Consecutive *calendar* days was the commit-graph
+definition and it measured nothing here: every program runs five or six days a
+week, so the number was capped at six by construction and read 0 on every rest
+day — the one morning it was meant to be encouraging. A commit graph can define
+it that way because nobody schedules a day off from committing. Three days off
+is a week that got away from you, which is the thing a streak exists to notice.
+
+**`currentStreak` is still anchored on today, not on the last session**, so one
+you let lapse a fortnight ago doesn't read as current. That half was always
+right; only the tolerance changed. The rule is printed under the stats, because
+a streak that survives a gap is not what the graph's shape implies.
 
 Colour is a **sequential ramp — one hue, four steps** (`--heat-1..4`), since
 this encodes magnitude; the categorical palette is reserved for identity. Steps
@@ -1148,10 +1161,49 @@ Unticking removes with an Undo on the toast, like `deleteSet`. Toggling reads
 exists for, and deciding "is this already ticked" from a stale render logs a
 duplicate.
 
+### Supplements (`src/features/supplements/`)
+
+What you take daily, and whether you took it — on the **Today** tab beside the
+meals, because it answers the same question about the same day.
+
+**A supplement carries no macros, on purpose.** Three fish-oil capsules have
+calories on paper and nobody counts them; the thing being recorded is
+adherence. So a `supplement` intake entry contributes nothing to the day's
+totals and `resolveIntake` falls through it deliberately — listing it at zero
+would put a permanent nothing in the food totals.
+
+**The tick is a third `IntakeEntry` kind, not a table of its own.** It's the
+same question the other two answer (what went in, on which local day), so it
+inherits the day bucketing, the sync, the undo and the nothing-auto-logs rule
+for free — and needed no DDL, which for a table meant hand-applied SQL. The
+**stack** is a sixth `user_documents` kind, which is the case that table was
+shaped for and the one that proves it: no migration, no table, no new endpoint.
+
+**Provenance, not a copy**, the same call `meal` makes: the dose lives on the
+supplement, so correcting it fixes every day already logged. Right for a
+standing instruction you follow. Stopping one **archives** rather than deletes
+it once anything is ticked against it — the rule custom exercises follow — so
+the months you were taking it still read correctly; one with no history deletes
+outright.
+
+`supplementDay` counts **orphaned** ticks rather than dropping them: a tick
+against something no longer in the stack has no name to render, but losing it
+silently would make the day read one short.
+
+The dose is a number plus a unit from a closed set rather than free text, which
+is what makes "3 pills" translatable while a sentence you typed isn't — names
+and timings are yours and are not translation targets, like custom exercises.
+
+The creatine card doesn't grow a checkbox of its own: it offers to add itself
+to the stack at the dose it just worked out, so there stays **one place you
+tick**. Matching is by name rather than a reserved id, which would make one
+supplement special everywhere it's read to save a duplicate the button can just
+refuse to create.
+
 ## Accounts and sync (`src/features/auth/`, `src/server/`)
 
 Optional Supabase accounts — the app is fully usable signed out, and that is a
-design commitment, not a transition state. **All nine collections sync**, plus
+design commitment, not a transition state. **All ten collections sync**, plus
 the profile; theme, locale and `session-store` stay local by design.
 
 - **Auth is cookie-based on purpose.** `features/auth/client.ts` creates the
@@ -1277,7 +1329,7 @@ the profile; theme, locale and `session-store` stay local by design.
   uploading nothing or re-uploading everything. Signing out shows this
   device's own data again, untouched.
 - **The diff runs on press, not continuously.** Answering "what's missing"
-  across nine collections needs both sides of each awake, and doing that on
+  across ten collections needs both sides of each awake, and doing that on
   every render of the account page would fetch the whole account to draw one
   number.
 - **Two names, and they are different things.** `Profile.displayName` is
@@ -1330,7 +1382,7 @@ the profile; theme, locale and `session-store` stay local by design.
 
 ## Export, import and sharing (`src/features/backup/`)
 
-Everything lives in eleven localStorage keys, and the half that would hurt
+Everything lives in twelve localStorage keys, and the half that would hurt
 most to lose — the exercises, routines, foods, recipes and plans you wrote —
 is data only you have.
 
@@ -1820,6 +1872,12 @@ Radix default. Preset is **Nova** (Lucide icons, Geist Variable font via
   a `variant` — `wide` for the sidebar row, `compact` for the header's avatar
   button — and both render the same menu below the trigger, so the account
   can't offer different things in different corners.
+  - The header is **`sticky top-0` with an explicit `bg-background`**. It holds
+    the sidebar trigger, the theme and the account — how you leave the page
+    you're on — and on a long one (the guide, a program, `/progress` with a
+    year in it) they scrolled away, so getting back meant scrolling up first.
+    The background is load-bearing rather than decorative now that content
+    passes underneath.
   - The sidebar's active row is computed with `useMatchRoute` and passed as
     `isActive`. **A `Link` marks itself with `data-status`, which is not the
     `data-active` the sidebar styles** — so without this every row draws

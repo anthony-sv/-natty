@@ -98,6 +98,12 @@ export function HistoryPanel() {
             />
           </div>
 
+          {/* Said out loud, because a streak that survives a gap is not what
+              the commit graph this borrows its shape from means by one. */}
+          <p className="text-xs text-muted-foreground">
+            {t("history.streakRule")}
+          </p>
+
           <TrainingHeatmap calendar={calendar} onSelectDay={setSelected} />
         </CardContent>
       </Card>

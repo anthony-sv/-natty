@@ -1,5 +1,5 @@
 import { calendarWeeks } from "@/lib/calendar";
-import { addDays, daysBetween, startOfDay } from "@/lib/week";
+import { daysBetween, startOfDay } from "@/lib/week";
 import type { LoggedSet } from "./schema";
 
 /**
@@ -36,9 +36,9 @@ export interface Calendar {
   /** Days with at least one set. */
   daysTrained: number;
   totalSets: number;
-  /** Consecutive trained days, at its longest, within the window. */
+  /** The most training days one unbroken run held, within the window. */
   longestStreak: number;
-  /** Consecutive trained days ending today, or 0 if today is empty. */
+  /** Training days in the run that is still alive, or 0 if it has lapsed. */
   currentStreak: number;
   /** The most sets any one day carried — the top of the intensity scale. */
   busiestDay: number;
@@ -89,19 +89,42 @@ export function toCalendar(
     daysTrained: trained.length,
     totalSets: trained.reduce((total, day) => total + day.sets, 0),
     longestStreak: longestRun(trained.map((day) => day.date)),
-    currentStreak: runEndingAt(new Set(trained.map((day) => day.date)), today),
+    currentStreak: liveRun(
+      trained.map((day) => day.date),
+      today,
+    ),
     busiestDay: Math.max(0, ...trained.map((day) => day.sets)),
   };
 }
 
-/** The longest run of consecutive days in an ascending list of day starts. */
+/**
+ * How far apart two sessions can be and still belong to the same streak.
+ *
+ * **Rest days are prescribed, not missed, and a streak that a rest day breaks
+ * measures nothing.** Every program in this app runs five or six training days
+ * a week, so counting *consecutive calendar days* capped the number at six by
+ * construction and read 0 on every rest day — the one morning the figure was
+ * meant to be encouraging. A commit graph can define a streak that way because
+ * nobody schedules a day off from committing.
+ *
+ * Three days apart, so up to two rest days sit between sessions: that covers a
+ * Saturday-and-Sunday weekend, the longest gap any of the six programs
+ * prescribes. Three days off is a week that got away from you, which is the
+ * thing a streak exists to notice.
+ */
+const MAX_GAP_DAYS = 3;
+
+/** The most training days in one unbroken run, over ascending day starts. */
 function longestRun(days: number[]): number {
   let longest = 0;
   let run = 0;
   let previous: number | undefined;
 
   for (const day of days) {
-    run = previous !== undefined && daysBetween(previous, day) === 1 ? run + 1 : 1;
+    run =
+      previous !== undefined && daysBetween(previous, day) <= MAX_GAP_DAYS
+        ? run + 1
+        : 1;
     previous = day;
     if (run > longest) longest = run;
   }
@@ -109,18 +132,22 @@ function longestRun(days: number[]): number {
 }
 
 /**
- * The run of trained days ending today.
+ * The run that is still alive, counted in training days.
  *
- * Counts back from today rather than from the last trained day: a streak you
- * broke yesterday is not a streak, and reporting it as one is the kind of
- * flattery that makes a number worthless.
+ * Anchored on today rather than on the last session, which is what stops a
+ * streak you let lapse a fortnight ago from reading as current — that half of
+ * the original was right and is kept. What changed is the tolerance: today
+ * being a rest day no longer zeroes it, since you haven't missed anything
+ * until the gap outgrows `MAX_GAP_DAYS`.
  */
-function runEndingAt(trained: ReadonlySet<number>, today: number): number {
-  let streak = 0;
-  let day = today;
-  while (trained.has(day)) {
+function liveRun(days: number[], today: number): number {
+  const last = days[days.length - 1];
+  if (last === undefined || daysBetween(last, today) > MAX_GAP_DAYS) return 0;
+
+  let streak = 1;
+  for (let i = days.length - 1; i > 0; i--) {
+    if (daysBetween(days[i - 1], days[i]) > MAX_GAP_DAYS) break;
     streak++;
-    day = addDays(day, -1);
   }
   return streak;
 }

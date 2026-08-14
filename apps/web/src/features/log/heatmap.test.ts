@@ -124,12 +124,25 @@ describe("streaks", () => {
     expect(calendar.longestStreak).toBe(3);
   });
 
-  it("breaks a streak on a missed day", () => {
+  it("counts through the rest days a program actually prescribes", () => {
+    // Five on, two off, five on — the shape of every program in this app.
+    // Under the old consecutive-days rule this was a streak of 5, and no
+    // amount of adherence could ever make it 6.
+    const days = [3, 4, 5, 6, 7, /* 8-9 rest */ 10, 11, 12];
+    const calendar = toCalendar(
+      days.map((d) => set(at(2026, 8, d))),
+      { weeks: 4, now: NOW },
+    );
+
+    expect(calendar.longestStreak).toBe(8);
+  });
+
+  it("breaks on three days off, which is a week that got away from you", () => {
     const calendar = toCalendar(
       [
-        set(at(2026, 8, 3)),
-        set(at(2026, 8, 4)),
-        // 5th missed
+        set(at(2026, 8, 1)),
+        set(at(2026, 8, 2)),
+        // 3rd, 4th and 5th missed
         set(at(2026, 8, 6)),
       ],
       { weeks: 4, now: NOW },
@@ -147,14 +160,27 @@ describe("streaks", () => {
     expect(calendar.currentStreak).toBe(2);
   });
 
-  it("reports no current streak when today is empty", () => {
+  it("keeps the current streak alive on a rest day", () => {
+    // NOW is the 12th and the last session was the 11th. Taking today off is
+    // not missing anything, and reading 0 on the morning after a good week is
+    // the single most demoralising thing this number could do.
     const calendar = toCalendar(
       [set(at(2026, 8, 9)), set(at(2026, 8, 10)), set(at(2026, 8, 11))],
       { weeks: 2, now: NOW },
     );
 
-    // Three days in a row, but it ended yesterday. Calling that a live streak
-    // is flattery, and a number nobody can trust isn't worth showing.
+    expect(calendar.longestStreak).toBe(3);
+    expect(calendar.currentStreak).toBe(3);
+  });
+
+  it("lets a lapsed streak go rather than flattering you with its old length", () => {
+    // Four days since the last session: the gap outgrew the tolerance, so
+    // this is a streak you had, not one you have.
+    const calendar = toCalendar(
+      [set(at(2026, 8, 6)), set(at(2026, 8, 7)), set(at(2026, 8, 8))],
+      { weeks: 2, now: NOW },
+    );
+
     expect(calendar.longestStreak).toBe(3);
     expect(calendar.currentStreak).toBe(0);
   });

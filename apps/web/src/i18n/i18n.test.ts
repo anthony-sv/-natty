@@ -242,6 +242,16 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       // every language that uses the metric system, which is the point of it.
       "tonnage.kg",
       "tonnage.tonnes",
+      // Same again: the metric symbols, in both plural forms because a dose
+      // reads "1 g" and "5 g" alike, plus the template that joins a number to
+      // one of them and contains nothing else.
+      "supplements.unit.g.one",
+      "supplements.unit.g.other",
+      "supplements.unit.mg.one",
+      "supplements.unit.mg.other",
+      "supplements.unit.ml.one",
+      "supplements.unit.ml.other",
+      "supplements.dose",
     ]);
 
     const unexplained = Object.keys(en).filter(
