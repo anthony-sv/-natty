@@ -21,6 +21,22 @@ export const en = {
   "nav.language": "Language",
   "nav.darkMode": "Dark mode",
   "nav.account": "Account",
+  "profile.title": "Profile",
+  "profile.subtitle":
+    "Standing facts about your body — used for FFMI and your natural-potential estimate. Works with no account.",
+  "profile.cardTitle": "About you",
+  "profile.cardBody":
+    "Stored once and applied everywhere it's used, so correcting a typo here recalculates FFMI and the potential estimate together.",
+  "profile.heightHint": "Needed for FFMI and the potential estimate.",
+  "profile.sex": "Sex",
+  "profile.sexHint": "Only picks the reference scale FFMI is read against.",
+  "profile.sexUnset": "Not set",
+  "profile.male": "Male",
+  "profile.female": "Female",
+  "profile.wristCm": "Wrist (cm)",
+  "profile.wristHint": "Below the bone. Used by the natural-potential estimate.",
+  "profile.ankleCm": "Ankle (cm)",
+  "profile.ankleHint": "Above the bone. Used by the natural-potential estimate.",
 
   "account.title": "Account",
   "account.subtitle": "Sign in to sync your data across devices.",
@@ -673,6 +689,14 @@ export const en = {
   "about.account.p3":
     "Backups still work signed in — the export covers whatever the app is showing right now, so it's your way out of the server too.",
   "about.account.link": "Go to your account",
+  "about.profile.title": "Profile",
+  "about.profile.body":
+    "Height, sex, wrist and ankle — the standing facts FFMI and the natural-potential estimate both read.",
+  "about.profile.p1":
+    "One edit surface, not two: this used to be a height and sex field on the body tab and a second copy of height, wrist and ankle on the potential calculator, and a typo fixed on one left the other wrong.",
+  "about.profile.p2":
+    "Works fully signed out, on purpose — /account only renders a menu once you're signed in, and FFMI shouldn't need an account to configure. That's why this has its own button in the header rather than living behind the avatar menu.",
+  "about.profile.link": "Open your profile",
 
   "about.routines.title": "Programs and days",
   "about.routines.body":
@@ -1194,20 +1218,9 @@ export const en = {
   "log.countLogged": "{count} logged",
 
   // ── Body ─────────────────────────────────────────────────────────────────
-  "body.profile.title": "About you",
-  "body.profile.body":
-    "Stored once and applied to every weigh-in, so correcting a typo here recalculates the whole history.",
-  "body.profile.heightHint": "Needed for FFMI.",
-  "body.profile.sex": "Sex",
-  "body.profile.sexHint": "Only picks the reference scale.",
-  "body.profile.sexUnset": "Not set",
-  "body.profile.male": "Male",
-  "body.profile.female": "Female",
-  "body.profile.heightSummary": "{height} cm",
-  "body.profile.edit": "Edit",
-  "body.profile.done": "Done",
   "body.latest.title": "Latest",
-  "body.latest.needHeight": "Add your height above to see FFMI.",
+  "body.latest.needHeight": "Add your height to see FFMI.",
+  "body.latest.needHeightLink": "Set it on your profile",
   "body.latest.needBodyFat": "Add a body-fat reading to a weigh-in to see FFMI.",
   "body.latest.body": "Fat-free mass index — lean mass over height squared.",
   "body.latest.carried": "Carried",
@@ -1233,7 +1246,7 @@ export const en = {
   "body.history.title": "History",
   "body.history.body": "Most recent first.",
   "body.history.needSex":
-    "Set your sex above to see where a normalized figure sits against population norms.",
+    "Set your sex on your profile to see where a normalized figure sits against population norms.",
   "body.history.empty": "No weigh-ins logged yet.",
   "body.history.editEntry": "Edit {weight}",
   "body.history.editTitle": "Correct this weigh-in",
@@ -1423,7 +1436,7 @@ export const en = {
   "calc.orm.forGivenSetBody":
     "The same formula run backwards, off its own estimate — so the row matching the set you entered reads back as the weight you lifted.",
   "calc.potential.measurementsBody":
-    "Wrist and ankle at their narrowest point. Height, wrist and ankle are saved to your profile; body fat starts from your last weigh-in and you can move it to see what changes.",
+    "Height, wrist and ankle come from your profile — wrist and ankle at their narrowest point. Body fat starts from your last weigh-in and you can move it to see what changes.",
   "calc.potential.lastWeighIn": "Last weigh-in: {percent}%.",
   "calc.potential.maxBody":
     "Dr Casey Butt's model, fitted to the measurements of drug-free bodybuilders. The second, smaller figure against each is 95% of the maximum — the one usually described as realistically achievable.",
@@ -1471,20 +1484,16 @@ export const en = {
     "Height, wrist and ankle write straight through to your profile. Body fat is a what-if dial here — the log owns the real history.",
   "calc.potential.fillAllBody":
     "Height, wrist, ankle and body fat are all inputs to the formula.",
+  "calc.potential.editFrame": "Edit on your profile",
+  "calc.potential.setFrame": "Set them on your profile",
+  "calc.potential.needFrame": "Height, wrist and ankle live on your profile.",
   "calc.potential.leanMax": "Maximum lean body mass",
   "calc.potential.realistic": "{value} kg realistic",
   "calc.potential.needWeighIn":
     "Log a weigh-in with a body-fat reading to see where you are against it.",
   "calc.potential.standing":
     "You're at {lean} kg lean — {percent}% of the maximum, {realistic}% of the realistic figure.",
-  "calc.potential.exampleHeight": "e.g. 179",
-  "calc.potential.exampleWrist": "e.g. 18",
-  "calc.potential.exampleAnkle": "e.g. 23",
   "calc.potential.exampleBodyFat": "e.g. 12",
-  "calc.potential.wristCm": "Wrist (cm)",
-  "calc.potential.wristHint": "Below the bone.",
-  "calc.potential.ankleCm": "Ankle (cm)",
-  "calc.potential.ankleHint": "Above the bone.",
   "calc.potential.noWeighIn": "No weigh-in to draw from yet.",
   "calc.potential.max": "Maximum realistic size",
   "calc.potential.girths": "Girths at that size",

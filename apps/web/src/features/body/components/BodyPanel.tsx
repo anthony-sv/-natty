@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useStore } from "@tanstack/react-store";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -26,7 +27,6 @@ import { BodyCharts } from "./BodyCharts";
 import { BodyEntryForm } from "./BodyEntryForm";
 import { FfmiMeter } from "./FfmiMeter";
 import { BodyHistoryTable } from "./BodyHistoryTable";
-import { ProfileFields } from "./ProfileFields";
 import { WeeklyAverageCard } from "./WeeklyAverageCard";
 
 export function BodyPanel() {
@@ -89,16 +89,6 @@ export function BodyPanel() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("body.profile.title")}</CardTitle>
-          <CardDescription>{t("body.profile.body")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ProfileFields />
-        </CardContent>
-      </Card>
-
       {loggedToday ? [averageCard, logCard] : [logCard, averageCard]}
 
       {display ? (
@@ -106,9 +96,17 @@ export function BodyPanel() {
           <CardHeader>
             <CardTitle>{t("body.latest.title")}</CardTitle>
             <CardDescription>
-              {profile.heightCm === undefined
-                ? t("body.latest.needHeight")
-                : display.bodyFatPercent === undefined
+              {profile.heightCm === undefined ? (
+                <span className="flex flex-wrap items-center gap-x-1.5">
+                  {t("body.latest.needHeight")}
+                  <Link
+                    to="/profile"
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    {t("body.latest.needHeightLink")}
+                  </Link>
+                </span>
+              ) : display.bodyFatPercent === undefined
                   ? t("body.latest.needBodyFat")
                   : carried?.isCarried === true && carried.measuredAt !== undefined
                     ? t("body.latest.carriedBodyFat", {

@@ -852,6 +852,45 @@ it. Reset and delete share the component because they're the same gesture on
 different things (your edit of a built-in, versus something that only ever
 existed here), and two copies of a confirm dialog is two wordings to drift.
 
+## Profile (`src/features/profile/`)
+
+`/profile` — height, sex, wrist, ankle — is where every standing fact about
+your body lives, edited in one place rather than two.
+
+**Height and sex used to be a card on the Body tab; wrist and ankle used to be
+inline fields on the Casey Butt calculator tab.** Same `profileStore`
+underneath the whole time — moving them cost no data migration — but two
+edit surfaces for the same four numbers meant a typo fixed on one page left
+the other one wrong, and a card of inputs sat at the top of the Body tab every
+single time you opened it, for values that are correct for months at a
+stretch. `ProfileForm` is the one form now; `BodyPanel` and `PotentialPanel`
+both read the store and point here when something's missing.
+
+**Reachable with no account, which is what rules out the obvious two homes for
+it.** `/account` gets away with living only behind the avatar menu — the menu
+renders nothing but a bare "Sign in" link while signed out, so it's fine
+there, because `/account` is genuinely unusable without an account. FFMI and
+the potential estimate both work fully signed out, so hiding the page behind
+that same menu would make them unconfigurable for anyone who hasn't signed
+in — most people, since accounts are optional by design. It's also not a row
+in the main sidebar (`/account`'s own rule: "a nav row beside the avatar menu
+is two doors to one room" — this isn't `/account`, but it's the same shape of
+problem in reverse). It gets its own icon in `AppHeader`, next to the locale
+and theme controls, which is the one spot in the chrome that's always visible
+regardless of sign-in state.
+
+**No submit button** — the calculators' own rule, reused here on purpose:
+every field writes through `setProfile` on change, so correcting a typo takes
+effect immediately. A settings page you visit rarely is exactly the wrong
+place to make someone remember to press Save.
+
+`profileStore` (`profile-store.ts`) is a plain TanStack Store persisted to
+localStorage in the same shape as `session-store.ts`, since a single
+always-present record with a handful of fields doesn't want a queryable
+collection. It also carries `displayName`, `avatarUrl`, `trackedSites` and
+`sidedSites` — account and measurement-form preferences that stay where they
+are; `/profile` only surfaces the body facts.
+
 ## Body measurements (`src/features/body/`)
 
 Weigh-ins — weight, optional body-fat percentage — in their own localStorage
@@ -877,14 +916,6 @@ disagree, and both say when the number shown isn't from today's entry. Never
 logging a body-fat reading at all is the one case with nothing honest to
 carry, and stays exactly as blank as before.
 
-**The profile card collapses once height and sex are both set.** It used to be
-a full card of two inputs and two hint lines at the very top of the tab, every
-single time, for values that are correct for months at a stretch — ahead of
-the thing you actually opened the tab to do. `ProfileFields` starts collapsed
-to one summary line with an edit button once both fields are set, and stays
-open — the same as an onboarding prompt — while either is missing, since
-that's the one state where filling them in actually is the next thing to do.
-
 **The log-entry and weekly-average cards swap order on whether you've weighed
 in today.** `hasLoggedToday(entries, now)` (in `weekly.ts`, local-day bucketed
 like the heatmap) decides which one leads: log first when there's nothing
@@ -893,15 +924,12 @@ since the trend is more interesting than a form you've already filled in. The
 index's `BodyCard` says so too — `headlineHint` reads "Not logged today"
 rather than silently showing a weigh-in that could be several days stale.
 
-**Standing facts live on the profile, not the entry** — see
-`src/features/profile/profile-store.ts`, a plain TanStack Store persisted to
-localStorage in the same shape as `session-store.ts`, since a single
-always-present record doesn't want a queryable collection. Height is the FFMI
-denominator; storing it once means correcting a typo recalculates every row.
-Sex only picks which population the reference band comes from — fat-free mass
-norms differ enough that one scale would misdescribe half its readers — and
-when it's unset the numbers still show, just without a band. `wristCm` and
-`ankleCm` are there for the same reason, and are only read by `/calculator`.
+**Standing facts live on the profile, not the entry** — see the `Profile`
+section below. Height is the FFMI denominator; storing it once means
+correcting a typo recalculates every row. Sex only picks which population the
+reference band comes from — fat-free mass norms differ enough that one scale
+would misdescribe half its readers — and when it's unset the numbers still
+show, just without a band.
 
 `FfmiMeter` plots the normalized figure against those bands, on the classic
 FFMI chart's spectrum track (`--ffmi-spectrum` in `styles.css`).
@@ -1025,10 +1053,12 @@ own numbers for 179cm / 18cm / 23cm / 12% — 83.2kg lean, and neck through calf
 A mistyped coefficient fails there instead of rendering a plausible wrong
 number. `REALISTIC_SHARE` is the conventional 95% quoted alongside each figure.
 
-Height/wrist/ankle write straight through to the profile store on change, the
-way `ProfileFields` does — no submit button, results recalculate live. Body fat
-is deliberately **local** state seeded from the latest weigh-in: the log owns
-the real history, so the field here is a what-if dial, not a record.
+Height, wrist and ankle are **read-only here** — a summary strip plus a link to
+`/profile`, which is where they're edited now. They used to be a second copy
+of the same three inputs the profile owns, and a typo fixed on one page left
+the other one wrong; see *Profile* above. Body fat stays **local** state
+seeded from the latest weigh-in: the log owns the real history, so the field
+here is a what-if dial, not a record.
 
 `potentialFor` returns undefined unless all four inputs are usable, so a
 half-filled form shows an `Empty` rather than "NaN kg". `percentOfPotential`
