@@ -4,6 +4,7 @@ import {
   ChevronsUpDownIcon,
   LogInIcon,
   LogOutIcon,
+  UserCircleIcon,
   UserIcon,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -30,12 +31,20 @@ import { getSupabaseBrowserClient, isSupabaseConfigured } from "../client";
 import { useSession } from "../session-store";
 
 /**
- * Who you're signed in as.
+ * Who you're signed in as — and, either way, the door to `/profile`.
  *
  * Two shapes, one menu. `wide` is the sidebar footer's row with a name and an
  * email; `compact` is the header's avatar button, which is the one that
  * survives the sidebar collapsing on a phone. They share everything below the
  * trigger, so the account can't offer different things in different corners.
+ *
+ * **Signed out, this is still a menu, not a bare "Sign in" link.** Height,
+ * sex, wrist and ankle on `/profile` work with no account — FFMI and the
+ * potential estimate both do — and the avatar corner is where every app this
+ * one is judged against puts "settings about you". Hiding `/profile` behind
+ * signing in first would make it unreachable for most people, since accounts
+ * are optional by design. The trigger is `UserAvatar` with no name, which is
+ * already the app's placeholder-person icon — no second icon to invent.
  */
 export function UserMenu({
   variant = "wide",
@@ -46,39 +55,84 @@ export function UserMenu({
   const session = useSession();
   const profile = useStore(profileStore);
 
-  // A build with no Supabase project has no account to show, and the row
-  // would be a button that can't do anything.
-  if (!isSupabaseConfigured) return null;
+  // No Supabase project: there's no session to offer, ever — so this is a
+  // single link rather than a menu with one dead-end item in it. `/profile`
+  // still works fully offline, which is what keeps this from being `null`.
+  if (!isSupabaseConfigured) {
+    return variant === "compact" ? (
+      <Button
+        variant="ghost"
+        size="icon"
+        nativeButton={false}
+        aria-label={t("profile.title")}
+        render={<Link to="/profile" />}
+      >
+        <UserCircleIcon />
+      </Button>
+    ) : (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton render={<Link to="/profile" />}>
+            <UserCircleIcon />
+            <span>{t("profile.title")}</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    );
+  }
 
   // `loading` renders the signed-out affordance rather than nothing: the
   // session settles in milliseconds, and chrome that appears late makes the
   // whole layout jump.
   if (session.status !== "signed-in") {
-    if (variant === "compact") {
-      return (
-        // `nativeButton={false}` because this renders as an anchor: Base UI
-        // warns loudly otherwise, and it's right to — a non-`<button>` still
-        // claiming button semantics is the accessibility bug, not the noise.
-        // Every other `Button render={<Link/>}` in the app already says it.
-        <Button
-          variant="ghost"
-          size="icon"
-          nativeButton={false}
-          aria-label={t("account.signIn")}
-          render={<Link to="/account" />}
+    const avatar = <UserAvatar name="" className="size-8 rounded-lg" />;
+    const menu = (
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            variant === "compact" ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t("account.title")}
+                className="rounded-lg"
+              >
+                {avatar}
+              </Button>
+            ) : (
+              <SidebarMenuButton size="lg">
+                {avatar}
+                <span className="flex-1 text-left text-sm font-medium">
+                  {t("account.title")}
+                </span>
+                <ChevronsUpDownIcon className="ml-auto" />
+              </SidebarMenuButton>
+            )
+          }
+        />
+        <DropdownMenuContent
+          side={variant === "compact" ? "bottom" : "top"}
+          align="end"
+          className="min-w-56"
         >
-          <LogInIcon />
-        </Button>
-      );
-    }
-    return (
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton render={<Link to="/account" />}>
+          <DropdownMenuItem render={<Link to="/profile" />}>
+            <UserCircleIcon />
+            {t("profile.title")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem render={<Link to="/account" />}>
             <LogInIcon />
-            <span>{t("account.signIn")}</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
+            {t("account.signIn")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+
+    return variant === "compact" ? (
+      menu
+    ) : (
+      <SidebarMenu>
+        <SidebarMenuItem>{menu}</SidebarMenuItem>
       </SidebarMenu>
     );
   }
@@ -146,6 +200,10 @@ export function UserMenu({
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
+            <DropdownMenuItem render={<Link to="/profile" />}>
+              <UserCircleIcon />
+              {t("profile.title")}
+            </DropdownMenuItem>
             <DropdownMenuItem render={<Link to="/account" />}>
               <UserIcon />
               {t("account.title")}

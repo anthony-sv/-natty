@@ -1,6 +1,5 @@
-import { Link } from "@tanstack/react-router";
 import { useStore } from "@tanstack/react-store";
-import { CheckIcon, LanguagesIcon, MoonIcon, SunIcon, UserCircleIcon } from "lucide-react";
+import { CheckIcon, LanguagesIcon, MoonIcon, SunIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -36,36 +35,11 @@ export function AppHeader() {
       {/* Pushes the controls right, and is what keeps the bar usable as the
           page title lands here later. */}
       <div className="ml-auto flex items-center gap-1">
-        <ProfileButton />
         <LocaleMenu />
         <ThemeButton />
         <UserMenu variant="compact" />
       </div>
     </header>
-  );
-}
-
-/**
- * The way to `/profile` — height, sex, wrist, ankle.
- *
- * A header icon rather than a sidebar row (`/account`'s own rule: a nav row
- * beside the avatar menu is two doors to one room) or a spot inside the user
- * menu (which renders nothing but a bare "Sign in" link while signed out, so
- * a signed-out visitor — most of them, the app works fully without an
- * account — would never see it). This is the one door that's open either way.
- */
-function ProfileButton() {
-  const t = useT();
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      nativeButton={false}
-      aria-label={t("profile.title")}
-      render={<Link to="/profile" />}
-    >
-      <UserCircleIcon />
-    </Button>
   );
 }
 

@@ -866,23 +866,34 @@ single time you opened it, for values that are correct for months at a
 stretch. `ProfileForm` is the one form now; `BodyPanel` and `PotentialPanel`
 both read the store and point here when something's missing.
 
-**Reachable with no account, which is what rules out the obvious two homes for
-it.** `/account` gets away with living only behind the avatar menu — the menu
-renders nothing but a bare "Sign in" link while signed out, so it's fine
-there, because `/account` is genuinely unusable without an account. FFMI and
-the potential estimate both work fully signed out, so hiding the page behind
-that same menu would make them unconfigurable for anyone who hasn't signed
-in — most people, since accounts are optional by design. It's also not a row
-in the main sidebar (`/account`'s own rule: "a nav row beside the avatar menu
-is two doors to one room" — this isn't `/account`, but it's the same shape of
-problem in reverse). It gets its own icon in `AppHeader`, next to the locale
-and theme controls, which is the one spot in the chrome that's always visible
-regardless of sign-in state.
+**Reachable with no account, which is what changed `UserMenu` rather than
+adding a new door.** The avatar corner used to render a bare "Sign in" link
+while signed out — no menu, so nothing behind it was ever reachable that way.
+FFMI and the potential estimate both work fully signed out, and hiding
+`/profile` behind signing in first would make it unconfigurable for most
+people, since accounts are optional by design. So the signed-out state is a
+menu now too: `UserAvatar` with no name (already the app's placeholder-person
+icon, nothing new to draw) opens **Profile** and **Sign in**. The signed-in
+menu gained a **Profile** item the same way. It isn't a sidebar row —
+`app-sidebar.tsx` deliberately has none for `/account` either, for the same
+reason: a nav row beside the avatar menu is two doors to one room. A build
+with no Supabase project at all skips the menu and goes straight to
+`/profile`, since there's no session to ever offer.
 
 **No submit button** — the calculators' own rule, reused here on purpose:
-every field writes through `setProfile` on change, so correcting a typo takes
-effect immediately. A settings page you visit rarely is exactly the wrong
-place to make someone remember to press Save.
+`ProfileForm`'s fields write through `setProfile` on every change.
+
+**Display first, edit on request — not a form left permanently open.**
+`ProfileCard` wraps `ProfileForm` the way `LoggedSetList` and
+`BodyHistoryTable` treat a real row: something is either shown, with Edit and
+Clear, or being edited, never both. Starts in edit mode only while every field
+is empty (first visit, or right after clearing) — anything set at all shows
+the display instead, since edit mode needs no draft of its own beyond a
+toggle over the same live-writing fields. **Clear** snapshots the four values
+before writing them all to `undefined` and offers an Undo — a real action
+(FFMI and the potential estimate change immediately) but one small enough,
+and reversible enough, that a confirm dialog would only be friction, the same
+call every other correction list in the app makes.
 
 `profileStore` (`profile-store.ts`) is a plain TanStack Store persisted to
 localStorage in the same shape as `session-store.ts`, since a single

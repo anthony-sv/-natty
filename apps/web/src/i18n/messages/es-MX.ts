@@ -40,6 +40,10 @@ export const esMX: Record<keyof typeof en, string> = {
   "profile.wristHint": "Debajo del hueso. Se usa en el estimado de potencial natural.",
   "profile.ankleCm": "Tobillo (cm)",
   "profile.ankleHint": "Arriba del hueso. Se usa en el estimado de potencial natural.",
+  "profile.edit": "Editar",
+  "profile.done": "Listo",
+  "profile.clear": "Borrar",
+  "profile.cleared": "Se borró tu perfil",
 
   "account.title": "Cuenta",
   "account.subtitle": "Inicia sesión para sincronizar tus datos entre dispositivos.",
@@ -687,7 +691,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "about.profile.p1":
     "Un solo lugar para editar, no dos: esto era un campo de estatura y sexo en la pestaña de cuerpo, y una segunda copia de estatura, muñeca y tobillo en la calculadora de potencial — corregir un error de dedo en un lado dejaba el otro mal.",
   "about.profile.p2":
-    "Funciona sin cuenta, a propósito — /account solo muestra un menú si ya iniciaste sesión, y el FFMI no debería necesitar una cuenta para configurarse. Por eso tiene su propio botón en el encabezado en vez de vivir detrás del menú del avatar.",
+    "Se llega desde el menú del avatar en el encabezado o la barra lateral, con o sin sesión iniciada — el FFMI no debería necesitar una cuenta para configurarse, así que el estado sin sesión ahora abre un menú en vez de ir directo a una página para iniciar sesión.",
   "about.profile.link": "Abrir tu perfil",
 
   "about.routines.title": "Programas y días",

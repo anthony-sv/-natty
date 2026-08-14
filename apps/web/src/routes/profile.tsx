@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ProfileForm } from "@/features/profile/components/ProfileForm";
+import { ProfileCard } from "@/features/profile/components/ProfileCard";
 import { useT } from "@/i18n/use-t";
 
 export const Route = createFileRoute("/profile")({
@@ -39,7 +39,7 @@ function ProfilePage() {
           <CardDescription>{t("profile.cardBody")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <ProfileForm />
+          <ProfileCard />
         </CardContent>
       </Card>
     </Page>

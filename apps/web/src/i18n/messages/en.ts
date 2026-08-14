@@ -37,6 +37,10 @@ export const en = {
   "profile.wristHint": "Below the bone. Used by the natural-potential estimate.",
   "profile.ankleCm": "Ankle (cm)",
   "profile.ankleHint": "Above the bone. Used by the natural-potential estimate.",
+  "profile.edit": "Edit",
+  "profile.done": "Done",
+  "profile.clear": "Clear",
+  "profile.cleared": "Cleared your profile",
 
   "account.title": "Account",
   "account.subtitle": "Sign in to sync your data across devices.",
@@ -695,7 +699,7 @@ export const en = {
   "about.profile.p1":
     "One edit surface, not two: this used to be a height and sex field on the body tab and a second copy of height, wrist and ankle on the potential calculator, and a typo fixed on one left the other wrong.",
   "about.profile.p2":
-    "Works fully signed out, on purpose — /account only renders a menu once you're signed in, and FFMI shouldn't need an account to configure. That's why this has its own button in the header rather than living behind the avatar menu.",
+    "Reachable from the avatar menu in the header or the sidebar, whether you're signed in or not — FFMI shouldn't need an account to configure, so the signed-out state opens a menu now instead of going straight to a sign-in page.",
   "about.profile.link": "Open your profile",
 
   "about.routines.title": "Programs and days",
