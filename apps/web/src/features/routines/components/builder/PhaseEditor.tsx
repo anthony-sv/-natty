@@ -1,4 +1,4 @@
-import { PlusIcon, XIcon } from "lucide-react";
+import { PlusIcon, TriangleAlertIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -344,6 +344,16 @@ export function PhaseEditor({
                       ))}
                     </SelectContent>
                   </Select>
+                  {/* Saving with an unchosen pose is allowed on purpose —
+                      see `toPrescription` in draft.ts — but nothing said so
+                      until this, and it's what let a finisher run in the gym
+                      with no hold and no cue at all. */}
+                  {phase.pose.poseId === "" ? (
+                    <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <TriangleAlertIcon className="mt-0.5 size-3.5 shrink-0" />
+                      {t("builder.finisher.poseUnset")}
+                    </p>
+                  ) : null}
                 </div>
 
                 {/* Blank is a real answer — `poseCueSchema` treats a missing

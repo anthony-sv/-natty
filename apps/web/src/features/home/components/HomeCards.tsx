@@ -1,5 +1,5 @@
 import { formatWeightValue } from "@/lib/units";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useLiveQuery } from "@tanstack/react-db";
 import { useStore } from "@tanstack/react-store";
@@ -20,6 +20,13 @@ import { loggedSetsFork } from "@/features/log/collection";
 import { toCalendar } from "@/features/log/heatmap";
 import { useAllRecords } from "@/features/log/queries";
 import { useMeasurements } from "@/features/measurements/collection";
+import {
+  MiniHeatmapStrip,
+  MiniHeatmapStripSample,
+} from "./MiniHeatmapStrip";
+import { MiniSparkline, MiniSparklineSample } from "./MiniSparkline";
+import { MiniMacroBar, MiniMacroBarSample } from "./MiniMacroBar";
+import { convertWeight } from "@/lib/units";
 import {
   orderSeries,
   toSeries,
@@ -113,6 +120,7 @@ function TrainingCard() {
         title={t("home.training")}
         to="/routines"
         empty={t("home.training.empty")}
+        visual={<MiniHeatmapStripSample />}
       />
     );
   }
@@ -128,6 +136,7 @@ function TrainingCard() {
         t.plural("home.setsThisWeek", setsThisWeek),
         t.plural("home.recordsHeld", rows.length),
       ]}
+      visual={<MiniHeatmapStrip calendar={calendar} />}
     />
   );
 }
@@ -152,9 +161,17 @@ function BodyCard() {
         to="/progress"
         search={{ tab: "body" }}
         empty={t("home.body.empty")}
+        visual={<MiniSparklineSample />}
       />
     );
   }
+
+  // Oldest first, on the latest entry's unit — a run mixing kg and lb would
+  // draw a cliff that isn't there. Same conversion `BodyCharts` plots with.
+  const points = [...entries]
+    .sort((a, b) => a.measuredAt - b.measuredAt)
+    .slice(-8)
+    .map((entry) => convertWeight(entry.weight, entry.unit, latest.unit));
 
   // The last real body-fat reading, carried forward when today's weigh-in
   // (or the latest one) didn't retake it — the same rule the body tab uses,
@@ -197,6 +214,7 @@ function BodyCard() {
             : t("home.needHeight")
           : t("home.ffmi", { value: formatIndex(index) }),
       ]}
+      visual={<MiniSparkline points={points} />}
     />
   );
 }
@@ -303,6 +321,7 @@ function FoodCard() {
             ? t.plural("home.food.emptyMeals", available)
             : t("home.food.empty")
         }
+        visual={<MiniMacroBarSample />}
       />
     );
   }
@@ -313,6 +332,13 @@ function FoodCard() {
       title={t("home.food")}
       to="/nutrition"
       search={{ tab: "today" }}
+      visual={
+        <MiniMacroBar
+          protein={resolved.totals.protein}
+          carbs={resolved.totals.carbs}
+          fat={resolved.totals.fat}
+        />
+      }
       headline={
         target === undefined
           ? `${Math.round(resolved.kcal).toLocaleString()} kcal`
@@ -352,6 +378,7 @@ function HomeCard({
   badge,
   lines,
   empty,
+  visual,
 }: {
   icon: LucideIcon;
   title: string;
@@ -373,6 +400,13 @@ function HomeCard({
   lines?: (string | undefined)[];
   /** Shown instead of the numbers when there's nothing yet. */
   empty?: string;
+  /**
+   * A small chart under the title row — present in both the populated and
+   * empty states, so the card reads as "here's what this becomes" rather
+   * than switching shape once there's data. The caller decides real vs.
+   * muted-sample; this just gives it a slot.
+   */
+  visual?: ReactNode;
 }) {
   const shown = (lines ?? []).filter((line): line is string => line !== undefined);
 
@@ -400,6 +434,8 @@ function HomeCard({
           )}
         />
       </div>
+
+      {visual !== undefined ? <div>{visual}</div> : null}
 
       {empty !== undefined ? (
         <p className="text-sm text-muted-foreground">{empty}</p>

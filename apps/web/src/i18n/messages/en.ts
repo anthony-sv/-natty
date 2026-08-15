@@ -182,8 +182,11 @@ export const en = {
   "index.stats.weekAverageDelta": "Week avg {weight} · {delta} vs last",
   "index.start.title": "Nothing in progress",
   "index.start.body":
-    "Start a workout from any training day, and it'll pick up here if you leave the page.",
+    "Pick a program and this card will tell you what to train today.",
   "index.start.action": "Browse programs",
+  "index.today.title": "Today",
+  "index.today.restBody": "Rest day.",
+  "index.today.upNext": "Next: {day}",
   "index.resume.title": "Workout in progress",
   "index.resume.upNext": "Up next: {exercise}",
   "index.resume.allDone": "All sets done.",
@@ -428,6 +431,10 @@ export const en = {
   "builder.finisher.rampBody":
     "4 sets, each a 10s hold → 12 pulses → 12 reps with a pulse → 10s hold → 12 pulses. The reps fall 12/10/8/6 as the weight goes up.",
   "builder.finisher.overwrites": "This replaces the sets you've entered.",
+  // Saving with no pose chosen is allowed on purpose — see draft.ts — but
+  // nothing said so until this, and it's what let a finisher reach the gym
+  // with no hold and no cue.
+  "builder.finisher.poseUnset": "Pick a pose, or this finisher won't show one.",
   "builder.pose": "Pose",
   // "Not chosen" rather than "None": a finisher without a pose isn't a
   // finisher, so this reads as a gap to fill rather than a valid answer.
@@ -1318,6 +1325,20 @@ export const en = {
   "routines.startWorkout": "Start workout",
   "routines.noExercises": "No exercises listed",
   "routines.noExercisesBody": "This day has no exercises recorded.",
+  // The program you've picked as the one you're running — a preference, not
+  // a claim about which day you're on (that's derived from the log).
+  "routines.setActive": "Make this my program",
+  "routines.activeProgram": "Your active program",
+  "routines.active": "Active",
+  // The activate-program popover — the choice only ever seeds the first
+  // "Today" read, before anything is logged; see `ActivateProgramButton`.
+  "routines.activate.default": "From the beginning",
+  "routines.activate.defaultBody": "Start at day 1. Today tracks where you are from what you log from here.",
+  "routines.activate.custom": "From a specific day",
+  "routines.activate.customBody": "Picking up mid-cycle? Choose which day is today.",
+  "routines.activate.day": "Day",
+  "routines.activate.confirm": "Activate",
+  "routines.weekDayLabel": "Week {week} · {day}",
   "routines.warmup": "Warm-up & stretching",
   "routines.phase.main": "Main work",
   "routines.phase.mobility": "Mobility",
@@ -1334,6 +1355,12 @@ export const en = {
   // is a light set of the lift you're about to do properly.
   "routines.superset": "Superset",
   "routines.circuitOf": "Circuit of {count}",
+  // Shown on a finisher whose phases have no pose picked yet — the same gap
+  // that let a finisher run in the gym with no hold and no cue at all.
+  "routines.finisherNoPose": "No pose set",
+  // On the connector between two supersetted/circuited exercises, only when
+  // the entry before the gap carries a transition — most pairs have none.
+  "routines.transitionSeconds": "{seconds}s transition",
   "player.supersetRound": "Superset · round {round} of {total}",
   "player.circuitRound": "Circuit · round {round} of {total}",
   "routines.warmupSet": "Warmup",
