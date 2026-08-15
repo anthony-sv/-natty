@@ -1,0 +1,172 @@
+import { describe, expect, it } from "vitest";
+import type { Routine, TrainingDay } from "@/data/routines";
+import type { LoggedSet } from "@/features/log/schema";
+import { dayAfter, nextTrainingDay } from "./next-day";
+
+function day(dayNumber: number, isRest = false): TrainingDay {
+  return {
+    dayNumber,
+    label: isRest ? "Rest" : `Day ${dayNumber}`,
+    isRest,
+    exercises: isRest
+      ? []
+      : [
+          {
+            exerciseId: "flat-barbell-bench-press",
+            orAlternatives: [],
+            kind: "resistance",
+            isFinisher: false,
+            prescriptions: [{ sets: 3, reps: 10, restSeconds: 90 }],
+          },
+        ],
+    warmupRefs: [],
+  };
+}
+
+/** Two weeks of three days — day 2 of week 1 is a rest day. */
+function twoWeekRoutine(): Routine {
+  return {
+    slug: "test-routine",
+    name: "Test routine",
+    weeks: [
+      { weekNumber: 1, days: [day(1), day(2, true), day(3)] },
+      { weekNumber: 2, days: [day(1), day(2, true), day(3)] },
+    ],
+  };
+}
+
+function set(over: Partial<LoggedSet> & { performedAt: number }): LoggedSet {
+  return {
+    id: `set-${over.performedAt}`,
+    exerciseId: "flat-barbell-bench-press",
+    unit: "kg",
+    reps: 10,
+    ...over,
+  };
+}
+
+describe("nextTrainingDay", () => {
+  it("starts at the first day when nothing has been logged for this routine", () => {
+    const result = nextTrainingDay(twoWeekRoutine(), []);
+    expect(result).toEqual({ weekNumber: 1, day: day(1) });
+  });
+
+  it("ignores sets logged against a different routine", () => {
+    const sets = [
+      set({
+        performedAt: 1,
+        routineSlug: "other-routine",
+        weekNumber: 2,
+        dayNumber: 3,
+      }),
+    ];
+    const result = nextTrainingDay(twoWeekRoutine(), sets);
+    expect(result).toEqual({ weekNumber: 1, day: day(1) });
+  });
+
+  it("advances to the next day after the most recently logged one", () => {
+    const sets = [
+      set({
+        performedAt: 1,
+        routineSlug: "test-routine",
+        weekNumber: 1,
+        dayNumber: 1,
+      }),
+      // A later set on an earlier day shouldn't move the pointer backward —
+      // only the most recent timestamp counts.
+      set({
+        performedAt: 100,
+        routineSlug: "test-routine",
+        weekNumber: 1,
+        dayNumber: 1,
+      }),
+    ];
+    const result = nextTrainingDay(twoWeekRoutine(), sets);
+    expect(result).toEqual({ weekNumber: 1, day: day(2, true) });
+  });
+
+  it("surfaces a rest day as-is rather than skipping past it", () => {
+    const sets = [
+      set({
+        performedAt: 1,
+        routineSlug: "test-routine",
+        weekNumber: 1,
+        dayNumber: 1,
+      }),
+    ];
+    const result = nextTrainingDay(twoWeekRoutine(), sets);
+    expect(result?.day.isRest).toBe(true);
+  });
+
+  it("wraps back to week 1 day 1 after the last day of the last week", () => {
+    const sets = [
+      set({
+        performedAt: 1,
+        routineSlug: "test-routine",
+        weekNumber: 2,
+        dayNumber: 3,
+      }),
+    ];
+    const result = nextTrainingDay(twoWeekRoutine(), sets);
+    expect(result).toEqual({ weekNumber: 1, day: day(1) });
+  });
+
+  it("starts over if the logged day no longer exists in the routine", () => {
+    const sets = [
+      set({
+        performedAt: 1,
+        routineSlug: "test-routine",
+        weekNumber: 5,
+        dayNumber: 9,
+      }),
+    ];
+    const result = nextTrainingDay(twoWeekRoutine(), sets);
+    expect(result).toEqual({ weekNumber: 1, day: day(1) });
+  });
+
+  it("seeds from startAt when nothing has been logged yet", () => {
+    const result = nextTrainingDay(twoWeekRoutine(), [], {
+      weekNumber: 1,
+      dayNumber: 3,
+    });
+    expect(result).toEqual({ weekNumber: 1, day: day(3) });
+  });
+
+  it("ignores startAt once the routine has a logged set", () => {
+    const sets = [
+      set({
+        performedAt: 1,
+        routineSlug: "test-routine",
+        weekNumber: 1,
+        dayNumber: 1,
+      }),
+    ];
+    const result = nextTrainingDay(twoWeekRoutine(), sets, {
+      weekNumber: 2,
+      dayNumber: 3,
+    });
+    expect(result).toEqual({ weekNumber: 1, day: day(2, true) });
+  });
+
+  it("falls back to the first day when startAt names a day the routine doesn't have", () => {
+    const result = nextTrainingDay(twoWeekRoutine(), [], {
+      weekNumber: 9,
+      dayNumber: 9,
+    });
+    expect(result).toEqual({ weekNumber: 1, day: day(1) });
+  });
+});
+
+describe("dayAfter", () => {
+  it("previews the entry that follows a given one", () => {
+    const routine = twoWeekRoutine();
+    const result = dayAfter(routine, { weekNumber: 1, day: day(2, true) });
+    expect(result).toEqual({ weekNumber: 1, day: day(3) });
+  });
+
+  it("wraps to week 1 day 1 after the last entry", () => {
+    const routine = twoWeekRoutine();
+    const result = dayAfter(routine, { weekNumber: 2, day: day(3) });
+    expect(result).toEqual({ weekNumber: 1, day: day(1) });
+  });
+});

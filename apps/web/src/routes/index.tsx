@@ -20,10 +20,12 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/toast";
 import { HomeCards } from "@/features/home/components/HomeCards";
+import { TodayCard } from "@/features/home/components/TodayCard";
 import { useNames } from "@/i18n/names";
 import { useT, type MessageKey } from "@/i18n/use-t";
 import { endSession } from "@/features/routines/session-store";
 import { useActiveSession } from "@/features/routines/lib/use-active-session";
+import { useActiveRoutine } from "@/features/routines/use-active-routine";
 
 export const Route = createFileRoute("/")({
   // No loader. The resume card resolves through `useRoutines`, a live query
@@ -50,6 +52,8 @@ const TOOLS: Array<{ to: string; icon: typeof ListIcon; titleKey: MessageKey }> 
 
 function Index() {
   const active = useActiveSession();
+  const { routine: activeRoutine, isLoading: activeRoutineLoading } =
+    useActiveRoutine();
   const t = useT();
 
   return (
@@ -59,7 +63,17 @@ function Index() {
         <p className="text-sm text-muted-foreground">{t("index.subtitle")}</p>
       </div>
 
-      {active ? <ResumeCard /> : <StartCard />}
+      {/* An in-progress session always wins the hero slot — you're mid
+          workout either way. Otherwise, Today reads off whichever program
+          you've picked as active; with none picked (or still resolving)
+          the old prompt to go pick one shows instead. */}
+      {active ? (
+        <ResumeCard />
+      ) : activeRoutineLoading ? null : activeRoutine !== undefined ? (
+        <TodayCard />
+      ) : (
+        <StartCard />
+      )}
 
       <HomeCards />
 

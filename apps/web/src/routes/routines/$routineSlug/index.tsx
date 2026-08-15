@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/card";
 import { exportRoutine } from "@/features/backup/use-backup";
 import { useShare } from "@/features/backup/use-share";
+import { ActivateProgramButton } from "@/features/routines/components/ActivateProgramButton";
 import { DeleteRoutineButton } from "@/features/routines/components/DeleteRoutineButton";
 import { useRoutine } from "@/features/routines/use-routines";
 import {
@@ -136,6 +137,11 @@ function RoutineBody({
             <Badge variant="outline">{t("builder.edited")}</Badge>
           ) : null}
 
+          {/* The missing link between browsing programs and knowing what to
+              train today — picking one here is what the home page's "Today"
+              card reads. Toggling off just clears the preference; nothing
+              about your log changes either way. */}
+          <ActivateProgramButton routine={routine} />
           {/* Every routine is editable now, built-in or not: saving a built-in
               writes your version at its slug and it replaces the shipped one
               in the list, which stays compiled in and recoverable. */}

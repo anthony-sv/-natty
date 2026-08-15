@@ -75,6 +75,30 @@ export const profileSchema = z.object({
    * @deprecated
    */
   trackSides: z.boolean().optional(),
+  /**
+   * The program you're currently running, if you've picked one — the slug of
+   * a built-in or custom routine. A preference like `trackedSites`, not
+   * training data: nothing here says which day you're on, that's derived
+   * from the log (see `features/routines/lib/next-day.ts`) so it can't drift
+   * from what you actually did. Unset is "no active program"; a slug that no
+   * longer resolves (a deleted custom routine) reads the same way.
+   */
+  activeRoutineSlug: z.string().optional(),
+  /**
+   * Where to seed "today" the first time it's read for the routine above —
+   * before any set has been logged against it. `nextTrainingDay` only
+   * consults this when your log has nothing yet for that slug, so it's a
+   * one-time starting point rather than a pointer that has to be kept in
+   * step: the moment you log a set, the day after it is derived from the log
+   * exactly as it always was, and this field simply stops being read for
+   * that routine.
+   */
+  activeRoutineStartDay: z
+    .object({
+      weekNumber: z.number().int().positive(),
+      dayNumber: z.number().int().positive(),
+    })
+    .optional(),
 });
 
 export type Profile = z.infer<typeof profileSchema>;

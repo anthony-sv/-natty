@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useStore } from "@tanstack/react-store";
 import { ChevronRightIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -9,6 +10,7 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import type { Routine } from "@/data/routines";
+import { profileStore } from "@/features/profile/profile-store";
 import { useFormatting } from "@/i18n/use-formatting";
 import { useT } from "@/i18n/use-t";
 import { summariseRoutine } from "../lib/summary";
@@ -25,6 +27,10 @@ export function RoutineRow({ routine }: { routine: Routine }) {
   const t = useT();
   const f = useFormatting();
   const summary = summariseRoutine(routine, f);
+  const isActive = useStore(
+    profileStore,
+    (state) => state.activeRoutineSlug === routine.slug,
+  );
 
   return (
     <Item
@@ -44,6 +50,7 @@ export function RoutineRow({ routine }: { routine: Routine }) {
             <ItemTitle className="text-base">
               {f.names.routine(routine.slug, routine.name)}
             </ItemTitle>
+            {isActive ? <Badge>{t("routines.active")}</Badge> : null}
             {routine.goal ? (
               <Badge
                 variant={routine.goal === "cutting" ? "destructive" : "default"}
