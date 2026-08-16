@@ -99,6 +99,15 @@ export const profileSchema = z.object({
       dayNumber: z.number().int().positive(),
     })
     .optional(),
+  /**
+   * When you last told the deload banner "I'll deload this week" — epoch ms.
+   * A deload week is itself lighter work, which would otherwise keep
+   * `isPlateaued` true and the banner stuck up indefinitely; this suppresses
+   * it for a couple of weeks and then lets `deloadStatus` re-evaluate from
+   * the log exactly as before. The one bit of stored state either feature
+   * needed — everything else about a plateau is derived on read.
+   */
+  deloadAcknowledgedAt: z.number().optional(),
 });
 
 export type Profile = z.infer<typeof profileSchema>;

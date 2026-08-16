@@ -39,6 +39,7 @@ export function HeatmapGrid<Day extends GridDay>({
   canSelect,
   legend,
   caption,
+  classFor,
 }: {
   weeks: Day[][];
   colourFor: (day: Day) => string;
@@ -51,6 +52,13 @@ export function HeatmapGrid<Day extends GridDay>({
   legend?: ReactNode;
   /** Drawn under the grid, on the left — what the cells actually count. */
   caption?: ReactNode;
+  /**
+   * Extra classes for one cell — e.g. ringing the current week when a
+   * deload is suggested. Optional, and additive to the base cell classes
+   * rather than a callback the other two heatmaps this grid serves need to
+   * know about.
+   */
+  classFor?: (day: Day) => string | undefined;
 }) {
   const month = useDateFormat(MONTH);
   const fullDate = useDateFormat(FULL_DATE);
@@ -176,6 +184,7 @@ export function HeatmapGrid<Day extends GridDay>({
                         className={cn(
                           "size-[11px] rounded-[2px] transition-transform",
                           "hover:scale-125 focus-visible:scale-125 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+                          classFor?.(day),
                         )}
                         style={{ backgroundColor: colourFor(day) }}
                       />
@@ -183,7 +192,7 @@ export function HeatmapGrid<Day extends GridDay>({
                       <span
                         key={day.date}
                         title={title}
-                        className="size-[11px] rounded-[2px]"
+                        className={cn("size-[11px] rounded-[2px]", classFor?.(day))}
                         style={{ backgroundColor: colourFor(day) }}
                       />
                     );

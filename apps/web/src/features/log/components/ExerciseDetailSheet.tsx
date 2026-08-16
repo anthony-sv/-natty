@@ -1,4 +1,5 @@
 import { ChartLineIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,6 +12,7 @@ import { useT } from "@/i18n/use-t";
 import type { WeightUnit } from "@/lib/units";
 import { useExerciseLog } from "../queries";
 import { formatSet } from "../pr";
+import { isPlateaued } from "../plateau";
 import { ExerciseCharts } from "./ExerciseCharts";
 import { LoggedSetList } from "./LoggedSetList";
 
@@ -40,6 +42,9 @@ export function ExerciseDetailSheet({
   // machine keeps reading in pounds, the same rule the player follows.
   const unit: WeightUnit = last?.unit ?? "kg";
   const best = frontier[0];
+  // Same rule the deload banner reads off — a lift flagged here is exactly
+  // what the banner's "several exercises stalled" is talking about.
+  const plateaued = !isLoading && isPlateaued(sets);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -47,7 +52,12 @@ export function ExerciseDetailSheet({
           the room, and this one is a reading surface rather than a form. */}
       <SheetContent className="w-full overflow-y-auto data-[side=right]:sm:max-w-xl">
         <SheetHeader>
-          <SheetTitle>{exerciseName}</SheetTitle>
+          <SheetTitle className="flex flex-wrap items-center gap-2">
+            {exerciseName}
+            {plateaued ? (
+              <Badge variant="outline">{t("detail.plateaued")}</Badge>
+            ) : null}
+          </SheetTitle>
           <SheetDescription>
             {isLoading
               ? t("detail.loading")

@@ -32,6 +32,7 @@ const SHARE_SCOPES = [
 function emptyData(): BackupData {
   return {
     sets: [],
+    cardio: [],
     bodyEntries: [],
     measurements: [],
     exercises: [],

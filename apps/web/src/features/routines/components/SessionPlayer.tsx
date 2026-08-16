@@ -51,8 +51,10 @@ import { toast } from "@/components/ui/toast";
 import { useFormatting } from "@/i18n/use-formatting";
 import { useT, type Translate } from "@/i18n/use-t";
 import { useExerciseLog } from "@/features/log/queries";
+import { useCardioLog } from "@/features/log/cardio-queries";
 import { formatSet } from "@/features/log/pr";
 import { SetLogControl } from "@/features/log/components/SetLogControl";
+import { CardioLogControl } from "@/features/log/components/CardioLogControl";
 import { cn } from "@/lib/utils";
 import { playerPrefs, toggleCues, useCue } from "../lib/cues";
 import {
@@ -517,9 +519,13 @@ function WorkStepBody({
     ? f.names.exercise(exerciseId)
     : step.exerciseName;
 
-  const showsLog = step.kind !== "cardio";
+  const isCardio = step.kind === "cardio";
+  const showsLog = !isCardio;
   const { sets, frontier, last, isLoading } = useExerciseLog(
     showsLog ? exerciseId : undefined,
+  );
+  const { entries: cardioEntries, last: cardioLast } = useCardioLog(
+    isCardio ? exerciseId : undefined,
   );
 
   const stepRef = {
@@ -529,6 +535,13 @@ function WorkStepBody({
     dayNumber: session.dayNumber,
     setNumber: step.setNumber,
   };
+  const cardioLoggedHere = cardioEntries.filter(
+    (entry) =>
+      entry.routineSlug === stepRef.routineSlug &&
+      entry.weekNumber === stepRef.weekNumber &&
+      entry.dayNumber === stepRef.dayNumber &&
+      entry.setNumber === stepRef.setNumber,
+  );
   // Everything recorded against this exercise in *this* session. Derived from
   // the live query rather than component state so it survives stepping Back and
   // forward again.
@@ -773,7 +786,16 @@ function WorkStepBody({
       {/* Zone 4 — pinned last, so the distance from the log control to the
           button below it never changes. Held back until the log has loaded:
           the form seeds its defaults from `last` on mount. */}
-      {isLoggable && !isLoading ? (
+      {isCardio ? (
+        <div className="flex shrink-0 flex-col gap-3">
+          <Separator />
+          <CardioLogControl
+            last={cardioLast}
+            stepRef={stepRef}
+            loggedHere={cardioLoggedHere}
+          />
+        </div>
+      ) : isLoggable && !isLoading ? (
         <div className="flex shrink-0 flex-col gap-3">
           <Separator />
           <SetLogControl

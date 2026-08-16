@@ -133,6 +133,47 @@ export const en = {
   "common.noExerciseFound": "No exercise found.",
   "common.weightUnit": "Weight unit",
   "common.cardio": "Cardio",
+  // Real-world reference distances for the cardio tab's "you've gone the
+  // distance from..." line — approximate, flavor text rather than a survey
+  // measurement. Ascending order matches `ROUTES` in `features/log/cardio.ts`.
+  "cardio.route.5k": "a 5K",
+  "cardio.route.10k": "a 10K",
+  "cardio.route.halfMarathon": "a half marathon",
+  "cardio.route.marathon": "a marathon",
+  "cardio.route.londonBrighton": "London to Brighton",
+  "cardio.route.laSanDiego": "Los Angeles to San Diego",
+  "cardio.route.madridValencia": "Madrid to Valencia",
+  "cardio.route.sfLa": "San Francisco to Los Angeles",
+  "cardio.route.parisBerlin": "Paris to Berlin",
+  "cardio.route.ukLength": "the length of Great Britain",
+  "cardio.route.nyLa": "New York to Los Angeles",
+  "cardio.route.madridMexicoCity": "Madrid to Mexico City",
+  "cardio.route.earthCircumference": "once around the Earth",
+  "cardio.log.action": "Log distance",
+  "cardio.log.thisSession": "Log this session",
+  "cardio.log.saving": "Saving session...",
+  "cardio.log.saved": "Logged {entry}",
+  "cardio.log.saveError": "Couldn't save that session",
+  "cardio.log.durationMinutes": "Duration (min)",
+  "cardio.distanceError": "Enter how far you went",
+  "cardio.durationError": "Enter minutes, or leave blank",
+  "common.distance": "Distance",
+  "common.distanceUnit": "Distance unit",
+  "cardio.history.noEntries": "nothing logged",
+  "cardio.history.editEntry": "Edit {entry}",
+  "cardio.history.editTitle": "Correct this session",
+  "cardio.history.saved": "Session updated",
+  "cardio.history.deleteEntry": "Delete {entry}",
+  "cardio.history.deleted": "Deleted {entry}",
+  "cardio.tab": "Cardio",
+  "cardio.empty.title": "No cardio logged yet",
+  "cardio.empty.body": "Log a distance from a cardio block in a session and it shows up here.",
+  "cardio.total.title": "Total distance",
+  "cardio.total.value": "{km} km",
+  "cardio.total.thisWeek": "{km} km this week",
+  "cardio.milestone.passed": "That's {route} — and {remainder} km further.",
+  "cardio.milestone.toward": "That's {remaining} km short of {route}.",
+  "cardio.sessions.title": "Sessions",
   "common.finisher": "Finisher",
   "common.bodyFatPercent": "Body fat (%)",
   "common.heightCm": "Height (cm)",
@@ -187,6 +228,11 @@ export const en = {
   "index.today.title": "Today",
   "index.today.restBody": "Rest day.",
   "index.today.upNext": "Next: {day}",
+  // The deload banner — see `plateau.ts` for the detection rule.
+  "deload.title": "Consider a deload week",
+  "deload.body":
+    "No new record on {exercises} in 3 sessions in a row. A lighter week often gets a stalled lift moving again.",
+  "deload.acknowledge": "Got it, deloading this week",
   "index.resume.title": "Workout in progress",
   "index.resume.upNext": "Up next: {exercise}",
   "index.resume.allDone": "All sets done.",
@@ -1080,6 +1126,7 @@ export const en = {
   "measure.site.calf": "Calf",
 
   "data.kind.sets": "Logged sets",
+  "data.kind.cardio": "Cardio sessions",
   "data.kind.bodyEntries": "Weigh-ins",
   "data.kind.measurements": "Measurements",
   "data.kind.exercises": "Your exercises",
@@ -1184,6 +1231,8 @@ export const en = {
 
   // ── Exercise detail ──────────────────────────────────────────────────────
   "detail.loading": "Loading your history…",
+  // No new record on the top set for 3 sessions in a row — see `plateau.ts`.
+  "detail.plateaued": "Plateaued",
   "detail.nothingLogged": "Nothing logged for this one yet.",
   "detail.summary": "{sets} · {records} · best {best}",
   "detail.summaryNoBest": "{sets} · {records}",
@@ -1226,6 +1275,8 @@ export const en = {
   "log.pr": "PR",
   "log.last": "Last",
   "log.firstTime": "First time logging this one.",
+  // Double progression's suggested next target — see `overload.ts`.
+  "log.try": "Try",
   "log.countLogged": "{count} logged",
 
   // ── Body ─────────────────────────────────────────────────────────────────

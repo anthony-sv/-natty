@@ -12,6 +12,7 @@ import { LibraryPanel } from "@/features/library/components/LibraryPanel";
 import { RecordsPanel } from "@/features/log/components/RecordsPanel";
 import { HistoryPanel } from "@/features/log/components/HistoryPanel";
 import { VolumePanel } from "@/features/log/components/VolumePanel";
+import { CardioPanel } from "@/features/log/components/CardioPanel";
 import { MeasurementPanel } from "@/features/measurements/components/MeasurementPanel";
 import { useT } from "@/i18n/use-t";
 
@@ -21,6 +22,7 @@ import { useT } from "@/i18n/use-t";
 const TABS = [
   "records",
   "volume",
+  "cardio",
   "history",
   "library",
   "body",
@@ -69,6 +71,7 @@ function ProgressPage() {
         <ScrollingTabsList>
           <TabsTrigger value="records">{t("progress.tab.records")}</TabsTrigger>
           <TabsTrigger value="volume">{t("volume.tab")}</TabsTrigger>
+          <TabsTrigger value="cardio">{t("cardio.tab")}</TabsTrigger>
           <TabsTrigger value="history">{t("history.tab")}</TabsTrigger>
           <TabsTrigger value="library">{t("library.tab")}</TabsTrigger>
           <TabsTrigger value="body">{t("progress.tab.body")}</TabsTrigger>
@@ -80,6 +83,9 @@ function ProgressPage() {
         </TabsContent>
         <TabsContent value="volume">
           {tab === "volume" ? <VolumePanel /> : null}
+        </TabsContent>
+        <TabsContent value="cardio">
+          {tab === "cardio" ? <CardioPanel /> : null}
         </TabsContent>
         <TabsContent value="history">
           {tab === "history" ? <HistoryPanel /> : null}

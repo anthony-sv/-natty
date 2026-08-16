@@ -6,6 +6,7 @@ import { intakeEntries } from "@/features/intake/collection";
 import { supplements } from "@/features/supplements/collection";
 import { measurements } from "@/features/measurements/collection";
 import { loggedSets } from "@/features/log/collection";
+import { cardioEntries } from "@/features/log/cardio-collection";
 import { userDiets, dietSlugFor } from "@/features/nutrition/collection";
 import { userFoods, userRecipes } from "@/features/pantry/collection";
 import { slugFor, userRoutines } from "@/features/routines/collection";
@@ -27,6 +28,7 @@ import { rekey, type IdSource } from "./rekey";
  */
 const allCollections = () => [
   loggedSets(),
+  cardioEntries(),
   activeBodyEntries(),
   measurements(),
   userExercises(),
@@ -61,6 +63,7 @@ export async function currentData(): Promise<BackupData> {
   await loadAll();
   return {
     sets: [...loggedSets().values()],
+    cardio: [...cardioEntries().values()],
     bodyEntries: [...activeBodyEntries().values()],
     measurements: [...measurements().values()],
     exercises: [...userExercises().values()],
@@ -76,6 +79,7 @@ export async function currentData(): Promise<BackupData> {
 
 const emptyData = (): BackupData => ({
   sets: [],
+  cardio: [],
   bodyEntries: [],
   measurements: [],
   exercises: [],
@@ -279,6 +283,7 @@ export async function restoreEverything(data: BackupData): Promise<void> {
   }
 
   if (data.sets.length > 0) loggedSets().insert(data.sets);
+  if (data.cardio.length > 0) cardioEntries().insert(data.cardio);
   if (data.bodyEntries.length > 0) activeBodyEntries().insert(data.bodyEntries);
   if (data.measurements.length > 0) measurements().insert(data.measurements);
   if (data.exercises.length > 0) userExercises().insert(data.exercises);

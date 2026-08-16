@@ -21,6 +21,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/toast";
 import { HomeCards } from "@/features/home/components/HomeCards";
 import { TodayCard } from "@/features/home/components/TodayCard";
+import { DeloadBanner } from "@/features/home/components/DeloadBanner";
 import { useNames } from "@/i18n/names";
 import { useT, type MessageKey } from "@/i18n/use-t";
 import { endSession } from "@/features/routines/session-store";
@@ -74,6 +75,10 @@ function Index() {
       ) : (
         <StartCard />
       )}
+
+      {/* Below the hero, not competing with "what to train today" for the
+          top slot — a suggestion, not the day's headline. */}
+      <DeloadBanner />
 
       <HomeCards />
 

@@ -27,6 +27,11 @@ import {
 import { toast } from "@/components/ui/toast";
 import { logSet, type StepRef } from "../collection";
 import { formatSet, prForRepRange } from "../pr";
+import {
+  formatOverload,
+  suggestOverload,
+  type OverloadSuggestion,
+} from "../overload";
 import { useT, type Translate } from "@/i18n/use-t";
 import { UNITS, weightUnitSchema, type WeightUnit } from "@/lib/units";
 import type { LoggedSet } from "../schema";
@@ -87,6 +92,9 @@ export function SetLogControl({
   const [open, setOpen] = useState(false);
   const t = useT();
   const pr = prForRepRange(frontier, targetReps);
+  // Double progression — see `overload.ts`. Undefined without both a target
+  // range and a last set, which is exactly when there's nothing to suggest.
+  const suggestion = suggestOverload(targetReps, last);
   const triggerLabel =
     loggedHere.length === 0
       ? t("log.action")
@@ -117,6 +125,21 @@ export function SetLogControl({
         {!pr && !last ? (
           <span className="text-muted-foreground">{t("log.firstTime")}</span>
         ) : null}
+        {suggestion ? (
+          <>
+            <span aria-hidden className="text-muted-foreground">
+              ·
+            </span>
+            {/* Visible before the popover even opens — the point of showing
+                this here rather than only as the form's prefill. */}
+            <span>
+              <span className="text-muted-foreground">{t("log.try")} </span>
+              <span className="font-medium tabular-nums text-primary">
+                {formatOverload(suggestion)}
+              </span>
+            </span>
+          </>
+        ) : null}
       </div>
 
       <Popover open={open} onOpenChange={setOpen}>
@@ -137,6 +160,7 @@ export function SetLogControl({
           <SetLogForm
             key={last?.id ?? "none"}
             last={last}
+            suggestion={suggestion}
             loggedHere={loggedHere}
             stepRef={stepRef}
             exerciseName={exerciseName}
@@ -155,12 +179,14 @@ export function SetLogControl({
  */
 function SetLogForm({
   last,
+  suggestion,
   loggedHere,
   stepRef,
   exerciseName,
   onLogged,
 }: {
   last: LoggedSet | undefined;
+  suggestion: OverloadSuggestion | undefined;
   loggedHere: LoggedSet[];
   stepRef: StepRef;
   exerciseName: string;
@@ -169,11 +195,15 @@ function SetLogForm({
   const t = useT();
   const form = useForm({
     defaultValues: {
-      // Prefilled from your last set on this exercise, since the weight
-      // usually carries over. Nothing is recorded until you submit.
-      unit: (last?.unit ?? "kg") as WeightUnit,
-      weight: last?.weight !== undefined ? String(last.weight) : "",
-      reps: last ? String(last.reps) : "",
+      // Prefilled from the double-progression suggestion when there is one
+      // (see `overload.ts`), falling back to your last set verbatim
+      // otherwise — still fully editable, and nothing is recorded until you
+      // submit.
+      unit: (suggestion?.unit ?? last?.unit ?? "kg") as WeightUnit,
+      weight: String(
+        (suggestion ? suggestion.weight : last?.weight) ?? "",
+      ),
+      reps: suggestion ? String(suggestion.reps) : last ? String(last.reps) : "",
     },
     validators: { onChange: buildSchema(t) },
     onSubmit: ({ value }) => {

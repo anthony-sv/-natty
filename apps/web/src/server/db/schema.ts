@@ -13,7 +13,7 @@ import {
 import type { IntakeSource } from "@/features/intake/schema";
 import type { MeasurementSite } from "@/features/measurements/schema";
 import type { Profile } from "@/features/profile/profile-store";
-import type { LengthUnit, WeightUnit } from "@/lib/units";
+import type { DistanceUnit, LengthUnit, WeightUnit } from "@/lib/units";
 
 /**
  * Supabase's managed auth schema, declared only far enough to reference —
@@ -139,6 +139,27 @@ export const loggedSets = pgTable(
     // whole: one exercise's history, and a date window.
     index("logged_sets_user_exercise_idx").on(table.userId, table.exerciseId),
     index("logged_sets_user_performed_idx").on(table.userId, table.performedAt),
+  ],
+).enableRLS();
+
+/** Every cardio session you've logged distance for. */
+export const cardioEntries = pgTable(
+  "cardio_entries",
+  {
+    ...owned(),
+    performedAt: bigint("performed_at", { mode: "number" }).notNull(),
+    exerciseId: text("exercise_id").notNull(),
+    distance: doublePrecision("distance").notNull(),
+    unit: text("unit").$type<DistanceUnit>().notNull().default("km"),
+    durationSeconds: integer("duration_seconds"),
+    routineSlug: text("routine_slug"),
+    weekNumber: integer("week_number"),
+    dayNumber: integer("day_number"),
+    setNumber: integer("set_number"),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.id] }),
+    index("cardio_entries_user_exercise_idx").on(table.userId, table.exerciseId),
   ],
 ).enableRLS();
 
