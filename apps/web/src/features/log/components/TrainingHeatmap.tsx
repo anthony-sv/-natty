@@ -27,12 +27,17 @@ const STEP_COLOUR = [
 export function TrainingHeatmap({
   calendar,
   onSelectDay,
+  /** Rings the current week's cells — see `DeloadBanner` for the reasoning. */
+  deloadSuggested = false,
 }: {
   calendar: Calendar;
   /** Given a day with at least one set logged. */
   onSelectDay: (day: CalendarDay) => void;
+  deloadSuggested?: boolean;
 }) {
   const t = useT();
+  const currentWeek = calendar.weeks[calendar.weeks.length - 1];
+  const currentWeekDates = new Set(currentWeek?.map((day) => day.date) ?? []);
 
   return (
     <HeatmapGrid
@@ -42,6 +47,11 @@ export function TrainingHeatmap({
         day.sets === 0
           ? t("history.noSets")
           : t.plural("history.setsOnDay", day.sets)
+      }
+      classFor={(day) =>
+        deloadSuggested && currentWeekDates.has(day.date)
+          ? "ring-1 ring-primary ring-offset-1 ring-offset-background"
+          : undefined
       }
       // Only a day with something on it is worth opening, so an empty one isn't
       // a button at all rather than a button that does nothing.

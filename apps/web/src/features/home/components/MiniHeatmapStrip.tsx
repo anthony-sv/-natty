@@ -7,17 +7,29 @@ import { cn } from "@/lib/utils";
  * the `/progress` heatmap. Same `--heat-1..4` sequential ramp, so a card and
  * the real thing never disagree about what a busy day looks like.
  */
-export function MiniHeatmapStrip({ calendar }: { calendar: Calendar }) {
+const DAYS_IN_WEEK = 7;
+
+export function MiniHeatmapStrip({
+  calendar,
+  /** Rings the current week's cells — see `TrainingHeatmap`'s own prop. */
+  deloadSuggested = false,
+}: {
+  calendar: Calendar;
+  deloadSuggested?: boolean;
+}) {
   const days = calendar.weeks.slice(-4).flat();
 
   return (
     <div className="flex gap-1" aria-hidden="true">
-      {days.map((day) => (
+      {days.map((day, i) => (
         <span
           key={day.date}
           className={cn(
             "h-3 flex-1 rounded-sm",
             day.isPadding && "opacity-0",
+            deloadSuggested &&
+              i >= days.length - DAYS_IN_WEEK &&
+              "ring-1 ring-primary ring-offset-1 ring-offset-background",
           )}
           style={{
             background:

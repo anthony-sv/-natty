@@ -100,3 +100,38 @@ export function convertLength(
   if (from === to) return length;
   return to === "cm" ? length * CM_PER_INCH : length / CM_PER_INCH;
 }
+
+/**
+ * Distance units, for cardio. The same trio as weight and length and for the
+ * same reason: a run logged in miles reads back in miles, with conversion
+ * confined to the one place a total gets summed across mixed entries.
+ */
+export const distanceUnitSchema = z.enum(["km", "mi"]);
+export type DistanceUnit = z.infer<typeof distanceUnitSchema>;
+
+export const DISTANCE_UNITS: Array<{ value: DistanceUnit; label: string }> = [
+  { value: "km", label: "km" },
+  { value: "mi", label: "mi" },
+];
+
+const KM_PER_MI = 1.609344;
+
+/** Kilometres, whatever it was entered in. For comparison, never for display. */
+export function toKilometers(distance: number, unit: DistanceUnit): number {
+  return unit === "mi" ? distance * KM_PER_MI : distance;
+}
+
+/**
+ * The same distance in another unit.
+ *
+ * Same job `convertWeight`/`convertLength` do: summing a run of 5km and
+ * 3.1mi entries needs one shared axis before the arithmetic means anything.
+ */
+export function convertDistance(
+  distance: number,
+  from: DistanceUnit,
+  to: DistanceUnit,
+): number {
+  if (from === to) return distance;
+  return to === "km" ? distance * KM_PER_MI : distance / KM_PER_MI;
+}

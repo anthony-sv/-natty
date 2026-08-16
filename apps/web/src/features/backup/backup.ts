@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { loggedSetSchema } from "@/features/log/schema";
+import { cardioEntrySchema } from "@/features/log/cardio-schema";
 import { bodyEntrySchema } from "@/features/body/schema";
 import { measurementSchema } from "@/features/measurements/schema";
 import { userExerciseSchema } from "@/features/library/schema";
@@ -40,6 +41,7 @@ export const BACKUP_VERSION = 1;
  */
 export const backupDataSchema = z.object({
   sets: z.array(loggedSetSchema).default([]),
+  cardio: z.array(cardioEntrySchema).default([]),
   bodyEntries: z.array(bodyEntrySchema).default([]),
   measurements: z.array(measurementSchema).default([]),
   exercises: z.array(userExerciseSchema).default([]),
@@ -113,6 +115,7 @@ export function stripInternal<T>(row: T): T {
 function cleanData(data: BackupData): BackupData {
   return {
     sets: data.sets.map(stripInternal),
+    cardio: data.cardio.map(stripInternal),
     bodyEntries: data.bodyEntries.map(stripInternal),
     measurements: data.measurements.map(stripInternal),
     exercises: data.exercises.map(stripInternal),
@@ -234,6 +237,7 @@ function countsOf(data: BackupData): { key: keyof BackupData; count: number }[] 
   return (
     [
       ["sets", data.sets.length],
+      ["cardio", data.cardio.length],
       ["bodyEntries", data.bodyEntries.length],
       ["measurements", data.measurements.length],
       ["exercises", data.exercises.length],

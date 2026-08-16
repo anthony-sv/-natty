@@ -204,6 +204,9 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "pattern.pullover",
       "pattern.elbow-flexion",
       "pattern.cardio",
+      "cardio.tab",
+      // "{km} km" — a number and the SI unit, no words to translate.
+      "cardio.total.value",
       "library.setsLogged.one",
       "library.setsLogged.other",
       // "Sets" and "reps" are the words a Mexican gym uses, which is why

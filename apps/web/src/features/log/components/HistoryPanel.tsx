@@ -20,6 +20,7 @@ import { useDateFormat, useT } from "@/i18n/use-t";
 import { addDays } from "@/lib/week";
 import { loggedSetsFork } from "../collection";
 import { toCalendar, type CalendarDay } from "../heatmap";
+import { useDeloadSuggested } from "../use-deload";
 import { LoggedSetList } from "./LoggedSetList";
 import { TrainingHeatmap } from "./TrainingHeatmap";
 
@@ -52,6 +53,8 @@ export function HistoryPanel() {
     () => toCalendar(sets, { weeks: WEEKS, now }),
     [sets, now],
   );
+  // Same hook `DeloadBanner` and the home strip read.
+  const suggestsDeload = useDeloadSuggested(now).suggested;
 
   // Filtered off the live query rather than read from the collection, so an
   // edit or a delete inside the sheet updates the list underneath it.
@@ -104,7 +107,11 @@ export function HistoryPanel() {
             {t("history.streakRule")}
           </p>
 
-          <TrainingHeatmap calendar={calendar} onSelectDay={setSelected} />
+          <TrainingHeatmap
+            calendar={calendar}
+            onSelectDay={setSelected}
+            deloadSuggested={suggestsDeload}
+          />
         </CardContent>
       </Card>
 

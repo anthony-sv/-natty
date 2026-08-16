@@ -19,6 +19,7 @@ import { resolveIntake, tickedMeals } from "@/features/intake/intake";
 import { loggedSetsFork } from "@/features/log/collection";
 import { toCalendar } from "@/features/log/heatmap";
 import { useAllRecords } from "@/features/log/queries";
+import { useDeloadSuggested } from "@/features/log/use-deload";
 import { useMeasurements } from "@/features/measurements/collection";
 import {
   MiniHeatmapStrip,
@@ -106,6 +107,10 @@ function TrainingCard() {
     () => toCalendar(sets, { weeks: STREAK_WEEKS, now }),
     [sets, now],
   );
+  // Same hook `DeloadBanner` reads — the strip's ring and the banner's
+  // reasoning (and its acknowledgement) can't disagree about whether a
+  // deload is suggested.
+  const suggestsDeload = useDeloadSuggested(now).suggested;
 
   // Sets in the week you're in, off the same grid the streak comes from — two
   // counts of one thing drift, which is why `summariseDay` derives from
@@ -136,7 +141,9 @@ function TrainingCard() {
         t.plural("home.setsThisWeek", setsThisWeek),
         t.plural("home.recordsHeld", rows.length),
       ]}
-      visual={<MiniHeatmapStrip calendar={calendar} />}
+      visual={
+        <MiniHeatmapStrip calendar={calendar} deloadSuggested={suggestsDeload} />
+      }
     />
   );
 }
