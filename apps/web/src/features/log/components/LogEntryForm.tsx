@@ -239,11 +239,14 @@ export function LogEntryForm() {
                 {t("common.weight")}
               </FieldLabel>
               <div className="flex items-center gap-2">
+                {/* `step="any"` — see `SetLogControl`'s own weight input for
+                    why a fixed increment silently blocks a value like
+                    6.25kg instead of showing a validation error. */}
                 <Input
                   id="backfill-weight"
                   type="number"
                   inputMode="decimal"
-                  step="0.5"
+                  step="any"
                   min="0"
                   placeholder={t("common.optional")}
                   className="min-w-0 flex-1"

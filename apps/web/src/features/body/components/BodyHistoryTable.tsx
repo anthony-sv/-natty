@@ -34,7 +34,14 @@ import { deleteBodyEntry, restoreBodyEntry, updateBodyEntry } from "../collectio
 import { ffmi, formatIndex, normalizedFfmi } from "../ffmi";
 import type { BodyEntry } from "../schema";
 
+/**
+ * The weekday, not just the date — a plain "Aug 4" reads as whatever day of
+ * the week the reader happens to guess, and the weekly average groups Monday
+ * to Sunday, so a row that doesn't say which one invites exactly the
+ * off-by-one mismatch a glance at the calendar would have caught.
+ */
 const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
+  weekday: "short",
   day: "numeric",
   month: "short",
   year: "numeric",

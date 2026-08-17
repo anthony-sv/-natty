@@ -205,8 +205,11 @@ function BodyCard() {
         change?.deltaWeight === undefined
           ? undefined
           : t("home.weekAverage", {
-              weight: `${change.latest.weight.toFixed(1)} ${unit}`,
-              delta: `${change.deltaWeight > 0 ? "+" : change.deltaWeight < 0 ? "−" : ""}${Math.abs(change.deltaWeight).toFixed(1)}`,
+              // `formatWeightValue`'s two decimals — see `WeeklyAverageCard`,
+              // whose own card on the body tab reads off the same figures and
+              // can't disagree with this one about what they are.
+              weight: `${formatWeightValue(change.latest.weight)} ${unit}`,
+              delta: `${change.deltaWeight > 0 ? "+" : change.deltaWeight < 0 ? "−" : ""}${formatWeightValue(Math.abs(change.deltaWeight))}`,
             }),
         carried.entry.bodyFatPercent === undefined
           ? t("home.noBodyFat")
