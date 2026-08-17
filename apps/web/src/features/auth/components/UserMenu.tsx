@@ -26,6 +26,7 @@ import {
 import { toast } from "@/components/ui/toast";
 import { displayName, initialsOf } from "@/features/profile/identity";
 import { profileStore } from "@/features/profile/profile-store";
+import { useOwnHandle } from "@/features/profile/use-handle";
 import { useT } from "@/i18n/use-t";
 import { getSupabaseBrowserClient, isSupabaseConfigured } from "../client";
 import { useSession } from "../session-store";
@@ -54,6 +55,9 @@ export function UserMenu({
   const t = useT();
   const session = useSession();
   const profile = useStore(profileStore);
+  // Called unconditionally — the branches below return before this point for
+  // the signed-out/no-Supabase cases, and hooks can't follow them there.
+  const handle = useOwnHandle(session.userId);
 
   // No Supabase project: there's no session to offer, ever — so this is a
   // single link rather than a menu with one dead-end item in it. `/profile`
@@ -170,6 +174,13 @@ export function UserMenu({
                 <span className="truncate text-xs text-muted-foreground">
                   {session.email}
                 </span>
+                {/* Omitted rather than a placeholder row — most accounts
+                    haven't claimed one, and "no handle" isn't worth a line. */}
+                {handle ? (
+                  <span className="truncate text-xs text-muted-foreground">
+                    @{handle}
+                  </span>
+                ) : null}
               </div>
               <ChevronsUpDownIcon className="ml-auto" />
             </SidebarMenuButton>
@@ -196,6 +207,11 @@ export function UserMenu({
                   <span className="truncate text-xs text-muted-foreground">
                     {session.email}
                   </span>
+                  {handle ? (
+                    <span className="truncate text-xs text-muted-foreground">
+                      @{handle}
+                    </span>
+                  ) : null}
                 </div>
               </DropdownMenuLabel>
             </DropdownMenuGroup>

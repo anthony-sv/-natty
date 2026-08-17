@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useDateFormat, useT } from "@/i18n/use-t";
-import type { WeightUnit } from "@/lib/units";
+import { formatWeightValue, type WeightUnit } from "@/lib/units";
 import { cn } from "@/lib/utils";
 import { DAYS_IN_WEEK, weekOverWeek, type WeeklyAverage } from "../weekly";
 
@@ -17,9 +17,15 @@ const WEEK_LABEL: Intl.DateTimeFormatOptions = {
   month: "short",
 };
 
-/** Weight changes are small, so a rounded-to-the-kilo figure would show none. */
+/**
+ * `formatWeightValue`'s two decimals, not a local `.toFixed(1)` — a mean of
+ * several weigh-ins routinely lands on a value a single decimal can't tell
+ * apart from its neighbour (two weeks both read "110.5" while differing by a
+ * few hundred grams), which is what made a week-over-week delta look like it
+ * didn't match the two totals shown beside it.
+ */
 function formatWeight(value: number, unit: WeightUnit): string {
-  return `${value.toFixed(1)} ${unit}`;
+  return `${formatWeightValue(value)} ${unit}`;
 }
 
 /** A true minus sign, not a hyphen — it aligns with digits in tabular figures. */
@@ -27,9 +33,9 @@ function signOf(value: number): string {
   return value > 0 ? "+" : value < 0 ? "−" : "";
 }
 
-/** Signed, so "+0.4" and "−0.4" are distinguishable at a glance. */
+/** Signed, so "+0.42" and "−0.42" are distinguishable at a glance. */
 function formatDelta(value: number, unit: WeightUnit): string {
-  return `${signOf(value)}${Math.abs(value).toFixed(1)} ${unit}`;
+  return `${signOf(value)}${formatWeightValue(Math.abs(value))} ${unit}`;
 }
 
 function formatPercent(value: number): string {

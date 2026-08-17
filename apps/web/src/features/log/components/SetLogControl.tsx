@@ -256,11 +256,17 @@ function SetLogForm({
             <Field>
               <FieldLabel htmlFor="log-weight">{t("common.weight")}</FieldLabel>
               <div className="flex items-center gap-2">
+                {/* `step="any"`, not a fixed increment — a stepped `<input
+                    type=number>` fails its own native validation on a value
+                    that isn't a multiple of the step, and the browser then
+                    silently swallows the submit event before this form's own
+                    handler ever runs. A gym's plates aren't all 0.5kg either:
+                    this one's cable stack goes down to 6.25kg. */}
                 <Input
                   id="log-weight"
                   type="number"
                   inputMode="decimal"
-                  step="0.5"
+                  step="any"
                   min="0"
                   placeholder={t("common.optional")}
                   className="min-w-0 flex-1"
