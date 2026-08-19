@@ -195,7 +195,7 @@ export function RoutineBuilder({
     updateDays(days.map((day, i) => (i === index ? { ...day, ...patch } : day)));
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-6">
       <FieldGroup>
         <Field>
           <FieldLabel htmlFor="routine-name">{t("builder.name")}</FieldLabel>
@@ -233,7 +233,7 @@ export function RoutineBuilder({
         }
       />
 
-      <div className="flex flex-col gap-4">
+      <div className="flex min-w-0 flex-col gap-4">
         <h2 className="text-lg font-semibold">
           {draft.weeks.length > 1
             ? t("builder.daysInWeek", { week: activeWeek + 1 })
@@ -244,6 +244,7 @@ export function RoutineBuilder({
           <p className="text-sm text-muted-foreground">{t("builder.noDays")}</p>
         ) : (
           <Tabs
+            className="min-w-0"
             // Keyed by week: without it, switching weeks lands on whatever
             // day index the previous week's tabs happened to leave selected
             // instead of day one.
