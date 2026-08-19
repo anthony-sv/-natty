@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useStore } from "@tanstack/react-store";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { PencilLineIcon, PlusIcon, Share2Icon } from "lucide-react";
 import { Page } from "@/components/page";
@@ -16,17 +16,19 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollingTabsList } from "@/components/scrolling-tabs-list";
-import { diets } from "@/data/diets";
 import { MacroCalculatorPanel } from "@/features/nutrition/components/MacroCalculatorPanel";
 import { PlanPanel } from "@/features/nutrition/components/PlanPanel";
 import { useDiets } from "@/features/nutrition/use-diets";
 import { TodayPanel } from "@/features/intake/components/TodayPanel";
 import { TrendsPanel } from "@/features/intake/components/TrendsPanel";
 import { PantryPanel } from "@/features/pantry/components/PantryPanel";
+import { profileStore, setProfile } from "@/features/profile/profile-store";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 
-const TABS = ["today", "trends", "plan", "macros", "pantry"] as const;
+// Most-used first — Plan (the reference you check mid-week) ranks above
+// Trends (a periodic look-back), the same reasoning `/progress` reorders on.
+const TABS = ["today", "plan", "trends", "macros", "pantry"] as const;
 type Tab = (typeof TABS)[number];
 
 export const Route = createFileRoute("/nutrition")({
@@ -56,7 +58,6 @@ export const Route = createFileRoute("/nutrition")({
 function NutritionPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const [slug, setSlug] = useState(search.plan ?? diets[0]!.slug);
   // In the URL, so a panel is linkable and survives a refresh. `replace` keeps
   // tab switches out of the back button.
   const tab = search.tab ?? "today";
@@ -73,6 +74,16 @@ function NutritionPage() {
 
   // Yours first, then the built-ins — a plan you wrote is the one you follow.
   const { plans } = useDiets();
+  // `?plan=` is a one-time "show me this one" — from the builder, or a
+  // bookmarked link — that doesn't disturb your standing pick. The picker
+  // itself writes `activeDietSlug` directly (see its `onValueChange`), the
+  // same way `ActivateProgramButton` owns `activeRoutineSlug`, rather than
+  // living in local component state: a plain `useState` seeded once from the
+  // URL meant switching plans in the picker only stuck until this component
+  // next remounted, at which point it silently reverted to whichever plan the
+  // URL still named — always the one you'd most recently created or edited.
+  const activeDietSlug = useStore(profileStore, (state) => state.activeDietSlug);
+  const slug = search.plan ?? activeDietSlug ?? plans[0]!.plan.slug;
   const entry = plans.find((p) => p.plan.slug === slug) ?? plans[0]!;
   const { plan, isCustom, isDraft } = entry;
   const options = plans.map((p) => ({
@@ -100,7 +111,21 @@ function NutritionPage() {
             <Select
               items={options}
               value={plan.slug}
-              onValueChange={(value) => setSlug(value ?? plans[0]!.plan.slug)}
+              onValueChange={(value) => {
+                setProfile({
+                  activeDietSlug: value ?? plans[0]!.plan.slug,
+                });
+                // Clears a lingering `?plan=` from a prior deep link — that
+                // param outranks the stored pick (see `slug` above), so
+                // without this a choice made here couldn't override it.
+                if (search.plan !== undefined) {
+                  void navigate({
+                    to: "/nutrition",
+                    search: { tab: search.tab },
+                    replace: true,
+                  });
+                }
+              }}
             >
               <SelectTrigger id="diet-plan">
                 <SelectValue />
@@ -157,16 +182,13 @@ function NutritionPage() {
       <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
         <ScrollingTabsList>
           <TabsTrigger value="today">{t("intake.tab")}</TabsTrigger>
-          <TabsTrigger value="trends">{t("trends.tab")}</TabsTrigger>
           <TabsTrigger value="plan">{t("nutrition.tab.plan")}</TabsTrigger>
+          <TabsTrigger value="trends">{t("trends.tab")}</TabsTrigger>
           <TabsTrigger value="macros">{t("nutrition.tab.macros")}</TabsTrigger>
           <TabsTrigger value="pantry">{t("pantry.tab")}</TabsTrigger>
         </ScrollingTabsList>
         <TabsContent value="today">
           {tab === "today" ? <TodayPanel key={plan.slug} plan={plan} /> : null}
-        </TabsContent>
-        <TabsContent value="trends">
-          {tab === "trends" ? <TrendsPanel key={plan.slug} plan={plan} /> : null}
         </TabsContent>
         <TabsContent value="plan">
           {/* Keyed so switching plans resets the day and swap choices rather
@@ -184,6 +206,9 @@ function NutritionPage() {
               <PlanPanel key={plan.slug} plan={plan} />
             </div>
           ) : null}
+        </TabsContent>
+        <TabsContent value="trends">
+          {tab === "trends" ? <TrendsPanel key={plan.slug} plan={plan} /> : null}
         </TabsContent>
         <TabsContent value="macros">
           {tab === "macros" ? (

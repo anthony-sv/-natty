@@ -402,6 +402,7 @@ export const en = {
   "builder.style": "Style",
   "builder.stylePlaceholder": "Push/pull/legs, upper/lower…",
   "builder.days": "Days",
+  "builder.dayNumber": "Day {number}",
   "builder.addDay": "Add a day",
   "builder.dayLabel": "What it's for",
   "builder.dayLabelPlaceholder": "Glutes, Chest, Pull\u2026",
@@ -486,6 +487,9 @@ export const en = {
   // finisher, so this reads as a gap to fill rather than a valid answer.
   "builder.pose.none": "Not chosen",
   "builder.holdSeconds": "Hold (s)",
+  "builder.poseAlternatives": "Or one of these poses",
+  "builder.poseAddAlternative": "Add an alternate pose...",
+  "builder.removePoseAlternative": "Remove {name}",
   "builder.phases": "Phases",
   "builder.addPhase": "Add a phase",
   "builder.removePhase": "Remove phase {number}",
@@ -1127,6 +1131,7 @@ export const en = {
 
   "data.kind.sets": "Logged sets",
   "data.kind.cardio": "Cardio sessions",
+  "data.kind.completions": "Completed workouts",
   "data.kind.bodyEntries": "Weigh-ins",
   "data.kind.measurements": "Measurements",
   "data.kind.exercises": "Your exercises",
@@ -1190,6 +1195,7 @@ export const en = {
   "history.exercises.other": "{count} exercises",
   "history.daySummary": "{sets} across {exercises}",
   "history.noSets": "nothing logged",
+  "history.completedNoSets": "workout completed, nothing logged",
   "history.empty.title": "No history yet",
   "history.empty.body":
     "Log a few sessions and a year of them shows up here, a square per day.",
@@ -1427,6 +1433,7 @@ export const en = {
   "player.swap": "Swap",
   "player.swapTitle": "Doing instead",
   "player.swappedFrom": "instead of {name}",
+  "player.poseSwapTitle": "Striking instead",
   "player.set": "Set",
   "player.setValue": "{number} of {total}",
   "player.target": "Target",
@@ -1460,6 +1467,9 @@ export const en = {
   "player.ended": "Workout ended",
   "player.endedBody": "{day} — anything you logged is kept.",
   "player.complete": "Workout complete",
+  "player.nothingLogged": "Nothing logged",
+  "player.nothingLoggedBody":
+    "You didn't log any sets or cardio this session, so it won't count toward your history — open the log control on a set next time to record it.",
   "player.stale.title": "Nothing left in this workout",
   "player.stale.body": "{day} — this session is further along than the day now goes.",
   "player.stale.action": "Clear it",

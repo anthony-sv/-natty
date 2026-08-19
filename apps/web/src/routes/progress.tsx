@@ -19,14 +19,18 @@ import { useT } from "@/i18n/use-t";
 // Measurements sits beside Body rather than inside it: they answer different
 // questions from different collections, and the Body panel already carries the
 // FFMI meter, two charts, a form and a history table.
+//
+// Ordered most-used first rather than by when each panel landed — a new tab
+// used to get appended (or worse, inserted ahead of ones you actually open
+// every day), which is how Library and Data ended up reachable before Records.
 const TABS = [
   "records",
-  "volume",
   "cardio",
   "history",
-  "library",
+  "volume",
   "body",
   "measurements",
+  "library",
   "data",
 ] as const;
 type Tab = (typeof TABS)[number];
@@ -70,19 +74,16 @@ function ProgressPage() {
       <Tabs value={tab} onValueChange={(value) => setTab(String(value))}>
         <ScrollingTabsList>
           <TabsTrigger value="records">{t("progress.tab.records")}</TabsTrigger>
-          <TabsTrigger value="volume">{t("volume.tab")}</TabsTrigger>
           <TabsTrigger value="cardio">{t("cardio.tab")}</TabsTrigger>
           <TabsTrigger value="history">{t("history.tab")}</TabsTrigger>
-          <TabsTrigger value="library">{t("library.tab")}</TabsTrigger>
+          <TabsTrigger value="volume">{t("volume.tab")}</TabsTrigger>
           <TabsTrigger value="body">{t("progress.tab.body")}</TabsTrigger>
           <TabsTrigger value="measurements">{t("measure.tab")}</TabsTrigger>
+          <TabsTrigger value="library">{t("library.tab")}</TabsTrigger>
           <TabsTrigger value="data">{t("data.tab")}</TabsTrigger>
         </ScrollingTabsList>
         <TabsContent value="records">
           {tab === "records" ? <RecordsPanel /> : null}
-        </TabsContent>
-        <TabsContent value="volume">
-          {tab === "volume" ? <VolumePanel /> : null}
         </TabsContent>
         <TabsContent value="cardio">
           {tab === "cardio" ? <CardioPanel /> : null}
@@ -90,14 +91,17 @@ function ProgressPage() {
         <TabsContent value="history">
           {tab === "history" ? <HistoryPanel /> : null}
         </TabsContent>
-        <TabsContent value="library">
-          {tab === "library" ? <LibraryPanel /> : null}
+        <TabsContent value="volume">
+          {tab === "volume" ? <VolumePanel /> : null}
         </TabsContent>
         <TabsContent value="body">
           {tab === "body" ? <BodyPanel /> : null}
         </TabsContent>
         <TabsContent value="measurements">
           {tab === "measurements" ? <MeasurementPanel /> : null}
+        </TabsContent>
+        <TabsContent value="library">
+          {tab === "library" ? <LibraryPanel /> : null}
         </TabsContent>
         <TabsContent value="data">
           {tab === "data" ? <DataPanel /> : null}

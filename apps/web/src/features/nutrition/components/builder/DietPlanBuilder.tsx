@@ -46,6 +46,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
 import type { DietPlan, MealItem } from "@/data/diets";
 import { ComboboxOptionGroup } from "@/components/combobox-option-group";
+import { setProfile } from "@/features/profile/profile-store";
 import {
   filterFoodOption,
   useFoodOptions,
@@ -116,6 +117,11 @@ export function DietPlanBuilder({
       success: { title: t("dietBuilder.saved", { name: toSave.name }), type: "success" },
       error: { title: t("dietBuilder.saveError"), type: "error" },
     });
+    // A plan you just wrote or edited is the one you're following — set
+    // directly rather than left for `/nutrition` to infer from the URL, which
+    // is what let the picker's own choice get silently overwritten the next
+    // time this page mounted.
+    setProfile({ activeDietSlug: slug });
     void navigate({ to: "/nutrition", search: { plan: slug } });
   }
 

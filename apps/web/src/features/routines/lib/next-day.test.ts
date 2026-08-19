@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Routine, TrainingDay } from "@/data/routines";
+import type { WorkoutCompletion } from "@/features/log/completion-schema";
 import type { LoggedSet } from "@/features/log/schema";
 import { dayAfter, nextTrainingDay } from "./next-day";
 
@@ -41,6 +42,18 @@ function set(over: Partial<LoggedSet> & { performedAt: number }): LoggedSet {
     exerciseId: "flat-barbell-bench-press",
     unit: "kg",
     reps: 10,
+    ...over,
+  };
+}
+
+function completion(
+  over: Partial<WorkoutCompletion> & { performedAt: number },
+): WorkoutCompletion {
+  return {
+    id: `completion-${over.performedAt}`,
+    routineSlug: "test-routine",
+    weekNumber: 1,
+    dayNumber: 1,
     ...over,
   };
 }
@@ -98,6 +111,60 @@ describe("nextTrainingDay", () => {
     expect(result?.day.isRest).toBe(true);
   });
 
+  it("advances to the day after a completion with nothing logged", () => {
+    // Reaching "Finish" with the log popover never opened — the whole reason
+    // completions exist.
+    const completions = [
+      completion({ performedAt: 1, weekNumber: 1, dayNumber: 1 }),
+    ];
+    const result = nextTrainingDay(twoWeekRoutine(), [], completions);
+    expect(result).toEqual({ weekNumber: 1, day: day(2, true) });
+  });
+
+  it("ignores completions logged against a different routine", () => {
+    const completions = [
+      completion({
+        performedAt: 1,
+        routineSlug: "other-routine",
+        weekNumber: 2,
+        dayNumber: 3,
+      }),
+    ];
+    const result = nextTrainingDay(twoWeekRoutine(), [], completions);
+    expect(result).toEqual({ weekNumber: 1, day: day(1) });
+  });
+
+  it("prefers whichever of a set or a completion happened more recently", () => {
+    const sets = [
+      set({
+        performedAt: 100,
+        routineSlug: "test-routine",
+        weekNumber: 1,
+        dayNumber: 3,
+      }),
+    ];
+    // An earlier completion shouldn't move the pointer backward past a later
+    // logged set — same rule the "later set wins" test pins for two sets.
+    const completions = [
+      completion({ performedAt: 1, weekNumber: 1, dayNumber: 1 }),
+    ];
+    const result = nextTrainingDay(twoWeekRoutine(), sets, completions);
+    expect(result).toEqual({ weekNumber: 2, day: day(1) });
+  });
+
+  it("advances into the next week's day 1 after the last day of a week", () => {
+    const sets = [
+      set({
+        performedAt: 1,
+        routineSlug: "test-routine",
+        weekNumber: 1,
+        dayNumber: 3,
+      }),
+    ];
+    const result = nextTrainingDay(twoWeekRoutine(), sets);
+    expect(result).toEqual({ weekNumber: 2, day: day(1) });
+  });
+
   it("wraps back to week 1 day 1 after the last day of the last week", () => {
     const sets = [
       set({
@@ -125,7 +192,7 @@ describe("nextTrainingDay", () => {
   });
 
   it("seeds from startAt when nothing has been logged yet", () => {
-    const result = nextTrainingDay(twoWeekRoutine(), [], {
+    const result = nextTrainingDay(twoWeekRoutine(), [], [], {
       weekNumber: 1,
       dayNumber: 3,
     });
@@ -141,7 +208,7 @@ describe("nextTrainingDay", () => {
         dayNumber: 1,
       }),
     ];
-    const result = nextTrainingDay(twoWeekRoutine(), sets, {
+    const result = nextTrainingDay(twoWeekRoutine(), sets, [], {
       weekNumber: 2,
       dayNumber: 3,
     });
@@ -149,7 +216,7 @@ describe("nextTrainingDay", () => {
   });
 
   it("falls back to the first day when startAt names a day the routine doesn't have", () => {
-    const result = nextTrainingDay(twoWeekRoutine(), [], {
+    const result = nextTrainingDay(twoWeekRoutine(), [], [], {
       weekNumber: 9,
       dayNumber: 9,
     });

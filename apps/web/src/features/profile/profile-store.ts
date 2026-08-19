@@ -100,6 +100,18 @@ export const profileSchema = z.object({
     })
     .optional(),
   /**
+   * The diet plan `/nutrition` opens on — the same idea as `activeRoutineSlug`,
+   * a preference rather than training data. Without a persisted pick, the page
+   * fell back to local component state seeded once from the URL, so choosing a
+   * different plan in the picker "stuck" only until the component remounted —
+   * a reload, a revisit from the sidebar, even just navigating away and back —
+   * at which point it silently reverted to whatever `?plan=` last named, which
+   * is always the plan you most recently created or edited. Picking a plan now
+   * writes here directly, and a slug that no longer resolves (a deleted custom
+   * plan) reads the same as unset.
+   */
+  activeDietSlug: z.string().optional(),
+  /**
    * When you last told the deload banner "I'll deload this week" — epoch ms.
    * A deload week is itself lighter work, which would otherwise keep
    * `isPlateaued` true and the banner stuck up indefinitely; this suppresses

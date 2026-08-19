@@ -206,11 +206,15 @@ function EditCardioForm({
                 {t("common.distance")}
               </FieldLabel>
               <div className="flex items-center gap-2">
+                {/* `step="any"` — a stepped input rejects a value that isn't a
+                    multiple of the step with no error, just a submit that
+                    silently does nothing. See `SetLogControl`'s weight input
+                    for the same fix. */}
                 <Input
                   id={`edit-distance-${entry.id}`}
                   type="number"
                   inputMode="decimal"
-                  step="0.1"
+                  step="any"
                   min="0"
                   className="min-w-0 flex-1"
                   value={field.state.value}
