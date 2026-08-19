@@ -1,4 +1,5 @@
 import { PlusIcon, TriangleAlertIcon, XIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ import {
   emptySegment,
   finisherPhase,
   type DraftPhase,
+  type DraftPose,
 } from "./draft";
 import { SegmentEditor } from "./SegmentEditor";
 
@@ -329,6 +331,7 @@ export function PhaseEditor({
                         pose: {
                           poseId: value as string,
                           holdSeconds: phase.pose?.holdSeconds ?? "",
+                          orAlternatives: phase.pose?.orAlternatives,
                         },
                       })
                     }
@@ -372,11 +375,31 @@ export function PhaseEditor({
                         pose: {
                           poseId: phase.pose?.poseId ?? "",
                           holdSeconds: e.target.value,
+                          orAlternatives: phase.pose?.orAlternatives,
                         },
                       })
                     }
                   />
                 </div>
+
+                {/* Equally acceptable substitutes — "most muscular *or* side
+                    chest" — offered to the athlete as a swap in the player
+                    rather than a second pose forced into this one slot. Same
+                    shape as `AlternativesEditor` for a lift, sized down: eight
+                    poses don't need a searchable Combobox. */}
+                <PoseAlternativesEditor
+                  pose={phase.pose}
+                  poseItems={poseItems}
+                  onChange={(orAlternatives) =>
+                    update(index, {
+                      pose: {
+                        poseId: phase.pose?.poseId ?? "",
+                        holdSeconds: phase.pose?.holdSeconds ?? "",
+                        orAlternatives,
+                      },
+                    })
+                  }
+                />
               </>
             ) : null}
 
@@ -506,6 +529,90 @@ export function PhaseEditor({
           {isCardio ? t("builder.cardioHint") : t("builder.phaseHint")}
         </p>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Other poses equally acceptable for this finisher — "most muscular *or*
+ * side chest" — so the athlete picks in the moment rather than the routine
+ * forcing one. `AlternativesEditor` (in `RoutineBuilder.tsx`) is the same
+ * idea for a lift; this one uses a `Select` instead of a `Combobox` because
+ * there are eight poses to choose from, not 113 exercises.
+ */
+function PoseAlternativesEditor({
+  pose,
+  poseItems,
+  onChange,
+}: {
+  pose: DraftPose;
+  poseItems: { value: string; label: string }[];
+  onChange: (next: string[]) => void;
+}) {
+  const t = useT();
+  const alternatives = pose.orAlternatives ?? [];
+  const labelFor = (id: string) =>
+    poseItems.find((option) => option.value === id)?.label ?? id;
+  // The primary pose, whatever's already listed, and the blank "not chosen"
+  // entry — offering any of those would only add a duplicate or a phantom.
+  const taken = new Set([pose.poseId, ...alternatives, ""]);
+  const options = poseItems.filter((option) => !taken.has(option.value));
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Label className="text-xs">{t("builder.poseAlternatives")}</Label>
+
+      {alternatives.length > 0 ? (
+        <ul className="flex flex-wrap gap-1.5">
+          {alternatives.map((id) => (
+            <li key={id}>
+              <Badge variant="secondary" className="gap-1 pr-1">
+                {labelFor(id)}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={t("builder.removePoseAlternative", {
+                    name: labelFor(id),
+                  })}
+                  onClick={() => onChange(alternatives.filter((a) => a !== id))}
+                >
+                  <XIcon />
+                </Button>
+              </Badge>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {options.length > 0 ? (
+        <Select
+          items={options}
+          // Held blank rather than showing the last pick: this control adds
+          // to a list, so a selection is an action, not a state.
+          value=""
+          onValueChange={(value) => {
+            // Base UI fires this with `null` on a dismiss with nothing
+            // picked (Escape, clicking away), not just on a real selection —
+            // guard on it explicitly or a dismissed picker writes a null
+            // into the list, which then fails the collection's own schema.
+            if (typeof value === "string" && value !== "") {
+              onChange([...alternatives, value]);
+            }
+          }}
+        >
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder={t("builder.poseAddAlternative")} />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : null}
     </div>
   );
 }

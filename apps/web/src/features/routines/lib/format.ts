@@ -52,9 +52,18 @@ export function formatAlternatives(
   return `${or} ${rendered.join(`, ${or} `)}`;
 }
 
-/** "Most muscular, 10s hold" — the pose closing a finisher set. */
-export function formatPose(pose: PoseCue, { names, t }: Formatting): string {
-  const name = names.pose(pose.poseId);
+/**
+ * "Most muscular, 10s hold" — the pose closing a finisher set.
+ *
+ * `poseIdOverride` names the one actually being struck when it differs from
+ * `pose.poseId` — the player's own swap, mid-session, among `orAlternatives`.
+ */
+export function formatPose(
+  pose: PoseCue,
+  { names, t }: Formatting,
+  poseIdOverride?: string,
+): string {
+  const name = names.pose(poseIdOverride ?? pose.poseId);
   return pose.holdSeconds === undefined
     ? name
     : `${name}, ${t("format.hold", { seconds: pose.holdSeconds })}`;

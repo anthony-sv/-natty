@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollingTabsList } from "@/components/scrolling-tabs-list";
+import { Tabs, TabsContent, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
@@ -64,7 +66,7 @@ import {
   type ExerciseOptionGroup,
 } from "@/features/library/use-exercise-options";
 import { useNames } from "@/i18n/names";
-import { useT } from "@/i18n/use-t";
+import { useT, type Translate } from "@/i18n/use-t";
 import {
   createUserRoutine,
   isBuiltInSlug,
@@ -107,6 +109,14 @@ const KINDS: { value: ExerciseEntry["kind"]; key: string }[] = [
   { value: "mobility", key: "routines.phase.mobility" },
   { value: "stretch", key: "routines.phase.stretch" },
 ];
+
+/** What a day's tab reads before you've committed to a real label. */
+function dayTabLabel(day: DraftDay, index: number, t: Translate): string {
+  const number = t("builder.dayNumber", { number: index + 1 });
+  const label = day.label.trim();
+  if (day.isRest) return t("builder.restDay");
+  return label === "" ? number : `${number} — ${label}`;
+}
 
 export function RoutineBuilder({
   initial,
@@ -161,6 +171,16 @@ export function RoutineBuilder({
   const [weekIndex, setWeekIndex] = useState(0);
   const activeWeek = Math.min(weekIndex, draft.weeks.length - 1);
   const days = draft.weeks[activeWeek]?.days ?? [];
+
+  /**
+   * Which day is on screen, sub-tabbed the same way `WeekBar` tabs weeks —
+   * a stack of full-height cards made it hard to tell where one day's
+   * exercises ended and the next one's began, especially once a day ran to
+   * six or seven exercises. Clamped on render rather than adjusted on
+   * delete or week switch, for the same reason `activeWeek` is.
+   */
+  const [dayIndex, setDayIndex] = useState(0);
+  const activeDay = Math.min(dayIndex, Math.max(days.length - 1, 0));
 
   /** Replace the days of the week being edited, leaving the others alone. */
   const updateDays = (next: DraftDay[]) =>
@@ -222,27 +242,48 @@ export function RoutineBuilder({
 
         {days.length === 0 ? (
           <p className="text-sm text-muted-foreground">{t("builder.noDays")}</p>
-        ) : null}
-
-        {days.map((day, index) => (
-          <DayEditor
-            // Keyed by week too: without it, switching weeks reuses each
-            // DayEditor's subtree for a different week's day.
-            key={`${activeWeek}-${index}`}
-            day={day}
-            index={index}
-            dayCount={days.length}
-            onChange={(patch) => updateDay(index, patch)}
-            onMove={(to) => updateDays(moveDay(days, index, to))}
-            onRemove={() => updateDays(days.filter((_, i) => i !== index))}
-          />
-        ))}
+        ) : (
+          <Tabs
+            // Keyed by week: without it, switching weeks lands on whatever
+            // day index the previous week's tabs happened to leave selected
+            // instead of day one.
+            key={activeWeek}
+            value={String(activeDay)}
+            onValueChange={(value) => setDayIndex(Number(value))}
+          >
+            <ScrollingTabsList>
+              {days.map((day, index) => (
+                <TabsTrigger key={index} value={String(index)}>
+                  {dayTabLabel(day, index, t)}
+                </TabsTrigger>
+              ))}
+            </ScrollingTabsList>
+            {days.map((day, index) => (
+              <TabsContent key={index} value={String(index)}>
+                <DayEditor
+                  day={day}
+                  index={index}
+                  dayCount={days.length}
+                  onChange={(patch) => updateDay(index, patch)}
+                  onMove={(to) => {
+                    updateDays(moveDay(days, index, to));
+                    setDayIndex(to);
+                  }}
+                  onRemove={() => updateDays(days.filter((_, i) => i !== index))}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+        )}
 
         <Button
           type="button"
           variant="outline"
           className="self-start"
-          onClick={() => updateDays([...days, emptyDay()])}
+          onClick={() => {
+            updateDays([...days, emptyDay()]);
+            setDayIndex(days.length);
+          }}
         >
           <PlusIcon data-icon="inline-start" />
           {t("builder.addDay")}

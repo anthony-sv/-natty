@@ -61,6 +61,15 @@ const sessionStateSchema = z.object({
    * shouldn't move the first.
    */
   swaps: z.record(z.string(), z.string()).default({}),
+  /**
+   * Same shape as `swaps`, one namespace over: which pose you're actually
+   * striking on a finisher whose prescription named more than one acceptable
+   * one, keyed by `exerciseIndex`. Session state for the same reason a lift
+   * swap is — picking "side chest" over "most muscular" today isn't an edit
+   * to the routine, and defaulted so a session persisted before this existed
+   * still parses.
+   */
+  poseSwaps: z.record(z.string(), z.string()).default({}),
 });
 
 export type SessionState = z.infer<typeof sessionStateSchema>;
@@ -100,6 +109,7 @@ export function startSession(target: {
     partExtraMs: {},
     startedAt: Date.now(),
     swaps: {},
+    poseSwaps: {},
   }));
 }
 
@@ -131,6 +141,34 @@ export function effectiveExerciseId(
   originalId: string,
 ): string {
   return state?.swaps[String(exerciseIndex)] ?? originalId;
+}
+
+/**
+ * Record that you're striking one of a finisher's other acceptable poses
+ * instead — the pose equivalent of `swapExercise`. Passing the prescription's
+ * own pose id clears the swap, same as swapping an exercise back to itself.
+ */
+export function swapPose(
+  exerciseIndex: number,
+  poseId: string,
+  originalId: string,
+): void {
+  sessionStore.setState((state) => {
+    if (state === null) return null;
+    const poseSwaps = { ...state.poseSwaps };
+    if (poseId === originalId) delete poseSwaps[String(exerciseIndex)];
+    else poseSwaps[String(exerciseIndex)] = poseId;
+    return { ...state, poseSwaps };
+  });
+}
+
+/** The pose you're actually striking at this position — the swap, or the original. */
+export function effectivePoseId(
+  state: SessionState | null,
+  exerciseIndex: number,
+  originalId: string,
+): string {
+  return state?.poseSwaps[String(exerciseIndex)] ?? originalId;
 }
 
 /**

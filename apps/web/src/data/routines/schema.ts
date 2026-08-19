@@ -69,6 +69,14 @@ export const poseCueSchema = z.object({
   poseId: z.string(),
   /** Seconds to hold. Omitted means "strike the pose", no timed hold. */
   holdSeconds: z.number().int().positive().optional(),
+  /**
+   * Equally acceptable substitutes for `poseId` — "most muscular *or* side
+   * chest" — the same shape `ExerciseEntry.orAlternatives` carries for a lift,
+   * and offered the same way: as a swap in the player, not a second field to
+   * fill in. `poseId` is the one written first / the default; this is optional
+   * so an existing routine with a single pose parses unchanged.
+   */
+  orAlternatives: z.array(z.string()).optional(),
 });
 export type PoseCue = z.infer<typeof poseCueSchema>;
 

@@ -150,6 +150,14 @@ export interface DraftPose {
   poseId: string;
   /** Blank means strike the pose with no timed hold, per `poseCueSchema`. */
   holdSeconds: string;
+  /**
+   * Equally acceptable substitutes for `poseId` — "most muscular *or* side
+   * chest" — the same shape `DraftExercise.orAlternatives` carries for a
+   * lift, offered to the athlete as a swap in the player rather than baked
+   * into the routine as a single choice. Empty or absent means there's only
+   * the one.
+   */
+  orAlternatives?: string[];
 }
 
 export interface DraftSegment {
@@ -484,12 +492,26 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
   // `holdSeconds` is genuinely optional in the schema — omitted means "strike
   // the pose", so a blank field drops the key instead of writing 0.
   const hold = num(phase.pose?.holdSeconds ?? "");
+  // Anything blank or pointing back at the primary pose is dropped, the same
+  // rule `orAlternatives` follows for an exercise — "or itself" isn't a
+  // choice, and a phantom "" would resolve to nothing in the player.
+  const alternates =
+    phase.pose === undefined
+      ? []
+      : [
+          ...new Set(
+            (phase.pose.orAlternatives ?? []).filter(
+              (id) => id !== "" && id !== phase.pose?.poseId,
+            ),
+          ),
+        ];
   const pose =
     phase.pose !== undefined && phase.pose.poseId !== ""
       ? {
           pose: {
             poseId: phase.pose.poseId,
             ...(hold !== undefined ? { holdSeconds: hold } : {}),
+            ...(alternates.length > 0 ? { orAlternatives: alternates } : {}),
           },
         }
       : undefined;
@@ -737,6 +759,7 @@ export function toDraft(routine: Routine): DraftRoutine {
                       p.pose.holdSeconds !== undefined
                         ? String(p.pose.holdSeconds)
                         : "",
+                    orAlternatives: p.pose.orAlternatives,
                   },
             segments: p.segments?.map((segment) => ({
               kind: segment.kind,
