@@ -1,5 +1,6 @@
 import { calendarWeeks } from "@/lib/calendar";
 import { daysBetween, startOfDay } from "@/lib/week";
+import type { WorkoutCompletion } from "./completion-schema";
 import type { LoggedSet } from "./schema";
 
 /**
@@ -21,6 +22,14 @@ export interface CalendarDay {
   sets: number;
   /** Distinct exercises, for the cell's tooltip. */
   exercises: number;
+  /**
+   * Something happened this day — a set was logged, or a workout was run to
+   * "Finish" with nothing logged against it. `sets > 0` implies this, but the
+   * reverse doesn't: a completed day with no logged sets is trained with
+   * `sets` still honestly at 0, which is what `cellStep` reads to color a cell
+   * without pretending a set exists that doesn't.
+   */
+  trained: boolean;
   /** Outside the requested window — drawn as a blank so the grid stays square. */
   isPadding: boolean;
 }
@@ -33,7 +42,7 @@ export interface Calendar {
    * weekday rows line up. The overhang is marked `isPadding`.
    */
   weeks: CalendarDay[][];
-  /** Days with at least one set. */
+  /** Days you trained — logged a set, or completed a workout. */
   daysTrained: number;
   totalSets: number;
   /** The most training days one unbroken run held, within the window. */
@@ -53,10 +62,17 @@ export interface Calendar {
  *
  * `now` is a parameter rather than `Date.now()` so the window is pinnable in a
  * test and nothing reads the clock during a render.
+ *
+ * `completions` is optional and defaults to none, so every existing call —
+ * and every test in this file — still reads a day as trained purely off
+ * logged sets. Pass it to also count a day you ran a workout to "Finish" but
+ * logged nothing against, which is what lets the streak and the day-count
+ * agree with `nextTrainingDay` about what "showed up" means.
  */
 export function toCalendar(
   sets: LoggedSet[],
   { weeks: weekCount, now }: { weeks: number; now: number },
+  completions: WorkoutCompletion[] = [],
 ): Calendar {
   const setsPerDay = new Map<number, LoggedSet[]>();
   for (const set of sets) {
@@ -64,6 +80,11 @@ export function toCalendar(
     const existing = setsPerDay.get(day);
     if (existing) existing.push(set);
     else setsPerDay.set(day, [set]);
+  }
+
+  const completedDays = new Set<number>();
+  for (const completion of completions) {
+    completedDays.add(startOfDay(completion.performedAt));
   }
 
   const today = startOfDay(now);
@@ -76,13 +97,14 @@ export function toCalendar(
         date,
         sets: logged.length,
         exercises: new Set(logged.map((set) => set.exerciseId)).size,
+        trained: logged.length > 0 || completedDays.has(date),
         isPadding,
       };
     }),
   );
 
   const inWindow = weeks.flat().filter((day) => !day.isPadding);
-  const trained = inWindow.filter((day) => day.sets > 0);
+  const trained = inWindow.filter((day) => day.trained);
 
   return {
     weeks,
@@ -168,4 +190,16 @@ export function intensityStep(sets: number, busiest: number): 0 | 1 | 2 | 3 | 4 
   if (share > 0.5) return 3;
   if (share > 0.25) return 2;
   return 1;
+}
+
+/**
+ * A cell's step, the way the two heatmap components should actually read
+ * `CalendarDay` — `intensityStep(day.sets, busiest)` alone goes blank on a
+ * completed day with nothing logged, because `sets` is honestly 0 there.
+ * `trained` is what says the day still counts, and the minimum step is what
+ * "any trained day reads as at least step 1" already means for a logged one.
+ */
+export function cellStep(day: CalendarDay, busiestDay: number): 0 | 1 | 2 | 3 | 4 {
+  if (day.sets > 0) return intensityStep(day.sets, busiestDay);
+  return day.trained ? 1 : 0;
 }

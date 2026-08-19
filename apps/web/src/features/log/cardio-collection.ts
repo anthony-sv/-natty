@@ -68,6 +68,19 @@ export function cardioForStep(ref: CardioStepRef): CardioEntry[] {
   );
 }
 
+/** Whether any cardio has been logged against this training day — see
+ * `hasLoggedSetsForDay`, its resistance-side counterpart. */
+export function hasLoggedCardioForDay(
+  ref: Omit<CardioStepRef, "setNumber" | "exerciseId">,
+): boolean {
+  return [...cardioEntries().values()].some(
+    (entry) =>
+      entry.routineSlug === ref.routineSlug &&
+      entry.weekNumber === ref.weekNumber &&
+      entry.dayNumber === ref.dayNumber,
+  );
+}
+
 /** Record a cardio session. */
 export function logCardio(input: CardioEntryInput) {
   const entry = { ...input, id: crypto.randomUUID() };

@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useDateFormat, useT } from "@/i18n/use-t";
 import { addDays } from "@/lib/week";
 import { loggedSetsFork } from "../collection";
+import { useCompletions } from "../completion-collection";
 import { toCalendar, type CalendarDay } from "../heatmap";
 import { useDeloadSuggested } from "../use-deload";
 import { LoggedSetList } from "./LoggedSetList";
@@ -49,9 +50,10 @@ export function HistoryPanel() {
     [loggedSets],
   );
   const sets = useMemo(() => data ?? [], [data]);
+  const completions = useCompletions();
   const calendar = useMemo(
-    () => toCalendar(sets, { weeks: WEEKS, now }),
-    [sets, now],
+    () => toCalendar(sets, { weeks: WEEKS, now }, completions),
+    [sets, completions, now],
   );
   // Same hook `DeloadBanner` and the home strip read.
   const suggestsDeload = useDeloadSuggested(now).suggested;
@@ -68,7 +70,10 @@ export function HistoryPanel() {
 
   if (isLoading) return <Skeleton className="h-56 w-full" />;
 
-  if (sets.length === 0) {
+  // A completed-but-unlogged day is real activity the panel has to show —
+  // gating on `sets` alone hid the whole heatmap the first time anyone
+  // pressed Finish without opening the log popover.
+  if (sets.length === 0 && completions.length === 0) {
     return (
       <Empty>
         <EmptyTitle>{t("history.empty.title")}</EmptyTitle>
@@ -137,7 +142,19 @@ export function HistoryPanel() {
           </SheetHeader>
 
           <div className="px-4 pb-6">
-            <LoggedSetList sets={daySets} />
+            {/* The only way this day is even openable with zero sets — see
+                `canSelect` on `TrainingHeatmap` — is a workout run to Finish
+                with nothing logged. Said here instead of falling through to
+                `LoggedSetList`'s own empty state, which just says "nothing
+                logged" — true, but it reads like an empty day rather than
+                one you showed up for. */}
+            {daySets.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {t("history.completedNoSets")}
+              </p>
+            ) : (
+              <LoggedSetList sets={daySets} />
+            )}
           </div>
         </SheetContent>
       </Sheet>

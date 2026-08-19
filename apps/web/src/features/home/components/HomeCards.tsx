@@ -17,6 +17,7 @@ import { hasLoggedToday, weeklyAverages, weekOverWeek } from "@/features/body/we
 import { useIntake } from "@/features/intake/use-intake";
 import { resolveIntake, tickedMeals } from "@/features/intake/intake";
 import { loggedSetsFork } from "@/features/log/collection";
+import { useCompletions } from "@/features/log/completion-collection";
 import { toCalendar } from "@/features/log/heatmap";
 import { useAllRecords } from "@/features/log/queries";
 import { useDeloadSuggested } from "@/features/log/use-deload";
@@ -103,9 +104,10 @@ function TrainingCard() {
   const [now] = useState(() => Date.now());
 
   const sets = useMemo(() => data ?? [], [data]);
+  const completions = useCompletions();
   const calendar = useMemo(
-    () => toCalendar(sets, { weeks: STREAK_WEEKS, now }),
-    [sets, now],
+    () => toCalendar(sets, { weeks: STREAK_WEEKS, now }, completions),
+    [sets, completions, now],
   );
   // Same hook `DeloadBanner` reads — the strip's ring and the banner's
   // reasoning (and its acknowledgement) can't disagree about whether a
@@ -118,7 +120,11 @@ function TrainingCard() {
   const thisWeek = calendar.weeks[calendar.weeks.length - 1] ?? [];
   const setsThisWeek = thisWeek.reduce((total, day) => total + day.sets, 0);
 
-  if (loggedSetCount === 0) {
+  // A completed-but-unlogged workout is still activity the streak should
+  // read — gating this card on `loggedSetCount` alone left it showing the
+  // "start training" empty state the first time anyone pressed Finish without
+  // logging a set.
+  if (loggedSetCount === 0 && completions.length === 0) {
     return (
       <HomeCard
         icon={FlameIcon}

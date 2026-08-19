@@ -1371,8 +1371,10 @@ refuse to create.
 ## Accounts and sync (`src/features/auth/`, `src/server/`)
 
 Optional Supabase accounts — the app is fully usable signed out, and that is a
-design commitment, not a transition state. **All ten collections sync**, plus
-the profile; theme, locale and `session-store` stay local by design.
+design commitment, not a transition state. **All eleven collections sync**,
+plus the profile; theme, locale and `session-store` stay local by design.
+`workout_completions` is the newest — it followed the same `forkCollection`
+pattern `cardio_entries` did, migration in `drizzle/manual/` and all.
 
 - **Auth is cookie-based on purpose.** `features/auth/client.ts` creates the
   browser client lazily (module scope would run in the shell prerender) via

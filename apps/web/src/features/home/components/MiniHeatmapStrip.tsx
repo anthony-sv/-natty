@@ -1,4 +1,4 @@
-import { intensityStep, type Calendar } from "@/features/log/heatmap";
+import { cellStep, type Calendar } from "@/features/log/heatmap";
 import { cn } from "@/lib/utils";
 
 /**
@@ -33,9 +33,9 @@ export function MiniHeatmapStrip({
           )}
           style={{
             background:
-              day.isPadding || day.sets === 0
+              day.isPadding || !day.trained
                 ? "var(--muted)"
-                : `var(--heat-${intensityStep(day.sets, calendar.busiestDay)})`,
+                : `var(--heat-${cellStep(day, calendar.busiestDay)})`,
           }}
         />
       ))}

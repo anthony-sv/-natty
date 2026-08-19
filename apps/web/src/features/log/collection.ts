@@ -99,6 +99,28 @@ export function loggedSetsForStep(ref: StepRef): LoggedSet[] {
 }
 
 /**
+ * Whether anything has been logged against this training day at all,
+ * regardless of which exercise or set.
+ *
+ * Logging is explicit — advancing through the player's steps records nothing
+ * on its own — so a session that ends without a single popover submitted
+ * leaves no trace here, and `nextTrainingDay` then reads exactly like the day
+ * was never trained. `hasLoggedAnythingForDay` (this, plus its cardio
+ * counterpart) is what lets the player say so before you close the session
+ * rather than leaving that discovery for the heatmap tomorrow.
+ */
+export function hasLoggedSetsForDay(
+  ref: Omit<StepRef, "setNumber" | "exerciseId">,
+): boolean {
+  return [...loggedSets().values()].some(
+    (set) =>
+      set.routineSlug === ref.routineSlug &&
+      set.weekNumber === ref.weekNumber &&
+      set.dayNumber === ref.dayNumber,
+  );
+}
+
+/**
  * Record a set, and say whether it was a personal record.
  *
  * `isRecord` is decided here rather than by the caller because it is

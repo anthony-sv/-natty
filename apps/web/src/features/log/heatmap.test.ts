@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { DAYS_IN_WEEK } from "@/lib/week";
-import { intensityStep, toCalendar } from "./heatmap";
+import { cellStep, intensityStep, toCalendar } from "./heatmap";
+import type { WorkoutCompletion } from "./completion-schema";
 import type { LoggedSet } from "./schema";
 
 function at(year: number, month: number, day: number, hour = 9): number {
@@ -20,6 +21,16 @@ function set(performedAt: number, exerciseId = "bench"): LoggedSet {
     weight: 100,
     unit: "kg",
     reps: 8,
+  };
+}
+
+function completion(performedAt: number): WorkoutCompletion {
+  return {
+    id: `c${++seq}`,
+    routineSlug: "test-routine",
+    weekNumber: 1,
+    dayNumber: 1,
+    performedAt,
   };
 }
 
@@ -101,6 +112,27 @@ describe("toCalendar", () => {
       totalSets: 3,
       busiestDay: 2,
     });
+  });
+
+  it("counts a completed-but-unlogged day as trained, with sets honestly at 0", () => {
+    const calendar = toCalendar([], { weeks: 2, now: NOW }, [
+      completion(at(2026, 8, 11)),
+    ]);
+    const day = calendar.weeks.flat().find((d) => d.date === midnight(2026, 8, 11))!;
+
+    expect(day).toMatchObject({ sets: 0, trained: true });
+    expect(calendar).toMatchObject({ daysTrained: 1, totalSets: 0 });
+  });
+
+  it("carries a streak through a completed day with nothing logged", () => {
+    const calendar = toCalendar(
+      [set(at(2026, 8, 10)), set(at(2026, 8, 12))],
+      { weeks: 2, now: NOW },
+      [completion(at(2026, 8, 11))],
+    );
+
+    expect(calendar.longestStreak).toBe(3);
+    expect(calendar.currentStreak).toBe(3);
   });
 
   it("has nothing to report on an empty log", () => {
@@ -215,5 +247,19 @@ describe("intensityStep", () => {
 
   it("puts the busiest day at the top step", () => {
     expect(intensityStep(20, 20)).toBe(4);
+  });
+});
+
+describe("cellStep", () => {
+  it("gives an untrained day nothing", () => {
+    expect(cellStep({ date: 0, sets: 0, exercises: 0, trained: false, isPadding: false }, 20)).toBe(0);
+  });
+
+  it("gives a completed day with nothing logged the first step", () => {
+    expect(cellStep({ date: 0, sets: 0, exercises: 0, trained: true, isPadding: false }, 20)).toBe(1);
+  });
+
+  it("scales a logged day the same way intensityStep does", () => {
+    expect(cellStep({ date: 0, sets: 5, exercises: 1, trained: true, isPadding: false }, 5)).toBe(4);
   });
 });

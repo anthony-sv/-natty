@@ -48,11 +48,15 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/components/ui/toast";
+import type { PoseCue } from "@/data/routines";
 import { useFormatting } from "@/i18n/use-formatting";
 import { useT, type Translate } from "@/i18n/use-t";
 import { useExerciseLog } from "@/features/log/queries";
 import { useCardioLog } from "@/features/log/cardio-queries";
 import { formatSet } from "@/features/log/pr";
+import { hasLoggedSetsForDay } from "@/features/log/collection";
+import { hasLoggedCardioForDay } from "@/features/log/cardio-collection";
+import { logCompletion } from "@/features/log/completion-collection";
 import { SetLogControl } from "@/features/log/components/SetLogControl";
 import { CardioLogControl } from "@/features/log/components/CardioLogControl";
 import { cn } from "@/lib/utils";
@@ -81,11 +85,13 @@ import {
 import { useElapsed, useTimerState, type TimerState } from "../lib/use-countdown";
 import {
   effectiveExerciseId,
+  effectivePoseId,
   endSession,
   goToStep,
   sessionStore,
   startTimer,
   swapExercise,
+  swapPose,
   type SessionState,
 } from "../session-store";
 import { Eyebrow, LoadBadge, PrescriptionStrip } from "./PlayerChrome";
@@ -253,6 +259,7 @@ function PlayerCard({
             <ChevronLeftIcon data-icon="inline-start" /> {t("player.back")}
           </Button>
           <EndWorkoutButton
+            session={session}
             dayLabel={dayLabel}
             stepIndex={session.stepIndex}
             stepCount={steps.length}
@@ -302,7 +309,7 @@ function primaryActionFor({
   // otherwise, with the fields prefilled from your last set, simply moving
   // through a workout would record sets you never entered.
   const advance = () => {
-    if (finishIfLast(next, dayLabel, t)) return;
+    if (finishIfLast(next, session, dayLabel, t)) return;
     goToStep(session.stepIndex + 1, autoStartFor(next));
   };
 
@@ -400,10 +407,12 @@ function CueToggle() {
  * that ends something.
  */
 function EndWorkoutButton({
+  session,
   dayLabel,
   stepIndex,
   stepCount,
 }: {
+  session: SessionState;
   dayLabel: string;
   stepIndex: number;
   stepCount: number;
@@ -436,14 +445,17 @@ function EndWorkoutButton({
             <AlertDialogCancel>{t("player.endConfirm.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                endSession();
                 // The player vanishing with no word reads as a misclick, even
-                // when it was deliberate.
-                toast.add({
-                  title: t("player.ended"),
-                  description: t("player.endedBody", { day: dayLabel }),
-                  type: "info",
-                });
+                // when it was deliberate — unless nothing was recorded at
+                // all, in which case that's the more useful thing to say.
+                if (!warnIfNothingLogged(session, t)) {
+                  toast.add({
+                    title: t("player.ended"),
+                    description: t("player.endedBody", { day: dayLabel }),
+                    type: "info",
+                  });
+                }
+                endSession();
               }}
             >
               {t("player.endWorkout")}
@@ -461,19 +473,56 @@ function EndWorkoutButton({
  * Returns true when it finished, so the caller skips advancing. Finishing ends
  * the workout outright rather than parking on a "done" card that needs a
  * second press — the toast is the confirmation.
+ *
+ * **Reaching the end always counts, whether or not anything was logged.**
+ * `logCompletion` records the day as trained — no weight, no reps, so it can
+ * never register as a PR the way a real logged set would — which is what lets
+ * the heatmap, the streak and `nextTrainingDay` all agree you showed up
+ * without this inventing a set you didn't actually enter. Bailing out early,
+ * via `EndWorkoutButton`, does not: that path still warns if nothing was
+ * logged, because leaving mid-day genuinely isn't the same as finishing it.
  */
 function finishIfLast(
   next: SessionStep | undefined,
+  session: SessionState,
   dayLabel: string,
   t: Translate,
 ): boolean {
   if (next !== undefined) return false;
+  logCompletion({
+    routineSlug: session.routineSlug,
+    weekNumber: session.weekNumber,
+    dayNumber: session.dayNumber,
+    performedAt: Date.now(),
+  });
   toast.add({
     title: t("player.complete"),
     description: dayLabel,
     type: "success",
   });
   endSession();
+  return true;
+}
+
+/**
+ * Warns instead of the normal completion toast when the whole day closes
+ * with nothing recorded against it — the same discovery `nextTrainingDay`
+ * and the heatmap would otherwise leave for tomorrow, silently. Returns
+ * whether it fired, so the caller can skip the ordinary "workout complete"
+ * toast rather than showing both.
+ */
+function warnIfNothingLogged(session: SessionState, t: Translate): boolean {
+  const ref = {
+    routineSlug: session.routineSlug,
+    weekNumber: session.weekNumber,
+    dayNumber: session.dayNumber,
+  };
+  if (hasLoggedSetsForDay(ref) || hasLoggedCardioForDay(ref)) return false;
+  toast.add({
+    title: t("player.nothingLogged"),
+    description: t("player.nothingLoggedBody"),
+    type: "warning",
+  });
   return true;
 }
 
@@ -724,11 +773,32 @@ function WorkStepBody({
               <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                 {step.alternatives ? <p>{step.alternatives}</p> : null}
                 {step.pose ? (
-                  <p>
-                    {t("player.pose")}:{" "}
-                    <span className="text-foreground">
-                      {formatPose(step.pose, f)}
+                  <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                    <span>
+                      {t("player.pose")}:{" "}
+                      <span className="text-foreground">
+                        {formatPose(
+                          step.pose,
+                          f,
+                          effectivePoseId(session, step.exerciseIndex, step.pose.poseId),
+                        )}
+                      </span>
                     </span>
+                    {/* Only when the prescription actually named more than
+                        one acceptable pose — a picker on every finisher would
+                        offer a choice that isn't there. */}
+                    {step.pose.orAlternatives !== undefined &&
+                    step.pose.orAlternatives.length > 0 ? (
+                      <PoseSwapControl
+                        pose={step.pose}
+                        exerciseIndex={step.exerciseIndex}
+                        current={effectivePoseId(
+                          session,
+                          step.exerciseIndex,
+                          step.pose.poseId,
+                        )}
+                      />
+                    ) : null}
                   </p>
                 ) : null}
                 {step.notes ? <p>{step.notes}</p> : null}
@@ -920,6 +990,59 @@ function SwapControl({
 }
 
 /**
+ * Swap to one of this finisher's other acceptable poses, mid-session — the
+ * pose equivalent of `SwapControl`, same reasoning throughout: a menu over the
+ * two or three the routine already named rather than a search over all eight,
+ * the original is in the list so picking it clears the swap, and it lasts the
+ * session only. "Either flex" was never one pose the routine had a preference
+ * between; it's an in-the-moment choice, which is exactly what a swap is.
+ */
+function PoseSwapControl({
+  pose,
+  exerciseIndex,
+  current,
+}: {
+  pose: PoseCue;
+  exerciseIndex: number;
+  current: string;
+}) {
+  const t = useT();
+  const { names } = useFormatting();
+  const choices = [pose.poseId, ...(pose.orAlternatives ?? [])];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant={current !== pose.poseId ? "secondary" : "outline"}
+            size="sm"
+            className="h-6 shrink-0 px-2 text-xs"
+          >
+            <ArrowLeftRightIcon data-icon="inline-start" className="size-3" />
+            {names.pose(current)}
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="start" className="w-auto min-w-48">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{t("player.poseSwapTitle")}</DropdownMenuLabel>
+          {choices.map((id) => (
+            <DropdownMenuCheckboxItem
+              key={id}
+              checked={id === current}
+              onCheckedChange={() => swapPose(exerciseIndex, id, pose.poseId)}
+            >
+              {names.pose(id)}
+            </DropdownMenuCheckboxItem>
+          ))}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/**
  * Rest and pose holds are the same shape: a countdown, and what it's for.
  *
  * The ring is centred in the stage rather than stacked at the top, because a
@@ -929,6 +1052,7 @@ function SwapControl({
 function TimerStepBody({
   eyebrow,
   title,
+  titleAction,
   subtitle,
   seconds,
   timer,
@@ -938,6 +1062,8 @@ function TimerStepBody({
 }: {
   eyebrow: string;
   title?: string;
+  /** A control that sits beside the title — currently just the pose swap. */
+  titleAction?: React.ReactNode;
   subtitle?: string;
   seconds: number;
   timer: TimerState;
@@ -954,10 +1080,13 @@ function TimerStepBody({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto text-center">
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col items-center gap-0.5">
         <Eyebrow>{eyebrow}</Eyebrow>
         {title ? (
-          <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+            {titleAction}
+          </div>
         ) : null}
         {subtitle ? (
           <p className="text-xs text-muted-foreground">{subtitle}</p>
@@ -1044,10 +1173,23 @@ function PoseStepBody({
         )}`
       : undefined;
 
+  const currentPoseId = effectivePoseId(session, step.exerciseIndex, step.pose.poseId);
+  const hasAlternatives =
+    step.pose.orAlternatives !== undefined && step.pose.orAlternatives.length > 0;
+
   return (
     <TimerStepBody
       eyebrow={t("player.hold")}
-      title={names.pose(step.pose.poseId)}
+      title={names.pose(currentPoseId)}
+      titleAction={
+        hasAlternatives ? (
+          <PoseSwapControl
+            pose={step.pose}
+            exerciseIndex={step.exerciseIndex}
+            current={currentPoseId}
+          />
+        ) : undefined
+      }
       subtitle={`${step.exerciseName} — ${t("routines.setOf", {
         number: step.setNumber,
         total: step.setsInExercise,

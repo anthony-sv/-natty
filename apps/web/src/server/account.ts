@@ -5,12 +5,14 @@ import { db } from "./db/client";
 import {
   authUsers,
   bodyEntries,
+  cardioEntries,
   handles,
   intakeEntries,
   loggedSets,
   measurements,
   profiles,
   userDocuments,
+  workoutCompletions,
 } from "./db/schema";
 
 /**
@@ -46,6 +48,10 @@ export const deleteAccount = createServerFn({ method: "POST" })
     // deletion, because the second attempt has nothing left to report on.
     await db().transaction(async (tx) => {
       await tx.delete(loggedSets).where(eq(loggedSets.userId, userId));
+      await tx.delete(cardioEntries).where(eq(cardioEntries.userId, userId));
+      await tx
+        .delete(workoutCompletions)
+        .where(eq(workoutCompletions.userId, userId));
       await tx.delete(bodyEntries).where(eq(bodyEntries.userId, userId));
       await tx.delete(measurements).where(eq(measurements.userId, userId));
       await tx.delete(intakeEntries).where(eq(intakeEntries.userId, userId));

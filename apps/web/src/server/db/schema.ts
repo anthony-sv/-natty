@@ -163,6 +163,38 @@ export const cardioEntries = pgTable(
   ],
 ).enableRLS();
 
+/**
+ * Proof a workout was run all the way to "Finish" — mirrors
+ * `workoutCompletionSchema` in `features/log/completion-schema.ts`.
+ *
+ * No weight, no reps, unlike `loggedSets`: that's the entire reason this is
+ * its own table rather than a row there. A completion can never register as
+ * a PR, because nothing here is a set — see `SessionPlayer`'s `finishIfLast`.
+ */
+export const workoutCompletions = pgTable(
+  "workout_completions",
+  {
+    ...owned(),
+    routineSlug: text("routine_slug").notNull(),
+    weekNumber: integer("week_number").notNull(),
+    dayNumber: integer("day_number").notNull(),
+    performedAt: bigint("performed_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.id] }),
+    // What `nextTrainingDay` and the heatmap actually ask: this routine's
+    // history, and the date window.
+    index("workout_completions_user_routine_idx").on(
+      table.userId,
+      table.routineSlug,
+    ),
+    index("workout_completions_user_performed_idx").on(
+      table.userId,
+      table.performedAt,
+    ),
+  ],
+).enableRLS();
+
 /** Girth measurements, one row per site per session. */
 export const measurements = pgTable(
   "measurements",

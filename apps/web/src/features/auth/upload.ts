@@ -3,7 +3,9 @@ import type { ForkedCollection } from "@/lib/synced-collection";
 import { bodyEntriesFork } from "@/features/body/collection";
 import { intakeEntriesFork } from "@/features/intake/collection";
 import { userExercisesFork } from "@/features/library/collection";
+import { cardioEntriesFork } from "@/features/log/cardio-collection";
 import { loggedSetsFork } from "@/features/log/collection";
+import { workoutCompletionsFork } from "@/features/log/completion-collection";
 import { measurementsFork } from "@/features/measurements/collection";
 import { userDietsFork } from "@/features/nutrition/collection";
 import { userFoodsFork, userRecipesFork } from "@/features/pantry/collection";
@@ -67,9 +69,9 @@ export function belongsToAnotherAccount(
 }
 
 /**
- * Loosely typed on purpose — nine collections of nine different row shapes,
- * and the only thing this file does with a row is read its key and hand it
- * back. Each fork keeps its own types at its own call sites.
+ * Loosely typed on purpose — a dozen collections of a dozen different row
+ * shapes, and the only thing this file does with a row is read its key and
+ * hand it back. Each fork keeps its own types at its own call sites.
  */
 type AnyFork = ForkedCollection<{
   preload: () => Promise<unknown>;
@@ -81,6 +83,11 @@ type AnyFork = ForkedCollection<{
 /** Everything that syncs, in the order the summary reads. */
 const TARGETS: Array<{ labelKey: MessageKey; fork: AnyFork }> = [
   { labelKey: "data.kind.sets", fork: loggedSetsFork as unknown as AnyFork },
+  { labelKey: "data.kind.cardio", fork: cardioEntriesFork as unknown as AnyFork },
+  {
+    labelKey: "data.kind.completions",
+    fork: workoutCompletionsFork as unknown as AnyFork,
+  },
   {
     labelKey: "data.kind.bodyEntries",
     fork: bodyEntriesFork as unknown as AnyFork,

@@ -1,6 +1,6 @@
 import { HeatmapGrid, HeatmapLegend } from "@/components/heatmap-grid";
 import { useT } from "@/i18n/use-t";
-import { intensityStep, type Calendar, type CalendarDay } from "../heatmap";
+import { cellStep, type Calendar, type CalendarDay } from "../heatmap";
 
 /** Every step's colour, indexed by what `intensityStep` returns. */
 const STEP_COLOUR = [
@@ -31,7 +31,7 @@ export function TrainingHeatmap({
   deloadSuggested = false,
 }: {
   calendar: Calendar;
-  /** Given a day with at least one set logged. */
+  /** Given a trained day — one with at least one logged set, or a completion. */
   onSelectDay: (day: CalendarDay) => void;
   deloadSuggested?: boolean;
 }) {
@@ -42,20 +42,22 @@ export function TrainingHeatmap({
   return (
     <HeatmapGrid
       weeks={calendar.weeks}
-      colourFor={(day) => STEP_COLOUR[intensityStep(day.sets, calendar.busiestDay)]}
+      colourFor={(day) => STEP_COLOUR[cellStep(day, calendar.busiestDay)]}
       titleFor={(day) =>
-        day.sets === 0
-          ? t("history.noSets")
-          : t.plural("history.setsOnDay", day.sets)
+        day.sets > 0
+          ? t.plural("history.setsOnDay", day.sets)
+          : day.trained
+            ? t("history.completedNoSets")
+            : t("history.noSets")
       }
       classFor={(day) =>
         deloadSuggested && currentWeekDates.has(day.date)
           ? "ring-1 ring-primary ring-offset-1 ring-offset-background"
           : undefined
       }
-      // Only a day with something on it is worth opening, so an empty one isn't
-      // a button at all rather than a button that does nothing.
-      canSelect={(day) => day.sets > 0}
+      // A trained day is worth opening even with nothing logged — the sheet
+      // says so rather than the day silently not being a button at all.
+      canSelect={(day) => day.trained}
       onSelect={onSelectDay}
       caption={t("history.logged")}
       legend={

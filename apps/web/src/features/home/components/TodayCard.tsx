@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { useStore } from "@tanstack/react-store";
 import { loggedSetsFork } from "@/features/log/collection";
+import { useCompletions } from "@/features/log/completion-collection";
 import { profileStore } from "@/features/profile/profile-store";
 import { useActiveRoutine } from "@/features/routines/use-active-routine";
 import { dayAfter, nextTrainingDay } from "@/features/routines/lib/next-day";
@@ -39,11 +40,12 @@ export function TodayCard() {
     (q) => q.from({ set: loggedSets }),
     [loggedSets],
   );
+  const completions = useCompletions();
 
   if (isLoading || routine === undefined) return null;
 
   const sets = data ?? [];
-  const next = nextTrainingDay(routine, sets, startAt);
+  const next = nextTrainingDay(routine, sets, completions, startAt);
   if (next === undefined) return null;
 
   const routineName = f.names.routine(routine.slug, routine.name);
