@@ -404,6 +404,12 @@ export const esMX: Record<keyof typeof en, string> = {
     "Agrega uno cuando hagas un ejercicio que no est\u00e9 en la lista incluida \u2014 o directo desde el selector, escribiendo un nombre que no conozca.",
   "library.showArchived": "Mostrar archivados",
 
+  // ── Media de ejercicios ──────────────────────────────────────────────────
+  "media.play": "Reproducir",
+  "media.pause": "Pausar",
+  "media.preview": "Vista previa de {name}",
+  "media.viewPhoto": "Ver foto",
+
   // ── Escribir tu propia rutina ────────────────────────────────────────────
   "builder.new": "Nueva rutina",
   "builder.yours": "Tuya",
@@ -802,6 +808,8 @@ export const esMX: Record<keyof typeof en, string> = {
     "Un récord no es un solo número. Es el mejor peso en cada cantidad de reps, quitando cualquier renglón que pierda por los dos lados — así 120x1, 110x3 y 90x8 pueden ser récords al mismo tiempo.",
   "about.logging.p3":
     "Las unidades se guardan tal como las escribes. Una máquina marcada en libras se lee en libras; solo las comparaciones convierten.",
+  "about.logging.p4":
+    "Una foto de inicio/fin aparece en la ficha de récords, en la lista del día y a mitad de la serie en el reproductor, donde haya una disponible — unos 80 de los ejercicios incluidos, tomadas de un banco de dominio público. El resto simplemente no muestra nada, en vez de una foto adivinada.",
   "about.logging.link": "Ver tus récords",
 
   "about.exercises.title": "Ejercicios que no están en la lista",
@@ -1454,6 +1462,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "player.timesUp": "Se acabó el tiempo",
   "player.holdComplete": "Pose completa.",
   "player.restComplete": "Descanso completo — cuando estés listo.",
+  "player.logLastSet": "¿Se te olvidó registrar esa serie?",
   "player.endWorkout": "Terminar",
   "player.endConfirm.title": "¿Terminar este entrenamiento?",
   "player.endConfirm.body":

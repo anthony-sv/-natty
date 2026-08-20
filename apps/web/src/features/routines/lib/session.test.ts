@@ -11,6 +11,7 @@ import {
   isLoggableStep,
   LEAD_IN_SECONDS,
   partAt,
+  previousWorkStep,
   setLadder,
   timedSecondsFor,
   type SessionStep,
@@ -414,14 +415,14 @@ describe("the sequence timeline", () => {
       { kind: "reps", count: 12 },
     ]);
 
-    expect(sequence.parts.map((p) => p.seconds)).toEqual([10, 10, 48, 36]);
+    expect(sequence.parts.map((p) => p.seconds)).toEqual([10, 18, 24, 21]);
     expect(sequence.parts.map((p) => p.isTimed)).toEqual([
       true,
       false,
       false,
       false,
     ]);
-    expect(sequence.seconds).toBe(104);
+    expect(sequence.seconds).toBe(73);
   });
 
   it("lays the parts end to end so the running one is a subtraction", () => {
@@ -431,17 +432,18 @@ describe("the sequence timeline", () => {
       { kind: "hold", seconds: 5 },
     ]);
 
+    // 10 pulses at PULSE_SECONDS (1.5) paces to 15s.
     expect(sequence.parts.map((p) => [p.startMs, p.endMs])).toEqual([
       [0, 10_000],
-      [10_000, 18_000],
-      [18_000, 23_000],
+      [10_000, 25_000],
+      [25_000, 30_000],
     ]);
 
     expect(partAt(sequence, 0).index).toBe(1);
     expect(partAt(sequence, 9_999).index).toBe(1);
     expect(partAt(sequence, 10_000).index).toBe(2);
-    expect(partAt(sequence, 17_999).index).toBe(2);
-    expect(partAt(sequence, 18_000).index).toBe(3);
+    expect(partAt(sequence, 24_999).index).toBe(2);
+    expect(partAt(sequence, 25_000).index).toBe(3);
     // Past the end it clamps rather than going undefined: a finished sequence
     // still has to render something, and "the last part, done" is both true and
     // what you want on screen while you rack the weight.
@@ -468,12 +470,13 @@ describe("the sequence timeline", () => {
       // Untouched: it already happened.
       [0, 10_000],
       // Ten seconds longer, and it still starts where it started — which is
-      // what keeps elapsed time pointing at the same part.
-      [10_000, 28_000],
+      // what keeps elapsed time pointing at the same part. (Base duration is
+      // 15s — 10 pulses at PULSE_SECONDS — plus the 10s grant.)
+      [10_000, 35_000],
       // Pushed back by the same ten.
-      [28_000, 33_000],
+      [35_000, 40_000],
     ]);
-    expect(extended.seconds).toBe(33);
+    expect(extended.seconds).toBe(40);
 
     // 12s in is a second into part 2 either way; the grant must not move that.
     expect(partAt(sequence, 12_000).index).toBe(2);
@@ -497,9 +500,57 @@ describe("the sequence timeline", () => {
       { kind: "pulses", count: 12 },
     ]);
 
-    expect(sequence.parts[0].seconds).toBe(36);
+    expect(sequence.parts[0].seconds).toBe(21);
   });
 });
+
+describe("previousWorkStep", () => {
+  it("finds the work step a plain rest follows", () => {
+    const steps = buildSteps(pairedDayForRest(), F);
+    const restIndex = steps.findIndex((s) => s.type === "rest");
+    const work = previousWorkStep(steps, restIndex);
+
+    expect(work?.type).toBe("work");
+    expect(steps[restIndex - 1]).toBe(work);
+  });
+
+  it("walks past a pose hold to the work step that set it up", () => {
+    // A finisher's rest follows the pose, not the work step directly — see
+    // the comment on the function. `steps[index - 1]` would return the pose.
+    const steps = buildSteps(dayWithFinisher(), F);
+    const restIndex = steps.findIndex(
+      (s, i) => s.type === "rest" && steps[i - 1]?.type === "pose",
+    );
+    const work = previousWorkStep(steps, restIndex);
+
+    expect(steps[restIndex - 1].type).toBe("pose");
+    expect(work?.type).toBe("work");
+  });
+
+  it("is undefined before any work step has run", () => {
+    const steps = buildSteps(dayWithFinisher(), F);
+    expect(previousWorkStep(steps, 0)).toBeUndefined();
+  });
+});
+
+/** A single-exercise day, for a rest step with an unambiguous predecessor. */
+function pairedDayForRest(): TrainingDay {
+  return {
+    dayNumber: 1,
+    label: "Push",
+    isRest: false,
+    warmupRefs: [],
+    exercises: [
+      {
+        exerciseId: "flat-barbell-bench-press",
+        orAlternatives: [],
+        kind: "resistance",
+        isFinisher: false,
+        prescriptions: [{ sets: 2, reps: 10, restSeconds: 90 }],
+      },
+    ],
+  };
+}
 
 describe("where the load goes", () => {
   function ramped(prescriptions: TrainingDay["exercises"][number]["prescriptions"]) {

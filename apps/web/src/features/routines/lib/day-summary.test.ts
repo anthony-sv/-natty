@@ -213,10 +213,11 @@ describe("a day with segmented sets", () => {
   });
 
   it("charges a sequence its own paced length, not the per-set guess", () => {
-    // A sequence is paced end to end (10s hold + 12 pulses + 12 pulsed reps +
-    // 10s hold + 12 pulses = 88s), so it reports a real duration the way a
-    // cardio block does. Adding the 45s guess on top would count the same
-    // minute twice. Plus 2 × 90s rest — the trailing one is trimmed.
-    expect(summariseDay(day, F).estimatedSeconds).toBe(3 * 88 + 180);
+    // A sequence is paced end to end (10s hold + 12 pulses@1.5s=18s + 12
+    // pulsed reps@2s=24s + 10s hold + 12 pulses@1.5s=18s = 80s), so it
+    // reports a real duration the way a cardio block does. Adding the 45s
+    // guess on top would count the same minute twice. Plus 2 × 90s rest —
+    // the trailing one is trimmed.
+    expect(summariseDay(day, F).estimatedSeconds).toBe(3 * 80 + 180);
   });
 });

@@ -118,7 +118,12 @@ const GUIDE: Section[] = [
     icon: TrophyIcon,
     titleKey: "about.logging.title",
     bodyKey: "about.logging.body",
-    points: ["about.logging.p1", "about.logging.p2", "about.logging.p3"],
+    points: [
+      "about.logging.p1",
+      "about.logging.p2",
+      "about.logging.p3",
+      "about.logging.p4",
+    ],
     to: "/progress",
     search: { tab: "records" },
     linkKey: "about.logging.link",

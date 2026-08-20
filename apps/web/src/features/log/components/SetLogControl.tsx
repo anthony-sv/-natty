@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { CheckIcon, PencilLineIcon } from "lucide-react";
+import { CheckIcon, PencilLineIcon, TrendingUpIcon } from "lucide-react";
 import { z } from "zod";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -79,6 +80,7 @@ export function SetLogControl({
   stepRef,
   exerciseName,
   loggedHere,
+  variant = "full",
 }: {
   frontier: LoggedSet[];
   last: LoggedSet | undefined;
@@ -88,68 +90,85 @@ export function SetLogControl({
   exerciseName: string;
   /** Sets already recorded against this step — usually none or one. */
   loggedHere: LoggedSet[];
+  /**
+   * `"compact"` drops PR/Last/Try entirely — for the rest screen's "forgot to
+   * log" prompt, which only ever shows *before* you've logged the set it's
+   * asking about (see `isLogged` below) and shouldn't restate the work step's
+   * own numbers a second time in a different place.
+   */
+  variant?: "full" | "compact";
 }) {
   const [open, setOpen] = useState(false);
   const t = useT();
+  const isLogged = loggedHere.length > 0;
   const pr = prForRepRange(frontier, targetReps);
   // Double progression — see `overload.ts`. Undefined without both a target
   // range and a last set, which is exactly when there's nothing to suggest.
   const suggestion = suggestOverload(targetReps, last);
-  const triggerLabel =
-    loggedHere.length === 0
-      ? t("log.action")
-      : loggedHere.length === 1
-        ? formatSet(loggedHere[0])
-        : t("log.countLogged", { count: loggedHere.length });
+  const triggerLabel = isLogged
+    ? loggedHere.length === 1
+      ? formatSet(loggedHere[0])
+      : t("log.countLogged", { count: loggedHere.length })
+    : t("log.action");
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-        {pr ? (
-          <span>
-            <span className="text-muted-foreground">{t("log.pr")} </span>
-            <span className="font-medium tabular-nums">{formatSet(pr)}</span>
-          </span>
-        ) : null}
-        {pr && last ? (
-          <span aria-hidden className="text-muted-foreground">
-            ·
-          </span>
-        ) : null}
-        {last ? (
-          <span>
-            <span className="text-muted-foreground">{t("log.last")} </span>
-            <span className="font-medium tabular-nums">{formatSet(last)}</span>
-          </span>
-        ) : null}
-        {!pr && !last ? (
-          <span className="text-muted-foreground">{t("log.firstTime")}</span>
-        ) : null}
-        {suggestion ? (
-          <>
+      {/* Once this exact set is logged there's nothing left to decide — `last`
+          has already shifted to be the set you just entered (it's the newest
+          row in the log), so recomputing PR/Last/Try here would show a "Try"
+          suggestion derived from your own just-logged set, which reads as the
+          hint changing for no reason. The trigger button already says what
+          was logged. */}
+      {!isLogged ? (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+          {variant === "full" && pr ? (
+            <span>
+              <span className="text-muted-foreground">{t("log.pr")} </span>
+              <span className="font-medium tabular-nums">{formatSet(pr)}</span>
+            </span>
+          ) : null}
+          {variant === "full" && pr && last ? (
             <span aria-hidden className="text-muted-foreground">
               ·
             </span>
-            {/* Visible before the popover even opens — the point of showing
-                this here rather than only as the form's prefill. */}
+          ) : null}
+          {variant === "full" && last ? (
             <span>
-              <span className="text-muted-foreground">{t("log.try")} </span>
-              <span className="font-medium tabular-nums text-primary">
-                {formatOverload(suggestion)}
-              </span>
+              <span className="text-muted-foreground">{t("log.last")} </span>
+              <span className="font-medium tabular-nums">{formatSet(last)}</span>
             </span>
-          </>
-        ) : null}
-      </div>
+          ) : null}
+          {!pr && !last ? (
+            <span className="text-muted-foreground">{t("log.firstTime")}</span>
+          ) : null}
+          {variant === "full" && suggestion ? (
+            // Visible before the popover even opens — the point of showing
+            // this here rather than only as the form's prefill. A badge, not
+            // plain text: this is the one number on the row you're meant to
+            // act on, and it read as just another muted fact next to PR/Last.
+            // `--log-suggestion` (green — see styles.css) rather than the
+            // theme's neutral `primary`, so it doesn't just read as bold, it
+            // reads as *this one*.
+            <Badge
+              variant="outline"
+              className="gap-1 border-log-suggestion/30 bg-log-suggestion/10 font-bold text-log-suggestion dark:bg-log-suggestion/20"
+            >
+              <TrendingUpIcon />
+              <span className="tabular-nums">
+                {t("log.try")} {formatOverload(suggestion)}
+              </span>
+            </Badge>
+          ) : null}
+        </div>
+      ) : (
+        <div />
+      )}
 
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger
           render={
-            <Button
-              variant={loggedHere.length > 0 ? "secondary" : "outline"}
-              size="sm"
-            >
-              {loggedHere.length > 0 ? <CheckIcon /> : <PencilLineIcon />}
+            <Button variant={isLogged ? "secondary" : "outline"} size="sm">
+              {isLogged ? <CheckIcon /> : <PencilLineIcon />}
               <span className="tabular-nums">{triggerLabel}</span>
             </Button>
           }

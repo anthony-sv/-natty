@@ -257,6 +257,24 @@ body {
 }
 
 /*
+ * The "Try" hint on an active set (`SetLogControl`) — the one number on the
+ * row you're meant to act on, sitting next to plain-text PR/Last. The same
+ * green as `--chart-estimate`/`--split-legs`/`--macro-fat` (this app's one
+ * recurring "positive, forward" hue), its own token for the reason those
+ * three are: a variable called `--chart-estimate` standing for "log this
+ * weight next" would be a lie the next reader has to decode. Text-only
+ * (not a solid fill) — white-on-fill measures under 3:1 for this green, and
+ * a tinted background keeps the saturated text as the readable part.
+ */
+:root {
+  --log-suggestion: #1baf7a;
+}
+
+.dark {
+  --log-suggestion: #199e70;
+}
+
+/*
  * The FFMI chart's conventional spectrum. Stops are placed at the band
  * boundaries so each label sits over its own hue; the same ramp serves both
  * modes because the track is opaque and the labels carry their own shadow.
@@ -278,6 +296,7 @@ body {
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;
+  --color-log-suggestion: var(--log-suggestion);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

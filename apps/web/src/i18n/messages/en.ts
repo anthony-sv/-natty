@@ -408,6 +408,12 @@ export const en = {
     "Add one when a lift you do isn't in the built-in list \u2014 or straight from the exercise picker, by typing a name it doesn't know.",
   "library.showArchived": "Show archived",
 
+  // ── Exercise media ───────────────────────────────────────────────────────
+  "media.play": "Play",
+  "media.pause": "Pause",
+  "media.preview": "Preview {name}",
+  "media.viewPhoto": "View photo",
+
   // ── Writing your own routine ─────────────────────────────────────────────
   "builder.new": "New routine",
   "builder.yours": "Yours",
@@ -816,6 +822,8 @@ export const en = {
     "A record isn't one number. It's the best weight at each rep count, dropping any row beaten on both — so 120x1, 110x3 and 90x8 can all stand as records at once.",
   "about.logging.p3":
     "Units are stored exactly as you enter them. A machine marked in pounds reads back in pounds; only comparisons convert.",
+  "about.logging.p4":
+    "A start/end photo shows up in the records sheet, the day list and mid-set in the player, wherever one's available — about 80 of the built-in exercises, sourced from a public-domain dataset. The rest simply show none rather than a guess.",
   "about.logging.link": "See your records",
 
   "about.exercises.title": "Exercises the library doesn't have",
@@ -1478,6 +1486,7 @@ export const en = {
   "player.timesUp": "Time's up",
   "player.holdComplete": "Hold complete.",
   "player.restComplete": "Rest complete — go when you're ready.",
+  "player.logLastSet": "Forgot to log that set?",
   "player.endWorkout": "End workout",
   "player.endConfirm.title": "End this workout?",
   "player.endConfirm.body":

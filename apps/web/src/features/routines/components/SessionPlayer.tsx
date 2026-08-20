@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "@tanstack/react-store";
 import {
   ArrowLeftRightIcon,
@@ -59,6 +59,7 @@ import { hasLoggedCardioForDay } from "@/features/log/cardio-collection";
 import { logCompletion } from "@/features/log/completion-collection";
 import { SetLogControl } from "@/features/log/components/SetLogControl";
 import { CardioLogControl } from "@/features/log/components/CardioLogControl";
+import { ExercisePreviewDialogButton } from "@/features/library/components/ExerciseMedia";
 import { cn } from "@/lib/utils";
 import { playerPrefs, toggleCues, useCue } from "../lib/cues";
 import {
@@ -74,15 +75,22 @@ import {
   isLoggableStep,
   LEAD_IN_SECONDS,
   extendSequence,
+  previousWorkStep,
   setLadder,
   timedSecondsFor,
+  workLabel,
   type PoseStep,
   type RestStep,
   type SessionStep,
   type SetSequence,
   type WorkStep,
 } from "../lib/session";
-import { useElapsed, useTimerState, type TimerState } from "../lib/use-countdown";
+import {
+  useElapsed,
+  useTimerState,
+  type TimerPhase,
+  type TimerState,
+} from "../lib/use-countdown";
 import {
   effectiveExerciseId,
   effectivePoseId,
@@ -182,6 +190,10 @@ function PlayerCard({
   });
   const ActionIcon = action.icon;
 
+  // Moves on by itself once the countdown actually finishes, rather than
+  // making you tap through a card that's already told you it's done.
+  useAutoAdvance(timer.phase, action.onClick);
+
   return (
     <Card className="gap-0 overflow-hidden border-primary/40 py-0 ring-primary/30">
       <CardHeader className="gap-3 border-b bg-muted/40 py-4">
@@ -235,7 +247,7 @@ function PlayerCard({
         ) : step.type === "pose" ? (
           <PoseStepBody step={step} steps={steps} session={session} timer={timer} />
         ) : (
-          <RestStepBody step={step} timer={timer} />
+          <RestStepBody step={step} steps={steps} session={session} timer={timer} />
         )}
       </CardContent>
 
@@ -263,6 +275,7 @@ function PlayerCard({
             dayLabel={dayLabel}
             stepIndex={session.stepIndex}
             stepCount={steps.length}
+            exerciseIndex={step.exerciseIndex}
           />
         </div>
       </CardFooter>
@@ -274,6 +287,33 @@ interface PrimaryAction {
   label: string;
   icon: LucideIcon;
   onClick: () => void;
+}
+
+/**
+ * Moves on by itself once a countdown finishes, rather than leaving you to
+ * tap through a card that's already told you it's done.
+ *
+ * Gated on `phase === "complete"` alone is enough to scope this correctly:
+ * `goToStep` (`session-store.ts`) sets `timerEndsAt` to `null` for any step
+ * that isn't rest, pose or timed work — which `autoStartFor` is what decides
+ * — so a plain rep-counted set can never read "complete" here in the first
+ * place, and this never fires for one.
+ *
+ * The isFirst/changed guard mirrors `useCue`'s, for the same reason: arriving
+ * on a step that's *already* complete — reopening the app on a stale
+ * finished rest — is not a transition, and auto-advancing on arrival would
+ * yank you into the next step with no warning. Only a live countdown
+ * actually finishing fires this.
+ */
+function useAutoAdvance(phase: TimerPhase, onAdvance: () => void): void {
+  const previous = useRef<TimerPhase | null>(null);
+
+  useEffect(() => {
+    const isFirst = previous.current === null;
+    const changed = previous.current !== phase;
+    previous.current = phase;
+    if (!isFirst && changed && phase === "complete") onAdvance();
+  }, [phase, onAdvance]);
 }
 
 /**
@@ -305,8 +345,8 @@ function primaryActionFor({
 }): PrimaryAction {
   const next = steps[session.stepIndex + 1];
 
-  // Advancing never logs. Logging is an explicit submit in the popover --
-  // otherwise, with the fields prefilled from your last set, simply moving
+  // Advancing never logs a set. Logging is an explicit submit in the popover
+  // -- otherwise, with the fields prefilled from your last set, simply moving
   // through a workout would record sets you never entered.
   const advance = () => {
     if (finishIfLast(next, session, dayLabel, t)) return;
@@ -405,17 +445,29 @@ function CueToggle() {
  * The icon is a stop sign rather than a bare square: an outlined square beside
  * a label reads as an unchecked checkbox, which is the opposite of a button
  * that ends something.
+ *
+ * **Still logs a completion, bounded to `exerciseIndex`.** This used to end
+ * the session and nothing else, on the reasoning that leaving mid-day isn't
+ * the same as finishing it — true, but the consequence was that a day you got
+ * six exercises into read identically to one you never started, everywhere
+ * that reads completions. `logCompletion` here is bounded rather than
+ * open-ended the way `finishIfLast`'s is, so only what was actually reached
+ * gets credited — see `weeklyVolume` and `muscleFatigue`. The
+ * nothing-logged warning is unrelated and stays: it's about whether any *set*
+ * has real weight/reps behind it, which a completion can never supply.
  */
 function EndWorkoutButton({
   session,
   dayLabel,
   stepIndex,
   stepCount,
+  exerciseIndex,
 }: {
   session: SessionState;
   dayLabel: string;
   stepIndex: number;
   stepCount: number;
+  exerciseIndex: number;
 }) {
   const [open, setOpen] = useState(false);
   const t = useT();
@@ -445,6 +497,13 @@ function EndWorkoutButton({
             <AlertDialogCancel>{t("player.endConfirm.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
+                logCompletion({
+                  routineSlug: session.routineSlug,
+                  weekNumber: session.weekNumber,
+                  dayNumber: session.dayNumber,
+                  performedAt: Date.now(),
+                  throughExerciseIndex: exerciseIndex,
+                });
                 // The player vanishing with no word reads as a misclick, even
                 // when it was deliberate — unless nothing was recorded at
                 // all, in which case that's the more useful thing to say.
@@ -478,9 +537,17 @@ function EndWorkoutButton({
  * `logCompletion` records the day as trained — no weight, no reps, so it can
  * never register as a PR the way a real logged set would — which is what lets
  * the heatmap, the streak and `nextTrainingDay` all agree you showed up
- * without this inventing a set you didn't actually enter. Bailing out early,
- * via `EndWorkoutButton`, does not: that path still warns if nothing was
- * logged, because leaving mid-day genuinely isn't the same as finishing it.
+ * without this inventing a set you didn't actually enter. No
+ * `throughExerciseIndex` bound here: reaching the last step means the whole
+ * day, the same thing `dayLookup.exercisesFor` reads an absent bound as.
+ *
+ * **Bailing out early, via `EndWorkoutButton`, now counts too** — it used to
+ * record nothing at all, on the reasoning that leaving mid-day isn't the same
+ * as finishing it. True, but the consequence was that Volume and Fatigue
+ * treated a day you got six exercises into exactly like a day you never
+ * started — which is a worse error than crediting six exercises. It logs a
+ * completion bounded to `exerciseIndex`, so only what was actually reached
+ * counts; see `weeklyVolume` and `muscleFatigue` for how that bound is used.
  */
 function finishIfLast(
   next: SessionStep | undefined,
@@ -764,6 +831,16 @@ function WorkStepBody({
                 instructions for the set you're about to do; the sequence
                 preview and the notes are things you read once. */}
             <TechniqueCueList modifiers={step.modifiers} />
+
+            {/* A button, not the photo itself — an embedded image read as
+                clutter on a card whose whole design is one thing changing at
+                a time. The dialog shows it full-width instead of squeezed
+                into this scroll zone. Renders nothing when there's no photo
+                for this exercise (`media.ts`). */}
+            <ExercisePreviewDialogButton
+              exerciseId={exerciseId}
+              exerciseName={exerciseName}
+            />
 
             {sequence !== undefined ? (
               <SequencePreview sequence={sequence} />
@@ -1059,6 +1136,7 @@ function TimerStepBody({
   completeNote,
   nextLabel,
   nextExerciseName,
+  logControl,
 }: {
   eyebrow: string;
   title?: string;
@@ -1070,6 +1148,11 @@ function TimerStepBody({
   completeNote: string;
   nextLabel?: string;
   nextExerciseName?: string;
+  /** The rest screen's offer to log the set that led into it — see
+      `RestStepBody`. Sits between the ring and "next up" on purpose: it's
+      the one screen you're guaranteed to see between every set, which makes
+      it the actual moment to catch a set you advanced past without logging. */
+  logControl?: React.ReactNode;
 }) {
   const t = useT();
   const leadSeconds = Math.ceil(timer.leadRemainingMs / 1000);
@@ -1130,6 +1213,8 @@ function TimerStepBody({
           <p className="text-sm font-medium text-primary">{completeNote}</p>
         ) : null}
       </div>
+
+      {logControl}
 
       {nextLabel ? (
         <div className="flex flex-col gap-0.5">
@@ -1202,8 +1287,21 @@ function PoseStepBody({
   );
 }
 
-function RestStepBody({ step, timer }: { step: RestStep; timer: TimerState }) {
+function RestStepBody({
+  step,
+  steps,
+  session,
+  timer,
+}: {
+  step: RestStep;
+  steps: SessionStep[];
+  session: SessionState;
+  timer: TimerState;
+}) {
   const t = useT();
+  // What this rest is resting *from* — walking back past a finisher's pose
+  // hold if there is one. See `previousWorkStep`.
+  const previous = previousWorkStep(steps, session.stepIndex);
 
   return (
     <TimerStepBody
@@ -1213,7 +1311,109 @@ function RestStepBody({ step, timer }: { step: RestStep; timer: TimerState }) {
       completeNote={t("player.restComplete")}
       nextLabel={step.nextLabel || undefined}
       nextExerciseName={step.nextExerciseName}
+      logControl={
+        previous !== undefined ? (
+          <RestLogPrompt step={previous} session={session} />
+        ) : undefined
+      }
     />
+  );
+}
+
+/**
+ * The rest screen's offer to log the set that led into it, for whoever
+ * advanced past the card without stopping to fill in the popover.
+ *
+ * Rest is the one screen guaranteed between every set — the exact moment
+ * "oh, I forgot" actually happens — which is why this lives here rather than
+ * relying on the work step's own control alone. `SetLogControl`'s "logging is
+ * explicit" rule still holds: this offers the same popover, it doesn't log
+ * anything by itself.
+ *
+ * Mirrors `WorkStepBody`'s own three-way split (cardio / loggable / neither)
+ * exactly, because it's the same question about the same step, asked one
+ * screen later.
+ */
+function RestLogPrompt({
+  step,
+  session,
+}: {
+  step: WorkStep;
+  session: SessionState;
+}) {
+  const t = useT();
+  const f = useFormatting();
+  const isCardio = step.kind === "cardio";
+  const isLoggable = isLoggableStep(step);
+
+  const exerciseId = effectiveExerciseId(session, step.exerciseIndex, step.exerciseId);
+  const isSwapped = exerciseId !== step.exerciseId;
+  const exerciseName = isSwapped ? f.names.exercise(exerciseId) : step.exerciseName;
+
+  const { sets, frontier, last, isLoading } = useExerciseLog(
+    !isCardio ? exerciseId : undefined,
+  );
+  const { entries: cardioEntries, last: cardioLast } = useCardioLog(
+    isCardio ? exerciseId : undefined,
+  );
+
+  const stepRef = {
+    exerciseId,
+    routineSlug: session.routineSlug,
+    weekNumber: session.weekNumber,
+    dayNumber: session.dayNumber,
+    setNumber: step.setNumber,
+  };
+
+  const loggedSets = sets.filter(
+    (logged) =>
+      logged.exerciseId === exerciseId &&
+      logged.dayNumber === session.dayNumber &&
+      logged.weekNumber === session.weekNumber &&
+      logged.routineSlug === session.routineSlug &&
+      logged.setNumber === step.setNumber,
+  );
+  const loggedCardio = cardioEntries.filter(
+    (entry) =>
+      entry.routineSlug === stepRef.routineSlug &&
+      entry.weekNumber === stepRef.weekNumber &&
+      entry.dayNumber === stepRef.dayNumber &&
+      entry.setNumber === stepRef.setNumber,
+  );
+  const isLogged = isCardio ? loggedCardio.length > 0 : loggedSets.length > 0;
+
+  // This is the "forgot" prompt, not a second confirmation of what you
+  // already did — once the step it's asking about is logged, it has nothing
+  // left to offer and disappears rather than sitting there showing what you
+  // just entered.
+  if (!isCardio && !isLoggable) return null;
+  if (isLogged) return null;
+  if (!isCardio && isLoading) return null;
+
+  const label = workLabel({ ...step, exerciseName }, f);
+
+  return (
+    <div className="flex w-full max-w-xs flex-col items-start gap-1.5 border-t pt-3 text-left">
+      <Eyebrow>{t("player.logLastSet")}</Eyebrow>
+      <p className="text-sm font-medium">{label}</p>
+      {isCardio ? (
+        <CardioLogControl
+          last={cardioLast}
+          stepRef={stepRef}
+          loggedHere={loggedCardio}
+        />
+      ) : (
+        <SetLogControl
+          frontier={frontier}
+          last={last}
+          targetReps={step.reps}
+          stepRef={stepRef}
+          exerciseName={exerciseName}
+          loggedHere={loggedSets}
+          variant="compact"
+        />
+      )}
+    </div>
   );
 }
 

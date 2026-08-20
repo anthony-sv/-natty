@@ -45,11 +45,18 @@ export const LEAD_IN_SECONDS = 3;
  * carry a *count*, so the player converts one to the other at a fixed tempo and
  * the clock is a pacer, not a measurement. It's adjustable mid-set (+10s, skip)
  * precisely because the tempo is an assumption and yours will differ.
+ *
+ * All three sit in a 1.5–2s band — fast enough that a 7-rep pulsed leg doesn't
+ * read as a second hold, which is what the previous 3–4s tempo did. This is
+ * also why a falling rep count (the hold-and-pulse ramp's 12/10/8/6) has to
+ * actually shorten the clock: at 4s a rep, 12 vs 6 reps only differed by 24s
+ * out of roughly a minute, easy to read as "about the same"; at this tempo the
+ * same gap is a third of the part's length.
  */
-const PULSE_SECONDS = 0.8;
-const REP_SECONDS = 3;
+const PULSE_SECONDS = 1.5;
+const REP_SECONDS = 1.75;
 /** A rep that ends in a pulse is one rep plus a beat, not two reps. */
-const PULSED_REP_SECONDS = 4;
+const PULSED_REP_SECONDS = 2;
 
 /** Where the load goes on this set, against the one before it. */
 export interface LoadCue {
@@ -222,7 +229,9 @@ function pacedCount(value: number | [number, number]): number {
   return Array.isArray(value) ? value[1] : value;
 }
 
-function workLabel(step: WorkStep, { t }: Formatting): string {
+/** "Exercise name — Set 2 of 4". Exported so a caller with a swapped
+    exercise's resolved name can format the same way — see `RestStepBody`. */
+export function workLabel(step: WorkStep, { t }: Formatting): string {
   return `${step.exerciseName} — ${t(
     step.isWarmup ? "routines.warmupSetOf" : "routines.setOf",
     { number: step.setNumber, total: step.setsInExercise },
@@ -793,4 +802,22 @@ export function isLoggableStep(step: SessionStep): boolean {
 /** Total work sets in the day, for a "12 sets" style summary. */
 export function countWorkSteps(steps: SessionStep[]): number {
   return steps.filter((s) => s.type === "work").length;
+}
+
+/**
+ * The set a rest step is resting *from* — the nearest work step before it.
+ *
+ * Not simply `steps[index - 1]`: a finisher's rest follows its pose hold, not
+ * the work step directly, so this walks back past whatever sits in between.
+ * What the rest screen's log prompt resolves against — see `RestStepBody`.
+ */
+export function previousWorkStep(
+  steps: SessionStep[],
+  index: number,
+): WorkStep | undefined {
+  for (let i = index - 1; i >= 0; i--) {
+    const step = steps[i];
+    if (step.type === "work") return step;
+  }
+  return undefined;
 }
