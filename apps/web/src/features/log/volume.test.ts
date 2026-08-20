@@ -8,6 +8,7 @@ import {
   type MovementPattern,
   type MuscleId,
 } from "@/data/exercises";
+import type { WorkoutCompletion } from "./completion-schema";
 import type { LoggedSet } from "./schema";
 import {
   muscleGaps,
@@ -15,6 +16,7 @@ import {
   totalsFor,
   weeklyVolume,
   type ExerciseAnatomy,
+  type RoutineDayExercises,
 } from "./volume";
 
 function at(year: number, month: number, day: number): number {
@@ -66,6 +68,41 @@ const anatomy: ExerciseAnatomy = {
     })[id] as MovementPattern | undefined,
 };
 
+function completion(
+  routineSlug: string,
+  weekNumber: number,
+  dayNumber: number,
+  performedAt: number,
+  throughExerciseIndex?: number,
+): WorkoutCompletion {
+  return {
+    id: `c${++seq}`,
+    routineSlug,
+    weekNumber,
+    dayNumber,
+    performedAt,
+    throughExerciseIndex,
+  };
+}
+
+/** No completions to resolve — most tests care only about logged sets. */
+const NO_COMPLETIONS: WorkoutCompletion[] = [];
+const EMPTY_LOOKUP: RoutineDayExercises = { exercisesFor: () => undefined };
+
+/** "push-day" w1d1 prescribes 3 sets of squat, then 4 of bench. */
+const ROUTINE_LOOKUP: RoutineDayExercises = {
+  exercisesFor: (slug, week, day, throughExerciseIndex) => {
+    if (slug !== "push-day" || week !== 1 || day !== 1) return undefined;
+    const all = [
+      { exerciseId: "squat", sets: 3 },
+      { exerciseId: "bench", sets: 4 },
+    ];
+    return throughExerciseIndex === undefined
+      ? all
+      : all.slice(0, throughExerciseIndex + 1);
+  },
+};
+
 const NOW = at(2026, 8, 12); // Wednesday of the week starting the 10th.
 
 describe("SPLIT_FOR_PATTERN", () => {
@@ -92,7 +129,13 @@ describe("SPLIT_FOR_PATTERN", () => {
 
 describe("weeklyVolume", () => {
   it("counts a primary muscle as direct and a secondary as indirect", () => {
-    const [week] = weeklyVolume([set("squat", at(2026, 8, 10))], anatomy, NOW);
+    const [week] = weeklyVolume(
+      [set("squat", at(2026, 8, 10))],
+      NO_COMPLETIONS,
+      anatomy,
+      EMPTY_LOOKUP,
+      NOW,
+    );
 
     expect(week.muscles).toEqual([
       { muscle: "quads", directSets: 1, indirectSets: 0 },
@@ -102,7 +145,13 @@ describe("weeklyVolume", () => {
   });
 
   it("counts a muscle once when it is listed both ways", () => {
-    const [week] = weeklyVolume([set("odd", at(2026, 8, 10))], anatomy, NOW);
+    const [week] = weeklyVolume(
+      [set("odd", at(2026, 8, 10))],
+      NO_COMPLETIONS,
+      anatomy,
+      EMPTY_LOOKUP,
+      NOW,
+    );
     const chest = week.muscles.find((m) => m.muscle === "chest")!;
 
     // The stronger claim wins: it's direct work, not direct *and* incidental.
@@ -118,7 +167,9 @@ describe("weeklyVolume", () => {
         set("bench", at(2026, 8, 11)),
         set("bench", at(2026, 8, 11)),
       ],
+      NO_COMPLETIONS,
       anatomy,
+      EMPTY_LOOKUP,
       NOW,
     )[0];
 
@@ -141,7 +192,9 @@ describe("weeklyVolume", () => {
         set("squat", at(2026, 8, 11)),
         set("run", at(2026, 8, 11)),
       ],
+      NO_COMPLETIONS,
       anatomy,
+      EMPTY_LOOKUP,
       NOW,
     );
 
@@ -156,7 +209,9 @@ describe("weeklyVolume", () => {
         set("bench", at(2026, 8, 9)), // Sunday — the week of the 3rd
         set("bench", at(2026, 8, 10)), // Monday — the week of the 10th
       ],
+      NO_COMPLETIONS,
       anatomy,
+      EMPTY_LOOKUP,
       NOW,
     );
 
@@ -169,7 +224,9 @@ describe("weeklyVolume", () => {
   it("marks only the running week as partial", () => {
     const weeks = weeklyVolume(
       [set("bench", at(2026, 8, 3)), set("bench", at(2026, 8, 10))],
+      NO_COMPLETIONS,
       anatomy,
+      EMPTY_LOOKUP,
       NOW,
     );
 
@@ -177,7 +234,99 @@ describe("weeklyVolume", () => {
   });
 
   it("has nothing to say about an empty log", () => {
-    expect(weeklyVolume([], anatomy, NOW)).toEqual([]);
+    expect(
+      weeklyVolume([], NO_COMPLETIONS, anatomy, EMPTY_LOOKUP, NOW),
+    ).toEqual([]);
+  });
+
+  // The bug this section pins: a day finished — fully or ended early — with
+  // sets that were never typed in by hand used to be invisible to Volume,
+  // even though the streak and the heatmap already count it as trained.
+  describe("a finished-or-ended day with sets never logged", () => {
+    it("credits the routine's prescribed sets, resolved through it", () => {
+      const [week] = weeklyVolume(
+        [],
+        [completion("push-day", 1, 1, at(2026, 8, 10))],
+        anatomy,
+        ROUTINE_LOOKUP,
+        NOW,
+      );
+
+      // squat: 3 sets direct quads, indirect glutes/hamstrings.
+      // bench: 4 sets direct chest, indirect triceps.
+      const quads = week.muscles.find((m) => m.muscle === "quads")!;
+      const chest = week.muscles.find((m) => m.muscle === "chest")!;
+      expect(quads.directSets).toBe(3);
+      expect(chest.directSets).toBe(4);
+    });
+
+    it("bounds an early end to what was actually reached", () => {
+      // throughExerciseIndex 0 — only the squat was reached, bench wasn't.
+      const [week] = weeklyVolume(
+        [],
+        [completion("push-day", 1, 1, at(2026, 8, 10), 0)],
+        anatomy,
+        ROUTINE_LOOKUP,
+        NOW,
+      );
+
+      expect(week.muscles.find((m) => m.muscle === "quads")?.directSets).toBe(3);
+      expect(week.muscles.find((m) => m.muscle === "chest")).toBeUndefined();
+    });
+
+    it("never double-counts an exercise this session already logged by hand", () => {
+      // Bench was logged for real (2 sets, exact weight/reps); squat wasn't.
+      // The completion should fill in only squat, not add to bench.
+      const [week] = weeklyVolume(
+        [
+          {
+            id: "logged1",
+            performedAt: at(2026, 8, 10),
+            exerciseId: "bench",
+            weight: 100,
+            unit: "kg",
+            reps: 8,
+            routineSlug: "push-day",
+            weekNumber: 1,
+            dayNumber: 1,
+            setNumber: 1,
+          },
+          {
+            id: "logged2",
+            performedAt: at(2026, 8, 10),
+            exerciseId: "bench",
+            weight: 100,
+            unit: "kg",
+            reps: 8,
+            routineSlug: "push-day",
+            weekNumber: 1,
+            dayNumber: 1,
+            setNumber: 2,
+          },
+        ],
+        [completion("push-day", 1, 1, at(2026, 8, 10))],
+        anatomy,
+        ROUTINE_LOOKUP,
+        NOW,
+      );
+
+      // Real sets: 2. Prescribed: 4. If this reads 4, the completion is
+      // double-counting on top of the real sets rather than deferring to them.
+      expect(week.muscles.find((m) => m.muscle === "chest")?.directSets).toBe(2);
+      // Squat has no logged sets this session, so the prescription fills it in.
+      expect(week.muscles.find((m) => m.muscle === "quads")?.directSets).toBe(3);
+    });
+
+    it("contributes nothing when the routine or day can't be resolved", () => {
+      const [week] = weeklyVolume(
+        [],
+        [completion("deleted-routine", 1, 1, at(2026, 8, 10))],
+        anatomy,
+        ROUTINE_LOOKUP,
+        NOW,
+      );
+      expect(week).toBeUndefined();
+    });
   });
 });
 
@@ -189,7 +338,9 @@ describe("totalsFor", () => {
         set("squat", at(2026, 8, 4)),
         set("bench", at(2026, 8, 10)),
       ],
+      NO_COMPLETIONS,
       anatomy,
+      EMPTY_LOOKUP,
       NOW,
     );
 
@@ -205,7 +356,13 @@ describe("muscleGaps", () => {
   const TRAINABLE = new Set<MuscleId>(["quads", "chest", "biceps"]);
 
   it("reports a muscle no exercise trains directly", () => {
-    const weeks = weeklyVolume([set("squat", at(2026, 8, 10))], anatomy, NOW);
+    const weeks = weeklyVolume(
+      [set("squat", at(2026, 8, 10))],
+      NO_COMPLETIONS,
+      anatomy,
+      EMPTY_LOOKUP,
+      NOW,
+    );
     const gaps = muscleGaps(weeks, ALL, TRAINABLE);
 
     // Glutes took an indirect set, and nothing in this library could give them
@@ -218,7 +375,13 @@ describe("muscleGaps", () => {
   });
 
   it("separates 'never trained' from 'only ever indirectly'", () => {
-    const weeks = weeklyVolume([set("curl", at(2026, 8, 10))], anatomy, NOW);
+    const weeks = weeklyVolume(
+      [set("curl", at(2026, 8, 10))],
+      NO_COMPLETIONS,
+      anatomy,
+      EMPTY_LOOKUP,
+      NOW,
+    );
     const gaps = muscleGaps(
       weeks,
       ALL,
@@ -234,7 +397,13 @@ describe("muscleGaps", () => {
   });
 
   it("leaves out anything that got direct work", () => {
-    const weeks = weeklyVolume([set("bench", at(2026, 8, 10))], anatomy, NOW);
+    const weeks = weeklyVolume(
+      [set("bench", at(2026, 8, 10))],
+      NO_COMPLETIONS,
+      anatomy,
+      EMPTY_LOOKUP,
+      NOW,
+    );
     const gaps = muscleGaps(weeks, ALL, TRAINABLE);
 
     expect(gaps.map((g) => g.muscle)).not.toContain("chest");
@@ -243,7 +412,9 @@ describe("muscleGaps", () => {
   it("puts the most-worked-indirectly first", () => {
     const weeks = weeklyVolume(
       [set("squat", at(2026, 8, 10)), set("squat", at(2026, 8, 11))],
+      NO_COMPLETIONS,
       anatomy,
+      EMPTY_LOOKUP,
       NOW,
     );
     const gaps = muscleGaps(weeks, ALL, TRAINABLE);

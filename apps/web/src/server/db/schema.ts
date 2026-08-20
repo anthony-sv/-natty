@@ -164,7 +164,7 @@ export const cardioEntries = pgTable(
 ).enableRLS();
 
 /**
- * Proof a workout was run all the way to "Finish" — mirrors
+ * Proof a workout was run — all the way to "Finish", or ended early — mirrors
  * `workoutCompletionSchema` in `features/log/completion-schema.ts`.
  *
  * No weight, no reps, unlike `loggedSets`: that's the entire reason this is
@@ -179,6 +179,9 @@ export const workoutCompletions = pgTable(
     weekNumber: integer("week_number").notNull(),
     dayNumber: integer("day_number").notNull(),
     performedAt: bigint("performed_at", { mode: "number" }).notNull(),
+    // Nullable: rows written before this field existed have no value, and
+    // read as "the whole day" — see the Zod schema's comment.
+    throughExerciseIndex: integer("through_exercise_index"),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.id] }),

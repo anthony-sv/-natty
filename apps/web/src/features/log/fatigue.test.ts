@@ -2,13 +2,8 @@ import { describe, expect, it } from "vitest";
 import { muscleSchema, type MovementPattern, type MuscleId } from "@/data/exercises";
 import type { WorkoutCompletion } from "./completion-schema";
 import type { LoggedSet } from "./schema";
-import type { ExerciseAnatomy } from "./volume";
-import {
-  fatigueStep,
-  muscleFatigue,
-  RECOVERY_HOURS,
-  type RoutineDayExercises,
-} from "./fatigue";
+import type { ExerciseAnatomy, RoutineDayExercises } from "./volume";
+import { fatigueStep, muscleFatigue, RECOVERY_HOURS } from "./fatigue";
 
 const HOUR_MS = 60 * 60 * 1000;
 const NOW = new Date(2026, 7, 12, 9, 0).getTime();
@@ -59,9 +54,13 @@ const EMPTY_LOOKUP: RoutineDayExercises = { exercisesFor: () => undefined };
 
 /** "chest-day" w1d1 prescribes `bench`; "back-day" w1d1 prescribes `squat`. */
 const ROUTINE_LOOKUP: RoutineDayExercises = {
-  exercisesFor: (slug, week, day) => {
-    if (slug === "chest-day" && week === 1 && day === 1) return ["bench"];
-    if (slug === "back-day" && week === 1 && day === 1) return ["squat"];
+  exercisesFor: (slug: string, week: number, day: number) => {
+    if (slug === "chest-day" && week === 1 && day === 1) {
+      return [{ exerciseId: "bench", sets: 4 }];
+    }
+    if (slug === "back-day" && week === 1 && day === 1) {
+      return [{ exerciseId: "squat", sets: 3 }];
+    }
     return undefined;
   },
 };

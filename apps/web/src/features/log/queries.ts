@@ -7,7 +7,7 @@ import { useRoutines } from "@/features/routines/use-routines";
 import { useNames } from "@/i18n/names";
 import { loggedSetsFork } from "./collection";
 import { useCompletions } from "./completion-collection";
-import { muscleFatigue, type MuscleFatigue, type RoutineDayExercises } from "./fatigue";
+import { muscleFatigue, type MuscleFatigue } from "./fatigue";
 import { lastSetFor, prFrontier } from "./pr";
 import { toRecordRows, type RecordRow } from "./records";
 import {
@@ -19,20 +19,33 @@ import {
   muscleGaps,
   weeklyVolume,
   type MuscleGap,
+  type RoutineDayExercises,
   type WeekVolume,
 } from "./volume";
 
 /**
  * Resolves a `WorkoutCompletion`'s exercises against the real routine list —
- * the concrete `RoutineDayExercises` `fatigue.ts` asks for.
+ * the concrete `RoutineDayExercises` `fatigue.ts` and `volume.ts` both ask
+ * for. Shared by `useFatigue` and `useVolume` rather than one each, since
+ * both are resolving the exact same question.
  */
 function dayLookupFor(routines: Routine[]): RoutineDayExercises {
   return {
-    exercisesFor: (routineSlug, weekNumber, dayNumber) => {
+    exercisesFor: (routineSlug, weekNumber, dayNumber, throughExerciseIndex) => {
       const routine = routines.find((r) => r.slug === routineSlug);
       const week = routine?.weeks.find((w) => w.weekNumber === weekNumber);
       const day = week?.days.find((d) => d.dayNumber === dayNumber);
-      return day?.exercises.map((entry) => entry.exerciseId);
+      if (day === undefined) return undefined;
+
+      const entries =
+        throughExerciseIndex === undefined
+          ? day.exercises
+          : day.exercises.slice(0, throughExerciseIndex + 1);
+
+      return entries.map((entry) => ({
+        exerciseId: entry.exerciseId,
+        sets: entry.prescriptions.reduce((total, p) => total + p.sets, 0),
+      }));
     },
   };
 }
@@ -114,6 +127,9 @@ export function useAllRecords(): {
  * than from the compiled-in data, so a lift you added yourself counts toward
  * its muscles and its split like any other. They used to be module-scope
  * constants; they can't be, now that half the library arrives at runtime.
+ *
+ * Also reads completions and routines, for the same reason `useFatigue` does
+ * — a day finished with nothing logged still counts, at its prescribed sets.
  */
 export function useVolume(
   /** Read once by the caller, so nothing reads the clock during render. */
@@ -130,17 +146,25 @@ export function useVolume(
     [loggedSets],
   );
   const { anatomy, trainableDirectly } = useLibrary();
+  const completions = useCompletions();
+  const { routines, isLoading: routinesLoading } = useRoutines();
+  const dayLookup = useMemo(() => dayLookupFor(routines), [routines]);
 
   const weeks = useMemo(
-    () => weeklyVolume(data ?? [], anatomy, now),
-    [data, anatomy, now],
+    () => weeklyVolume(data ?? [], completions, anatomy, dayLookup, now),
+    [data, completions, anatomy, dayLookup, now],
   );
   const gaps = useMemo(
     () => muscleGaps(weeks, muscleSchema.options, trainableDirectly),
     [weeks, trainableDirectly],
   );
 
-  return { weeks, gaps, isLoading, loggedSetCount: data?.length ?? 0 };
+  return {
+    weeks,
+    gaps,
+    isLoading: isLoading || routinesLoading,
+    loggedSetCount: data?.length ?? 0,
+  };
 }
 
 /**

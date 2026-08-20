@@ -13,6 +13,17 @@ export const workoutCompletionSchema = z.object({
   weekNumber: z.number().int().positive(),
   dayNumber: z.number().int().positive(),
   performedAt: z.number(),
+  /**
+   * The last exercise of the day you'd actually reached — a position in
+   * `day.exercises`, the same index every `SessionStep` carries. Absent on
+   * completions written before this field existed, which is read as "the
+   * whole day" (they only ever came from reaching the last step anyway).
+   *
+   * Optional rather than required for a second reason too: ending a session
+   * before it reaches a single work step (closing it from the day page with
+   * nothing started) has no exercise to point at.
+   */
+  throughExerciseIndex: z.number().int().nonnegative().optional(),
 });
 export type WorkoutCompletion = z.infer<typeof workoutCompletionSchema>;
 export type WorkoutCompletionInput = Omit<WorkoutCompletion, "id">;

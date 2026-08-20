@@ -78,7 +78,9 @@ describe("archiving", () => {
           performedAt: Date.UTC(2026, 0, 7, 12),
         },
       ],
+      [],
       library.anatomy,
+      { exercisesFor: () => undefined },
       Date.UTC(2026, 0, 7, 12),
     );
     expect(

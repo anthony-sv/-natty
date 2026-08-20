@@ -45,7 +45,7 @@ export function VolumePanel() {
   // Read once on mount rather than during render, per `react-hooks/purity` —
   // and so "the current week" doesn't shift under you mid-read.
   const [now] = useState(() => Date.now());
-  const { weeks, gaps, isLoading, loggedSetCount } = useVolume(now);
+  const { weeks, gaps, isLoading } = useVolume(now);
 
   const recent = useMemo(() => weeks.slice(-TREND_WEEKS), [weeks]);
   const latest = recent[recent.length - 1];
@@ -60,7 +60,11 @@ export function VolumePanel() {
     );
   }
 
-  if (loggedSetCount === 0 || latest === undefined) {
+  // `latest === undefined` alone is the whole check now that a completion
+  // with no logged sets can still populate a week — `loggedSetCount === 0`
+  // used to be equivalent to this and would now wrongly show Empty for a day
+  // that was only ever finished through the player.
+  if (latest === undefined) {
     return (
       <Empty>
         <EmptyTitle>{t("volume.empty.title")}</EmptyTitle>

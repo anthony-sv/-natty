@@ -1,5 +1,6 @@
 import type { MovementPattern, MuscleId } from "@/data/exercises";
 import { startOfWeek } from "@/lib/week";
+import type { WorkoutCompletion } from "./completion-schema";
 import type { LoggedSet } from "./schema";
 
 /**
@@ -106,6 +107,33 @@ export interface ExerciseAnatomy {
   pattern: (exerciseId: string) => MovementPattern | undefined;
 }
 
+/** One exercise as a finished-but-unlogged day actually prescribed it. */
+export interface RoutineDayExercise {
+  exerciseId: string;
+  /** Prescribed sets summed across the exercise's prescriptions. */
+  sets: number;
+}
+
+/**
+ * Resolves what a day's exercises actually were, for crediting a
+ * `WorkoutCompletion` — which carries no exercises of its own, deliberately
+ * (see `completion-schema.ts`): it's proof a session was run, not a record of
+ * what was done in it. Injected the same way `ExerciseAnatomy` is: the real
+ * implementation reads `useRoutines()`, a test reads a fixture.
+ *
+ * `throughExerciseIndex` bounds the result to what a partial completion
+ * actually reached (see `WorkoutCompletion.throughExerciseIndex`) — omitted
+ * or `undefined` means the whole day, which is what a full "Finish" means.
+ */
+export interface RoutineDayExercises {
+  exercisesFor: (
+    routineSlug: string,
+    weekNumber: number,
+    dayNumber: number,
+    throughExerciseIndex?: number,
+  ) => RoutineDayExercise[] | undefined;
+}
+
 export interface MuscleVolume {
   muscle: MuscleId;
   /** Sets where this muscle was the point of the exercise. */
@@ -135,8 +163,27 @@ const emptySplit = (): Record<TrainingSplit, number> => ({
   cardio: 0,
 });
 
+interface WeekAccumulator {
+  direct: Map<MuscleId, number>;
+  indirect: Map<MuscleId, number>;
+  split: Record<TrainingSplit, number>;
+}
+
+function bucketFor(
+  byWeek: Map<number, WeekAccumulator>,
+  weekStart: number,
+): WeekAccumulator {
+  let bucket = byWeek.get(weekStart);
+  if (bucket === undefined) {
+    bucket = { direct: new Map(), indirect: new Map(), split: emptySplit() };
+    byWeek.set(weekStart, bucket);
+  }
+  return bucket;
+}
+
 /**
- * Sets grouped into Monday-to-Sunday weeks, counted per muscle and per split.
+ * Credits `count` sets of one exercise to a week — `count` is 1 for a real
+ * logged set, or a completion's prescribed set total (see `weeklyVolume`).
  *
  * **Direct and indirect sets are counted separately and never fused.** A set of
  * squats gives quads a direct set and glutes an indirect one; collapsing them
@@ -146,50 +193,95 @@ const emptySplit = (): Record<TrainingSplit, number> => ({
  *
  * A muscle listed as both primary and secondary on one exercise counts once, as
  * direct: the stronger claim wins.
+ */
+function registerSets(
+  bucket: WeekAccumulator,
+  exerciseId: string,
+  count: number,
+  anatomy: ExerciseAnatomy,
+): void {
+  const pattern = anatomy.pattern(exerciseId);
+  const split = pattern === undefined ? undefined : SPLIT_FOR_PATTERN[pattern];
+  if (split) bucket.split[split] += count;
+
+  const { primary, secondary } = anatomy.muscles(exerciseId);
+  const counted = new Set(primary);
+  for (const muscle of counted) {
+    bucket.direct.set(muscle, (bucket.direct.get(muscle) ?? 0) + count);
+  }
+  for (const muscle of new Set(secondary)) {
+    if (counted.has(muscle)) continue;
+    bucket.indirect.set(muscle, (bucket.indirect.get(muscle) ?? 0) + count);
+  }
+}
+
+/**
+ * Sets grouped into Monday-to-Sunday weeks, counted per muscle and per split.
+ *
+ * **A finished-but-unlogged day counts too, at its prescribed sets.** Pressing
+ * "Finish" (or "End workout") already counts a day as trained for the streak
+ * and the heatmap whether or not you typed any sets in by hand — see
+ * `SessionPlayer`'s `finishIfLast`. Reading only `LoggedSet[]` here would
+ * silently disagree: a day run entirely through the player would show every
+ * muscle it worked as untouched. So each `WorkoutCompletion` is resolved back
+ * to its day's exercises via `dayLookup`, bounded to `throughExerciseIndex`
+ * for a day ended early, and credited at the routine's own prescribed set
+ * count for each — the best honest estimate of "what you did" without
+ * inventing a weight nobody entered.
+ *
+ * **An exercise this exact session already has real logged sets for is never
+ * also credited from the completion** — otherwise a day you partly logged by
+ * hand would double-count the part you did log. Only the exercises you
+ * reached but never typed a set for fall back to the prescription.
  *
  * `now` is a parameter rather than `Date.now()`, so "the current week" is
  * pinnable in a test and nothing reads the clock during a render.
  */
 export function weeklyVolume(
   sets: LoggedSet[],
+  completions: WorkoutCompletion[],
   anatomy: ExerciseAnatomy,
+  dayLookup: RoutineDayExercises,
   now: number,
 ): WeekVolume[] {
-  const byWeek = new Map<number, LoggedSet[]>();
+  const byWeek = new Map<number, WeekAccumulator>();
+
   for (const set of sets) {
-    const weekStart = startOfWeek(set.performedAt);
-    const existing = byWeek.get(weekStart);
-    if (existing) existing.push(set);
-    else byWeek.set(weekStart, [set]);
+    registerSets(bucketFor(byWeek, startOfWeek(set.performedAt)), set.exerciseId, 1, anatomy);
+  }
+
+  for (const completion of completions) {
+    const exercises = dayLookup.exercisesFor(
+      completion.routineSlug,
+      completion.weekNumber,
+      completion.dayNumber,
+      completion.throughExerciseIndex,
+    );
+    if (exercises === undefined) continue;
+
+    const loggedThisSession = new Set(
+      sets
+        .filter(
+          (set) =>
+            set.routineSlug === completion.routineSlug &&
+            set.weekNumber === completion.weekNumber &&
+            set.dayNumber === completion.dayNumber,
+        )
+        .map((set) => set.exerciseId),
+    );
+
+    const bucket = bucketFor(byWeek, startOfWeek(completion.performedAt));
+    for (const { exerciseId, sets: prescribedSets } of exercises) {
+      if (loggedThisSession.has(exerciseId)) continue;
+      registerSets(bucket, exerciseId, prescribedSets, anatomy);
+    }
   }
 
   const currentWeekStart = startOfWeek(now);
 
   return [...byWeek.entries()]
     .sort(([a], [b]) => a - b)
-    .map(([weekStart, weekSets]) => {
-      const direct = new Map<MuscleId, number>();
-      const indirect = new Map<MuscleId, number>();
-      const split = emptySplit();
-
-      for (const set of weekSets) {
-        const pattern = anatomy.pattern(set.exerciseId);
-        const bucket = pattern === undefined ? undefined : SPLIT_FOR_PATTERN[pattern];
-        if (bucket) split[bucket]++;
-
-        const { primary, secondary } = anatomy.muscles(set.exerciseId);
-        const counted = new Set(primary);
-        for (const muscle of counted) {
-          direct.set(muscle, (direct.get(muscle) ?? 0) + 1);
-        }
-        for (const muscle of new Set(secondary)) {
-          // A muscle that is already primary here doesn't also get an indirect
-          // set for the same work.
-          if (counted.has(muscle)) continue;
-          indirect.set(muscle, (indirect.get(muscle) ?? 0) + 1);
-        }
-      }
-
+    .map(([weekStart, { direct, indirect, split }]) => {
       const muscles = [...new Set([...direct.keys(), ...indirect.keys()])]
         .map((muscle) => ({
           muscle,

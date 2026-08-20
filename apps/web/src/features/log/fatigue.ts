@@ -1,7 +1,7 @@
 import type { MuscleId } from "@/data/exercises";
 import type { WorkoutCompletion } from "./completion-schema";
 import type { LoggedSet } from "./schema";
-import type { ExerciseAnatomy } from "./volume";
+import type { ExerciseAnatomy, RoutineDayExercises } from "./volume";
 
 /**
  * How long each muscle takes to recover, in hours.
@@ -79,25 +79,6 @@ function stateFor(
   return "ready";
 }
 
-/**
- * Resolves what a finished-but-unlogged day actually prescribed.
- *
- * `WorkoutCompletion` carries no exercises of its own — see
- * `completion-schema.ts`, deliberately: it's proof a session was run, not a
- * record of what was done in it. So the day it points at has to be looked up
- * in the routine itself. Injected the same way `ExerciseAnatomy` is: the real
- * implementation reads `useRoutines()`, the test reads a fixture.
- */
-export interface RoutineDayExercises {
-  /** Exercise ids prescribed that day, or `undefined` if the day can't be found
-      (a deleted routine, a since-edited day). */
-  exercisesFor: (
-    routineSlug: string,
-    weekNumber: number,
-    dayNumber: number,
-  ) => string[] | undefined;
-}
-
 function registerHit(
   exerciseId: string,
   timestamp: number,
@@ -169,12 +150,13 @@ export function muscleFatigue(
   }
 
   for (const completion of completions) {
-    const exerciseIds = dayLookup.exercisesFor(
+    const exercises = dayLookup.exercisesFor(
       completion.routineSlug,
       completion.weekNumber,
       completion.dayNumber,
+      completion.throughExerciseIndex,
     );
-    for (const exerciseId of exerciseIds ?? []) {
+    for (const { exerciseId } of exercises ?? []) {
       registerHit(
         exerciseId,
         completion.performedAt,

@@ -20,6 +20,7 @@ function toCompletion(
     weekNumber: row.weekNumber,
     dayNumber: row.dayNumber,
     performedAt: row.performedAt,
+    throughExerciseIndex: row.throughExerciseIndex ?? undefined,
   };
 }
 
@@ -47,6 +48,7 @@ export const upsertWorkoutCompletions = createServerFn({ method: "POST" })
           weekNumber: completion.weekNumber,
           dayNumber: completion.dayNumber,
           performedAt: completion.performedAt,
+          throughExerciseIndex: completion.throughExerciseIndex ?? null,
         })),
       )
       .onConflictDoUpdate({
@@ -56,6 +58,7 @@ export const upsertWorkoutCompletions = createServerFn({ method: "POST" })
           weekNumber: sql`excluded.week_number`,
           dayNumber: sql`excluded.day_number`,
           performedAt: sql`excluded.performed_at`,
+          throughExerciseIndex: sql`excluded.through_exercise_index`,
         },
       });
   });
