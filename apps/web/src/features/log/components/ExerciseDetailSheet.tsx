@@ -8,6 +8,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { ExerciseMedia } from "@/features/library/components/ExerciseMedia";
 import { useT } from "@/i18n/use-t";
 import type { WeightUnit } from "@/lib/units";
 import { useExerciseLog } from "../queries";
@@ -77,6 +78,8 @@ export function ExerciseDetailSheet({
         </SheetHeader>
 
         <div className="flex flex-col gap-6 px-4 pb-6">
+          {exerciseId !== undefined ? <ExerciseMedia exerciseId={exerciseId} /> : null}
+
           <ExerciseCharts sets={sets} unit={unit} isLoading={isLoading} />
 
           {sets.length > 0 ? (

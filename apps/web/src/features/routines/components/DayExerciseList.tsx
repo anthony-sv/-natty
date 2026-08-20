@@ -12,6 +12,7 @@ import { Fragment } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Marker } from "@/components/ui/marker";
+import { ExercisePreviewButton } from "@/features/library/components/ExerciseMedia";
 import { cn } from "@/lib/utils";
 import type { ExerciseEntry } from "@/data/routines";
 import { useFormatting } from "@/i18n/use-formatting";
@@ -216,6 +217,13 @@ function ExerciseRow({
         )}
       </ItemContent>
       <ItemActions className="self-start">
+        {/* Only renders when this exercise actually has media — an
+            uncovered exercise (roughly a third of the library) grows no
+            dead button. */}
+        <ExercisePreviewButton
+          exerciseId={exercise.exerciseId}
+          exerciseName={exerciseDisplayName(exercise, f)}
+        />
         <PrescriptionBadges
           prescriptions={exercise.prescriptions}
           isFinisher={exercise.isFinisher}
