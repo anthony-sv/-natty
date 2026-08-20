@@ -318,6 +318,25 @@ export const en = {
   "volume.empty.body":
     "Log some sets and this breaks them down by muscle and by push, pull and legs.",
 
+  // ── Fatigue ──────────────────────────────────────────────────────────────
+  "fatigue.title": "Fatigue",
+  "fatigue.description":
+    "Which muscles are still recovering, based on when you last trained them directly.",
+  "fatigue.figureAlt": "{view} view of muscle recovery",
+  "fatigue.view.front": "Front",
+  "fatigue.view.back": "Back",
+  "fatigue.state.recovering": "Recovering",
+  "fatigue.state.nearly": "Nearly ready",
+  "fatigue.state.ready": "Ready",
+  "fatigue.state.untrained": "No recent data",
+  "fatigue.status": "{muscle} · {state} · trained {time}",
+  "fatigue.status.untrained": "{muscle} · {state}",
+  "fatigue.indirectNote": "Also worked indirectly {time}",
+  "fatigue.recoveringHeading": "Still recovering",
+  "fatigue.allReady": "Everything's ready to train.",
+  "fatigue.footnote":
+    "Recovery windows are a rule of thumb — 48h for smaller muscles, 72h for larger ones — and only count sessions you've recorded, whether you logged sets or just marked the day finished.",
+
   // ── Movement patterns ────────────────────────────────────────────────────
   // Shown when you add your own exercise: the pattern is what puts it in push,
   // pull or legs, so it has to be a word you can pick, not an id.
@@ -831,7 +850,7 @@ export const en = {
   "about.progress.p1":
     "Records — every personal record, searchable and grouped by exercise. Fix or delete a mistyped set here and everything downstream corrects itself.",
   "about.progress.p2":
-    "Volume — weekly sets per muscle, and a push/pull/legs/core split. Direct and indirect sets are counted separately rather than blended.",
+    "Volume — weekly sets per muscle, a push/pull/legs/core split, and a Fatigue map of which muscles are still recovering. Direct and indirect sets are counted separately rather than blended.",
   "about.progress.p3":
     "History — a year of training days as a grid, and your current streak. It counts back from today, so a broken streak reads zero.",
   "about.progress.p4":

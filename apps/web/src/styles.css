@@ -139,6 +139,37 @@ body {
 }
 
 /*
+ * The Fatigue map's ramp — how far a muscle still is from recovered.
+ *
+ * **Sequential, not the heatmap's blue**: this is a different magnitude
+ * (recovery, not training volume) on the same page, and reusing `--heat-*`
+ * would read as the same measurement. Warm rather than cool because that's how
+ * a fatigue/readiness map is conventionally read. Terminates on palette slot 2
+ * (`#eb6834`), the same hex `--split-pull` and `--chart-body-fat` land on.
+ *
+ * Checked for Oklab lightness monotonicity, the way `--heat-*` is: light steps
+ * from 0.915 down to 0.671, dark climbs the opposite way from 0.349 up to
+ * 0.671 — "more" is lighter on a dark surface, same as every ramp here.
+ *
+ * A recovered or never-trained muscle is `--muted`, never a fifth step —
+ * exactly the heatmap's empty-cell rule, and what makes the map read at a
+ * glance: colour means "still recovering", grey means "go".
+ */
+:root {
+  --fatigue-1: #fbdcc9;
+  --fatigue-2: #f5b48c;
+  --fatigue-3: #f08652;
+  --fatigue-4: #eb6834;
+}
+
+.dark {
+  --fatigue-1: #5c2a12;
+  --fatigue-2: #8a3a19;
+  --fatigue-3: #c04a1f;
+  --fatigue-4: #eb6834;
+}
+
+/*
  * Calories against target, as a **diverging** scale.
  *
  * The one place here that isn't sequential, and deliberately: over and under

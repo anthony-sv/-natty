@@ -105,3 +105,23 @@ export function useDateFormat(
     [locale, key],
   );
 }
+
+/**
+ * A memoised `Intl.RelativeTimeFormat` for the active locale — the same rule
+ * `useDateFormat` follows, for the same reason: built with `undefined` it
+ * would follow the browser's language rather than the app's.
+ */
+export function useRelativeTimeFormat(
+  options?: Intl.RelativeTimeFormatOptions,
+): Intl.RelativeTimeFormat {
+  const locale = useStore(localeStore, (s) => s);
+  const key = JSON.stringify(options ?? {});
+  return useMemo(
+    () =>
+      new Intl.RelativeTimeFormat(
+        locale,
+        JSON.parse(key) as Intl.RelativeTimeFormatOptions,
+      ),
+    [locale, key],
+  );
+}

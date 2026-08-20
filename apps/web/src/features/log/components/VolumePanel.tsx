@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useDateFormat, useT } from "@/i18n/use-t";
 import { useVolume } from "../queries";
 import { RESISTANCE_SPLITS, totalsFor, type MuscleGapReason } from "../volume";
+import { FatigueCard } from "./FatigueCard";
 import { MuscleVolumeBars } from "./MuscleVolumeBars";
 import { TonnageCard } from "./TonnageCard";
 import { SplitTrendChart } from "./SplitTrendChart";
@@ -93,6 +94,8 @@ export function VolumePanel() {
           <MuscleVolumeBars muscles={latest.muscles} />
         </CardContent>
       </Card>
+
+      <FatigueCard />
 
       <Card>
         <CardHeader>

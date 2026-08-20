@@ -255,6 +255,8 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "supplements.unit.ml.one",
       "supplements.unit.ml.other",
       "supplements.dose",
+      // Two placeholders and a middot — there is nothing in it to translate.
+      "fatigue.status.untrained",
     ]);
 
     const unexplained = Object.keys(en).filter(

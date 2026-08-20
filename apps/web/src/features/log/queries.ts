@@ -1,9 +1,13 @@
 import { useMemo } from "react";
 import { eq, useLiveQuery } from "@tanstack/react-db";
 import { muscleSchema } from "@/data/exercises";
+import type { Routine } from "@/data/routines";
 import { useLibrary } from "@/features/library/use-library";
+import { useRoutines } from "@/features/routines/use-routines";
 import { useNames } from "@/i18n/names";
 import { loggedSetsFork } from "./collection";
+import { useCompletions } from "./completion-collection";
+import { muscleFatigue, type MuscleFatigue, type RoutineDayExercises } from "./fatigue";
 import { lastSetFor, prFrontier } from "./pr";
 import { toRecordRows, type RecordRow } from "./records";
 import {
@@ -17,6 +21,21 @@ import {
   type MuscleGap,
   type WeekVolume,
 } from "./volume";
+
+/**
+ * Resolves a `WorkoutCompletion`'s exercises against the real routine list —
+ * the concrete `RoutineDayExercises` `fatigue.ts` asks for.
+ */
+function dayLookupFor(routines: Routine[]): RoutineDayExercises {
+  return {
+    exercisesFor: (routineSlug, weekNumber, dayNumber) => {
+      const routine = routines.find((r) => r.slug === routineSlug);
+      const week = routine?.weeks.find((w) => w.weekNumber === weekNumber);
+      const day = week?.days.find((d) => d.dayNumber === dayNumber);
+      return day?.exercises.map((entry) => entry.exerciseId);
+    },
+  };
+}
 
 /**
  * Everything logged for one exercise, with its records and most recent set.
@@ -122,6 +141,50 @@ export function useVolume(
   );
 
   return { weeks, gaps, isLoading, loggedSetCount: data?.length ?? 0 };
+}
+
+/**
+ * How recovered each muscle is right now, off the same anatomy `useVolume`
+ * reads — `useLibrary().anatomy` already is the `ExerciseAnatomy` this needs,
+ * so nothing new is threaded through the library layer for it.
+ *
+ * Also reads completions and routines, because a day finished with nothing
+ * logged is direct work too — see `fatigue.ts` for why the clock has to know
+ * that, or it silently disagrees with the streak and the heatmap about what
+ * "trained" means.
+ */
+export function useFatigue(
+  /** Read once by the caller, so nothing reads the clock during render. */
+  now: number,
+): { muscles: MuscleFatigue[]; isLoading: boolean; loggedSetCount: number } {
+  const loggedSets = loggedSetsFork.useActive();
+  const { data, isLoading } = useLiveQuery(
+    (q) => q.from({ set: loggedSets }),
+    [loggedSets],
+  );
+  const { anatomy } = useLibrary();
+  const completions = useCompletions();
+  const { routines, isLoading: routinesLoading } = useRoutines();
+  const dayLookup = useMemo(() => dayLookupFor(routines), [routines]);
+
+  const muscles = useMemo(
+    () =>
+      muscleFatigue(
+        data ?? [],
+        completions,
+        anatomy,
+        dayLookup,
+        muscleSchema.options,
+        now,
+      ),
+    [data, completions, anatomy, dayLookup, now],
+  );
+
+  return {
+    muscles,
+    isLoading: isLoading || routinesLoading,
+    loggedSetCount: data?.length ?? 0,
+  };
 }
 
 /**

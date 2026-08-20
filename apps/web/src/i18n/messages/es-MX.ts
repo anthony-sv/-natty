@@ -315,6 +315,25 @@ export const esMX: Record<keyof typeof en, string> = {
   "volume.empty.body":
     "Registra algunos sets y aqu\u00ed se desglosan por m\u00fasculo y por empuje, jal\u00f3n y pierna.",
 
+  // -- Fatiga -----------------------------------------------------------
+  "fatigue.title": "Fatiga",
+  "fatigue.description":
+    "Qu\u00e9 m\u00fasculos siguen en recuperaci\u00f3n, seg\u00fan cu\u00e1ndo los trabajaste directo por \u00faltima vez.",
+  "fatigue.figureAlt": "Vista {view} de la recuperaci\u00f3n muscular",
+  "fatigue.view.front": "Frontal",
+  "fatigue.view.back": "Posterior",
+  "fatigue.state.recovering": "En recuperaci\u00f3n",
+  "fatigue.state.nearly": "Casi listo",
+  "fatigue.state.ready": "Listo",
+  "fatigue.state.untrained": "Sin datos recientes",
+  "fatigue.status": "{muscle} \u00b7 {state} \u00b7 trabajado {time}",
+  "fatigue.status.untrained": "{muscle} \u00b7 {state}",
+  "fatigue.indirectNote": "Tambi\u00e9n trabajado indirectamente {time}",
+  "fatigue.recoveringHeading": "Todav\u00eda en recuperaci\u00f3n",
+  "fatigue.allReady": "Todo listo para entrenar.",
+  "fatigue.footnote":
+    "Las ventanas de recuperaci\u00f3n son una referencia general \u2014 48h para m\u00fasculos peque\u00f1os, 72h para los m\u00e1s grandes \u2014 y solo cuentan las sesiones que registraste, ya sea con series anotadas o marcando el d\u00eda como terminado.",
+
   // ── Patrones de movimiento ─────────────────────────────────
   "pattern.horizontal-press": "Press horizontal",
   "pattern.incline-press": "Press inclinado",
@@ -817,7 +836,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "about.progress.p1":
     "Récords — todos tus récords, buscables y agrupados por ejercicio. Corrige o borra aquí una serie mal escrita y todo lo demás se corrige solo.",
   "about.progress.p2":
-    "Volumen — series semanales por músculo, y un split de push/pull/pierna/core. Las series directas e indirectas se cuentan aparte en vez de mezclarse.",
+    "Volumen — series semanales por músculo, un split de push/pull/pierna/core, y un mapa de Fatiga con los músculos que siguen en recuperación. Las series directas e indirectas se cuentan aparte en vez de mezclarse.",
   "about.progress.p3":
     "Historial — un año de días de entrenamiento en cuadrícula, y tu racha actual. Cuenta hacia atrás desde hoy, así que una racha rota marca cero.",
   "about.progress.p4":
