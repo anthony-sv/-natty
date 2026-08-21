@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { defineChart } from "@tanstack/charts";
 import { polar, radialArc } from "@tanstack/charts/polar";
 import { tooltip } from "@tanstack/charts/tooltip";
+import { portal } from "@tanstack/charts/tooltip/portal";
 import { Chart } from "@tanstack/react-charts";
 import { pie } from "d3-shape";
 import { cn } from "@/lib/utils";
@@ -106,6 +107,11 @@ export function MacroSplit({
       theme,
       tooltip: {
         use: tooltip,
+        // The ring is only 220px across, so the tooltip's own `maxWidth:
+        // min(24rem, 80%)` resolves against that tiny box and wraps "Calories"
+        // mid-word. `portal` escapes it to the viewport instead of the chart's
+        // own DOM container, so the percentage resolves against the window.
+        portal,
         items: [
           {
             channel: "y",

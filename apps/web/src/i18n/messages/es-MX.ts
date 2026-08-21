@@ -1653,6 +1653,8 @@ export const esMX: Record<keyof typeof en, string> = {
   // ── Nutrition ────────────────────────────────────────────────────────────
   "nutrition.title": "Nutrición",
   "nutrition.subtitle": "La dieta como referencia, y la aritmética detrás.",
+  "nutrition.setActive": "Hacer este mi plan",
+  "nutrition.activePlan": "Tu plan activo",
   "nutrition.tab.plan": "Plan",
   "nutrition.tab.macros": "Macros",
   "nutrition.day": "Día",

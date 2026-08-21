@@ -49,7 +49,7 @@ import type { DietPlan, MealItem } from "@/data/diets";
 import { ComboboxOptionGroup } from "@/components/combobox-option-group";
 import { useBodyEntries } from "@/features/body/collection";
 import { ageFromBirthDate } from "@/features/log/heart-rate";
-import { profileStore, setProfile } from "@/features/profile/profile-store";
+import { profileStore } from "@/features/profile/profile-store";
 import { useRoutine } from "@/features/routines/use-routines";
 import { summariseRoutine } from "@/features/routines/lib/summary";
 import {
@@ -184,11 +184,11 @@ export function DietPlanBuilder({
       success: { title: t("dietBuilder.saved", { name: toSave.name }), type: "success" },
       error: { title: t("dietBuilder.saveError"), type: "error" },
     });
-    // A plan you just wrote or edited is the one you're following — set
-    // directly rather than left for `/nutrition` to infer from the URL, which
-    // is what let the picker's own choice get silently overwritten the next
-    // time this page mounted.
-    setProfile({ activeDietSlug: slug });
+    // `?plan=` lands you on the plan you just saved without touching which
+    // one is *active* — setting `activeDietSlug` here used to mean fixing a
+    // typo in an old plan silently swapped your standing pick out from under
+    // you, the same mistake `ActivateProgramButton` deliberately avoids by
+    // keeping activation its own explicit gesture, separate from editing.
     void navigate({ to: "/nutrition", search: { plan: slug } });
   }
 

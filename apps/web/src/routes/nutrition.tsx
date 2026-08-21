@@ -16,13 +16,14 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollingTabsList } from "@/components/scrolling-tabs-list";
+import { ActivateDietButton } from "@/features/nutrition/components/ActivateDietButton";
 import { MacroCalculatorPanel } from "@/features/nutrition/components/MacroCalculatorPanel";
 import { PlanPanel } from "@/features/nutrition/components/PlanPanel";
 import { useDiets } from "@/features/nutrition/use-diets";
 import { TodayPanel } from "@/features/intake/components/TodayPanel";
 import { TrendsPanel } from "@/features/intake/components/TrendsPanel";
 import { PantryPanel } from "@/features/pantry/components/PantryPanel";
-import { profileStore, setProfile } from "@/features/profile/profile-store";
+import { profileStore } from "@/features/profile/profile-store";
 import { useNames } from "@/i18n/names";
 import { useT } from "@/i18n/use-t";
 
@@ -74,14 +75,13 @@ function NutritionPage() {
 
   // Yours first, then the built-ins — a plan you wrote is the one you follow.
   const { plans } = useDiets();
-  // `?plan=` is a one-time "show me this one" — from the builder, or a
-  // bookmarked link — that doesn't disturb your standing pick. The picker
-  // itself writes `activeDietSlug` directly (see its `onValueChange`), the
-  // same way `ActivateProgramButton` owns `activeRoutineSlug`, rather than
-  // living in local component state: a plain `useState` seeded once from the
-  // URL meant switching plans in the picker only stuck until this component
-  // next remounted, at which point it silently reverted to whichever plan the
-  // URL still named — always the one you'd most recently created or edited.
+  // The picker only ever changes what this page is *showing* — it writes
+  // `?plan=`, nothing more. Which plan is *active* is a separate, explicit
+  // choice owned by `ActivateDietButton`, the same way `ActivateProgramButton`
+  // owns `activeRoutineSlug` rather than the routine picker setting it as a
+  // side effect of being browsed. Browsing used to double as activating: just
+  // looking up a plan in the dropdown — or saving an edit to a plan you
+  // weren't even following — silently became your new standing pick.
   const activeDietSlug = useStore(profileStore, (state) => state.activeDietSlug);
   const slug = search.plan ?? activeDietSlug ?? plans[0]!.plan.slug;
   const entry = plans.find((p) => p.plan.slug === slug) ?? plans[0]!;
@@ -112,19 +112,14 @@ function NutritionPage() {
               items={options}
               value={plan.slug}
               onValueChange={(value) => {
-                setProfile({
-                  activeDietSlug: value ?? plans[0]!.plan.slug,
+                // Just changes what's on screen — `?plan=` names the plan
+                // being viewed, same as landing here from a shared link or
+                // the builder. Whether it's *active* is untouched.
+                void navigate({
+                  to: "/nutrition",
+                  search: { plan: value ?? plans[0]!.plan.slug, tab: search.tab },
+                  replace: true,
                 });
-                // Clears a lingering `?plan=` from a prior deep link — that
-                // param outranks the stored pick (see `slug` above), so
-                // without this a choice made here couldn't override it.
-                if (search.plan !== undefined) {
-                  void navigate({
-                    to: "/nutrition",
-                    search: { tab: search.tab },
-                    replace: true,
-                  });
-                }
               }}
             >
               <SelectTrigger id="diet-plan">
@@ -139,6 +134,8 @@ function NutritionPage() {
               </SelectContent>
             </Select>
           </Field>
+
+          <ActivateDietButton slug={plan.slug} />
 
           {/* Every plan is editable, built-in or not: saving a built-in writes
               your version at its slug and it replaces the shipped one in this

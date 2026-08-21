@@ -307,7 +307,16 @@ function FoodCard() {
   const pantry = usePantry();
   const [now] = useState(() => Date.now());
 
-  const plan = plans[0]?.plan;
+  // The same plan `/nutrition` opens on — `activeDietSlug`, falling back to
+  // `plans[0]` only while nothing's been made active yet. Reading `plans[0]`
+  // unconditionally meant this card ticked meals against whichever plan
+  // happened to sort first (yours, most recently created or edited), which is
+  // routinely a *different* plan than the one you're actually logging
+  // against — so a meal ticked on `/nutrition` never showed up here.
+  const activeDietSlug = useStore(profileStore, (state) => state.activeDietSlug);
+  const plan =
+    plans.find((entry) => entry.plan.slug === activeDietSlug)?.plan ??
+    plans[0]?.plan;
   const today = startOfDay(now);
 
   const resolved = useMemo(

@@ -1680,6 +1680,8 @@ export const en = {
   // ── Nutrition ────────────────────────────────────────────────────────────
   "nutrition.title": "Nutrition",
   "nutrition.subtitle": "The diet as a reference, and the arithmetic behind it.",
+  "nutrition.setActive": "Make this my plan",
+  "nutrition.activePlan": "Your active plan",
   "nutrition.tab.plan": "Plan",
   "nutrition.tab.macros": "Macros",
   "nutrition.day": "Day",
