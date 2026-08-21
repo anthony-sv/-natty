@@ -1,6 +1,15 @@
+import { useState } from "react";
 import { useStore } from "@tanstack/react-store";
+import { CalendarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -9,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { profileStore, setProfile } from "@/features/profile/profile-store";
-import { useT, type MessageKey } from "@/i18n/use-t";
+import { useDateFormat, useT, type MessageKey } from "@/i18n/use-t";
 
 const SEX_KEYS: Array<{ value: "male" | "female"; labelKey: MessageKey }> = [
   { value: "male", labelKey: "profile.male" },
@@ -40,9 +49,17 @@ function parsePositive(raw: string): number | undefined {
  * change, so correcting a typo takes effect immediately rather than waiting
  * on a save you might not remember to press.
  */
+const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+};
+
 export function ProfileForm() {
   const profile = useStore(profileStore, (s) => s);
   const t = useT();
+  const dateFormat = useDateFormat(DATE_OPTIONS);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   const sexes = SEX_KEYS.map((sex) => ({ value: sex.value, label: t(sex.labelKey) }));
 
@@ -85,6 +102,42 @@ export function ProfileForm() {
             </SelectContent>
           </Select>
           <FieldDescription>{t("profile.sexHint")}</FieldDescription>
+        </Field>
+
+        <Field className="w-40">
+          <FieldLabel htmlFor="profile-birth-date">{t("profile.birthDate")}</FieldLabel>
+          <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+            <PopoverTrigger
+              render={
+                <Button
+                  id="profile-birth-date"
+                  variant="outline"
+                  className="justify-start font-normal"
+                >
+                  <CalendarIcon data-icon="inline-start" />
+                  {profile.birthDate === undefined
+                    ? t("profile.birthDateUnset")
+                    : dateFormat.format(new Date(profile.birthDate))}
+                </Button>
+              }
+            />
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={
+                  profile.birthDate === undefined
+                    ? undefined
+                    : new Date(profile.birthDate)
+                }
+                disabled={{ after: new Date() }}
+                onSelect={(date) => {
+                  if (date) setProfile({ birthDate: date.getTime() });
+                  setDatePickerOpen(false);
+                }}
+              />
+            </PopoverContent>
+          </Popover>
+          <FieldDescription>{t("profile.birthDateHint")}</FieldDescription>
         </Field>
       </div>
 
