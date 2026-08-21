@@ -24,6 +24,7 @@ function toEntry(row: typeof bodyEntries.$inferSelect): BodyEntry {
     // Postgres has no undefined; the app's schema has no null. Convert at the
     // boundary in both directions.
     bodyFatPercent: row.bodyFatPercent ?? undefined,
+    visceralFat: row.visceralFat ?? undefined,
     notes: row.notes ?? undefined,
   };
 }
@@ -52,6 +53,7 @@ export const upsertBodyEntries = createServerFn({ method: "POST" })
           weight: entry.weight,
           unit: entry.unit,
           bodyFatPercent: entry.bodyFatPercent ?? null,
+          visceralFat: entry.visceralFat ?? null,
           notes: entry.notes ?? null,
         })),
       )
@@ -62,6 +64,7 @@ export const upsertBodyEntries = createServerFn({ method: "POST" })
           weight: sql`excluded.weight`,
           unit: sql`excluded.unit`,
           bodyFatPercent: sql`excluded.body_fat_percent`,
+          visceralFat: sql`excluded.visceral_fat`,
           notes: sql`excluded.notes`,
         },
       });

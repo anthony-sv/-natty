@@ -33,6 +33,9 @@ export const en = {
   "profile.sexUnset": "Not set",
   "profile.male": "Male",
   "profile.female": "Female",
+  "profile.birthDate": "Birth date",
+  "profile.birthDateHint": "Used to estimate your max heart rate and calorie needs.",
+  "profile.birthDateUnset": "Not set",
   "profile.wristCm": "Wrist (cm)",
   "profile.wristHint": "Below the bone. Used by the natural-potential estimate.",
   "profile.ankleCm": "Ankle (cm)",
@@ -168,6 +171,11 @@ export const en = {
   "cardio.tab": "Cardio",
   "cardio.empty.title": "No cardio logged yet",
   "cardio.empty.body": "Log a distance from a cardio block in a session and it shows up here.",
+  "cardio.zone2.title": "Zone 2 target",
+  "cardio.zone2.description": "60-70% of your estimated max heart rate.",
+  "cardio.zone2.range": "{low}-{high} bpm",
+  "cardio.zone2.noBirthDate": "Add your birth date to see a target",
+  "cardio.zone2.setBirthDate": "Set it on your profile",
   "cardio.total.title": "Total distance",
   "cardio.total.value": "{km} km",
   "cardio.total.thisWeek": "{km} km this week",
@@ -176,6 +184,7 @@ export const en = {
   "cardio.sessions.title": "Sessions",
   "common.finisher": "Finisher",
   "common.bodyFatPercent": "Body fat (%)",
+  "common.visceralFat": "Visceral fat",
   "common.heightCm": "Height (cm)",
   "common.none": "—",
 
@@ -677,10 +686,15 @@ export const en = {
   "dietBuilder.goal.bulking": "Bulking",
   "dietBuilder.goal.maintenance": "Maintenance",
   "dietBuilder.tdee": "Maintenance calories",
-  "dietBuilder.tdeeHint":
-    "Optional. What you burn in a day — if your weight has held steady for a couple of weeks, whatever you were eating is your maintenance. Failing that, roughly 30–33 kcal per kg of bodyweight.",
-  "dietBuilder.targetHint":
-    "Optional. What you'll actually eat. Leave it blank and it's worked out from your macro targets.",
+  "dietBuilder.tdeeSuggested": "Estimated from your profile and routine: {kcal} kcal.",
+  "dietBuilder.useSuggested": "Use it",
+  "dietBuilder.tdeeMissing":
+    "Optional. What you burn in a day — set your height, sex and birth date on",
+  "dietBuilder.tdeeMissingProfileLink": "your profile",
+  "dietBuilder.tdeeMissingAnd": "and",
+  "dietBuilder.tdeeMissingRoutineLink": "pick an active routine",
+  "dietBuilder.tdeeMissingEnd": "for an estimate.",
+  "dietBuilder.targetSuggested": "Based on TDEE and your goal: {kcal} kcal.",
   "dietBuilder.target": "Daily target",
   "dietBuilder.targets": "Macro targets",
   "dietBuilder.targetsHint":
@@ -862,9 +876,11 @@ export const en = {
   "about.progress.p3":
     "History — a year of training days as a grid, and your current streak. It counts back from today, so a broken streak reads zero.",
   "about.progress.p4":
-    "Body — weigh-ins, body fat and FFMI against the population bands. Set your height on that tab or the numbers can't be computed.",
+    "Body — weigh-ins, body fat, visceral fat and FFMI against the population bands. Set your height on that tab or the numbers can't be computed.",
   "about.progress.p5":
     "Measurements — girths over time, kept apart from Body because a tape and a scale answer different questions.",
+  "about.progress.p6":
+    "Cardio — distance, and an estimated Zone 2 heart-rate target from your birth date on the profile.",
   "about.progress.link": "Open progress",
 
   "about.nutrition.title": "Nutrition",
@@ -879,7 +895,7 @@ export const en = {
   "about.nutrition.p4":
     "Macros — drag the split and watch the grams and calories move, then send the result back as your plan's targets.",
   "about.nutrition.p5":
-    "Writing a plan checks it against itself: if your macro targets don't come to the daily calorie figure you typed, it says so and by how much.",
+    "Writing a plan checks it against itself: if your macro targets don't come to the daily calorie figure you typed, it says so and by how much. It can also estimate TDEE and a target for you, from your profile, latest weigh-in and how many days a week your active routine trains — a suggestion you fill in yourself, never written for you.",
   "about.nutrition.link": "Open nutrition",
 
   "about.supplements.title": "Supplements",
@@ -1324,6 +1340,7 @@ export const en = {
   "body.stat.ffmi": "FFMI",
   "body.stat.normalized": "Normalized",
   "body.stat.bodyFat": "Body fat",
+  "body.stat.visceralFat": "Visceral fat",
   "body.logEntry.title": "Log a weigh-in",
   "body.logEntry.notToday": "Nothing logged today yet.",
   "body.logEntry.body": "Body fat is optional — weight alone is still worth tracking.",
@@ -1331,13 +1348,15 @@ export const en = {
   "body.logEntry.weightError": "Enter your weight",
   "body.logEntry.bodyFatError":
     "Enter a percentage between 0 and 100, or leave it blank",
+  "body.logEntry.visceralFatError":
+    "Enter a rating between 1 and 59, or leave it blank",
   "body.logEntry.saving": "Saving...",
   "body.logEntry.saved": "Logged {weight}",
   "body.logEntry.savedBodyFat": "{percent}% body fat",
   "body.logEntry.saveError": "Couldn't save that weigh-in",
   "body.trend.title": "Trend",
   "body.trend.body":
-    "Weight and body fat on their own scales — one chart each, since a shared axis would only invite reading a crossing point as meaningful.",
+    "Weight, body fat and visceral fat on their own scales — one chart each, since a shared axis would only invite reading a crossing point as meaningful.",
   "body.history.title": "History",
   "body.history.body": "Most recent first.",
   "body.history.needSex":
@@ -1354,8 +1373,12 @@ export const en = {
   "body.chart.bodyFatAria": "Body fat percentage over time",
   "body.chart.bodyFatNeedsTwo":
     "Body fat is optional, so this needs two weigh-ins that carry a reading.",
+  "body.chart.visceralFatAria": "Visceral fat rating over time",
+  "body.chart.visceralFatNeedsTwo":
+    "Visceral fat is optional, so this needs two weigh-ins that carry a reading.",
   "body.chart.axisWeight": "Weight ({unit})",
   "body.chart.axisBodyFat": "Body fat (%)",
+  "body.chart.axisVisceralFat": "Visceral fat",
   "body.chart.legendDaily": "Each weigh-in",
   "body.chart.legendWeekly": "Weekly average",
   "body.chart.legendPartial": "This week so far ({count} of {total} days)",

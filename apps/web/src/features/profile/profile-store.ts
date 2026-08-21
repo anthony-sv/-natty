@@ -46,6 +46,16 @@ export const profileSchema = z.object({
   wristCm: z.number().positive().optional(),
   ankleCm: z.number().positive().optional(),
   /**
+   * Epoch ms. The one age-adjacent fact stored here, and it's a date rather
+   * than a raw age number for the reason height is a number and not "how
+   * tall you said you were last time": age changes every year on its own,
+   * and a birth date lets the reader compute today's age instead of one that
+   * quietly goes stale. Feeds the Zone 2 heart-rate estimate
+   * (`features/log/heart-rate.ts`) and the TDEE estimate
+   * (`features/nutrition/tdee.ts`).
+   */
+  birthDate: z.number().int().positive().optional(),
+  /**
    * Which girths the measurement form asks for.
    *
    * A preference rather than a fixed list, because nine sites × two sides is

@@ -90,6 +90,19 @@ function buildColumns(
         );
       },
     }),
+    column.accessor("visceralFat", {
+      header: t("body.stat.visceralFat"),
+      sortFn: "basic",
+      sortUndefined: "last",
+      cell: (info) => {
+        const value = info.getValue();
+        return (
+          <span className="tabular-nums">
+            {value === undefined ? t("common.none") : value}
+          </span>
+        );
+      },
+    }),
     // Display columns have no value to compare, so neither is sortable — FFMI
     // tracks weight and body fat anyway, both of which are.
     column.display({
@@ -241,6 +254,14 @@ const buildSchema = (t: Translate) =>
           (Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 100),
         t("body.logEntry.bodyFatError"),
       ),
+    visceralFat: z
+      .string()
+      .refine(
+        (v) =>
+          v.trim() === "" ||
+          (Number.isFinite(Number(v)) && Number(v) >= 1 && Number(v) <= 59),
+        t("body.logEntry.visceralFatError"),
+      ),
   });
 
 function EditEntryForm({
@@ -261,6 +282,8 @@ function EditEntryForm({
       weight: String(entry.weight),
       bodyFatPercent:
         entry.bodyFatPercent !== undefined ? String(entry.bodyFatPercent) : "",
+      visceralFat:
+        entry.visceralFat !== undefined ? String(entry.visceralFat) : "",
     },
     validators: { onChange: buildSchema(t) },
     onSubmit: ({ value }) => {
@@ -272,6 +295,8 @@ function EditEntryForm({
           value.bodyFatPercent.trim() === ""
             ? undefined
             : Number(value.bodyFatPercent),
+        visceralFat:
+          value.visceralFat.trim() === "" ? undefined : Number(value.visceralFat),
       });
       toast.add({ title: t("body.history.saved"), type: "success" });
       onDone();
@@ -386,6 +411,29 @@ function EditEntryForm({
                 step="0.1"
                 min="0"
                 max="100"
+                placeholder={t("common.optional")}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+              />
+              <FieldError errors={field.state.meta.errors} />
+            </Field>
+          )}
+        </form.Field>
+
+        <form.Field name="visceralFat">
+          {(field) => (
+            <Field>
+              <FieldLabel htmlFor={`edit-body-visceral-fat-${entry.id}`}>
+                {t("common.visceralFat")}
+              </FieldLabel>
+              <Input
+                id={`edit-body-visceral-fat-${entry.id}`}
+                type="number"
+                inputMode="decimal"
+                step="1"
+                min="1"
+                max="59"
                 placeholder={t("common.optional")}
                 value={field.state.value}
                 onBlur={field.handleBlur}

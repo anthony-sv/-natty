@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useLiveQuery } from "@tanstack/react-db";
-import { FootprintsIcon } from "lucide-react";
+import { useStore } from "@tanstack/react-store";
+import { Link } from "@tanstack/react-router";
+import { FootprintsIcon, HeartPulseIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -10,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
+import { profileStore } from "@/features/profile/profile-store";
 import { useT } from "@/i18n/use-t";
 import { cardioEntriesFork } from "../cardio-collection";
 import {
@@ -17,7 +20,53 @@ import {
   distanceThisWeek,
   totalDistanceKm,
 } from "../cardio";
+import { ageFromBirthDate, estimatedMaxHr, zone2Range } from "../heart-rate";
 import { CardioEntryList } from "./CardioEntryList";
+
+/**
+ * The estimated Zone 2 heart-rate band — derived from the profile, not from
+ * cardio history, so it's useful before you've logged a single session.
+ * That's why it's a card of its own rather than folded into the totals card
+ * below, which stays gated on having entries at all.
+ */
+function Zone2Card({ now }: { now: number }) {
+  const t = useT();
+  const birthDate = useStore(profileStore, (s) => s.birthDate);
+
+  const range =
+    birthDate === undefined
+      ? undefined
+      : zone2Range(estimatedMaxHr(ageFromBirthDate(birthDate, now)));
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <HeartPulseIcon className="size-4 text-muted-foreground" />{" "}
+          {t("cardio.zone2.title")}
+        </CardTitle>
+        <CardDescription>{t("cardio.zone2.description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {range === undefined ? (
+          <Empty>
+            <EmptyTitle>{t("cardio.zone2.noBirthDate")}</EmptyTitle>
+            <EmptyDescription>
+              <Link to="/profile">{t("cardio.zone2.setBirthDate")}</Link>
+            </EmptyDescription>
+          </Empty>
+        ) : (
+          <p className="text-3xl font-semibold tabular-nums">
+            {t("cardio.zone2.range", {
+              low: range.lowBpm,
+              high: range.highBpm,
+            })}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 /**
  * What your cardio adds up to — total distance is nothing next to a bar
@@ -51,16 +100,21 @@ export function CardioPanel() {
 
   if (entries.length === 0) {
     return (
-      <Empty>
-        <FootprintsIcon className="size-8 text-muted-foreground" />
-        <EmptyTitle>{t("cardio.empty.title")}</EmptyTitle>
-        <EmptyDescription>{t("cardio.empty.body")}</EmptyDescription>
-      </Empty>
+      <div className="flex flex-col gap-4">
+        <Zone2Card now={now} />
+        <Empty>
+          <FootprintsIcon className="size-8 text-muted-foreground" />
+          <EmptyTitle>{t("cardio.empty.title")}</EmptyTitle>
+          <EmptyDescription>{t("cardio.empty.body")}</EmptyDescription>
+        </Empty>
+      </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
+      <Zone2Card now={now} />
+
       <Card>
         <CardHeader>
           <CardTitle>{t("cardio.total.title")}</CardTitle>

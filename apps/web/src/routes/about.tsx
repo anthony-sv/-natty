@@ -165,6 +165,7 @@ const GUIDE: Section[] = [
       "about.progress.p3",
       "about.progress.p4",
       "about.progress.p5",
+      "about.progress.p6",
     ],
     to: "/progress",
     linkKey: "about.progress.link",
