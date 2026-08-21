@@ -100,7 +100,7 @@ describe("muscleFatigue", () => {
   });
 
   it("is recovering well inside the window", () => {
-    // Quads recover in 72h; 12h in is deep in the window.
+    // Quads recover in 48h; 12h in is deep in the window.
     const [quads] = muscleFatigue(
       [set("squat", 12)],
       NO_COMPLETIONS,
@@ -126,9 +126,9 @@ describe("muscleFatigue", () => {
   });
 
   it("treats both sides of the +/-3h tolerance as 'nearly', not a flip", () => {
-    // 72h window: 69h and 75h are the two edges of the band.
+    // 48h window: 45h and 51h are the two edges of the band.
     const early = muscleFatigue(
-      [set("squat", 69)],
+      [set("squat", 45)],
       NO_COMPLETIONS,
       anatomy,
       EMPTY_LOOKUP,
@@ -136,7 +136,7 @@ describe("muscleFatigue", () => {
       NOW,
     )[0];
     const late = muscleFatigue(
-      [set("squat", 75)],
+      [set("squat", 51)],
       NO_COMPLETIONS,
       anatomy,
       EMPTY_LOOKUP,
@@ -148,7 +148,7 @@ describe("muscleFatigue", () => {
 
     // Just outside either edge falls back to the plain states.
     const justBefore = muscleFatigue(
-      [set("squat", 68.9)],
+      [set("squat", 44.9)],
       NO_COMPLETIONS,
       anatomy,
       EMPTY_LOOKUP,
@@ -156,7 +156,7 @@ describe("muscleFatigue", () => {
       NOW,
     )[0];
     const justAfter = muscleFatigue(
-      [set("squat", 75.1)],
+      [set("squat", 51.1)],
       NO_COMPLETIONS,
       anatomy,
       EMPTY_LOOKUP,
@@ -342,9 +342,9 @@ describe("fatigueStep", () => {
   });
 
   it("climbs through quartiles as fatigue rises", () => {
-    // 72h window: fresh (0h) is the top step, and each fixture sits in a
+    // 48h window: fresh (0h) is the top step, and each fixture sits in a
     // different quartile of the way back down.
-    const quartiles = [0, 20, 40, 60].map(
+    const quartiles = [0, 15, 30, 40].map(
       (hoursAgo) =>
         muscleFatigue(
           [set("squat", hoursAgo)],

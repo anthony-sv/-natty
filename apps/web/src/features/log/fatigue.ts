@@ -9,35 +9,100 @@ import type { ExerciseAnatomy, RoutineDayExercises } from "./volume";
  * Coarse on purpose and captioned as a rule of thumb wherever it's shown — the
  * same call `REFERENCE_MIN`/`REFERENCE_MAX` (`MuscleVolumeBars.tsx`) and
  * `describeFfmi` already make. Published recovery figures vary between sources
- * and none of them knows what *you* recover from; finer tiers would imply a
- * precision nobody has.
+ * and none of them knows what *you* recover from; round numbers in a handful
+ * of tiers, not 18 individually-tuned figures, is the right amount of
+ * precision to claim.
+ *
+ * **Five tiers, not two.** A flat small/large split treated a bicep and a calf
+ * the same as a delt, and a quad the same as a spinal erector — both wrong in
+ * the same direction, understating how much faster the smallest isolation
+ * muscles bounce back and how much slower two specific large-muscle outliers
+ * are:
+ * - **24h** — calves, forearms and abs are the muscles mainstream
+ *   strength-coaching guidance (RP Strength's frequency material, NSCA's
+ *   resistance-training-frequency baseline) most consistently calls safe to
+ *   train near-daily: fatigue-resistant, slow-twitch-leaning, and already
+ *   conditioned by daily use outside the gym.
+ * - **36h** — the small isolation muscles (all three delt heads, biceps,
+ *   triceps) recover faster than a compound-lift mover but aren't in the
+ *   daily-tolerant tier; DOMS/MPS physiology reviews put muscle protein
+ *   synthesis back near baseline inside 24-48h for muscles this size. Glutes
+ *   sit here too, on different evidence — Bret Contreras's SRA (Stimulus-
+ *   Recovery-Adaptation) model tiers glute recovery by *exercise type*
+ *   rather than one figure: full-ROM "stretcher" work (squats, lunges) runs
+ *   3-4 days, peak-contraction "activator" work (hip thrusts) runs 2-3 days,
+ *   and low-fatigue "pumper" work (band walks) runs 1-2 days, with some of
+ *   his programming running glutes up to 6x/week. 36h is a single number
+ *   standing in for that range, weighted toward the activator/pumper end
+ *   since hip-thrust-pattern work is what dedicated glute training mostly
+ *   is. It's a synthesis of his framework, not one peer-reviewed figure — a
+ *   2025 Frontiers in Physiology review of glute hypertrophy studies
+ *   documents training frequencies of 1-3x/week across the literature but
+ *   draws no conclusion on an optimal one. No sex-based difference in glute
+ *   recovery or training frequency turned up in any of this — the one
+ *   sex-difference study found (squat-pattern neuromuscular fatigue at
+ *   72h, larger and slower to resolve in women) is about general fatigue
+ *   after a compound lift, not glutes specifically, and doesn't support a
+ *   different number here.
+ * - **48h** — the default for a large muscle group with no specific reason to
+ *   run slower: chest, upper-chest, lats, upper-back, traps, quads,
+ *   adductors. Quads in particular are explicitly called out in coaching
+ *   material as recovering faster than hamstrings despite being the bigger
+ *   mover, which is why they sit here and not in the tier below. Adductors
+ *   have no dedicated research of their own and stay bucketed here with
+ *   quads rather than following glutes to the tier above — the two are
+ *   trained by different movement patterns often enough that borrowing
+ *   glutes' number for them would be the same kind of unsourced guess this
+ *   tier system replaced.
+ * - **72h** — hamstrings. Eccentric-dominant work (RDLs, leg curls, the
+ *   eccentric portion of a squat) is the one loading pattern DOMS/strength-loss
+ *   research consistently ties to a longer recovery tail than concentric-heavy
+ *   work on a similarly-sized muscle.
+ * - **96h** — spinal erectors. Hit indirectly by nearly every heavy compound
+ *   lift, so they rarely get a true rest day, and carry CNS/stabiliser fatigue
+ *   on top of local muscle fatigue — coaching guidance leans toward once-weekly
+ *   direct work here. The least directly-sourced figure in this table: no
+ *   source states an hour count this high, it's inferred from "once a week"
+ *   guidance rather than measured, so treat it as the roughest estimate of
+ *   the five.
+ *
+ * Adductors, upper-chest, upper-back and traps still have no dedicated
+ * recovery-time literature of their own — each stays bucketed with its parent
+ * region (adductors with quads; the other three with chest/lats/traps'
+ * general large-muscle tier) rather than guessed at individually.
  *
  * A **total `Record`**, the same device `SPLIT_FOR_PATTERN` (`volume.ts`) uses:
  * adding a muscle to `muscleSchema` without a tier here fails the build rather
  * than silently defaulting.
  */
 export const RECOVERY_HOURS: Record<MuscleId, number> = {
-  // Small, high-frequency-tolerant muscles.
-  "front-delts": 48,
-  "side-delts": 48,
-  "rear-delts": 48,
-  biceps: 48,
-  triceps: 48,
-  forearms: 48,
-  calves: 48,
-  abs: 48,
+  // Daily-tolerant: fatigue-resistant, conditioned by everyday use.
+  calves: 24,
+  forearms: 24,
+  abs: 24,
 
-  // Larger muscle groups.
-  chest: 72,
-  "upper-chest": 72,
-  lats: 72,
-  "upper-back": 72,
-  traps: 72,
-  quads: 72,
+  // Small isolation muscles — plus glutes, on Contreras's SRA model.
+  "front-delts": 36,
+  "side-delts": 36,
+  "rear-delts": 36,
+  biceps: 36,
+  triceps: 36,
+  glutes: 36,
+
+  // Large muscle groups, no specific reason to run slower.
+  chest: 48,
+  "upper-chest": 48,
+  lats: 48,
+  "upper-back": 48,
+  traps: 48,
+  quads: 48,
+  adductors: 48,
+
+  // Eccentric-dominant loading, a longer recovery tail than its size alone.
   hamstrings: 72,
-  glutes: 72,
-  adductors: 72,
-  "spinal-erectors": 72,
+
+  // Indirect hit by nearly every heavy compound lift, plus CNS/stabiliser load.
+  "spinal-erectors": 96,
 };
 
 /**
