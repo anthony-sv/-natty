@@ -36,6 +36,9 @@ export const esMX: Record<keyof typeof en, string> = {
   "profile.sexUnset": "Sin definir",
   "profile.male": "Hombre",
   "profile.female": "Mujer",
+  "profile.birthDate": "Fecha de nacimiento",
+  "profile.birthDateHint": "Se usa para estimar tu frecuencia cardíaca máxima y tus necesidades calóricas.",
+  "profile.birthDateUnset": "Sin definir",
   "profile.wristCm": "Muñeca (cm)",
   "profile.wristHint": "Debajo del hueso. Se usa en el estimado de potencial natural.",
   "profile.ankleCm": "Tobillo (cm)",
@@ -168,6 +171,11 @@ export const esMX: Record<keyof typeof en, string> = {
   "cardio.tab": "Cardio",
   "cardio.empty.title": "Aún no hay cardio registrado",
   "cardio.empty.body": "Registra una distancia desde un bloque de cardio en una sesión y aparecerá aquí.",
+  "cardio.zone2.title": "Meta de Zona 2",
+  "cardio.zone2.description": "60-70% de tu frecuencia cardíaca máxima estimada.",
+  "cardio.zone2.range": "{low}-{high} lpm",
+  "cardio.zone2.noBirthDate": "Agrega tu fecha de nacimiento para ver una meta",
+  "cardio.zone2.setBirthDate": "Configúrala en tu perfil",
   "cardio.total.title": "Distancia total",
   "cardio.total.value": "{km} km",
   "cardio.total.thisWeek": "{km} km esta semana",
@@ -176,6 +184,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "cardio.sessions.title": "Sesiones",
   "common.finisher": "Finisher",
   "common.bodyFatPercent": "Grasa corporal (%)",
+  "common.visceralFat": "Grasa visceral",
   "common.heightCm": "Estatura (cm)",
   "common.none": "—",
 
@@ -663,10 +672,15 @@ export const esMX: Record<keyof typeof en, string> = {
   "dietBuilder.goal.bulking": "Volumen",
   "dietBuilder.goal.maintenance": "Mantenimiento",
   "dietBuilder.tdee": "Calor\u00edas de mantenimiento",
-  "dietBuilder.tdeeHint":
-    "Opcional. Lo que quemas al d\u00eda \u2014 si tu peso lleva un par de semanas estable, lo que estabas comiendo es tu mantenimiento. Si no, m\u00e1s o menos 30\u201333 kcal por kg de peso corporal.",
-  "dietBuilder.targetHint":
-    "Opcional. Lo que de verdad vas a comer. D\u00e9jalo en blanco y sale de tus objetivos de macros.",
+  "dietBuilder.tdeeSuggested": "Estimado a partir de tu perfil y tu rutina: {kcal} kcal.",
+  "dietBuilder.useSuggested": "Usarlo",
+  "dietBuilder.tdeeMissing":
+    "Opcional. Lo que quemas al d\u00eda \u2014 pon tu estatura, sexo y fecha de nacimiento en",
+  "dietBuilder.tdeeMissingProfileLink": "tu perfil",
+  "dietBuilder.tdeeMissingAnd": "y",
+  "dietBuilder.tdeeMissingRoutineLink": "elige una rutina activa",
+  "dietBuilder.tdeeMissingEnd": "para ver una estimaci\u00f3n.",
+  "dietBuilder.targetSuggested": "Seg\u00fan el TDEE y tu objetivo: {kcal} kcal.",
   "dietBuilder.target": "Objetivo diario",
   "dietBuilder.targets": "Objetivos de macros",
   "dietBuilder.targetsHint":
@@ -848,9 +862,11 @@ export const esMX: Record<keyof typeof en, string> = {
   "about.progress.p3":
     "Historial — un año de días de entrenamiento en cuadrícula, y tu racha actual. Cuenta hacia atrás desde hoy, así que una racha rota marca cero.",
   "about.progress.p4":
-    "Cuerpo — pesajes, grasa corporal y FFMI contra las bandas de referencia. Pon tu estatura en esa pestaña o los números no se pueden calcular.",
+    "Cuerpo — pesajes, grasa corporal, grasa visceral y FFMI contra las bandas de referencia. Pon tu estatura en esa pestaña o los números no se pueden calcular.",
   "about.progress.p5":
     "Medidas — contornos con el tiempo, aparte de Cuerpo porque una cinta y una báscula responden preguntas distintas.",
+  "about.progress.p6":
+    "Cardio — distancia, y una meta de Zona 2 estimada a partir de tu fecha de nacimiento en el perfil.",
   "about.progress.link": "Abrir progreso",
 
   "about.nutrition.title": "Nutrición",
@@ -865,7 +881,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "about.nutrition.p4":
     "Macros — mueve el reparto y mira cómo cambian los gramos y las calorías, luego manda el resultado como los objetivos de tu plan.",
   "about.nutrition.p5":
-    "Al escribir un plan se revisa contra sí mismo: si tus objetivos de macros no dan la cifra diaria de calorías que pusiste, te lo dice y por cuánto.",
+    "Al escribir un plan se revisa contra sí mismo: si tus objetivos de macros no dan la cifra diaria de calorías que pusiste, te lo dice y por cuánto. También puede estimar tu TDEE y un objetivo por ti, a partir de tu perfil, tu último pesaje y cuántos días a la semana entrena tu rutina activa — una sugerencia que tú decides usar, nunca algo que se escribe solo.",
   "about.nutrition.link": "Abrir nutrición",
 
   "about.supplements.title": "Suplementos",
@@ -1309,6 +1325,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "body.stat.ffmi": "FFMI",
   "body.stat.normalized": "Normalizado",
   "body.stat.bodyFat": "Grasa corporal",
+  "body.stat.visceralFat": "Grasa visceral",
   "body.logEntry.title": "Registrar un pesaje",
   "body.logEntry.notToday": "Todavía no registras nada hoy.",
   "body.logEntry.body":
@@ -1317,13 +1334,15 @@ export const esMX: Record<keyof typeof en, string> = {
   "body.logEntry.weightError": "Pon tu peso",
   "body.logEntry.bodyFatError":
     "Pon un porcentaje entre 0 y 100, o déjalo vacío",
+  "body.logEntry.visceralFatError":
+    "Pon un valor entre 1 y 59, o déjalo vacío",
   "body.logEntry.saving": "Guardando...",
   "body.logEntry.saved": "Registrado {weight}",
   "body.logEntry.savedBodyFat": "{percent}% de grasa corporal",
   "body.logEntry.saveError": "No se pudo guardar ese pesaje",
   "body.trend.title": "Tendencia",
   "body.trend.body":
-    "Peso y grasa corporal en sus propias escalas — una gráfica para cada uno, porque un eje compartido solo invitaría a leer el cruce como si significara algo.",
+    "Peso, grasa corporal y grasa visceral en sus propias escalas — una gráfica para cada uno, porque un eje compartido solo invitaría a leer el cruce como si significara algo.",
   "body.history.title": "Historial",
   "body.history.body": "Del más reciente al más antiguo.",
   "body.history.needSex":
@@ -1341,8 +1360,12 @@ export const esMX: Record<keyof typeof en, string> = {
   "body.chart.bodyFatAria": "Porcentaje de grasa corporal a lo largo del tiempo",
   "body.chart.bodyFatNeedsTwo":
     "La grasa corporal es opcional, así que esto necesita dos pesajes que la traigan.",
+  "body.chart.visceralFatAria": "Grasa visceral a lo largo del tiempo",
+  "body.chart.visceralFatNeedsTwo":
+    "La grasa visceral es opcional, así que esto necesita dos pesajes que la traigan.",
   "body.chart.axisWeight": "Peso ({unit})",
   "body.chart.axisBodyFat": "Grasa corporal (%)",
+  "body.chart.axisVisceralFat": "Grasa visceral",
   "body.chart.legendDaily": "Cada pesaje",
   "body.chart.legendWeekly": "Promedio semanal",
   "body.chart.legendPartial": "Esta semana hasta ahora ({count} de {total} días)",

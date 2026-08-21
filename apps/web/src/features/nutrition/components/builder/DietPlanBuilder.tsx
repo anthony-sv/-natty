@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useStore } from "@tanstack/react-store";
 import { PlusIcon, XIcon } from "lucide-react";
 import {
   AlertDialog,
@@ -46,7 +47,11 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
 import type { DietPlan, MealItem } from "@/data/diets";
 import { ComboboxOptionGroup } from "@/components/combobox-option-group";
-import { setProfile } from "@/features/profile/profile-store";
+import { useBodyEntries } from "@/features/body/collection";
+import { ageFromBirthDate } from "@/features/log/heart-rate";
+import { profileStore, setProfile } from "@/features/profile/profile-store";
+import { useRoutine } from "@/features/routines/use-routines";
+import { summariseRoutine } from "@/features/routines/lib/summary";
 import {
   filterFoodOption,
   useFoodOptions,
@@ -55,7 +60,9 @@ import {
   type FoodOption,
   type FoodOptionGroup,
 } from "@/features/pantry/use-pantry";
+import { useFormatting } from "@/i18n/use-formatting";
 import { useT } from "@/i18n/use-t";
+import { toKilograms } from "@/lib/units";
 import {
   createUserDiet,
   dietSlugFor,
@@ -72,6 +79,12 @@ import {
   TARGET_TOLERANCE_KCAL,
   totalFor,
 } from "../../macros";
+import {
+  activityFactorForTrainingDays,
+  estimatedBmr,
+  estimatedTdee,
+  suggestedTargetKcal,
+} from "../../tdee";
 import {
   emptyMeal,
   toDietPlan,
@@ -90,12 +103,66 @@ export function DietPlanBuilder({
 }) {
   const t = useT();
   const navigate = useNavigate();
+  const formatting = useFormatting();
   const [draft, setDraft] = useState(initial);
   const [confirmGaps, setConfirmGaps] = useState(false);
   const pantry = usePantry();
+  // Read once on mount rather than during render, per `react-hooks/purity`.
+  const [now] = useState(() => Date.now());
 
   const plan = toDietPlan(draft, existingSlug ?? "preview");
   const canSave = plan !== undefined;
+
+  // What TDEE and target-calorie figures we can offer to fill in for you —
+  // never written until you press "Use", since these fields are already
+  // free-text and silently overwriting what you typed would fight you.
+  const profile = useStore(profileStore, (s) => s);
+  const { latest: latestBodyEntry } = useBodyEntries();
+  const { routine: activeRoutine } = useRoutine(profile.activeRoutineSlug ?? "");
+
+  const bodyWeightKg =
+    latestBodyEntry !== undefined
+      ? toKilograms(latestBodyEntry.weight, latestBodyEntry.unit)
+      : undefined;
+  const age =
+    profile.birthDate !== undefined
+      ? ageFromBirthDate(profile.birthDate, now)
+      : undefined;
+  const trainingDays =
+    activeRoutine !== undefined
+      ? summariseRoutine(activeRoutine, formatting).trainingDays
+      : undefined;
+
+  const bmr =
+    bodyWeightKg !== undefined &&
+    profile.heightCm !== undefined &&
+    age !== undefined &&
+    profile.sex !== undefined
+      ? estimatedBmr({
+          weightKg: bodyWeightKg,
+          heightCm: profile.heightCm,
+          age,
+          sex: profile.sex,
+        })
+      : undefined;
+
+  const suggestedTdee =
+    bmr !== undefined && trainingDays !== undefined
+      ? Math.round(estimatedTdee(bmr, activityFactorForTrainingDays(trainingDays)))
+      : undefined;
+
+  // The target follows whatever TDEE is actually in the field — typed or
+  // already filled from the suggestion above — falling back to the estimate
+  // only while that field is still blank.
+  const typedTdee = Number(draft.tdeeKcal);
+  const tdeeForTarget =
+    draft.tdeeKcal.trim() !== "" && Number.isFinite(typedTdee)
+      ? typedTdee
+      : suggestedTdee;
+  const suggestedTarget =
+    tdeeForTarget !== undefined
+      ? suggestedTargetKcal(tdeeForTarget, draft.goal)
+      : undefined;
 
   function save(asDraft: boolean) {
     if (plan === undefined) return;
@@ -231,11 +298,58 @@ export function DietPlanBuilder({
           </Field>
         </div>
 
-        {/* These were written as `FieldDescription`s and never mounted, which
-            is why the two calorie fields sat on screen with no explanation of
-            where their numbers come from. */}
-        <FieldDescription>{t("dietBuilder.tdeeHint")}</FieldDescription>
-        <FieldDescription>{t("dietBuilder.targetHint")}</FieldDescription>
+        {/* Estimated from the profile, latest weigh-in and the active
+            routine's training days — visible before you commit to it, the
+            same reasoning `SetLogControl`'s "Try" badge shows a suggestion
+            before the popover opens. Never written until "Use" is pressed:
+            these fields already take free text, and silently overwriting a
+            typed value would fight whoever's editing it. */}
+        <FieldDescription>
+          {suggestedTdee !== undefined ? (
+            <span className="flex flex-wrap items-center gap-x-1.5">
+              {t("dietBuilder.tdeeSuggested", { kcal: suggestedTdee })}
+              <button
+                type="button"
+                className="underline underline-offset-2 hover:text-foreground"
+                onClick={() => update({ tdeeKcal: String(suggestedTdee) })}
+              >
+                {t("dietBuilder.useSuggested")}
+              </button>
+            </span>
+          ) : (
+            <span className="flex flex-wrap items-center gap-x-1.5">
+              {t("dietBuilder.tdeeMissing")}
+              <Link
+                to="/profile"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                {t("dietBuilder.tdeeMissingProfileLink")}
+              </Link>
+              {t("dietBuilder.tdeeMissingAnd")}
+              <Link
+                to="/routines"
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                {t("dietBuilder.tdeeMissingRoutineLink")}
+              </Link>
+              {t("dietBuilder.tdeeMissingEnd")}
+            </span>
+          )}
+        </FieldDescription>
+        <FieldDescription>
+          {suggestedTarget !== undefined ? (
+            <span className="flex flex-wrap items-center gap-x-1.5">
+              {t("dietBuilder.targetSuggested", { kcal: suggestedTarget })}
+              <button
+                type="button"
+                className="underline underline-offset-2 hover:text-foreground"
+                onClick={() => update({ targetKcal: String(suggestedTarget) })}
+              >
+                {t("dietBuilder.useSuggested")}
+              </button>
+            </span>
+          ) : null}
+        </FieldDescription>
 
         <Field>
           <FieldLabel>{t("dietBuilder.targets")}</FieldLabel>
