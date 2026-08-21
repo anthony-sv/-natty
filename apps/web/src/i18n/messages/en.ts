@@ -134,6 +134,7 @@ export const en = {
   "common.optional": "Optional",
   "common.searchExercises": "Search exercises...",
   "common.noExerciseFound": "No exercise found.",
+  "common.noFoodFound": "No food or recipe found.",
   "common.weightUnit": "Weight unit",
   "common.cardio": "Cardio",
   // Real-world reference distances for the cardio tab's "you've gone the

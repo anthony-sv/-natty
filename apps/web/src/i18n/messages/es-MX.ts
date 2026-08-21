@@ -137,6 +137,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "common.optional": "Opcional",
   "common.searchExercises": "Busca ejercicios...",
   "common.noExerciseFound": "No se encontró el ejercicio.",
+  "common.noFoodFound": "No se encontró ningún alimento o receta.",
   "common.weightUnit": "Unidad de peso",
   "common.cardio": "Cardio",
   "cardio.route.5k": "un 5K",

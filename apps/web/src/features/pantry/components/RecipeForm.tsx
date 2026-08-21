@@ -27,7 +27,11 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import type { MealItem } from "@/data/diets";
-import { kcalOf } from "@/features/nutrition/macros";
+import {
+  kcalOf,
+  macrosForItem,
+  type FoodSource,
+} from "@/features/nutrition/macros";
 import { useT } from "@/i18n/use-t";
 import { createRecipe, updateRecipe } from "../collection";
 import { recipeAsFood, recipeTotal } from "../pantry";
@@ -171,6 +175,7 @@ export function RecipeForm({
             key={index}
             item={item}
             options={options}
+            foods={pantry.ingredientSource}
             onChange={(next) =>
               setIngredients(ingredients.map((it, i) => (i === index ? next : it)))
             }
@@ -303,11 +308,13 @@ export function RecipeForm({
 function IngredientRow({
   item,
   options,
+  foods,
   onChange,
   onRemove,
 }: {
   item: MealItem;
   options: FoodOption[];
+  foods: FoodSource;
   onChange: (next: MealItem) => void;
   onRemove: () => void;
 }) {
@@ -321,6 +328,7 @@ function IngredientRow({
   );
   const groups = useGroupedFoodOptions(selectable);
   const selected = selectable.find((option) => option.id === item.foodId) ?? null;
+  const itemMacros = macrosForItem(item, foods);
 
   return (
     <div className="flex flex-wrap items-end gap-2 rounded-md border p-2">
@@ -330,13 +338,21 @@ function IngredientRow({
           filter={filterFoodOption}
           value={selected}
           onValueChange={(option: FoodOption | null) =>
-            onChange({ ...item, foodId: option?.id ?? "" })
+            onChange({
+              ...item,
+              foodId: option?.id ?? "",
+              // Same reasoning as the diet plan builder's item picker: a unit
+              // food (an egg, a scoop) should start at one of it, not the 100
+              // that makes sense for a gram or millilitre.
+              amount:
+                option === null ? item.amount : option.unit === "unit" ? 1 : 100,
+            })
           }
           itemToStringLabel={(option: FoodOption) => option.name}
         >
           <ComboboxInput placeholder={t("nutrition.item")} />
           <ComboboxContent>
-            <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
+            <ComboboxEmpty>{t("common.noFoodFound")}</ComboboxEmpty>
             <ComboboxList>
               {(group: FoodOptionGroup, index: number) => (
                 <ComboboxOptionGroup
@@ -372,6 +388,15 @@ function IngredientRow({
           </span>
         </div>
       </div>
+
+      {/* What this ingredient alone contributes to the recipe total below. */}
+      {selected ? (
+        <span className="pb-1.5 text-xs tabular-nums text-muted-foreground">
+          P{itemMacros.protein.toFixed(0)} · C{itemMacros.carbs.toFixed(0)} · F
+          {itemMacros.fat.toFixed(0)} ·{" "}
+          {Math.round(kcalOf(itemMacros)).toLocaleString()} kcal
+        </span>
+      ) : null}
 
       <Button
         type="button"

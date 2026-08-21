@@ -343,7 +343,7 @@ function AddExtra({ day }: { day: number }) {
         >
           <ComboboxInput placeholder={t("nutrition.item")} />
           <ComboboxContent>
-            <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
+            <ComboboxEmpty>{t("common.noFoodFound")}</ComboboxEmpty>
             <ComboboxList>
               {(group: FoodOptionGroup, index: number) => (
                 <ComboboxOptionGroup

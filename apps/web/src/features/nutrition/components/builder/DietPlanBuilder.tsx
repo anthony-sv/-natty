@@ -75,6 +75,7 @@ import {
   compareToTargets,
   effectiveTargetKcal,
   kcalOf,
+  macrosForItem,
   targetsSelfCheck,
   TARGET_TOLERANCE_KCAL,
   totalFor,
@@ -715,6 +716,7 @@ function ItemList({
 
       {items.map((item, index) => {
         const selected = options.find((o) => o.id === item.foodId) ?? null;
+        const itemMacros = macrosForItem(item, pantry);
         return (
           <div
             key={index}
@@ -728,7 +730,22 @@ function ItemList({
                 onValueChange={(option: FoodOption | null) =>
                   onChange(
                     items.map((it, i) =>
-                      i === index ? { ...it, foodId: option?.id ?? "" } : it,
+                      i === index
+                        ? {
+                            ...it,
+                            foodId: option?.id ?? "",
+                            // A fresh row's amount is a placeholder, not a
+                            // choice — picking a unit food (an egg, a scoop)
+                            // should start at one of it, not the 100 that
+                            // makes sense for a gram or millilitre.
+                            amount:
+                              option === null
+                                ? it.amount
+                                : option.unit === "unit"
+                                  ? 1
+                                  : 100,
+                          }
+                        : it,
                     ),
                   )
                 }
@@ -736,7 +753,7 @@ function ItemList({
               >
                 <ComboboxInput placeholder={t("nutrition.item")} />
                 <ComboboxContent>
-                  <ComboboxEmpty>{t("common.noExerciseFound")}</ComboboxEmpty>
+                  <ComboboxEmpty>{t("common.noFoodFound")}</ComboboxEmpty>
                   <ComboboxList>
                     {(group: FoodOptionGroup, index: number) => (
                       <ComboboxOptionGroup
@@ -789,6 +806,18 @@ function ItemList({
                 </span>
               </div>
             </div>
+
+            {/* What this line actually contributes — the aggregate below the
+                list answers "what's the meal", this answers "is this one
+                thing worth it", which is the question you're asking while
+                you're still picking the amount. */}
+            {selected ? (
+              <span className="pb-1.5 text-xs tabular-nums text-muted-foreground">
+                P{itemMacros.protein.toFixed(0)} · C{itemMacros.carbs.toFixed(0)} · F
+                {itemMacros.fat.toFixed(0)} ·{" "}
+                {Math.round(kcalOf(itemMacros)).toLocaleString()} kcal
+              </span>
+            ) : null}
 
             <Button
               type="button"
