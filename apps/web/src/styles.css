@@ -113,6 +113,20 @@ body {
 }
 
 /*
+ * Visceral fat over time, in `BodyCharts`. Slot 3 again — the third body-
+ * composition line in a file that already uses slots 1 and 2 for weight and
+ * body fat, and never on the same chart as either, so there's no adjacent-pair
+ * check to run here the way `--chart-girth-left/right` needed one.
+ */
+:root {
+  --chart-visceral: #1baf7a;
+}
+
+.dark {
+  --chart-visceral: #199e70;
+}
+
+/*
  * The training heatmap's intensity ramp.
  *
  * **Sequential, not categorical**: this encodes magnitude, so it's one hue

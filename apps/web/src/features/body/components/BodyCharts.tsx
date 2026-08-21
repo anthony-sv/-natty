@@ -67,6 +67,12 @@ interface BodyFatPoint {
   bodyFatPercent: number;
 }
 
+interface VisceralFatPoint {
+  id: string;
+  date: Date;
+  visceralFat: number;
+}
+
 /**
  * Weight and body fat over time.
  *
@@ -144,6 +150,19 @@ export function BodyCharts({
           id: entry.id,
           date: new Date(entry.measuredAt),
           bodyFatPercent: entry.bodyFatPercent!,
+        }))
+        .reverse(),
+    [entries],
+  );
+
+  const visceralFatPoints = useMemo<VisceralFatPoint[]>(
+    () =>
+      entries
+        .filter((entry) => entry.visceralFat !== undefined)
+        .map((entry) => ({
+          id: entry.id,
+          date: new Date(entry.measuredAt),
+          visceralFat: entry.visceralFat!,
         }))
         .reverse(),
     [entries],
@@ -260,6 +279,49 @@ export function BodyCharts({
     [bodyFatPoints, t, tooltipDate],
   );
 
+  const visceralFatChart = useMemo(
+    () =>
+      defineChart({
+        marks: [
+          lineY(visceralFatPoints, {
+            x: "date",
+            y: "visceralFat",
+            stroke: "var(--chart-visceral)",
+          }),
+          dot(visceralFatPoints, {
+            x: "date",
+            y: "visceralFat",
+            r: DOT_RADIUS,
+            fill: "var(--chart-visceral)",
+          }),
+        ],
+        x: { scale: scaleTime, nice: true },
+        y: {
+          scale: scaleLinear,
+          nice: true,
+          grid: true,
+          axis: { label: t("body.chart.axisVisceralFat") },
+        },
+        theme,
+        tooltip: {
+          use: tooltip,
+          items: [
+            {
+              channel: "x",
+              label: t("common.date"),
+              text: (point) => tooltipDate.format(point.xValue),
+            },
+            {
+              channel: "y",
+              label: t("body.stat.visceralFat"),
+              text: (point) => `${point.yValue.toFixed(0)}`,
+            },
+          ],
+        },
+      }),
+    [visceralFatPoints, t, tooltipDate],
+  );
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-6">
@@ -329,6 +391,21 @@ export function BodyCharts({
             definition={bodyFatChart}
             height={CHART_HEIGHT}
             ariaLabel={t("body.chart.bodyFatAria")}
+          />
+        )}
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h3 className="text-sm font-medium">{t("body.stat.visceralFat")}</h3>
+        {visceralFatPoints.length < 2 ? (
+          <p className="text-sm text-muted-foreground">
+            {t("body.chart.visceralFatNeedsTwo")}
+          </p>
+        ) : (
+          <Chart
+            definition={visceralFatChart}
+            height={CHART_HEIGHT}
+            ariaLabel={t("body.chart.visceralFatAria")}
           />
         )}
       </section>

@@ -52,6 +52,7 @@ export const bodyEntries = pgTable(
     weight: doublePrecision("weight").notNull(),
     unit: text("unit").$type<WeightUnit>().notNull().default("kg"),
     bodyFatPercent: doublePrecision("body_fat_percent"),
+    visceralFat: doublePrecision("visceral_fat"),
     notes: text("notes"),
   },
   (table) => [primaryKey({ columns: [table.userId, table.id] })],

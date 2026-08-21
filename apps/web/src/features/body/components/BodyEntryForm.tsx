@@ -51,6 +51,14 @@ const buildSchema = (t: Translate) =>
           (Number.isFinite(Number(v)) && Number(v) >= 0 && Number(v) <= 100),
         t("body.logEntry.bodyFatError"),
       ),
+    visceralFat: z
+      .string()
+      .refine(
+        (v) =>
+          v.trim() === "" ||
+          (Number.isFinite(Number(v)) && Number(v) >= 1 && Number(v) <= 59),
+        t("body.logEntry.visceralFatError"),
+      ),
   });
 
 const DATE_OPTIONS: Intl.DateTimeFormatOptions = {
@@ -75,6 +83,8 @@ export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
       weight: latest ? String(latest.weight) : "",
       bodyFatPercent:
         latest?.bodyFatPercent !== undefined ? String(latest.bodyFatPercent) : "",
+      visceralFat:
+        latest?.visceralFat !== undefined ? String(latest.visceralFat) : "",
     },
     validators: { onChange: buildSchema(t) },
     onSubmit: ({ value }) => {
@@ -86,6 +96,8 @@ export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
           value.bodyFatPercent.trim() === ""
             ? undefined
             : Number(value.bodyFatPercent),
+        visceralFat:
+          value.visceralFat.trim() === "" ? undefined : Number(value.visceralFat),
       });
       void toast.promise(transaction.isPersisted.promise, {
         loading: t("body.logEntry.saving"),
@@ -221,6 +233,29 @@ export function BodyEntryForm({ latest }: { latest: BodyEntry | undefined }) {
           )}
         </form.Field>
       </div>
+
+      <form.Field name="visceralFat">
+        {(field) => (
+          <Field className="w-40">
+            <FieldLabel htmlFor="body-visceral-fat">
+              {t("common.visceralFat")}
+            </FieldLabel>
+            <Input
+              id="body-visceral-fat"
+              type="number"
+              inputMode="decimal"
+              step="1"
+              min="1"
+              max="59"
+              placeholder={t("common.optional")}
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+            />
+            <FieldError errors={field.state.meta.errors} />
+          </Field>
+        )}
+      </form.Field>
 
       <form.Subscribe selector={(s) => [s.canSubmit, s.isSubmitting]}>
         {([canSubmit, isSubmitting]) => (

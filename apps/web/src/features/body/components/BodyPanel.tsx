@@ -133,6 +133,18 @@ export function BodyPanel() {
               badge={carried?.isCarried ? t("body.latest.carried") : undefined}
             />
             <Stat
+              label={t("body.stat.visceralFat")}
+              value={
+                // The entry's own reading, not the carried one FFMI reads —
+                // nothing derived depends on visceral fat, so there's nothing
+                // to carry forward, and doing so anyway would show a stale
+                // number as if it were today's.
+                latest?.visceralFat === undefined
+                  ? t("common.none")
+                  : String(latest.visceralFat)
+              }
+            />
+            <Stat
               label={t("body.stat.leanMass")}
               value={
                 lean === undefined ? t("common.none") : `${lean.toFixed(1)} kg`
