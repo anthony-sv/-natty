@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useLiveQuery } from "@tanstack/react-db";
 import { PlayIcon } from "lucide-react";
@@ -41,11 +42,12 @@ export function TodayCard() {
     [loggedSets],
   );
   const completions = useCompletions();
+  const [now] = useState(() => Date.now());
 
   if (isLoading || routine === undefined) return null;
 
   const sets = data ?? [];
-  const next = nextTrainingDay(routine, sets, completions, startAt);
+  const next = nextTrainingDay(routine, sets, completions, startAt, now);
   if (next === undefined) return null;
 
   const routineName = f.names.routine(routine.slug, routine.name);

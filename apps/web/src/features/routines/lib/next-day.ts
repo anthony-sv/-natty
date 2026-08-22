@@ -1,6 +1,7 @@
 import type { Routine, TrainingDay } from "@/data/routines";
 import type { WorkoutCompletion } from "@/features/log/completion-schema";
 import type { LoggedSet } from "@/features/log/schema";
+import { daysBetween } from "@/lib/week";
 
 export interface NextTrainingDay {
   weekNumber: number;
@@ -52,6 +53,18 @@ interface Activity {
  * "next" — wording that as a rest day rather than skipping past it is on the
  * caller.
  *
+ * **A rest day needs no activity to move past, and that's the one place
+ * "derived from the log" alone doesn't work.** A training day waits for you
+ * indefinitely — good, that's the whole point, skipping the app costs
+ * nothing — but a rest day has nothing to log by design, so with no other
+ * signal it would freeze the app on "rest" forever the moment you reached
+ * one. `now` is what breaks the tie: once a full calendar day has passed
+ * since your last logged activity, this steps over exactly one *consecutive*
+ * rest day for it, the same way actually running the program would — reach
+ * the day after that and it's still rest, step over another, and so on —
+ * but it stops dead the instant it reaches a training day. That one still
+ * gets the indefinite wait; only rest days are time-based.
+ *
  * The two sources merge by comparing `performedAt`: reaching the end of a
  * session counts the same way logging a set always has, which is what stops
  * this reading "still on day 1" the morning after a workout you completed
@@ -68,7 +81,8 @@ export function nextTrainingDay(
   routine: Routine,
   sets: LoggedSet[],
   completions: WorkoutCompletion[] = [],
-  startAt?: DayCoordinate,
+  startAt: DayCoordinate | undefined,
+  now: number,
 ): NextTrainingDay | undefined {
   const sequence = scheduleSequence(routine);
   if (sequence.length === 0) return undefined;
@@ -124,7 +138,26 @@ export function nextTrainingDay(
   // the same as never having done any — start over from the top.
   if (lastIndex === -1) return sequence[0];
 
-  return sequence[(lastIndex + 1) % sequence.length];
+  // The day right after `last` is always shown as-is, rest or not — one
+  // elapsed calendar day accounts for that one. Each day beyond it steps
+  // past one more *consecutive* rest day, stopping the moment a training day
+  // is reached (that one waits for real activity, same as ever) or once a
+  // full lap of the sequence has been covered (an all-rest edge case has no
+  // more to say past that, and it bounds how long a long-idle app spends
+  // walking forward here).
+  const elapsed = daysBetween(last.performedAt, now);
+  let index = lastIndex;
+  let skipped = 0;
+  while (
+    skipped < elapsed - 1 &&
+    skipped < sequence.length &&
+    sequence[(index + 1) % sequence.length]!.day.isRest
+  ) {
+    index = (index + 1) % sequence.length;
+    skipped += 1;
+  }
+
+  return sequence[(index + 1) % sequence.length];
 }
 
 /**

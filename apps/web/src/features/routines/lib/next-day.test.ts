@@ -4,6 +4,9 @@ import type { WorkoutCompletion } from "@/features/log/completion-schema";
 import type { LoggedSet } from "@/features/log/schema";
 import { dayAfter, nextTrainingDay } from "./next-day";
 
+/** A calendar day, so `now` can be moved forward in whole-day steps. */
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 function day(dayNumber: number, isRest = false): TrainingDay {
   return {
     dayNumber,
@@ -36,6 +39,20 @@ function twoWeekRoutine(): Routine {
   };
 }
 
+/** Two rest days in a row — day 2 *and* day 3 of week 1. */
+function twoRestDaysRoutine(): Routine {
+  return {
+    slug: "test-routine",
+    name: "Test routine",
+    weeks: [
+      {
+        weekNumber: 1,
+        days: [day(1), day(2, true), day(3, true), day(4)],
+      },
+    ],
+  };
+}
+
 function set(over: Partial<LoggedSet> & { performedAt: number }): LoggedSet {
   return {
     id: `set-${over.performedAt}`,
@@ -60,7 +77,7 @@ function completion(
 
 describe("nextTrainingDay", () => {
   it("starts at the first day when nothing has been logged for this routine", () => {
-    const result = nextTrainingDay(twoWeekRoutine(), []);
+    const result = nextTrainingDay(twoWeekRoutine(), [], [], undefined, 1);
     expect(result).toEqual({ weekNumber: 1, day: day(1) });
   });
 
@@ -73,7 +90,7 @@ describe("nextTrainingDay", () => {
         dayNumber: 3,
       }),
     ];
-    const result = nextTrainingDay(twoWeekRoutine(), sets);
+    const result = nextTrainingDay(twoWeekRoutine(), sets, [], undefined, 1);
     expect(result).toEqual({ weekNumber: 1, day: day(1) });
   });
 
@@ -94,7 +111,7 @@ describe("nextTrainingDay", () => {
         dayNumber: 1,
       }),
     ];
-    const result = nextTrainingDay(twoWeekRoutine(), sets);
+    const result = nextTrainingDay(twoWeekRoutine(), sets, [], undefined, 100);
     expect(result).toEqual({ weekNumber: 1, day: day(2, true) });
   });
 
@@ -107,8 +124,62 @@ describe("nextTrainingDay", () => {
         dayNumber: 1,
       }),
     ];
-    const result = nextTrainingDay(twoWeekRoutine(), sets);
+    // Same calendar day as the logged set — the rest day right after it is
+    // always shown once, whatever `now` turns out to be past that.
+    const result = nextTrainingDay(twoWeekRoutine(), sets, [], undefined, 1);
     expect(result?.day.isRest).toBe(true);
+  });
+
+  it("steps past a rest day once a full calendar day has passed", () => {
+    // The bug this pins: reaching a rest day used to freeze the pointer
+    // there forever, since nothing is ever logged *for* a rest day.
+    const sets = [
+      set({
+        performedAt: 1,
+        routineSlug: "test-routine",
+        weekNumber: 1,
+        dayNumber: 1,
+      }),
+    ];
+    const now = 1 + 2 * DAY_MS;
+    const result = nextTrainingDay(twoWeekRoutine(), sets, [], undefined, now);
+    expect(result).toEqual({ weekNumber: 1, day: day(3) });
+  });
+
+  it("steps past two consecutive rest days the same way", () => {
+    const sets = [
+      set({
+        performedAt: 1,
+        routineSlug: "test-routine",
+        weekNumber: 1,
+        dayNumber: 1,
+      }),
+    ];
+    const now = 1 + 3 * DAY_MS;
+    const result = nextTrainingDay(
+      twoRestDaysRoutine(),
+      sets,
+      [],
+      undefined,
+      now,
+    );
+    expect(result).toEqual({ weekNumber: 1, day: day(4) });
+  });
+
+  it("never steps past a training day, no matter how much time passed", () => {
+    // Only rest days are time-based — a training day you haven't done yet
+    // still waits for you indefinitely, same as it always has.
+    const sets = [
+      set({
+        performedAt: 1,
+        routineSlug: "test-routine",
+        weekNumber: 1,
+        dayNumber: 3,
+      }),
+    ];
+    const now = 1 + 30 * DAY_MS;
+    const result = nextTrainingDay(twoWeekRoutine(), sets, [], undefined, now);
+    expect(result).toEqual({ weekNumber: 2, day: day(1) });
   });
 
   it("advances to the day after a completion with nothing logged", () => {
@@ -117,7 +188,13 @@ describe("nextTrainingDay", () => {
     const completions = [
       completion({ performedAt: 1, weekNumber: 1, dayNumber: 1 }),
     ];
-    const result = nextTrainingDay(twoWeekRoutine(), [], completions);
+    const result = nextTrainingDay(
+      twoWeekRoutine(),
+      [],
+      completions,
+      undefined,
+      1,
+    );
     expect(result).toEqual({ weekNumber: 1, day: day(2, true) });
   });
 
@@ -130,7 +207,13 @@ describe("nextTrainingDay", () => {
         dayNumber: 3,
       }),
     ];
-    const result = nextTrainingDay(twoWeekRoutine(), [], completions);
+    const result = nextTrainingDay(
+      twoWeekRoutine(),
+      [],
+      completions,
+      undefined,
+      1,
+    );
     expect(result).toEqual({ weekNumber: 1, day: day(1) });
   });
 
@@ -148,7 +231,13 @@ describe("nextTrainingDay", () => {
     const completions = [
       completion({ performedAt: 1, weekNumber: 1, dayNumber: 1 }),
     ];
-    const result = nextTrainingDay(twoWeekRoutine(), sets, completions);
+    const result = nextTrainingDay(
+      twoWeekRoutine(),
+      sets,
+      completions,
+      undefined,
+      100,
+    );
     expect(result).toEqual({ weekNumber: 2, day: day(1) });
   });
 
@@ -161,7 +250,7 @@ describe("nextTrainingDay", () => {
         dayNumber: 3,
       }),
     ];
-    const result = nextTrainingDay(twoWeekRoutine(), sets);
+    const result = nextTrainingDay(twoWeekRoutine(), sets, [], undefined, 1);
     expect(result).toEqual({ weekNumber: 2, day: day(1) });
   });
 
@@ -174,7 +263,7 @@ describe("nextTrainingDay", () => {
         dayNumber: 3,
       }),
     ];
-    const result = nextTrainingDay(twoWeekRoutine(), sets);
+    const result = nextTrainingDay(twoWeekRoutine(), sets, [], undefined, 1);
     expect(result).toEqual({ weekNumber: 1, day: day(1) });
   });
 
@@ -187,15 +276,18 @@ describe("nextTrainingDay", () => {
         dayNumber: 9,
       }),
     ];
-    const result = nextTrainingDay(twoWeekRoutine(), sets);
+    const result = nextTrainingDay(twoWeekRoutine(), sets, [], undefined, 1);
     expect(result).toEqual({ weekNumber: 1, day: day(1) });
   });
 
   it("seeds from startAt when nothing has been logged yet", () => {
-    const result = nextTrainingDay(twoWeekRoutine(), [], [], {
-      weekNumber: 1,
-      dayNumber: 3,
-    });
+    const result = nextTrainingDay(
+      twoWeekRoutine(),
+      [],
+      [],
+      { weekNumber: 1, dayNumber: 3 },
+      1,
+    );
     expect(result).toEqual({ weekNumber: 1, day: day(3) });
   });
 
@@ -208,18 +300,24 @@ describe("nextTrainingDay", () => {
         dayNumber: 1,
       }),
     ];
-    const result = nextTrainingDay(twoWeekRoutine(), sets, [], {
-      weekNumber: 2,
-      dayNumber: 3,
-    });
+    const result = nextTrainingDay(
+      twoWeekRoutine(),
+      sets,
+      [],
+      { weekNumber: 2, dayNumber: 3 },
+      1,
+    );
     expect(result).toEqual({ weekNumber: 1, day: day(2, true) });
   });
 
   it("falls back to the first day when startAt names a day the routine doesn't have", () => {
-    const result = nextTrainingDay(twoWeekRoutine(), [], [], {
-      weekNumber: 9,
-      dayNumber: 9,
-    });
+    const result = nextTrainingDay(
+      twoWeekRoutine(),
+      [],
+      [],
+      { weekNumber: 9, dayNumber: 9 },
+      1,
+    );
     expect(result).toEqual({ weekNumber: 1, day: day(1) });
   });
 });
