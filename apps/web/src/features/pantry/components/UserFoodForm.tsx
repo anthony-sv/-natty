@@ -55,16 +55,21 @@ const buildSchema = (t: Translate) => {
 
 export function UserFoodForm({
   existing,
+  initialName,
   onDone,
 }: {
   existing?: UserFood;
-  onDone: () => void;
+  /** Seeds the name from a picker's search query — only when creating fresh. */
+  initialName?: string;
+  /** The food just created, so a caller (a picker's inline "add it" flow) can
+      select it immediately rather than waiting for you to find it again. */
+  onDone: (food?: UserFood) => void;
 }) {
   const t = useT();
 
   const form = useForm({
     defaultValues: {
-      name: existing?.name ?? "",
+      name: existing?.name ?? initialName ?? "",
       unit: existing?.unit ?? ("g" as const),
       state: existing?.state ?? ("none" as const),
       category: existing?.category ?? ("none" as const),
@@ -88,16 +93,20 @@ export function UserFoodForm({
         unitNote: value.unitNote.trim() === "" ? undefined : value.unitNote.trim(),
       };
 
+      // `createUserFood` hands back the food synchronously — the insert
+      // resolves in the background, but there's nothing left to wait on to
+      // know its id, which is what a caller selecting it right away needs.
+      const created = existing ? undefined : createUserFood(input);
       const transaction = existing
         ? updateUserFood(existing.id, input)
-        : createUserFood(input).transaction;
+        : created!.transaction;
 
       void toast.promise(transaction.isPersisted.promise, {
         loading: t("pantry.saving"),
         success: { title: t("pantry.saved", { name: input.name }), type: "success" },
         error: { title: t("pantry.saveError"), type: "error" },
       });
-      onDone();
+      onDone(created?.food);
     },
   });
 

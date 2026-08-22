@@ -53,6 +53,11 @@ import { profileStore } from "@/features/profile/profile-store";
 import { useRoutine } from "@/features/routines/use-routines";
 import { summariseRoutine } from "@/features/routines/lib/summary";
 import {
+  CreateFoodDialog,
+  CreateFoodTrigger,
+} from "@/features/pantry/components/CreateFoodButton";
+import { SaveAsRecipeButton } from "@/features/pantry/components/SaveAsRecipeButton";
+import {
   filterFoodOption,
   useFoodOptions,
   useGroupedFoodOptions,
@@ -79,6 +84,7 @@ import {
   targetsSelfCheck,
   TARGET_TOLERANCE_KCAL,
   totalFor,
+  type FoodSource,
 } from "../../macros";
 import {
   activityFactorForTrainingDays,
@@ -664,6 +670,7 @@ function MealEditor({
 
             <ItemList
               items={option.items}
+              mealName={meal.name}
               onChange={(items) =>
                 onChange({
                   options: meal.options.map((o, i) =>
@@ -694,9 +701,12 @@ function MealEditor({
 
 function ItemList({
   items,
+  mealName,
   onChange,
 }: {
   items: MealItem[];
+  /** Seeds "Save as a recipe"'s name field — the meal this list belongs to. */
+  mealName: string;
   onChange: (next: MealItem[]) => void;
 }) {
   const t = useT();
@@ -714,126 +724,19 @@ function ItemList({
         </p>
       ) : null}
 
-      {items.map((item, index) => {
-        const selected = options.find((o) => o.id === item.foodId) ?? null;
-        const itemMacros = macrosForItem(item, pantry);
-        return (
-          <div
-            key={index}
-            className="flex flex-wrap items-end gap-2 rounded-md border p-2"
-          >
-            <div className="flex min-w-48 flex-1 flex-col gap-1">
-              <Combobox
-                items={groups}
-                filter={filterFoodOption}
-                value={selected}
-                onValueChange={(option: FoodOption | null) =>
-                  onChange(
-                    items.map((it, i) =>
-                      i === index
-                        ? {
-                            ...it,
-                            foodId: option?.id ?? "",
-                            // A fresh row's amount is a placeholder, not a
-                            // choice — picking a unit food (an egg, a scoop)
-                            // should start at one of it, not the 100 that
-                            // makes sense for a gram or millilitre.
-                            amount:
-                              option === null
-                                ? it.amount
-                                : option.unit === "unit"
-                                  ? 1
-                                  : 100,
-                          }
-                        : it,
-                    ),
-                  )
-                }
-                itemToStringLabel={(option: FoodOption) => option.name}
-              >
-                <ComboboxInput placeholder={t("nutrition.item")} />
-                <ComboboxContent>
-                  <ComboboxEmpty>{t("common.noFoodFound")}</ComboboxEmpty>
-                  <ComboboxList>
-                    {(group: FoodOptionGroup, index: number) => (
-                      <ComboboxOptionGroup
-                        key={group.key}
-                        group={group}
-                        index={index}
-                      >
-                        {(option) => (
-                          <ComboboxItem key={option.id} value={option}>
-                            <span className="flex items-center gap-2">
-                              {option.name}
-                              {/* A dish you cooked reads the same as an
-                                  ingredient otherwise, and the heading now
-                                  says what kind of food it is instead. */}
-                              {option.kind === "recipe" ? (
-                                <Badge variant="outline">
-                                  {t("pantry.recipe")}
-                                </Badge>
-                              ) : null}
-                            </span>
-                          </ComboboxItem>
-                        )}
-                      </ComboboxOptionGroup>
-                    )}
-                  </ComboboxList>
-                </ComboboxContent>
-              </Combobox>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs">{t("nutrition.amount")}</Label>
-              <div className="flex items-center gap-1">
-                <Input
-                  type="number"
-                  min="0"
-                  className="w-24"
-                  value={String(item.amount)}
-                  onChange={(e) =>
-                    onChange(
-                      items.map((it, i) =>
-                        i === index
-                          ? { ...it, amount: Number(e.target.value) }
-                          : it,
-                      ),
-                    )
-                  }
-                />
-                <span className="text-xs text-muted-foreground">
-                  {selected && selected.unit !== "unit" ? selected.unit : ""}
-                </span>
-              </div>
-            </div>
-
-            {/* What this line actually contributes — the aggregate below the
-                list answers "what's the meal", this answers "is this one
-                thing worth it", which is the question you're asking while
-                you're still picking the amount. */}
-            {selected ? (
-              <span className="pb-1.5 text-xs tabular-nums text-muted-foreground">
-                P{itemMacros.protein.toFixed(0)} · C{itemMacros.carbs.toFixed(0)} · F
-                {itemMacros.fat.toFixed(0)} ·{" "}
-                {Math.round(kcalOf(itemMacros)).toLocaleString()} kcal
-              </span>
-            ) : null}
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="ml-auto text-muted-foreground"
-              aria-label={t("dietBuilder.removeItem", {
-                name: selected?.name ?? t("nutrition.item"),
-              })}
-              onClick={() => onChange(items.filter((_, i) => i !== index))}
-            >
-              <XIcon />
-            </Button>
-          </div>
-        );
-      })}
+      {items.map((item, index) => (
+        <MealItemRow
+          key={index}
+          item={item}
+          options={options}
+          groups={groups}
+          pantry={pantry}
+          onChange={(next) =>
+            onChange(items.map((it, i) => (i === index ? next : it)))
+          }
+          onRemove={() => onChange(items.filter((_, i) => i !== index))}
+        />
+      ))}
 
       <div className="flex flex-wrap items-center gap-3">
         <Button
@@ -845,6 +748,25 @@ function ItemList({
           <PlusIcon data-icon="inline-start" />
           {t("dietBuilder.addItem")}
         </Button>
+        <SaveAsRecipeButton
+          items={items}
+          initialName={mealName}
+          onSaved={(recipe) =>
+            // One line replacing the whole list, at whatever amount
+            // reproduces the total the list already had — see
+            // `recipeAsFood`'s two portionings for why the arithmetic
+            // differs between them.
+            onChange([
+              {
+                foodId: recipe.id,
+                amount:
+                  recipe.portioning.kind === "servings"
+                    ? recipe.portioning.servings
+                    : recipe.portioning.cookedGrams,
+              },
+            ])
+          }
+        />
         {items.length > 0 ? (
           <span className="text-xs tabular-nums text-muted-foreground">
             P{macros.protein.toFixed(0)} · C{macros.carbs.toFixed(0)} · F
@@ -853,6 +775,156 @@ function ItemList({
           </span>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function MealItemRow({
+  item,
+  options,
+  groups,
+  pantry,
+  onChange,
+  onRemove,
+}: {
+  item: MealItem;
+  options: FoodOption[];
+  groups: FoodOptionGroup[];
+  pantry: FoodSource;
+  onChange: (next: MealItem) => void;
+  onRemove: () => void;
+}) {
+  const t = useT();
+  // Watched rather than left uncontrolled, so a search with no matches can
+  // offer to add what was typed — the same reason the exercise picker in
+  // `RoutineBuilder` tracks its own query.
+  const [query, setQuery] = useState("");
+  const [creatingFood, setCreatingFood] = useState(false);
+  // Captured at the moment "add it" is pressed, not read live off `query` —
+  // the combobox clears its own input once the dialog steals focus and closes
+  // the popover, and a `query` still wired to the dialog's `initialName` at
+  // that point wiped whatever had already been typed into the new food's form.
+  const [createName, setCreateName] = useState("");
+  const selected = options.find((o) => o.id === item.foodId) ?? null;
+  const itemMacros = macrosForItem(item, pantry);
+
+  // Either a picked `FoodOption` or a just-created `UserFood` — both carry
+  // an id and a unit, which is all a selection needs.
+  const selectFood = (option: { id: string; unit: "g" | "ml" | "unit" }) =>
+    onChange({
+      ...item,
+      foodId: option.id,
+      // A fresh row's amount is a placeholder, not a choice — picking a unit
+      // food (an egg, a scoop) should start at one of it, not the 100 that
+      // makes sense for a gram or millilitre.
+      amount: option.unit === "unit" ? 1 : 100,
+    });
+
+  return (
+    <div className="flex flex-wrap items-end gap-2 rounded-md border p-2">
+      <div className="flex min-w-48 flex-1 flex-col gap-1">
+        <Combobox
+          items={groups}
+          filter={filterFoodOption}
+          value={selected}
+          onValueChange={(option: FoodOption | null) =>
+            option === null
+              ? onChange({ ...item, foodId: "" })
+              : selectFood(option)
+          }
+          onInputValueChange={setQuery}
+          itemToStringLabel={(option: FoodOption) => option.name}
+        >
+          <ComboboxInput placeholder={t("nutrition.item")} />
+          <ComboboxContent>
+            <ComboboxEmpty>
+              <div className="flex flex-col items-center gap-1 py-1">
+                <span>{t("common.noFoodFound")}</span>
+                <CreateFoodTrigger
+                  query={query}
+                  onClick={() => {
+                    setCreateName(query.trim());
+                    setCreatingFood(true);
+                  }}
+                />
+              </div>
+            </ComboboxEmpty>
+            <ComboboxList>
+              {(group: FoodOptionGroup, index: number) => (
+                <ComboboxOptionGroup key={group.key} group={group} index={index}>
+                  {(option) => (
+                    <ComboboxItem key={option.id} value={option}>
+                      <span className="flex items-center gap-2">
+                        {option.name}
+                        {/* A dish you cooked reads the same as an ingredient
+                            otherwise, and the heading now says what kind of
+                            food it is instead. */}
+                        {option.kind === "recipe" ? (
+                          <Badge variant="outline">{t("pantry.recipe")}</Badge>
+                        ) : null}
+                      </span>
+                    </ComboboxItem>
+                  )}
+                </ComboboxOptionGroup>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
+      </div>
+
+      {/* A sibling of the `Combobox`, not nested inside its popover content —
+          see `CreateFoodButton`'s own comment for why that split is load-
+          bearing rather than tidiness. */}
+      <CreateFoodDialog
+        open={creatingFood}
+        onOpenChange={setCreatingFood}
+        initialName={createName}
+        onCreated={(food) => {
+          setCreatingFood(false);
+          selectFood(food);
+        }}
+      />
+
+      <div className="flex flex-col gap-1">
+        <Label className="text-xs">{t("nutrition.amount")}</Label>
+        <div className="flex items-center gap-1">
+          <Input
+            type="number"
+            min="0"
+            className="w-24"
+            value={String(item.amount)}
+            onChange={(e) => onChange({ ...item, amount: Number(e.target.value) })}
+          />
+          <span className="text-xs text-muted-foreground">
+            {selected && selected.unit !== "unit" ? selected.unit : ""}
+          </span>
+        </div>
+      </div>
+
+      {/* What this line actually contributes — the aggregate below the list
+          answers "what's the meal", this answers "is this one thing worth
+          it", which is the question you're asking while you're still
+          picking the amount. */}
+      {selected ? (
+        <span className="pb-1.5 text-xs tabular-nums text-muted-foreground">
+          P{itemMacros.protein.toFixed(0)} · C{itemMacros.carbs.toFixed(0)} · F
+          {itemMacros.fat.toFixed(0)} ·{" "}
+          {Math.round(kcalOf(itemMacros)).toLocaleString()} kcal
+        </span>
+      ) : null}
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        className="ml-auto text-muted-foreground"
+        aria-label={t("dietBuilder.removeItem", {
+          name: selected?.name ?? t("nutrition.item"),
+        })}
+        onClick={onRemove}
+      >
+        <XIcon />
+      </Button>
     </div>
   );
 }

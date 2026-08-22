@@ -44,6 +44,10 @@ import {
   weekdayOf,
 } from "@/features/nutrition/macros";
 import { MacroSplit } from "@/features/nutrition/components/MacroSplit";
+import {
+  CreateFoodDialog,
+  CreateFoodTrigger,
+} from "@/features/pantry/components/CreateFoodButton";
 import { ComboboxOptionGroup } from "@/components/combobox-option-group";
 import { SupplementChecklist } from "@/features/supplements/components/SupplementChecklist";
 import {
@@ -324,8 +328,18 @@ function AddExtra({ day }: { day: number }) {
   const t = useT();
   const options = useFoodOptions();
   const groups = useGroupedFoodOptions(options);
-  const [food, setFood] = useState<FoodOption | null>(null);
+  // An id rather than the resolved option, so a food created inline (which
+  // `options` only picks up once the collection's live query catches up)
+  // still resolves the moment it does, the same way the diet plan builder's
+  // and recipe form's rows key off `foodId` rather than holding the object.
+  const [foodId, setFoodId] = useState("");
   const [amount, setAmount] = useState("");
+  const [query, setQuery] = useState("");
+  const [creatingFood, setCreatingFood] = useState(false);
+  // Captured at the moment "add it" is pressed — see `DietPlanBuilder`'s
+  // `MealItemRow` for why this can't just read `query` live.
+  const [createName, setCreateName] = useState("");
+  const food = options.find((option) => option.id === foodId) ?? null;
 
   const parsed = Number(amount);
   const canAdd = food !== null && Number.isFinite(parsed) && parsed > 0;
@@ -338,12 +352,30 @@ function AddExtra({ day }: { day: number }) {
           items={groups}
           filter={filterFoodOption}
           value={food}
-          onValueChange={(option: FoodOption | null) => setFood(option)}
+          onValueChange={(option: FoodOption | null) => {
+            setFoodId(option?.id ?? "");
+            // Starting the amount at a sensible figure for the unit, the same
+            // reasoning the other two food pickers apply — 100 read as "100
+            // eggs" for a unit food.
+            if (option !== null) setAmount(option.unit === "unit" ? "1" : "100");
+          }}
+          onInputValueChange={setQuery}
           itemToStringLabel={(option: FoodOption) => option.name}
         >
           <ComboboxInput placeholder={t("nutrition.item")} />
           <ComboboxContent>
-            <ComboboxEmpty>{t("common.noFoodFound")}</ComboboxEmpty>
+            <ComboboxEmpty>
+              <div className="flex flex-col items-center gap-1 py-1">
+                <span>{t("common.noFoodFound")}</span>
+                <CreateFoodTrigger
+                  query={query}
+                  onClick={() => {
+                    setCreateName(query.trim());
+                    setCreatingFood(true);
+                  }}
+                />
+              </div>
+            </ComboboxEmpty>
             <ComboboxList>
               {(group: FoodOptionGroup, index: number) => (
                 <ComboboxOptionGroup
@@ -370,6 +402,20 @@ function AddExtra({ day }: { day: number }) {
         </Combobox>
       </div>
 
+      {/* A sibling of the `Combobox`, not nested inside its popover content —
+          see `CreateFoodButton`'s own comment for why that split is load-
+          bearing rather than tidiness. */}
+      <CreateFoodDialog
+        open={creatingFood}
+        onOpenChange={setCreatingFood}
+        initialName={createName}
+        onCreated={(created) => {
+          setCreatingFood(false);
+          setFoodId(created.id);
+          setAmount(created.unit === "unit" ? "1" : "100");
+        }}
+      />
+
       <div className="flex flex-col gap-1">
         <Label className="text-xs">{t("nutrition.amount")}</Label>
         <div className="flex items-center gap-1">
@@ -392,7 +438,7 @@ function AddExtra({ day }: { day: number }) {
         onClick={() => {
           if (!canAdd) return;
           logItem(day, food.id, parsed);
-          setFood(null);
+          setFoodId("");
           setAmount("");
         }}
       >

@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import type { MealItem } from "@/data/diets";
+import { CreateFoodDialog, CreateFoodTrigger } from "./CreateFoodButton";
 import {
   kcalOf,
   macrosForItem,
@@ -57,19 +58,28 @@ const METHODS = cookingMethodSchema.options;
  */
 export function RecipeForm({
   existing,
+  initialName,
+  initialIngredients,
   onDone,
 }: {
   existing?: Recipe;
-  onDone: () => void;
+  /** Seeds the name and ingredient list — only when creating fresh, the same
+      way `UserFoodForm.initialName` works. What "make a recipe from these
+      ingredients" (a meal's `ItemList`) hands over. */
+  initialName?: string;
+  initialIngredients?: MealItem[];
+  /** The recipe just created, so a caller can fold the meal it came from
+      down to a single line that references it. */
+  onDone: (recipe?: Recipe) => void;
 }) {
   const t = useT();
   const pantry = usePantry();
   const options = useFoodOptions();
 
-  const [name, setName] = useState(existing?.name ?? "");
+  const [name, setName] = useState(existing?.name ?? initialName ?? "");
   const [method, setMethod] = useState(existing?.method ?? "none");
   const [ingredients, setIngredients] = useState<MealItem[]>(
-    existing?.ingredients ?? [],
+    existing?.ingredients ?? initialIngredients ?? [],
   );
   const [kind, setKind] = useState<"servings" | "weight">(
     existing?.portioning.kind ?? "servings",
@@ -123,16 +133,20 @@ export function RecipeForm({
       method: draft.method,
       portioning: draft.portioning,
     };
+    // Same reasoning as `UserFoodForm`: `createRecipe` hands back the recipe
+    // synchronously, which is what a caller selecting it right away needs —
+    // the insert itself resolves in the background.
+    const created = existing ? undefined : createRecipe(input);
     const transaction = existing
       ? updateRecipe(existing.id, input)
-      : createRecipe(input).transaction;
+      : created!.transaction;
 
     void toast.promise(transaction.isPersisted.promise, {
       loading: t("pantry.saving"),
       success: { title: t("pantry.saved", { name: input.name }), type: "success" },
       error: { title: t("pantry.saveError"), type: "error" },
     });
-    onDone();
+    onDone(created?.recipe);
   }
 
   return (
@@ -329,6 +343,23 @@ function IngredientRow({
   const groups = useGroupedFoodOptions(selectable);
   const selected = selectable.find((option) => option.id === item.foodId) ?? null;
   const itemMacros = macrosForItem(item, foods);
+  // Watched rather than left uncontrolled, so a search with no matches can
+  // offer to add what was typed.
+  const [query, setQuery] = useState("");
+  const [creatingFood, setCreatingFood] = useState(false);
+  // Captured at the moment "add it" is pressed — see `DietPlanBuilder`'s
+  // `MealItemRow` for why this can't just read `query` live.
+  const [createName, setCreateName] = useState("");
+
+  const selectFood = (option: { id: string; unit: "g" | "ml" | "unit" }) =>
+    onChange({
+      ...item,
+      foodId: option.id,
+      // Same reasoning as the diet plan builder's item picker: a unit
+      // food (an egg, a scoop) should start at one of it, not the 100
+      // that makes sense for a gram or millilitre.
+      amount: option.unit === "unit" ? 1 : 100,
+    });
 
   return (
     <div className="flex flex-wrap items-end gap-2 rounded-md border p-2">
@@ -338,21 +369,25 @@ function IngredientRow({
           filter={filterFoodOption}
           value={selected}
           onValueChange={(option: FoodOption | null) =>
-            onChange({
-              ...item,
-              foodId: option?.id ?? "",
-              // Same reasoning as the diet plan builder's item picker: a unit
-              // food (an egg, a scoop) should start at one of it, not the 100
-              // that makes sense for a gram or millilitre.
-              amount:
-                option === null ? item.amount : option.unit === "unit" ? 1 : 100,
-            })
+            option === null ? onChange({ ...item, foodId: "" }) : selectFood(option)
           }
+          onInputValueChange={setQuery}
           itemToStringLabel={(option: FoodOption) => option.name}
         >
           <ComboboxInput placeholder={t("nutrition.item")} />
           <ComboboxContent>
-            <ComboboxEmpty>{t("common.noFoodFound")}</ComboboxEmpty>
+            <ComboboxEmpty>
+              <div className="flex flex-col items-center gap-1 py-1">
+                <span>{t("common.noFoodFound")}</span>
+                <CreateFoodTrigger
+                  query={query}
+                  onClick={() => {
+                    setCreateName(query.trim());
+                    setCreatingFood(true);
+                  }}
+                />
+              </div>
+            </ComboboxEmpty>
             <ComboboxList>
               {(group: FoodOptionGroup, index: number) => (
                 <ComboboxOptionGroup
@@ -371,6 +406,19 @@ function IngredientRow({
           </ComboboxContent>
         </Combobox>
       </div>
+
+      {/* A sibling of the `Combobox`, not nested inside its popover content —
+          see `CreateFoodButton`'s own comment for why that split is load-
+          bearing rather than tidiness. */}
+      <CreateFoodDialog
+        open={creatingFood}
+        onOpenChange={setCreatingFood}
+        initialName={createName}
+        onCreated={(food) => {
+          setCreatingFood(false);
+          selectFood(food);
+        }}
+      />
 
       <div className="flex flex-col gap-1">
         <Label className="text-xs">{t("nutrition.amount")}</Label>
