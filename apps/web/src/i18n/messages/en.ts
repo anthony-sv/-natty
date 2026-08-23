@@ -363,6 +363,8 @@ export const en = {
   "pattern.shrug": "Shrug",
   "pattern.elbow-flexion": "Curl",
   "pattern.elbow-extension": "Triceps extension",
+  "pattern.wrist-flexion": "Wrist curl",
+  "pattern.wrist-extension": "Reverse wrist curl",
   "pattern.squat": "Squat",
   "pattern.hinge": "Hinge",
   "pattern.lunge": "Lunge",
@@ -830,6 +832,18 @@ export const en = {
   "about.player.p7":
     "Every hold counts you in with a 3-2-1 before it starts, and beeps when it ends. A hold whose clock starts while you're still getting into position is a hold you did for seven seconds, not ten.",
 
+  "about.extras.title": "Extra work",
+  "about.extras.body":
+    "Log gym work that isn't in the routine — an accessory you added on, or catching up on a day you cut short.",
+  "about.extras.p1":
+    "It's a real exercise, not a bare log — the same editor the routine builder uses, so a warmup, a ramp, or several sets of different things is all on the table, not just one plain set.",
+  "about.extras.p2":
+    "Works on a rest day too. Add something and that day becomes a real one to train, straight from home — no need to open the player first.",
+  "about.extras.p3":
+    "Clears itself once you finish that day again, so it's a one-off top-up rather than a standing change to the routine — remove it sooner if you added it by mistake.",
+  "about.extras.p4":
+    "It can be a finisher (either kind — a pose hold or the hold-and-pulse ramp) or cardio too — and a lift or finisher you add runs before the day's own cardio, the way you'd actually do it.",
+
   "about.logging.title": "Logging sets and personal records",
   "about.logging.body":
     "Log a set from the player, or backfill one later from the Records tab. Weight is optional — bodyweight work counts.",
@@ -1187,6 +1201,7 @@ export const en = {
   "data.kind.diets": "Your diet plans",
   "data.kind.intake": "Meals eaten",
   "data.kind.supplements": "Supplements",
+  "data.kind.extras": "Extra work",
   "data.kind.profile": "Your profile",
   "data.share": "Share",
   "data.shareMissing": "Couldn't find that to share",
@@ -1571,6 +1586,23 @@ export const en = {
   "technique.restPause":
     "at failure, rack it, breathe for about fifteen seconds, then get more at the same weight.",
   "technique.ladder": "one rep is the whole ladder: {positions}.",
+
+  // ── Extra work ───────────────────────────────────────────────────────────
+  "extras.addButton": "Add extra work",
+  "extras.title": "Add extra work",
+  "extras.description": "Runs as a real exercise on {day} — rest timers, PR line and all.",
+  "extras.expiryHint": "Shows the next time this day comes up, then clears itself once you finish it.",
+  "extras.action": "Add",
+  "extras.saving": "Adding...",
+  "extras.saved": "Added {name} to {day}",
+  "extras.saveError": "Couldn't add that",
+  "extras.marker": "Extra work",
+  "extras.eyebrow": "Extra work",
+  "extras.addedOn": "Added {date} · shows once",
+  "extras.remove": "Remove {name}",
+  "extras.removed": "Removed {name}",
+  "extras.undo": "Undo",
+  "extras.restDayBody": "Nothing scheduled — but you've logged extra work for it.",
 
   // ── Calculators ──────────────────────────────────────────────────────────
   "calc.title": "Calculators",

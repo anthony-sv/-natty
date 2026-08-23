@@ -10,6 +10,7 @@ import {
   KeyboardIcon,
   ListIcon,
   PlayIcon,
+  PlusCircleIcon,
   RulerIcon,
   PillIcon,
   ShoppingBasketIcon,
@@ -111,6 +112,18 @@ const GUIDE: Section[] = [
       "about.player.p5",
       "about.player.p6",
       "about.player.p7",
+    ],
+  },
+  {
+    id: "extras",
+    icon: PlusCircleIcon,
+    titleKey: "about.extras.title",
+    bodyKey: "about.extras.body",
+    points: [
+      "about.extras.p1",
+      "about.extras.p2",
+      "about.extras.p3",
+      "about.extras.p4",
     ],
   },
   {

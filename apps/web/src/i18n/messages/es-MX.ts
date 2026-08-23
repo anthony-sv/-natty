@@ -358,6 +358,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "pattern.shrug": "Encogimiento",
   "pattern.elbow-flexion": "Curl",
   "pattern.elbow-extension": "Extensi\u00f3n de tr\u00edceps",
+  "pattern.wrist-flexion": "Curl de mu\u00f1eca",
+  "pattern.wrist-extension": "Curl de mu\u00f1eca inverso",
   "pattern.squat": "Sentadilla",
   "pattern.hinge": "Bisagra de cadera",
   "pattern.lunge": "Zancada",
@@ -816,6 +818,18 @@ export const esMX: Record<keyof typeof en, string> = {
   "about.player.p7":
     "Todo aguante te cuenta 3-2-1 antes de empezar, y suena al terminar. Un aguante cuyo reloj arranca mientras todavía te estás acomodando es un aguante de siete segundos, no de diez.",
 
+  "about.extras.title": "Trabajo extra",
+  "about.extras.body":
+    "Registra trabajo de gimnasio que no está en la rutina — un accesorio que agregaste, o para completar un día que dejaste a medias.",
+  "about.extras.p1":
+    "Es un ejercicio real, no solo un registro — el mismo editor que usa el constructor de rutinas, así que un calentamiento, una rampa o varias series distintas están sobre la mesa, no solo una serie sencilla.",
+  "about.extras.p2":
+    "También funciona en un día de descanso. Agrega algo y ese día se vuelve uno real para entrenar, directo desde el inicio — sin necesidad de abrir el reproductor primero.",
+  "about.extras.p3":
+    "Se borra sola en cuanto vuelvas a terminar ese día, así que es un extra de una sola vez y no un cambio permanente a la rutina — quítalo antes si lo agregaste por error.",
+  "about.extras.p4":
+    "Puede ser un finisher (de cualquiera de los dos tipos — pose o la rampa de aguante y pulso) o cardio también — y un ejercicio o finisher que agregues se corre antes del cardio propio del día, como realmente lo harías.",
+
   "about.logging.title": "Registrar series y récords",
   "about.logging.body":
     "Registra una serie desde el reproductor, o captúrala después desde la pestaña de Récords. El peso es opcional — el trabajo con peso corporal cuenta.",
@@ -1171,6 +1185,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "data.kind.diets": "Tus planes de dieta",
   "data.kind.intake": "Comidas registradas",
   "data.kind.supplements": "Suplementos",
+  "data.kind.extras": "Trabajo extra",
   "data.kind.profile": "Tu perfil",
   "data.share": "Compartir",
   "data.shareMissing": "No se encontró eso para compartir",
@@ -1543,6 +1558,23 @@ export const esMX: Record<keyof typeof en, string> = {
   "technique.restPause":
     "al fallo, deja el peso, respira unos quince segundos y saca más con el mismo peso.",
   "technique.ladder": "una rep es toda la escalera: {positions}.",
+
+  // ── Extra work ───────────────────────────────────────────────────────────
+  "extras.addButton": "Agregar trabajo extra",
+  "extras.title": "Agregar trabajo extra",
+  "extras.description": "Se corre como un ejercicio real en {day} — con temporizador de descanso, récord y todo.",
+  "extras.expiryHint": "Aparece la próxima vez que llegue este día, y se borra sola en cuanto lo termines.",
+  "extras.action": "Agregar",
+  "extras.saving": "Agregando...",
+  "extras.saved": "Se agregó {name} a {day}",
+  "extras.saveError": "No se pudo agregar",
+  "extras.marker": "Trabajo extra",
+  "extras.eyebrow": "Trabajo extra",
+  "extras.addedOn": "Agregado el {date} · aparece una vez",
+  "extras.remove": "Quitar {name}",
+  "extras.removed": "Se quitó {name}",
+  "extras.undo": "Deshacer",
+  "extras.restDayBody": "Nada programado — pero registraste trabajo extra para hoy.",
 
   // ── Calculators ──────────────────────────────────────────────────────────
   "calc.title": "Calculadoras",

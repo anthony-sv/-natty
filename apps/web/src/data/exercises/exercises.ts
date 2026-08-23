@@ -405,6 +405,19 @@ const raw: z.input<typeof exerciseSchema>[] = [
     },
   },
   {
+    id: "cable-lateral-raise",
+    movementId: "lateral-raise",
+    name: "Cable lateral raise",
+    aliases: ["Cable lateral raises"],
+    facets: { implement: "cable", posture: "standing" },
+  },
+  {
+    id: "machine-lateral-raise",
+    movementId: "lateral-raise",
+    name: "Machine lateral raise",
+    facets: { implement: "machine", posture: "seated" },
+  },
+  {
     id: "dumbbell-front-raise",
     movementId: "front-raise",
     name: "Standing dumbbell front raise",
@@ -473,6 +486,13 @@ const raw: z.input<typeof exerciseSchema>[] = [
     facets: { implement: "machine", posture: "seated" },
   },
   {
+    id: "cable-rear-delt-fly",
+    movementId: "rear-delt-fly",
+    name: "Cable rear delt fly",
+    aliases: ["Cable rear delt flyes"],
+    facets: { implement: "cable", posture: "bent-over" },
+  },
+  {
     id: "cable-face-pull",
     movementId: "face-pull",
     name: "Cable face pull",
@@ -510,6 +530,13 @@ const raw: z.input<typeof exerciseSchema>[] = [
     name: "Smith machine shrug",
     aliases: ["Smith machine shoulder shrugs"],
     facets: { implement: "smith", posture: "standing" },
+  },
+  {
+    id: "cable-shrug",
+    movementId: "shrug",
+    name: "Cable shrug",
+    aliases: ["Cable shrugs"],
+    facets: { implement: "cable", posture: "standing" },
   },
 
   // ── Biceps ─────────────────────────────────────────────────────────────
@@ -787,6 +814,42 @@ const raw: z.input<typeof exerciseSchema>[] = [
     },
   },
 
+  // ── Forearms ───────────────────────────────────────────────────────────
+  {
+    id: "barbell-wrist-curl",
+    movementId: "wrist-curl",
+    name: "Seated barbell wrist curl",
+    aliases: ["Barbell wrist curl", "Seated barbell wrist curls"],
+    facets: { implement: "barbell", posture: "seated", grip: "supinated" },
+  },
+  {
+    id: "dumbbell-wrist-curl",
+    movementId: "wrist-curl",
+    name: "Seated dumbbell wrist curl",
+    aliases: ["Dumbbell wrist curl", "Seated dumbbell wrist curls"],
+    facets: { implement: "dumbbell", posture: "seated", grip: "supinated" },
+  },
+  {
+    id: "barbell-reverse-wrist-curl",
+    movementId: "reverse-wrist-curl",
+    name: "Seated barbell reverse wrist curl",
+    aliases: [
+      "Barbell reverse wrist curl",
+      "Seated barbell reverse wrist curls",
+    ],
+    facets: { implement: "barbell", posture: "seated", grip: "pronated" },
+  },
+  {
+    id: "dumbbell-reverse-wrist-curl",
+    movementId: "reverse-wrist-curl",
+    name: "Seated dumbbell reverse wrist curl",
+    aliases: [
+      "Dumbbell reverse wrist curl",
+      "Seated dumbbell reverse wrist curls",
+    ],
+    facets: { implement: "dumbbell", posture: "seated", grip: "pronated" },
+  },
+
   // ── Legs: squat patterns ───────────────────────────────────────────────
   {
     id: "back-squat",
@@ -894,6 +957,29 @@ const raw: z.input<typeof exerciseSchema>[] = [
     },
   },
   {
+    id: "cable-step-up",
+    movementId: "step-up",
+    name: "Cable step-up",
+    aliases: ["Cable step ups"],
+    facets: { implement: "cable", laterality: "alternating" },
+  },
+  {
+    id: "dumbbell-step-up",
+    movementId: "step-up",
+    name: "Dumbbell step-up",
+    // The bare spelling defaults here — a dumbbell in each hand is the most
+    // common way this gets loaded with no implement stated.
+    aliases: ["Step-up", "Step ups", "Db step-up", "Dumbbell step ups"],
+    facets: { implement: "dumbbell", laterality: "alternating" },
+  },
+  {
+    id: "smith-step-up",
+    movementId: "step-up",
+    name: "Smith machine step-up",
+    aliases: ["Smith machine step ups"],
+    facets: { implement: "smith", laterality: "alternating" },
+  },
+  {
     id: "lying-leg-curl",
     movementId: "leg-curl",
     name: "Lying leg curl",
@@ -919,11 +1005,25 @@ const raw: z.input<typeof exerciseSchema>[] = [
     },
   },
   {
+    id: "nordic-curl",
+    movementId: "leg-curl",
+    name: "Nordic curl",
+    aliases: ["Nordic hamstring curl"],
+    facets: { implement: "bodyweight" },
+  },
+  {
     id: "dumbbell-stiff-leg-deadlift",
     movementId: "romanian-deadlift",
     name: "Dumbbell straight-leg deadlift",
     aliases: ["Db straight leg deadlift"],
     facets: { implement: "dumbbell", posture: "standing" },
+  },
+  {
+    id: "barbell-stiff-leg-deadlift",
+    movementId: "romanian-deadlift",
+    name: "Barbell stiff-leg deadlift",
+    aliases: ["Barbell straight-leg deadlift", "Stiff-leg deadlift"],
+    facets: { implement: "barbell", posture: "standing" },
   },
 
   // ── Calves ─────────────────────────────────────────────────────────────
@@ -950,6 +1050,23 @@ const raw: z.input<typeof exerciseSchema>[] = [
     movementId: "calf-raise",
     name: "Calf extension machine (toes out)",
     facets: { implement: "machine", orientation: "toes-out" },
+  },
+  {
+    id: "donkey-calf-raise",
+    movementId: "calf-raise",
+    name: "Donkey calf raise",
+    facets: { implement: "machine", posture: "bent-over" },
+  },
+  {
+    id: "single-leg-calf-raise",
+    movementId: "calf-raise",
+    name: "Single-leg dumbbell calf raise",
+    aliases: ["Single leg calf raise", "Single-leg calf raises"],
+    facets: {
+      implement: "dumbbell",
+      stance: "single-leg",
+      laterality: "unilateral",
+    },
   },
 
   // ── Hips ───────────────────────────────────────────────────────────────
@@ -1019,6 +1136,12 @@ const raw: z.input<typeof exerciseSchema>[] = [
     aliases: ["Hip adduction", "Adductor machine", "Adductor"],
     facets: { implement: "machine", posture: "seated" },
   },
+  {
+    id: "cable-hip-adduction",
+    movementId: "hip-adduction",
+    name: "Cable hip adduction",
+    facets: { implement: "cable", posture: "standing", laterality: "unilateral" },
+  },
 
   // ── Core ───────────────────────────────────────────────────────────────
   {
@@ -1041,6 +1164,20 @@ const raw: z.input<typeof exerciseSchema>[] = [
     movementId: "ab-crunch",
     aliases: ["Hanging leg raises", "Leg raises", "Hanging knee raise"],
     facets: { implement: "bodyweight", posture: "standing" },
+  },
+  {
+    id: "plank",
+    name: "Plank",
+    movementId: "ab-crunch",
+    aliases: ["Front plank"],
+    facets: { implement: "bodyweight", posture: "prone" },
+  },
+  {
+    id: "cable-kneeling-crunch",
+    name: "Kneeling cable crunch",
+    movementId: "ab-crunch",
+    aliases: ["Cable crunch", "Kneeling cable crunches"],
+    facets: { implement: "cable" },
   },
 
   // ── Conditioning ───────────────────────────────────────────────────────

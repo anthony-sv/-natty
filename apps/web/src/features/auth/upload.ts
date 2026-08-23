@@ -1,6 +1,7 @@
 import type { MessageKey } from "@/i18n/use-t";
 import type { ForkedCollection } from "@/lib/synced-collection";
 import { bodyEntriesFork } from "@/features/body/collection";
+import { extrasFork } from "@/features/extras/collection";
 import { intakeEntriesFork } from "@/features/intake/collection";
 import { userExercisesFork } from "@/features/library/collection";
 import { cardioEntriesFork } from "@/features/log/cardio-collection";
@@ -112,6 +113,7 @@ const TARGETS: Array<{ labelKey: MessageKey; fork: AnyFork }> = [
     labelKey: "data.kind.supplements",
     fork: supplementsFork as unknown as AnyFork,
   },
+  { labelKey: "data.kind.extras", fork: extrasFork as unknown as AnyFork },
 ];
 
 export interface PendingUpload {

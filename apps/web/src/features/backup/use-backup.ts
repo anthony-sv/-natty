@@ -1,6 +1,7 @@
 import { getDietBySlug } from "@/data/diets";
 import { getRoutineBySlug } from "@/data/routines";
 import { activeBodyEntries } from "@/features/body/collection";
+import { extras } from "@/features/extras/collection";
 import { userExercises } from "@/features/library/collection";
 import { intakeEntries } from "@/features/intake/collection";
 import { supplements } from "@/features/supplements/collection";
@@ -38,6 +39,7 @@ const allCollections = () => [
   userDiets(),
   intakeEntries(),
   supplements(),
+  extras(),
 ];
 
 /**
@@ -73,6 +75,7 @@ export async function currentData(): Promise<BackupData> {
     diets: [...userDiets().values()],
     intake: [...intakeEntries().values()],
     supplements: [...supplements().values()],
+    extras: [...extras().values()],
     profile: profileStore.state,
   };
 }
@@ -89,6 +92,7 @@ const emptyData = (): BackupData => ({
   diets: [],
   intake: [],
   supplements: [],
+  extras: [],
 });
 
 /** The real id generator. Uuid-backed, so two imports never collide. */
@@ -130,18 +134,33 @@ export async function exportRoutine(
     own ?? (builtIn && { ...builtIn, createdAt: now, updatedAt: now });
   if (routine === undefined) return undefined;
 
+  // The extras logged against this routine travel with it — otherwise a
+  // shared routine silently drops the "abs live on leg day now" you added,
+  // which is exactly the kind of thing "share what the item needs" exists
+  // to prevent.
+  const routineExtras = [...extras().values()].filter(
+    (e) => e.routineSlug === slug,
+  );
+
   const referenced = new Set(
-    routine.weeks.flatMap((week) =>
-      week.days.flatMap((day) =>
-        day.exercises.flatMap((entry) => [entry.exerciseId, ...entry.orAlternatives]),
+    [
+      ...routine.weeks.flatMap((week) =>
+        week.days.flatMap((day) =>
+          day.exercises.flatMap((entry) => [entry.exerciseId, ...entry.orAlternatives]),
+        ),
       ),
-    ),
+      ...routineExtras.flatMap((e) => [
+        e.entry.exerciseId,
+        ...e.entry.orAlternatives,
+      ]),
+    ],
   );
 
   return buildBackup(
     {
       ...emptyData(),
       routines: [routine],
+      extras: routineExtras,
       exercises: [...userExercises().values()].filter((e) => referenced.has(e.id)),
     },
     "routine",
@@ -263,6 +282,7 @@ export async function importAdditive(
   if (fresh.diets.length > 0) userDiets().insert(fresh.diets);
   if (fresh.intake.length > 0) intakeEntries().insert(fresh.intake);
   if (fresh.supplements.length > 0) supplements().insert(fresh.supplements);
+  if (fresh.extras.length > 0) extras().insert(fresh.extras);
 }
 
 /**
@@ -293,6 +313,7 @@ export async function restoreEverything(data: BackupData): Promise<void> {
   if (data.diets.length > 0) userDiets().insert(data.diets);
   if (data.intake.length > 0) intakeEntries().insert(data.intake);
   if (data.supplements.length > 0) supplements().insert(data.supplements);
+  if (data.extras.length > 0) extras().insert(data.extras);
   if (data.profile) profileStore.setState(() => data.profile!);
 }
 

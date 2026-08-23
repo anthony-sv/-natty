@@ -138,6 +138,22 @@ export function nextTrainingDay(
   // the same as never having done any — start over from the top.
   if (lastIndex === -1) return sequence[0];
 
+  // Anchored on the *earliest* activity for that same (week, day), not
+  // `last.performedAt` itself — a session that runs past midnight logs its
+  // `WorkoutCompletion` on the calendar day after the one it was actually
+  // trained on, and that later timestamp winning here shifted the whole
+  // rest-day countdown a day late: the day after training read as "day of
+  // training" all over again.
+  const anchor = activity.reduce(
+    (earliest, entry) =>
+      entry.weekNumber === last.weekNumber &&
+      entry.dayNumber === last.dayNumber &&
+      entry.performedAt < earliest
+        ? entry.performedAt
+        : earliest,
+    last.performedAt,
+  );
+
   // The day right after `last` is always shown as-is, rest or not — one
   // elapsed calendar day accounts for that one. Each day beyond it steps
   // past one more *consecutive* rest day, stopping the moment a training day
@@ -145,7 +161,7 @@ export function nextTrainingDay(
   // full lap of the sequence has been covered (an all-rest edge case has no
   // more to say past that, and it bounds how long a long-idle app spends
   // walking forward here).
-  const elapsed = daysBetween(last.performedAt, now);
+  const elapsed = daysBetween(anchor, now);
   let index = lastIndex;
   let skipped = 0;
   while (

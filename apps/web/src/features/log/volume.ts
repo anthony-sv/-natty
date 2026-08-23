@@ -63,6 +63,9 @@ export const SPLIT_FOR_PATTERN: Record<MovementPattern, TrainingSplit> = {
   "lateral-raise": "push",
   "front-raise": "push",
   "elbow-extension": "push",
+  // Same call as `elbow-extension` just above: an extensor works the back of
+  // the forearm, the same side of the limb as the triceps it sits next to.
+  "wrist-extension": "push",
 
   "vertical-pull": "pull",
   "horizontal-pull": "pull",
@@ -70,6 +73,9 @@ export const SPLIT_FOR_PATTERN: Record<MovementPattern, TrainingSplit> = {
   "rear-delt": "pull",
   shrug: "pull",
   "elbow-flexion": "pull",
+  // And a flexor pairs with the biceps beside it, the same way
+  // `elbow-flexion` does.
+  "wrist-flexion": "pull",
   "spinal-extension": "pull",
   "spinal-flexion": "core",
 

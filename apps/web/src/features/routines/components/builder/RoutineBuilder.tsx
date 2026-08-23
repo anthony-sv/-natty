@@ -85,10 +85,10 @@ import {
   linkToPrevious,
   unlinkFromPrevious,
   moveDay,
+  timed,
   toRoutine,
   type DraftDay,
   type DraftExercise,
-  type DraftPhase,
   type DraftRoutine,
   type DraftWeek,
 } from "./draft";
@@ -896,35 +896,6 @@ function ExerciseEditor({
         onChange={(phases) => onChange({ phases })}
       />
     </div>
-  );
-}
-
-/**
- * Turn a set of phases into timed ones, keeping the sets and rest you'd
- * already typed.
- *
- * A cardio block is a duration, and the model has said so since the beginning
- * (`durationSeconds`) — the builder simply never switched to it, so picking
- * "Low-intensity steady-state cardio" left you looking at "3 sets of 8-12
- * reps" with a Forced reps checkbox underneath. Anything already timed is left
- * alone so an existing routine's numbers survive a re-pick.
- */
-function timed(phases: DraftPhase[]): DraftPhase[] {
-  return phases.map((phase) =>
-    phase.duration !== undefined
-      ? phase
-      : {
-          ...phase,
-          duration: "20",
-          durationUnit: "min",
-          segments: undefined,
-          // One block, not three. A cardio phase is "twenty minutes", and the
-          // resistance default of three sets turned that into an hour of it.
-          sets: "1",
-          // And a single block has nothing to rest between, so it carries no
-          // rest at all rather than the resistance default of 90 seconds.
-          restSeconds: "",
-        },
   );
 }
 

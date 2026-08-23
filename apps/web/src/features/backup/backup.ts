@@ -9,6 +9,7 @@ import { recipeSchema, userFoodSchema } from "@/features/pantry/schema";
 import { userDietPlanSchema } from "@/features/nutrition/collection";
 import { intakeEntrySchema } from "@/features/intake/schema";
 import { supplementSchema } from "@/features/supplements/schema";
+import { extraWorkSchema } from "@/features/extras/schema";
 import { profileSchema } from "@/features/profile/profile-store";
 
 /**
@@ -51,6 +52,7 @@ export const backupDataSchema = z.object({
   diets: z.array(userDietPlanSchema).default([]),
   intake: z.array(intakeEntrySchema).default([]),
   supplements: z.array(supplementSchema).default([]),
+  extras: z.array(extraWorkSchema).default([]),
   profile: profileSchema.optional(),
 });
 export type BackupData = z.infer<typeof backupDataSchema>;
@@ -125,6 +127,7 @@ function cleanData(data: BackupData): BackupData {
     diets: data.diets.map(stripInternal),
     intake: data.intake.map(stripInternal),
     supplements: data.supplements.map(stripInternal),
+    extras: data.extras.map(stripInternal),
     ...(data.profile === undefined ? {} : { profile: stripInternal(data.profile) }),
   };
 }
@@ -247,6 +250,7 @@ function countsOf(data: BackupData): { key: keyof BackupData; count: number }[] 
       ["diets", data.diets.length],
       ["intake", data.intake.length],
       ["supplements", data.supplements.length],
+      ["extras", data.extras.length],
       ["profile", data.profile === undefined ? 0 : 1],
     ] as const
   ).map(([key, count]) => ({ key: key as keyof BackupData, count }));

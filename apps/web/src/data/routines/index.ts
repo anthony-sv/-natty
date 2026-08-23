@@ -19,7 +19,12 @@ export function getRoutineBySlug(slug: string): Routine | undefined {
   return routines.find((routine) => routine.slug === slug);
 }
 
-export { routineSchema, prescriptionSchema, setSegmentSchema } from "./schema";
+export {
+  routineSchema,
+  prescriptionSchema,
+  setSegmentSchema,
+  exerciseEntrySchema,
+} from "./schema";
 export type {
   Routine,
   TrainingWeek,

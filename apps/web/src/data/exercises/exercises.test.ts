@@ -125,7 +125,7 @@ describe("routine coverage", () => {
       .filter((e) => !used.has(e.id))
       .map((e) => e.id)
       .sort();
-    // Two deliberate reasons to be here, and neither is an oversight:
+    // Three deliberate reasons to be here, and none is an oversight:
     //
     // - `straight-bar-pushdown` is reached only as the other half of "Cable
     //   cambered bar pushdowns/ straight bar", i.e. via orAlternatives rather
@@ -134,19 +134,41 @@ describe("routine coverage", () => {
     //   all. The source docs train glutes, adductors and abs only as a
     //   by-product, so these exist to be reachable from a routine you write
     //   yourself.
+    // - The forearms/step-up/hamstring/calf/delt/trap additions below them
+    //   are a deliberate library-coverage pass (forearms and adductors had
+    //   effectively no dedicated movement at all) — same reasoning, no
+    //   built-in program was rewritten to use them.
     expect(unused).toEqual([
       "banded-hip-abduction",
       "barbell-glute-bridge",
       "barbell-hip-thrust",
+      "barbell-reverse-wrist-curl",
+      "barbell-stiff-leg-deadlift",
+      "barbell-wrist-curl",
       "cable-glute-kickback",
       "cable-hip-abduction",
+      "cable-hip-adduction",
+      "cable-kneeling-crunch",
+      "cable-lateral-raise",
+      "cable-rear-delt-fly",
+      "cable-shrug",
+      "cable-step-up",
       "decline-reverse-crunch",
+      "donkey-calf-raise",
+      "dumbbell-reverse-wrist-curl",
+      "dumbbell-step-up",
+      "dumbbell-wrist-curl",
       "hanging-leg-raise",
       "machine-ab-crunch",
       "machine-hip-abduction",
       "machine-hip-adduction",
       "machine-hip-thrust",
+      "machine-lateral-raise",
+      "nordic-curl",
+      "plank",
+      "single-leg-calf-raise",
       "single-leg-hip-thrust",
+      "smith-step-up",
       "straight-bar-pushdown",
     ]);
   });

@@ -38,6 +38,7 @@ function emptyData(): BackupData {
     exercises: [],
     routines: [],
     supplements: [],
+    extras: [],
     foods: [],
     recipes: [],
     diets: [],
@@ -577,6 +578,58 @@ describe("re-keying an import", () => {
       ],
     };
     expect(rekey(data, counter()).sets).toEqual(data.sets);
+  });
+
+  it("follows a shared routine's fresh slug and exercise ids into its extras", () => {
+    // An extra travels with the routine it's on (see `exportRoutine`), and
+    // has to follow both the routine's fresh slug and its own exercise's
+    // fresh id — otherwise the copy's extra points at a routine day and a
+    // lift that no longer exist on the recipient's machine.
+    const data: BackupData = {
+      ...emptyData(),
+      exercises: [
+        {
+          id: "user:theirs",
+          name: "Their lift",
+          aliases: [],
+          pattern: "squat",
+          primaryMuscles: ["quads"],
+          secondaryMuscles: [],
+          createdAt: 0,
+        },
+      ],
+      routines: [
+        {
+          slug: "theirs",
+          name: "Theirs",
+          weeks: [{ weekNumber: 1, days: [] }],
+          createdAt: 0,
+          updatedAt: 0,
+        },
+      ],
+      extras: [
+        {
+          id: "extra:theirs",
+          createdAt: 0,
+          routineSlug: "theirs",
+          weekNumber: 1,
+          dayNumber: 1,
+          entry: {
+            exerciseId: "user:theirs",
+            orAlternatives: ["user:theirs"],
+            kind: "resistance",
+            isFinisher: false,
+            prescriptions: [{ sets: 3, reps: 15 }],
+          },
+        },
+      ],
+    };
+    const out = rekey(data, counter());
+
+    expect(out.extras[0]!.id).not.toBe("extra:theirs");
+    expect(out.extras[0]!.routineSlug).toBe(out.routines[0]!.slug);
+    expect(out.extras[0]!.entry.exerciseId).toBe(out.exercises[0]!.id);
+    expect(out.extras[0]!.entry.orAlternatives).toEqual([out.exercises[0]!.id]);
   });
 
   it("gives two imports of the same file different ids", () => {

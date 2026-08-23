@@ -72,6 +72,8 @@ export const exerciseNames: Record<string, string> = {
   "smith-shoulder-press": "Press de hombro en máquina Smith",
   "seated-dumbbell-lateral-raise": "Elevaciones laterales sentado con mancuernas",
   "single-arm-cable-lateral-raise": "Elevación lateral a una mano en polea",
+  "cable-lateral-raise": "Elevación lateral en polea",
+  "machine-lateral-raise": "Elevación lateral en máquina",
   "dumbbell-front-raise": "Elevaciones frontales de pie con mancuernas",
   "dumbbell-front-raise-together":
     "Elevaciones frontales de pie con mancuernas (brazos juntos)",
@@ -84,11 +86,13 @@ export const exerciseNames: Record<string, string> = {
   "seated-bent-over-rear-delt-raise":
     "Elevación posterior sentado inclinado (agarre prono)",
   "reverse-fly-machine": "Máquina de deltoide posterior",
+  "cable-rear-delt-fly": "Aperturas posteriores en polea",
   "cable-face-pull": "Face pull en polea",
   "barbell-upright-row": "Remo al mentón de pie con barra",
   "barbell-shrug": "Encogimientos de pie con barra",
   "dumbbell-shrug": "Encogimientos con mancuernas",
   "smith-shrug": "Encogimientos en máquina Smith",
+  "cable-shrug": "Encogimientos en polea",
 
   // Biceps
   "standing-barbell-curl": "Curl de bíceps de pie con barra",
@@ -127,6 +131,12 @@ export const exerciseNames: Record<string, string> = {
   "dumbbell-kickback": "Patada de tríceps con mancuerna (palmas abajo)",
   "dumbbell-kickback-pinky-up": "Patada de tríceps con mancuerna (meñique arriba)",
 
+  // Forearms
+  "barbell-wrist-curl": "Curl de muñeca con barra sentado",
+  "dumbbell-wrist-curl": "Curl de muñeca con mancuerna sentado",
+  "barbell-reverse-wrist-curl": "Curl de muñeca inverso con barra sentado",
+  "dumbbell-reverse-wrist-curl": "Curl de muñeca inverso con mancuerna sentado",
+
   // Legs
   "back-squat": "Sentadilla con barra",
   "front-squat": "Sentadilla frontal con barra",
@@ -142,14 +152,21 @@ export const exerciseNames: Record<string, string> = {
   "walking-lunge": "Zancadas caminando",
   "alternating-dumbbell-lunge": "Zancadas alternas con mancuernas",
   "smith-bulgarian-split-squat": "Sentadilla búlgara en máquina Smith",
+  "cable-step-up": "Subida al cajón en polea",
+  "dumbbell-step-up": "Subida al cajón con mancuernas",
+  "smith-step-up": "Subida al cajón en máquina Smith",
   "lying-leg-curl": "Curl femoral acostado",
   "seated-leg-curl": "Curl femoral sentado",
   "standing-single-leg-curl": "Curl femoral de pie a una pierna",
+  "nordic-curl": "Curl nórdico",
   "dumbbell-stiff-leg-deadlift": "Peso muerto piernas rectas con mancuernas",
+  "barbell-stiff-leg-deadlift": "Peso muerto piernas rectas con barra",
   "standing-calf-raise": "Elevación de talones de pie",
   "seated-calf-raise": "Elevación de talones sentado",
   "calf-extension-toes-in": "Máquina de pantorrilla (puntas adentro)",
   "calf-extension-toes-out": "Máquina de pantorrilla (puntas afuera)",
+  "donkey-calf-raise": "Elevación de talones burro",
+  "single-leg-calf-raise": "Elevación de talones a una pierna con mancuerna",
 
   // Cadera
   "barbell-hip-thrust": "Empuje de cadera con barra",
@@ -161,11 +178,14 @@ export const exerciseNames: Record<string, string> = {
   "cable-hip-abduction": "Abducción de cadera en polea",
   "banded-hip-abduction": "Abducción de cadera con banda",
   "machine-hip-adduction": "Máquina de aductores sentado",
+  "cable-hip-adduction": "Aducción de cadera en polea",
 
   // Core
   "machine-ab-crunch": "Crunch en máquina",
   "decline-reverse-crunch": "Crunch inverso en banco declinado",
   "hanging-leg-raise": "Elevación de piernas colgado",
+  plank: "Plancha",
+  "cable-kneeling-crunch": "Crunch de rodillas en polea",
 
   // Cardio
   "liss-cardio": "Cardio continuo de baja intensidad",
@@ -205,12 +225,15 @@ export const movementNames: Record<string, string> = {
   "skull-crusher": "Rompecráneos",
   "overhead-triceps-extension": "Extensión de tríceps sobre la cabeza",
   "triceps-kickback": "Patada de tríceps",
+  "wrist-curl": "Curl de muñeca",
+  "reverse-wrist-curl": "Curl de muñeca inverso",
   squat: "Sentadilla",
   "hack-squat": "Sentadilla hack",
   "leg-press": "Prensa de piernas",
   "leg-extension": "Extensión de cuádriceps",
   lunge: "Zancadas",
   "split-squat": "Sentadilla búlgara",
+  "step-up": "Subida al cajón",
   "leg-curl": "Curl femoral",
   "romanian-deadlift": "Peso muerto rumano",
   "calf-raise": "Elevación de talones",

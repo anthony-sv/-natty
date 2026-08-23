@@ -1,5 +1,7 @@
 ﻿import { describe, expect, it } from "vitest";
 import { getRoutineBySlug, type TrainingDay } from "@/data/routines";
+import { composeDay } from "@/features/extras/extras";
+import type { ExtraWork } from "@/features/extras/schema";
 import { formattingFor } from "@/i18n/test-formatting";
 import {
   autoStartFor,
@@ -792,5 +794,162 @@ describe("warmup sets", () => {
     expect(work.map((s) => s.setNumber)).toEqual([1, 2, 3]);
     expect(work.every((s) => !s.isWarmup)).toBe(true);
     expect(work.filter(isLoggableStep)).toHaveLength(3);
+  });
+});
+
+/**
+ * The invariant the whole extra-work feature rests on: `composeDay` (in
+ * `features/extras/extras.ts`) appends to `day.exercises`, and `buildSteps`
+ * must genuinely not care that it did. See `schema.ts` in that feature for
+ * why an extra being a bare `ExerciseEntry` is what makes this true.
+ */
+describe("appending extra work", () => {
+  const TARGET = { routineSlug: "test-routine", weekNumber: 1, dayNumber: 1 };
+
+  function plainDay(): TrainingDay {
+    return {
+      dayNumber: 1,
+      label: "Push",
+      isRest: false,
+      warmupRefs: [],
+      exercises: [
+        {
+          exerciseId: "flat-barbell-bench-press",
+          orAlternatives: [],
+          kind: "resistance",
+          isFinisher: false,
+          prescriptions: [{ sets: 3, reps: 10, restSeconds: 90 }],
+        },
+        {
+          exerciseId: "lat-pulldown-wide",
+          orAlternatives: [],
+          kind: "resistance",
+          isFinisher: false,
+          prescriptions: [{ sets: 3, reps: 12, restSeconds: 90 }],
+        },
+      ],
+    };
+  }
+
+  function anExtra(): ExtraWork {
+    return {
+      id: "extra:1",
+      createdAt: 1,
+      ...TARGET,
+      entry: {
+        exerciseId: "cable-crossover-mid",
+        orAlternatives: [],
+        kind: "resistance",
+        isFinisher: false,
+        prescriptions: [{ sets: 3, reps: 15, restSeconds: 60 }],
+      },
+    };
+  }
+
+  /**
+   * Asserted on **ids**, not deep equality — the boundary step legitimately
+   * gains a `nextExerciseName` once something follows it (see the next
+   * test), and asserting the whole object would fail on the one change
+   * that's actually correct.
+   */
+  it("never disturbs the ids of steps that existed before the extra", () => {
+    const day = plainDay();
+    const before = buildSteps(day, F);
+
+    const { day: composed } = composeDay(day, [anExtra()], TARGET, undefined);
+    const after = buildSteps(composed, F);
+
+    expect(after.slice(0, before.length).map((s) => s.id)).toEqual(
+      before.map((s) => s.id),
+    );
+    // Genuinely longer — the extra's own steps landed after.
+    expect(after.length).toBeGreaterThan(before.length);
+  });
+
+  it("gives the previously-last work step a nextExerciseName once an extra follows it", () => {
+    const day = plainDay();
+    const before = buildSteps(day, F);
+    const lastWork = [...before]
+      .reverse()
+      .find((s): s is WorkStep => s.type === "work")!;
+    expect(lastWork.nextExerciseName).toBeUndefined();
+
+    const { day: composed } = composeDay(day, [anExtra()], TARGET, undefined);
+    const after = buildSteps(composed, F);
+    const sameStep = after.find((s) => s.id === lastWork.id) as WorkStep;
+    expect(sameStep.nextExerciseName).toBeDefined();
+  });
+
+  function dayWithCardio(): TrainingDay {
+    const base = plainDay();
+    return {
+      ...base,
+      exercises: [
+        ...base.exercises,
+        {
+          exerciseId: "treadmill-steady-state",
+          orAlternatives: [],
+          kind: "cardio",
+          isFinisher: false,
+          prescriptions: [{ sets: 1, durationSeconds: 1200 }],
+        },
+      ],
+    };
+  }
+
+  /**
+   * The whole reason `"append"` placement exists rather than always using
+   * `"beforeCardio"`: a live session must be able to add an extra without
+   * ever shifting a step it has already shown or passed, and `"append"` is
+   * the one placement that keeps that true regardless of whether the day
+   * has cardio.
+   */
+  it('"append" placement keeps the no-earlier-steps-disturbed invariant even when the day has cardio', () => {
+    const day = dayWithCardio();
+    const before = buildSteps(day, F);
+
+    const { day: composed } = composeDay(
+      day,
+      [anExtra()],
+      TARGET,
+      undefined,
+      "append",
+    );
+    const after = buildSteps(composed, F);
+
+    expect(after.slice(0, before.length).map((s) => s.id)).toEqual(
+      before.map((s) => s.id),
+    );
+  });
+
+  /**
+   * The negative case, spelled out: the default `"beforeCardio"` placement
+   * is explicitly *not* safe to use on a running session, because it can
+   * insert ahead of steps that already exist — here, the cardio block's own
+   * step shifts to make room for the extra landing in front of it.
+   *
+   * Compared by **content** (`exerciseName`), not `id` — step ids are built
+   * from position alone (`${exerciseIndex}-work${setNumber}-work`), so the
+   * treadmill's single step at position 2 and the extra's first set landing
+   * at that same position afterward coincidentally produce the identical id
+   * string despite being completely different steps. That collision is
+   * itself worth knowing: an id equality check alone cannot be trusted to
+   * catch this class of corruption, which is exactly why `"append"` — never
+   * reusing an existing position at all — is the one placement actually
+   * safe for a running session, rather than merely "ids happened to still
+   * match".
+   */
+  it('"beforeCardio" placement, by contrast, does shift what follows the extra', () => {
+    const day = dayWithCardio();
+    const before = buildSteps(day, F);
+    const signature = (steps: typeof before) =>
+      steps.map((s) => (s.type === "work" ? s.exerciseName : s.type));
+
+    const { day: composed } = composeDay(day, [anExtra()], TARGET, undefined);
+    const after = buildSteps(composed, F);
+
+    expect(signature(after.slice(0, before.length))).not.toEqual(
+      signature(before),
+    );
   });
 });

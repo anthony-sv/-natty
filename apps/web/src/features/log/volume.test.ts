@@ -462,13 +462,20 @@ describe("against the real exercise library", () => {
   });
 
   it("counts a muscle an exercise overrides to primary as directly trainable", () => {
-    // No *movement* lists forearms as primary, but the reverse curl overrides
-    // its movement to say so — which is exactly why the gap check has to run
-    // through `musclesForExercise` rather than over `movements`.
-    expect(trainableDirectly.has("forearms")).toBe(true);
-    expect(
-      movements.every((movement) => !movement.primaryMuscles.includes("forearms")),
-    ).toBe(true);
+    // `ez-bar-reverse-curl`'s own movement (`barbell-curl`) is biceps-primary
+    // — the reverse curl overrides *that specific exercise* to say forearms
+    // is the point of the set instead. Asserted on this one exercise rather
+    // than "no movement anywhere lists forearms as primary": the library
+    // grew real forearm-primary movements since this test was written
+    // (`wrist-curl`/`reverse-wrist-curl`), which is exactly the kind of
+    // library growth this override mechanism has to keep working under —
+    // the point being verified is that the gap check runs through
+    // `musclesForExercise`, not over `movements` directly, and that's true
+    // regardless of how many other paths to forearms exist elsewhere.
+    const overridden = exercises.find((e) => e.id === "ez-bar-reverse-curl")!;
+    const ownMovement = movements.find((m) => m.id === overridden.movementId)!;
+    expect(ownMovement.primaryMuscles).not.toContain("forearms");
+    expect(musclesForExercise(overridden).primaryMuscles).toContain("forearms");
   });
 
   it("works glutes as a secondary on several movements", () => {

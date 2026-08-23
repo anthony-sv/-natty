@@ -72,23 +72,29 @@ export function rekey(data: BackupData, source: IdSource): BackupData {
   const remapFoodId = (foodId: string) =>
     foodIds.get(foodId) ?? recipeIds.get(foodId) ?? foodId;
 
-  const routines = data.routines.map((routine) => ({
-    ...routine,
-    slug: source.routineSlug(routine.name),
-    weeks: routine.weeks.map((week) => ({
-      ...week,
-      days: week.days.map((day) => ({
-        ...day,
-        exercises: day.exercises.map((entry) => ({
-          ...entry,
-          exerciseId: exerciseIds.get(entry.exerciseId) ?? entry.exerciseId,
-          orAlternatives: entry.orAlternatives.map(
-            (id) => exerciseIds.get(id) ?? id,
-          ),
+  /** What an extra's `routineSlug` has to follow, below. */
+  const routineSlugs = new Map<string, string>();
+  const routines = data.routines.map((routine) => {
+    const slug = source.routineSlug(routine.name);
+    routineSlugs.set(routine.slug, slug);
+    return {
+      ...routine,
+      slug,
+      weeks: routine.weeks.map((week) => ({
+        ...week,
+        days: week.days.map((day) => ({
+          ...day,
+          exercises: day.exercises.map((entry) => ({
+            ...entry,
+            exerciseId: exerciseIds.get(entry.exerciseId) ?? entry.exerciseId,
+            orAlternatives: entry.orAlternatives.map(
+              (id) => exerciseIds.get(id) ?? id,
+            ),
+          })),
         })),
       })),
-    })),
-  }));
+    };
+  });
 
   const dietSlugs = new Map<string, string>();
   const diets = data.diets.map((plan) => {
@@ -147,10 +153,30 @@ export function rekey(data: BackupData, source: IdSource): BackupData {
           : { ...entry.source, foodId: remapFoodId(entry.source.foodId) },
   }));
 
+  /**
+   * An extra points at a routine day and, inside its `entry`, at exercises —
+   * both have to follow the same maps `routines` above just built, or a
+   * shared routine's extras land pointing at a slug and lifts that no longer
+   * exist once the routine itself has a fresh slug.
+   */
+  const extras = data.extras.map((extra) => ({
+    ...extra,
+    id: source.id("extra"),
+    routineSlug: routineSlugs.get(extra.routineSlug) ?? extra.routineSlug,
+    entry: {
+      ...extra.entry,
+      exerciseId: exerciseIds.get(extra.entry.exerciseId) ?? extra.entry.exerciseId,
+      orAlternatives: extra.entry.orAlternatives.map(
+        (id) => exerciseIds.get(id) ?? id,
+      ),
+    },
+  }));
+
   return {
     ...data,
     intake,
     supplements,
+    extras,
     foods,
     exercises,
     recipes,

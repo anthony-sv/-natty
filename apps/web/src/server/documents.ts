@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
+import { extraWorkSchema, type ExtraWork } from "@/features/extras/schema";
 import { userExerciseSchema, type UserExercise } from "@/features/library/schema";
 import {
   userDietPlanSchema,
@@ -48,6 +49,8 @@ const KINDS = {
   // no table and no new endpoint — which is what sharing one document table
   // was for.
   supplement: { schema: supplementSchema, keyField: "id" },
+  // The seventh, same story.
+  extra: { schema: extraWorkSchema, keyField: "id" },
 } as const;
 
 /**
@@ -64,7 +67,8 @@ export type DocumentRow =
   | UserFood
   | Recipe
   | UserDietPlan
-  | Supplement;
+  | Supplement
+  | ExtraWork;
 
 export type DocumentKind = keyof typeof KINDS;
 const documentKindSchema = z.enum(

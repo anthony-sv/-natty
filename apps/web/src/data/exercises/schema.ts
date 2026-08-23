@@ -45,6 +45,12 @@ export const movementPatternSchema = z.enum([
   "shrug",
   "elbow-flexion",
   "elbow-extension",
+  // Wrist curls and reverse wrist curls — mechanically distinct from the
+  // elbow patterns above (a different joint moves), so folding them in would
+  // make "all elbow-flexion work" quietly include forearm isolation that
+  // shares nothing but a neighbouring muscle.
+  "wrist-flexion",
+  "wrist-extension",
   "squat",
   "hinge",
   "lunge",

@@ -279,8 +279,15 @@ export function isUntouched(phases: DraftPhase[]): boolean {
  * Read off the phases rather than stored, for the same reason `isRecord` is
  * derived: a second field saying which preset was picked would be one more
  * thing to keep true after the phases are edited by hand.
+ *
+ * Takes only the two fields it reads, not a full `DraftExercise` — the
+ * extras feature edits one exercise's phases in isolation, with no
+ * `exerciseId`/`groupId`/day tree around it, and there's no reason to make
+ * it fabricate one just to satisfy this signature.
  */
-export function finisherKindOf(exercise: DraftExercise): FinisherKind {
+export function finisherKindOf(
+  exercise: Pick<DraftExercise, "isFinisher" | "phases">,
+): FinisherKind {
   if (!exercise.isFinisher) return "none";
   if (exercise.phases.some((phase) => phase.pose !== undefined)) return "pose";
   if (
@@ -339,6 +346,35 @@ export function applyFinisher(
 
 export function emptySegment(kind: SetSegment["kind"]): DraftSegment {
   return { kind, count: "12", seconds: "10", pulsePerRep: false };
+}
+
+/**
+ * Turn a set of phases into timed ones, keeping the sets and rest you'd
+ * already typed.
+ *
+ * A cardio block is a duration, and the model has said so since the
+ * beginning (`durationSeconds`) — picking a cardio exercise over a repped
+ * one is what triggers this, so the phases stop asking for "3 sets of 8-12
+ * reps" of walking. Anything already timed is left alone so an existing
+ * routine's numbers survive a re-pick.
+ */
+export function timed(phases: DraftPhase[]): DraftPhase[] {
+  return phases.map((phase) =>
+    phase.duration !== undefined
+      ? phase
+      : {
+          ...phase,
+          duration: "20",
+          durationUnit: "min",
+          segments: undefined,
+          // One block, not three. A cardio phase is "twenty minutes", and the
+          // resistance default of three sets turned that into an hour of it.
+          sets: "1",
+          // And a single block has nothing to rest between, so it carries no
+          // rest at all rather than the resistance default of 90 seconds.
+          restSeconds: "",
+        },
+  );
 }
 
 export function emptyDay(): DraftDay {
@@ -569,6 +605,21 @@ function toPrescription(phase: DraftPhase): Prescription | undefined {
 }
 
 /**
+ * `toPrescription`, over a whole exercise's phases.
+ *
+ * Exported on its own — `toDays` inlines this same `.map().filter()` for a
+ * `DraftExercise` sitting inside a full day/week/routine tree, but the
+ * extras feature edits one exercise's phases with no tree around them at
+ * all, so it needs the mapping without everything `toDays` does alongside
+ * it (day numbering, grouping, `orAlternatives` cleanup).
+ */
+export function toPrescriptions(phases: DraftPhase[]): Prescription[] {
+  return phases
+    .map(toPrescription)
+    .filter((p): p is Prescription => p !== undefined);
+}
+
+/**
  * Turn the draft into a real `Routine`.
  *
  * Returns undefined if anything essential is missing, so the caller can keep
@@ -613,9 +664,7 @@ function toDays(week: DraftWeek): TrainingDay[] {
       ? []
       : day.exercises
           .map((exercise) => {
-            const prescriptions = exercise.phases
-              .map(toPrescription)
-              .filter((p): p is Prescription => p !== undefined);
+            const prescriptions = toPrescriptions(exercise.phases);
             if (exercise.exerciseId === "" || prescriptions.length === 0) {
               return undefined;
             }

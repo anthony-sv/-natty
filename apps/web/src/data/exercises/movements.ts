@@ -245,6 +245,26 @@ const raw: z.input<typeof movementSchema>[] = [
     secondaryMuscles: [],
   },
 
+  // ── Forearms ───────────────────────────────────────────────────────────
+  // The one muscle `muscleGaps` could name but the library couldn't fix —
+  // every other mention of forearms anywhere above is a secondary muscle
+  // riding on a curl or a shrug. These are the first movements that make it
+  // primary on purpose.
+  {
+    id: "wrist-curl",
+    name: "Wrist curl",
+    pattern: "wrist-flexion",
+    primaryMuscles: ["forearms"],
+    secondaryMuscles: [],
+  },
+  {
+    id: "reverse-wrist-curl",
+    name: "Reverse wrist curl",
+    pattern: "wrist-extension",
+    primaryMuscles: ["forearms"],
+    secondaryMuscles: [],
+  },
+
   // ── Legs ───────────────────────────────────────────────────────────────
   {
     id: "squat",
@@ -289,6 +309,17 @@ const raw: z.input<typeof movementSchema>[] = [
     secondaryMuscles: ["glutes"],
   },
   {
+    id: "step-up",
+    name: "Step-up",
+    pattern: "lunge",
+    // Glute-primary, unlike `lunge`/`split-squat` just above — a step-up
+    // drives through a fully extended hip at the top of the movement, which
+    // is what tips the emphasis off the quad and onto the glute doing the
+    // work of standing up.
+    primaryMuscles: ["glutes"],
+    secondaryMuscles: ["quads", "hamstrings"],
+  },
+  {
     id: "leg-curl",
     name: "Leg curl",
     pattern: "knee-flexion",
@@ -311,8 +342,9 @@ const raw: z.input<typeof movementSchema>[] = [
   },
 
   // ── Hips ───────────────────────────────────────────────────────────────
-  // The only movements in the library that make glutes or adductors *primary*.
-  // Everything above works them constantly and never on purpose, which is
+  // Glutes and adductors are primary here — and on `step-up` above, grouped
+  // with `lunge`/`split-squat` instead since it shares their pattern.
+  // Everything else works them constantly and never on purpose, which is
   // exactly what `muscleGaps` was reporting as `never-direct` — a hole nothing
   // in the library could fill until these landed.
   {

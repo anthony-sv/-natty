@@ -15,7 +15,9 @@ import {
   unlinkFromPrevious,
   finisherPhase,
   moveDay,
+  timed,
   toDraft,
+  toPrescriptions,
   toRoutine,
   applyFinisher,
   type DraftExercise,
@@ -912,5 +914,68 @@ describe("moveDay", () => {
     const days = week(["A", "B"]);
     moveDay(days, 0, 1);
     expect(days.map((d) => d.label)).toEqual(["A", "B"]);
+  });
+});
+
+/**
+ * `toPrescriptions` is the `.map(toPrescription).filter(...)` `toDays` does
+ * inline, exported so the extras feature can convert one exercise's phases
+ * with no day/week/routine tree around them. Thin, so these mainly pin that
+ * it's wired to the same `toPrescription` `toDays` already exercises
+ * thoroughly above, not a second copy of that logic.
+ */
+describe("toPrescriptions", () => {
+  it("converts every valid phase, in order", () => {
+    const phases: DraftPhase[] = [
+      { ...emptyPhase(), sets: "3", repsFrom: "8", repsTo: "12" },
+      { ...emptyPhase(), sets: "1", repsFrom: "5", repsTo: "" },
+    ];
+    expect(toPrescriptions(phases)).toEqual([
+      { sets: 3, reps: [8, 12], restSeconds: 90 },
+      { sets: 1, reps: 5, restSeconds: 90 },
+    ]);
+  });
+
+  it("drops a phase with nothing valid to say, rather than throwing", () => {
+    const phases: DraftPhase[] = [
+      { ...emptyPhase(), sets: "3", repsFrom: "8" },
+      { ...emptyPhase(), sets: "", repsFrom: "8" }, // no set count
+    ];
+    expect(toPrescriptions(phases)).toHaveLength(1);
+  });
+
+  it("returns an empty array rather than undefined when nothing survives", () => {
+    expect(toPrescriptions([{ ...emptyPhase(), sets: "" }])).toEqual([]);
+  });
+});
+
+describe("timed", () => {
+  it("converts a repped phase to a twenty-minute cardio block", () => {
+    const [result] = timed([emptyPhase()]);
+    expect(result).toMatchObject({
+      duration: "20",
+      durationUnit: "min",
+      sets: "1",
+      restSeconds: "",
+      segments: undefined,
+    });
+  });
+
+  it("leaves a phase that's already timed alone", () => {
+    const already: DraftPhase = {
+      ...emptyPhase(),
+      duration: "45",
+      durationUnit: "s",
+    };
+    expect(timed([already])).toEqual([already]);
+  });
+
+  it("strips any segments a ramp phase carried, since timed and segmented are exclusive", () => {
+    const ramped: DraftPhase = {
+      ...emptyPhase(),
+      segments: [emptySegment("hold"), emptySegment("pulses")],
+    };
+    const [result] = timed([ramped]);
+    expect(result.segments).toBeUndefined();
   });
 });

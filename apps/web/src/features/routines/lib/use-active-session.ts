@@ -1,5 +1,8 @@
 import { useStore } from "@tanstack/react-store";
 import type { Routine, TrainingDay } from "@/data/routines";
+import { useCompletions } from "@/features/log/completion-collection";
+import { composeDay, lastCompletionFor } from "@/features/extras/extras";
+import { useExtras } from "@/features/extras/use-extras";
 import { useFormatting } from "@/i18n/use-formatting";
 import { useRoutines } from "../use-routines";
 import { sessionStore, type SessionState } from "../session-store";
@@ -15,6 +18,11 @@ export interface ResolvedSession {
   currentStep: SessionStep | undefined;
   /** Name of the exercise being worked or rested for. */
   currentExerciseName: string | undefined;
+  /** Which `exerciseIndex`es are extra work rather than a prescription —
+   * see `composeDay`. Composed with `"append"` placement, the same as
+   * `SessionPlayer` itself: this only ever resolves an *active* session, and
+   * `"beforeCardio"` placement is unsafe once one is running. */
+  extraIndices: Set<number>;
 }
 
 /**
@@ -32,14 +40,34 @@ export interface ResolvedSession {
 export function useActiveSession(): ResolvedSession | null {
   const state = useStore(sessionStore, (s) => s);
   const { routines, isLoading } = useRoutines();
+  const { extras } = useExtras();
+  const completions = useCompletions();
   const f = useFormatting();
 
   if (state === null || isLoading) return null;
 
   const routine = routines.find((r) => r.slug === state.routineSlug);
   const week = routine?.weeks.find((w) => w.weekNumber === state.weekNumber);
-  const day = week?.days.find((d) => d.dayNumber === state.dayNumber);
-  if (!routine || !day) return null;
+  const rawDay = week?.days.find((d) => d.dayNumber === state.dayNumber);
+  if (!routine || !rawDay) return null;
+
+  // Composed the same way the day page composes it — without this, a
+  // session that's had extra work added mid-workout resolves here against
+  // the *uncomposed* day: the resume card would report the wrong step count,
+  // and `day.exercises[currentStep.exerciseIndex]` would be `undefined` for
+  // any step that's an extra, blanking `currentExerciseName`.
+  const target = {
+    routineSlug: state.routineSlug,
+    weekNumber: state.weekNumber,
+    dayNumber: state.dayNumber,
+  };
+  const { day, extraIndices } = composeDay(
+    rawDay,
+    extras,
+    target,
+    lastCompletionFor(completions, target),
+    "append",
+  );
 
   const steps = buildSteps(day, f);
   const currentStep = steps[state.stepIndex];
@@ -50,5 +78,13 @@ export function useActiveSession(): ResolvedSession | null {
   const currentExerciseName =
     activeEntry === undefined ? undefined : exerciseDisplayName(activeEntry, f);
 
-  return { state, routine, day, steps, currentStep, currentExerciseName };
+  return {
+    state,
+    routine,
+    day,
+    steps,
+    currentStep,
+    currentExerciseName,
+    extraIndices,
+  };
 }

@@ -182,6 +182,41 @@ describe("nextTrainingDay", () => {
     expect(result).toEqual({ weekNumber: 2, day: day(1) });
   });
 
+  it("anchors elapsed days on the session's earliest activity, not its completion", () => {
+    // A workout that runs past midnight logs its WorkoutCompletion on the
+    // calendar day *after* the one it was trained on. Anchoring on that
+    // later timestamp instead of the set logged the night before shifted the
+    // whole rest-day countdown a day late — this pins the real bug report.
+    const trainedAt = Date.UTC(2026, 7, 19, 21, 1); // Wed 21:01
+    const finishedAt = Date.UTC(2026, 7, 20, 1, 48); // Thu 01:48 — after midnight
+    const sets = [
+      set({
+        performedAt: trainedAt,
+        routineSlug: "test-routine",
+        weekNumber: 1,
+        dayNumber: 1,
+      }),
+    ];
+    const completions = [
+      completion({
+        performedAt: finishedAt,
+        weekNumber: 1,
+        dayNumber: 1,
+      }),
+    ];
+    // Two calendar days after the *set* (Wed -> Fri), even though only one
+    // calendar day separates the completion (Thu) from Friday.
+    const now = Date.UTC(2026, 7, 21, 12, 0); // Fri noon
+    const result = nextTrainingDay(
+      twoWeekRoutine(),
+      sets,
+      completions,
+      undefined,
+      now,
+    );
+    expect(result?.day.isRest).toBe(false);
+  });
+
   it("advances to the day after a completion with nothing logged", () => {
     // Reaching "Finish" with the log popover never opened — the whole reason
     // completions exist.

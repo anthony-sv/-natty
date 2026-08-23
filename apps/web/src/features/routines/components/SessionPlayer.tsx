@@ -10,6 +10,7 @@ import {
   FlagIcon,
   ListOrderedIcon,
   PlayIcon,
+  PlusIcon,
   Repeat2Icon,
   TargetIcon,
   TimerIcon,
@@ -60,6 +61,7 @@ import { logCompletion } from "@/features/log/completion-collection";
 import { SetLogControl } from "@/features/log/components/SetLogControl";
 import { CardioLogControl } from "@/features/log/components/CardioLogControl";
 import { ExercisePreviewDialogButton } from "@/features/library/components/ExerciseMedia";
+import { AddExtraWorkDialog } from "@/features/extras/components/AddExtraWorkDialog";
 import { cn } from "@/lib/utils";
 import { playerPrefs, toggleCues, useCue } from "../lib/cues";
 import {
@@ -126,9 +128,18 @@ import { TimerRing } from "./TimerRing";
 export function SessionPlayer({
   steps,
   dayLabel,
+  extraIndices,
 }: {
   steps: SessionStep[];
   dayLabel: string;
+  /** Which `exerciseIndex`es are extra work rather than a prescription —
+   * see `composeDay`. Threaded down to the eyebrow, not into `buildSteps`
+   * itself: an extra is a property of how this day was *composed*, not of
+   * the day, and `buildSteps` deliberately stays a pure flattener that
+   * doesn't know the difference. A live session always composes with
+   * `"append"` placement, so in practice this is a trailing range here —
+   * but the eyebrow tests membership rather than assuming that. */
+  extraIndices?: Set<number>;
 }) {
   const session = useStore(sessionStore, (s) => s);
   if (session === null) return null;
@@ -147,6 +158,7 @@ export function SessionPlayer({
       step={step}
       steps={steps}
       dayLabel={dayLabel}
+      extraIndices={extraIndices}
     />
   );
 }
@@ -156,11 +168,13 @@ function PlayerCard({
   step,
   steps,
   dayLabel,
+  extraIndices,
 }: {
   session: SessionState;
   step: SessionStep;
   steps: SessionStep[];
   dayLabel: string;
+  extraIndices?: Set<number>;
 }) {
   const t = useT();
   const f = useFormatting();
@@ -208,6 +222,7 @@ function PlayerCard({
           </span>
           <span className="flex items-center gap-1">
             <Elapsed since={session.startedAt} />
+            <AddExtraWorkButton session={session} dayLabel={dayLabel} />
             <CueToggle />
           </span>
         </CardTitle>
@@ -243,6 +258,7 @@ function PlayerCard({
             timer={timer}
             sequence={sequence}
             totalSeconds={totalSeconds}
+            extraIndices={extraIndices}
           />
         ) : step.type === "pose" ? (
           <PoseStepBody step={step} steps={steps} session={session} timer={timer} />
@@ -401,6 +417,49 @@ function Elapsed({ since }: { since: number }) {
       <ClockIcon className="size-3.5" />
       {formatElapsed(elapsedMs)}
     </span>
+  );
+}
+
+/**
+ * "Add extra work" from inside a live session — a session-level action, the
+ * same class `CueToggle` is, rather than a step-level one, which is why it
+ * sits in the header rather than the fixed-height stage or the footer's
+ * three-zone action bar. Saving closes the dialog and raises a toast; there
+ * is deliberately no jump to the new steps, which would abandon your place
+ * in the day the same way the End-workout confirmation exists to prevent.
+ */
+function AddExtraWorkButton({
+  session,
+  dayLabel,
+}: {
+  session: SessionState;
+  dayLabel: string;
+}) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label={t("extras.addButton")}
+        title={t("extras.addButton")}
+        onClick={() => setOpen(true)}
+      >
+        <PlusIcon className="size-4" />
+      </Button>
+      <AddExtraWorkDialog
+        target={{
+          routineSlug: session.routineSlug,
+          weekNumber: session.weekNumber,
+          dayNumber: session.dayNumber,
+        }}
+        dayLabel={dayLabel}
+        open={open}
+        onOpenChange={setOpen}
+      />
+    </>
   );
 }
 
@@ -600,6 +659,7 @@ function WorkStepBody({
   timer,
   sequence,
   totalSeconds,
+  extraIndices,
 }: {
   step: WorkStep;
   session: SessionState;
@@ -608,6 +668,7 @@ function WorkStepBody({
   /** `step.sequence` with any mid-set "+10s" folded in. */
   sequence: SetSequence | undefined;
   totalSeconds: number;
+  extraIndices?: Set<number>;
 }) {
   const t = useT();
   const f = useFormatting();
@@ -718,10 +779,12 @@ function WorkStepBody({
                   : "player.supersetRound",
                 { round: step.group.round, total: step.group.rounds },
               )
-            : t("player.exerciseOf", {
-                current: step.exerciseIndex + 1,
-                total: exerciseCount,
-              })}
+            : extraIndices?.has(step.exerciseIndex) === true
+              ? t("extras.eyebrow")
+              : t("player.exerciseOf", {
+                  current: step.exerciseIndex + 1,
+                  total: exerciseCount,
+                })}
         </Eyebrow>
         <div className="flex items-start gap-2">
           <h2 className="line-clamp-2 min-w-0 flex-1 text-2xl font-semibold leading-tight tracking-tight">

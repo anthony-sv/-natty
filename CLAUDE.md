@@ -177,6 +177,26 @@ Rules that keep this from exploding:
   against the source docs in `gym-docs/` and six by the author.
   The test pins it at empty so a new one has to be acknowledged.
 
+### Coverage passes
+
+The library grows for two different reasons, and they read differently in the
+data. Six programs transcribed out of `gym-docs/` account for most of it —
+every exercise, alias and judgment call there traces back to a source
+document. The **hip, core, forearm and step-up movements don't** — no built-in
+program prescribes any of them (`exercises.test.ts`'s "unused entries are
+deliberate" list says so explicitly), and they exist purely because
+`muscleGaps`/the coverage audit could name a deficiency the library gave you
+no way to fix. Forearms is the sharpest example: before the `wrist-curl` and
+`reverse-wrist-curl` movements landed, the *only* thing that made forearms
+trainable at all was `ez-bar-reverse-curl` overriding its own movement
+(biceps-primary) to say otherwise — one exercise standing in for a whole
+muscle. **Adding a movement here doesn't require a program that prescribes
+it**; it requires the muscle gaps card naming a hole nothing else fills, or a
+lift common enough (`step-up`) that its total absence is itself the gap.
+`step-up` shares the `lunge` pattern with `split-squat` (same substitution
+family) but is glute-primary, unlike either — the sibling comment in
+`movements.ts` says why.
+
 ### How routines link to it
 
 `ExerciseEntry.exerciseId` is required and is the source of truth. Program files
@@ -746,7 +766,7 @@ built-in of the same name landing later, and makes it obvious in a stored log
 row which sets are against a custom lift.
 
 **A custom exercise names its muscles and pattern directly rather than pointing
-at a movement.** Picking from 42 movements is a worse question than "what does
+at a movement.** Picking from 51 movements is a worse question than "what does
 it work", and reusing `muscleSchema` and `movementPatternSchema` verbatim is
 exactly what makes volume, the split chart and the gaps card read it with **no
 change to any of them**. What it gives up is the movement rollup — and that's
@@ -851,6 +871,209 @@ Getting rid of a routine used to mean opening the one page you'd open to keep
 it. Reset and delete share the component because they're the same gesture on
 different things (your edit of a built-in, versus something that only ever
 existed here), and two copies of a confirm dialog is two wordings to drift.
+
+## Extra work (`src/features/extras/`)
+
+Gym work outside the prescribed routine — ad-hoc forearms or abs, or topping
+up volume on a day cut short. Chosen over a bare log form on purpose: an
+extra runs as a real exercise in the player — rest timers, PR line, set
+ladder, the works.
+
+**An extra work item *is* an `ExerciseEntry`**, the same move `userRoutineSchema`
+makes ("a user routine *is* a `Routine`"). `exerciseEntrySchema` is entirely
+self-contained — nothing in it references the day or a position — so
+working one into `day.exercises` is plain array surgery, and `buildSteps`,
+`summariseDay`, `DayExerciseList` and the log's provenance all work
+untouched. It can carry a warmup, a ramp, either kind of finisher, or be
+cardio — see "Full builder parity" below — exactly like anything the program
+itself prescribes; nothing downstream needs to know it arrived this way.
+`composeDay` (`extras.ts`) is the one function that does the surgery: it
+takes a `TrainingDay` and the pending `ExtraWork` rows for it and returns a
+new day with them worked in, plus `extraIndices` — which positions in
+`day.exercises` are extra rather than prescribed, which everything
+downstream needs to tell the two apart. It's pure and directly tested, like
+`pr.ts`/`volume.ts`.
+
+**A rest day is just a day with `isRest: true, exercises: []`** — appending
+extras to it makes it a real trainable day with real steps, no synthetic day
+and no new route. The day page's `canStart` simplified to `steps.length > 0`
+for exactly this reason: the `!day.isRest` guard it used to carry is now
+provably redundant, since an untouched rest day already composes to zero
+steps.
+
+**A seventh `user_documents` kind**, following `supplements` — no new table,
+no DDL, no new endpoint. `KINDS` in `server/documents.ts` gained one line.
+
+### Expiry is completion-based, not set-based
+
+A routine that repeats has no calendar pointer for "which lap you're on" —
+`nextTrainingDay` derives "what's next" from the log rather than tracking
+one, specifically so it can't drift, and an extra's expiry follows the same
+rule rather than adding a second, competing pointer.
+
+An extra is excluded once the day it was added to has been **finished**
+again since — a `WorkoutCompletion` logged for that exact
+`(routineSlug, weekNumber, dayNumber)`, which is exactly what `finishIfLast`
+and `EndWorkoutButton` already write on every session close, reached-the-end
+or bailed-out early. `lastCompletionFor` finds that timestamp;
+`composeDay` excludes any extra whose `createdAt` is older than it.
+
+**Completions, not sets, and that distinction is load-bearing.** You add an
+extra *during* a session, then log sets against it — all with `performedAt`
+after the extra's `createdAt`. If any later activity expired it, it would
+vanish from the very session you just added it to. A `WorkoutCompletion` is
+written exactly once, at the natural close of a session, so it's the only
+signal that actually means "this occurrence is over."
+
+Consequences worth stating plainly, because they're easy to assume away:
+never finishing or ending that session leaves the extra pending
+indefinitely; adding an extra to a day already completed this cycle doesn't
+attach retroactively, it shows starting the *next* time that day comes up.
+Volume/fatigue crediting for an extra you never actually logged a set
+against (the "credit the whole day on Finish" treatment prescribed exercises
+get from `throughExerciseIndex`) is **not** wired up — extras count toward
+volume, PRs and the heatmap only through the `LoggedSet`s you actually log,
+same as any ad-hoc set today. Closing that gap needs `dayLookupFor`
+(`features/log/queries.ts`) to reconstruct the composed day *as of* each
+historical completion, which is real work for a minor edge case.
+
+### Full builder parity, not a smaller copy of it
+
+The first version of `ExtraWorkForm` was a flat TanStack Form — one
+prescription, sets/reps/rest as three fields, plus a checkbox that seeded the
+pose-hold finisher's numbers. That covers a plain accessory set and nothing
+past it: no warmup, no ramp, and only one of the two finisher shapes — a
+warmup and a ramp are both genuinely *multi-phase* (a ramp is four sets with
+falling reps and rising load; the hold-and-pulse finisher is four *sequenced*
+sets), and a single prescription has nowhere to put a second phase.
+
+**So the form reuses the routine builder's own editor instead of reinventing
+a smaller one.** `RoutineBuilder`'s `ExerciseEditor` wires together three
+pieces for one exercise inside a full day: `PhaseEditor` (sets, reps, load,
+rest, warmup, style — plain/timed/segments — and the six modifier
+checkboxes), `FinisherPicker` (the "none"/"pose"/"ramp" choice), and local
+`DraftPhase[]` state from `draft.ts`. None of the three reads any
+builder-specific context — all are plain props in, `onChange` out — so
+`ExtraWorkForm` lifts them verbatim: local `useState<DraftPhase[]>` seeded
+with `[emptyPhase()]`, `FinisherPicker`'s `onChange` driving both `isFinisher`
+and `phases` via `applyFinisher`, and `PhaseEditor` rendering the rest.
+Picking a cardio exercise converts the phases via `timed()`, the exact
+conversion `ExerciseEditor` applies for the same pick.
+
+**Not a TanStack Form**, for the same reason the builder itself isn't one —
+see `draft.ts`'s own doc comment: multiple phases of structural edits (add a
+phase, add a segment, toggle a modifier) don't fit "a flat set of fields with
+per-field validation". `toPrescriptions(phases)` — exported from `draft.ts`
+for exactly this, since `toDays` used to inline the same `.map().filter()`
+for a `DraftExercise` sitting inside a whole routine tree — is the
+validation, called on every render to decide whether the extra's own Add
+button is enabled, the same way `toRoutine` gates the builder's Save.
+
+Two small exports moved to make this possible, both because they were
+private to files that had no reason to keep them: `toPrescriptions` (above)
+and `timed()`, previously a private helper inside `RoutineBuilder.tsx` —
+`draft.test.ts` now pins `timed()` directly, which it never was before.
+`finisherKindOf`'s parameter widened from a full `DraftExercise` to
+`Pick<DraftExercise, "isFinisher" | "phases">`, since it only ever read those
+two fields and the extras feature has no `exerciseId`/day tree to fabricate
+one from.
+
+A poseless finisher saves anyway — `DayExerciseList`'s existing "no pose
+picked" badge already covers that case for authored and extra finishers
+alike, so this needed no new UI for it.
+
+### Placement: before the day's own cardio, except mid-session
+
+A resistance or finisher extra is worked in **ahead of** the day's own
+cardio block, not appended after it — the realistic order is lifting first,
+treadmill last, and `day.exercises`' array order is what `buildSteps` (and
+therefore the player) actually runs, regardless of how `DayExerciseList`
+buckets things visually by kind. A cardio extra, by contrast, keeps company
+with the day's own cardio at the very end. `composeDay`'s `placement`
+parameter is `"beforeCardio"` (the default) or `"append"`:
+
+- `"beforeCardio"` splits pending extras by kind, inserts the non-cardio
+  ones right before the day's first cardio entry (or at the tail, if there
+  isn't one), and appends the cardio ones after everything, including the
+  day's own cardio.
+- `"append"` ignores cardio entirely and puts everything at the tail, full
+  stop.
+
+**A live session always composes with `"append"`, and that is not a
+simplification — it's the only placement actually safe on one.**
+`"beforeCardio"` can insert ahead of steps that already exist (the cardio
+block's), which shifts their positions; `"append"` only ever adds *new*
+positions beyond the array's old length, so every position that existed
+before is provably still the same exercise, same set, same everything.
+`session.test.ts` pins this both ways: `"append"` preserves every step's
+identity even on a day with cardio, and `"beforeCardio"` on the same day
+visibly does not. (The comparison there is by *content* — `exerciseName` —
+not by step `id`: ids are built from position alone,
+`${exerciseIndex}-work${setNumber}-work`, so a shifted step can coincidentally
+land on the same id string a different exercise used to have at that
+position. That collision is worth knowing on its own — an id-equality check
+is not sufficient proof that nothing changed.) The day route picks the
+placement per render: `"append"` while `isSessionFor` says a session is
+running on *this* day, `"beforeCardio"` otherwise — so the gym-order
+placement applies the moment you next view the day fresh, not retroactively
+into whatever's already running.
+
+### Distinguishing extras in the UI
+
+**`DayExerciseList` takes `extraIndices: Set<number>`, not a flag on the
+entry, and not a single cutoff.** `"beforeCardio"` placement means extras
+are no longer guaranteed to be a trailing range — a resistance extra can sit
+ahead of the day's own cardio — so membership is the only test that stays
+correct regardless of where a piece landed. Within each kind-based phase
+(`groupIntoPhases`), `runsWithExtraMarker` marks every *transition* into
+extra membership, not just the first one seen — usually there's exactly
+one, but cardio splitting a phase's own entries could in principle produce
+more than one. The marker sits **outside** the `phases.length > 1` gate,
+since a day that's entirely main work plus one extra is still one phase and
+still needs it.
+
+**`SessionPlayer` deliberately does *not* get an `isExtra` flag on
+`WorkStep`.** That would leak a composition-time distinction into
+`buildSteps`, which is a pure flattener that doesn't — and shouldn't — know
+the difference. `extraIndices` is threaded down as a plain prop instead,
+tested for membership (`.has(step.exerciseIndex)`) where the eyebrow
+renders.
+
+### Append is safe mid-session, removal is not
+
+Steps before the append point are byte-identical when an extra lands with
+`"append"` placement — only the previously-last step's `nextExerciseName`
+changes, correctly, since there genuinely is something after it now. So
+appending to a running session never disturbs `session.stepIndex`. Removing
+is different: an extra whose steps sit before the live step index would
+shift every later index out from under the session. `DayExerciseList`'s
+`onRemoveExtra` is passed as `undefined` while a session is running on that
+day; `StaleSession` remains the backstop for anything that still slips
+through.
+
+`deleteExtra`/`restoreExtra` follow the standing rule — immediate delete
+with an Undo on the toast, returning the row. Deleting an extra never
+deletes sets already logged against it; those keep counting for volume and
+PRs, the same as archiving a custom exercise leaves its history intact.
+
+### Entry points
+
+The player's header, beside the mute toggle — a session-level action, not a
+step-level one, so it costs no height in the fixed-height stage or the
+footer's three-zone action bar. The day page, next to Start. The home Today
+card, on both branches — the rest-day branch is the one that matters: once a
+rest day has pending extras, it renders the same preview and Start link the
+training branch does, which is what makes "I went to the gym on my rest day"
+reachable without navigating anywhere first.
+
+### A known pre-existing edge case, not introduced
+
+If an extra names an exercise already in that day, both get `setNumber`
+1, 2, 3… and `loggedSetsForStep` matches on
+`{exerciseId, routineSlug, weekNumber, dayNumber, setNumber}` with no
+`exerciseIndex` — so their logs merge. Already true today for any routine
+that lists the same lift twice in one day; this just makes it reachable by
+accident too.
 
 ## Profile (`src/features/profile/`)
 
@@ -1371,10 +1594,11 @@ refuse to create.
 ## Accounts and sync (`src/features/auth/`, `src/server/`)
 
 Optional Supabase accounts — the app is fully usable signed out, and that is a
-design commitment, not a transition state. **All eleven collections sync**,
+design commitment, not a transition state. **All twelve collections sync**,
 plus the profile; theme, locale and `session-store` stay local by design.
-`workout_completions` is the newest — it followed the same `forkCollection`
-pattern `cardio_entries` did, migration in `drizzle/manual/` and all.
+`extras` is the newest — the seventh `user_documents` kind, needing no
+migration at all; `workout_completions` before it needed one, following the
+same `forkCollection` pattern `cardio_entries` did.
 
 - **Auth is cookie-based on purpose.** `features/auth/client.ts` creates the
   browser client lazily (module scope would run in the shell prerender) via
@@ -1552,7 +1776,7 @@ pattern `cardio_entries` did, migration in `drizzle/manual/` and all.
 
 ## Export, import and sharing (`src/features/backup/`)
 
-Everything lives in twelve localStorage keys, and the half that would hurt
+Everything lives in thirteen localStorage keys, and the half that would hurt
 most to lose — the exercises, routines, foods, recipes and plans you wrote —
 is data only you have.
 
@@ -1729,7 +1953,7 @@ reaching a release.
 
 `src/data/` stays canonical English and is **not** touched, so adding an
 exercise doesn't require speaking Spanish. The catalog keys off ids where the
-data has them (113 exercises, 42 movements, 8 poses, 18 foods, 6 routines, 2
+data has them (143 exercises, 51 movements, 8 poses, 18 foods, 6 routines, 2
 plans) and off the **English source string** where it doesn't — day labels
 (`"Shoulder/Traps"`), meal names, variant labels, supplement timings and doses,
 and the free notes on foods, plans and hydration. Keying on a string is only
