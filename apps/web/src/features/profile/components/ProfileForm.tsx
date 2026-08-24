@@ -124,7 +124,21 @@ export function ProfileForm() {
             <PopoverContent className="w-auto p-0">
               <Calendar
                 mode="single"
+                // Month/year dropdowns instead of the default "click back
+                // arrow once per month" caption — a birth date is decades in
+                // the past, and the plain label caption makes reaching one
+                // practically impossible. `endMonth` caps the year dropdown
+                // at the current year too, so it can't offer a future one
+                // `disabled` would just reject anyway.
+                captionLayout="dropdown"
+                startMonth={new Date(new Date().getFullYear() - 100, 0)}
+                endMonth={new Date()}
                 selected={
+                  profile.birthDate === undefined
+                    ? undefined
+                    : new Date(profile.birthDate)
+                }
+                defaultMonth={
                   profile.birthDate === undefined
                     ? undefined
                     : new Date(profile.birthDate)
