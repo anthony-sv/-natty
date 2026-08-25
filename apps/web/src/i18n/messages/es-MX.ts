@@ -678,11 +678,11 @@ export const esMX: Record<keyof typeof en, string> = {
   "dietBuilder.tdee": "Calor\u00edas de mantenimiento",
   "dietBuilder.tdeeSuggested": "Estimado a partir de tu perfil y tu rutina: {kcal} kcal.",
   "dietBuilder.useSuggested": "Usarlo",
-  "dietBuilder.tdeeMissing":
-    "Opcional. Lo que quemas al d\u00eda \u2014 pon tu estatura, sexo y fecha de nacimiento en",
+  "dietBuilder.tdeeMissingIntro":
+    "Opcional. Lo que quemas al d\u00eda \u2014 necesita",
   "dietBuilder.tdeeMissingProfileLink": "tu perfil",
-  "dietBuilder.tdeeMissingAnd": "y",
-  "dietBuilder.tdeeMissingRoutineLink": "elige una rutina activa",
+  "dietBuilder.tdeeMissingWeightLink": "un registro de peso",
+  "dietBuilder.tdeeMissingRoutineLink": "una rutina activa",
   "dietBuilder.tdeeMissingEnd": "para ver una estimaci\u00f3n.",
   "dietBuilder.targetSuggested": "Seg\u00fan el TDEE y tu objetivo: {kcal} kcal.",
   "dietBuilder.target": "Objetivo diario",

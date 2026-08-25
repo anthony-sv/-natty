@@ -158,6 +158,54 @@ export function DietPlanBuilder({
       ? Math.round(estimatedTdee(bmr, activityFactorForTrainingDays(trainingDays)))
       : undefined;
 
+  // Which of the estimate's three inputs is actually missing, so the hint
+  // names only what's still needed rather than always pointing at profile
+  // and routine — a weigh-in lives on a third page (`/progress`'s Body tab)
+  // that this hint used to never mention at all, which left "filled in my
+  // profile and picked a routine, still no estimate" with no next step.
+  const missingProfileLabel = t("dietBuilder.tdeeMissingProfileLink");
+  const missingWeightLabel = t("dietBuilder.tdeeMissingWeightLink");
+  const missingRoutineLabel = t("dietBuilder.tdeeMissingRoutineLink");
+  const missingReasons = [
+    ...(profile.heightCm === undefined ||
+    age === undefined ||
+    profile.sex === undefined
+      ? [missingProfileLabel]
+      : []),
+    ...(bodyWeightKg === undefined ? [missingWeightLabel] : []),
+    ...(trainingDays === undefined ? [missingRoutineLabel] : []),
+  ];
+  // `formatToParts` rather than `format` so each reason can stay a link —
+  // it hands back the same "X, Y and Z" localized joining as a list of
+  // literal/element parts instead of one opaque string.
+  const missingParts = new Intl.ListFormat(t.locale, {
+    style: "long",
+    type: "conjunction",
+  }).formatToParts(missingReasons);
+
+  function missingReasonLink(label: string) {
+    const linkClassName = "underline underline-offset-2 hover:text-foreground";
+    if (label === missingProfileLabel) {
+      return (
+        <Link to="/profile" className={linkClassName}>
+          {label}
+        </Link>
+      );
+    }
+    if (label === missingWeightLabel) {
+      return (
+        <Link to="/progress" search={{ tab: "body" }} className={linkClassName}>
+          {label}
+        </Link>
+      );
+    }
+    return (
+      <Link to="/routines" className={linkClassName}>
+        {label}
+      </Link>
+    );
+  }
+
   // The target follows whatever TDEE is actually in the field — typed or
   // already filled from the suggestion above — falling back to the estimate
   // only while that field is still blank.
@@ -325,20 +373,14 @@ export function DietPlanBuilder({
             </span>
           ) : (
             <span className="flex flex-wrap items-center gap-x-1.5">
-              {t("dietBuilder.tdeeMissing")}
-              <Link
-                to="/profile"
-                className="underline underline-offset-2 hover:text-foreground"
-              >
-                {t("dietBuilder.tdeeMissingProfileLink")}
-              </Link>
-              {t("dietBuilder.tdeeMissingAnd")}
-              <Link
-                to="/routines"
-                className="underline underline-offset-2 hover:text-foreground"
-              >
-                {t("dietBuilder.tdeeMissingRoutineLink")}
-              </Link>
+              {t("dietBuilder.tdeeMissingIntro")}
+              {missingParts.map((part, i) =>
+                part.type === "element" ? (
+                  <span key={i}>{missingReasonLink(part.value)}</span>
+                ) : (
+                  <span key={i}>{part.value}</span>
+                ),
+              )}
               {t("dietBuilder.tdeeMissingEnd")}
             </span>
           )}
