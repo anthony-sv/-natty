@@ -110,6 +110,9 @@ import { SetLadderRow } from "./SetLadderRow";
 import { TechniqueCueList } from "./TechniqueCueList";
 import { TimerRing } from "./TimerRing";
 
+/** A stable no-op, so skipping auto-advance doesn't churn the effect's deps. */
+function NOOP(): void {}
+
 /**
  * The guided workout card.
  *
@@ -206,7 +209,18 @@ function PlayerCard({
 
   // Moves on by itself once the countdown actually finishes, rather than
   // making you tap through a card that's already told you it's done.
-  useAutoAdvance(timer.phase, action.onClick);
+  //
+  // **Except on the last step**, where `action.onClick` is `advance`, and
+  // `advance` on a step with no `next` is `finishIfLast` — it ends the whole
+  // session. A cardio block is routinely the last thing in a day, so without
+  // this guard its countdown finishing would tear the session down (and with
+  // it, the cardio log popover) before you ever got a chance to open it and
+  // log what you just did. Ending the workout stays a deliberate tap, same
+  // as `EndWorkoutButton`'s own confirm dialog for bailing out early — the
+  // button already reads "Finish" the whole time this step is running, so
+  // nothing is hidden, it's just no longer automatic.
+  const isLastStep = steps[session.stepIndex + 1] === undefined;
+  useAutoAdvance(timer.phase, isLastStep ? NOOP : action.onClick);
 
   return (
     <Card className="gap-0 overflow-hidden border-primary/40 py-0 ring-primary/30">
