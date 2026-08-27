@@ -144,15 +144,40 @@ export function nextTrainingDay(
   // trained on, and that later timestamp winning here shifted the whole
   // rest-day countdown a day late: the day after training read as "day of
   // training" all over again.
-  const anchor = activity.reduce(
-    (earliest, entry) =>
-      entry.weekNumber === last.weekNumber &&
-      entry.dayNumber === last.dayNumber &&
-      entry.performedAt < earliest
-        ? entry.performedAt
-        : earliest,
-    last.performedAt,
+  //
+  // **Scoped to the current occurrence, not every lap that ever touched this
+  // (week, day).** A routine with one week repeats forever on the same
+  // `weekNumber` (`userRoutineSchema`'s "one week, which repeats"), so a
+  // routine trained for a month has logged activity against, say,
+  // `(week 1, day 3)` on several different real calendar weeks — matching on
+  // (week, day) alone, as the midnight fix above does, isn't enough to tell
+  // those laps apart, since they share the exact same coordinates. Scanning
+  // all of it for the minimum picked up whichever lap happened to be
+  // earliest — often the very first one ever — and anchored `elapsed` on a
+  // session from weeks ago, which skipped straight past a rest day (or
+  // several) that hadn't actually happened yet.
+  //
+  // Walking backward from the chronologically latest entry and stopping the
+  // instant the gap to the next-older one exceeds a single session's length
+  // keeps only this occurrence: still absorbs a completion logged after
+  // midnight (a few hours' gap, at most), but not a session on the exact
+  // same day-of-week from a lap ago (days or weeks).
+  const MAX_SESSION_GAP_MS = 12 * 60 * 60 * 1000; // generous: no real session runs this long
+  const chronological = [...activity].sort(
+    (a, b) => a.performedAt - b.performedAt,
   );
+  let anchor = last.performedAt;
+  for (let i = chronological.length - 1; i >= 0; i--) {
+    const entry = chronological[i]!;
+    if (
+      entry.weekNumber !== last.weekNumber ||
+      entry.dayNumber !== last.dayNumber ||
+      anchor - entry.performedAt > MAX_SESSION_GAP_MS
+    ) {
+      break;
+    }
+    anchor = entry.performedAt;
+  }
 
   // The day right after `last` is always shown as-is, rest or not — one
   // elapsed calendar day accounts for that one. Each day beyond it steps

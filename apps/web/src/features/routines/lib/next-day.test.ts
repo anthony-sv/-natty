@@ -39,6 +39,15 @@ function twoWeekRoutine(): Routine {
   };
 }
 
+/** One week that repeats forever on the same weekNumber — day 2 is rest. */
+function oneWeekRepeatingRoutine(): Routine {
+  return {
+    slug: "test-routine",
+    name: "Test routine",
+    weeks: [{ weekNumber: 1, days: [day(1), day(2, true), day(3)] }],
+  };
+}
+
 /** Two rest days in a row — day 2 *and* day 3 of week 1. */
 function twoRestDaysRoutine(): Routine {
   return {
@@ -215,6 +224,42 @@ describe("nextTrainingDay", () => {
       now,
     );
     expect(result?.day.isRest).toBe(false);
+  });
+
+  it("anchors on the most recent lap of a repeating routine, not an older one at the same (week, day)", () => {
+    // A one-week routine repeats on the same weekNumber forever, so two
+    // different laps can log activity against identical (week, day)
+    // coordinates weeks apart. Anchoring on the *earliest ever* logged
+    // against that pair — rather than the earliest one from the current,
+    // unbroken occurrence — inflated `elapsed` to weeks and skipped straight
+    // past the very next rest day into the day after it.
+    const oldLap = Date.UTC(2026, 7, 1, 20, 0); // Aug 1
+    const recentLap = Date.UTC(2026, 7, 20, 20, 0); // Aug 20
+    const sets = [
+      set({
+        performedAt: oldLap,
+        routineSlug: "test-routine",
+        weekNumber: 1,
+        dayNumber: 1,
+      }),
+      set({
+        performedAt: recentLap,
+        routineSlug: "test-routine",
+        weekNumber: 1,
+        dayNumber: 1,
+      }),
+    ];
+    // One calendar day after the *recent* lap's session — the rest day right
+    // after it should still show as-is, same as any single-lap case.
+    const now = Date.UTC(2026, 7, 21, 20, 0);
+    const result = nextTrainingDay(
+      oneWeekRepeatingRoutine(),
+      sets,
+      [],
+      undefined,
+      now,
+    );
+    expect(result).toEqual({ weekNumber: 1, day: day(2, true) });
   });
 
   it("advances to the day after a completion with nothing logged", () => {
