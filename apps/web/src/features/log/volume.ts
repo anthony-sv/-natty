@@ -76,19 +76,27 @@ export const SPLIT_FOR_PATTERN: Record<MovementPattern, TrainingSplit> = {
   // And a flexor pairs with the biceps beside it, the same way
   // `elbow-flexion` does.
   "wrist-flexion": "pull",
+  // Grip/forearm work has always ridden along with pulling movements in
+  // this split — the same reasoning `wrist-flexion` above already applies.
+  "loaded-carry": "pull",
   "spinal-extension": "pull",
   "spinal-flexion": "core",
   "core-stability": "core",
+  "anti-rotation": "core",
+  "anti-lateral-flexion": "core",
+  rotation: "core",
 
   squat: "legs",
   hinge: "legs",
   lunge: "legs",
   "knee-extension": "legs",
   "knee-flexion": "legs",
+  "nordic-curl": "legs",
   "hip-extension": "legs",
   "hip-abduction": "legs",
   "hip-adduction": "legs",
   "calf-raise": "legs",
+  "seated-calf-raise": "legs",
 
   cardio: "cardio",
 };

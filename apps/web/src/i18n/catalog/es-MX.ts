@@ -39,7 +39,8 @@ export const exerciseNames: Record<string, string> = {
   "chest-dip": "Fondos de pecho",
   "machine-chest-dip": "Fondos en máquina (pecho)",
   "machine-triceps-dip": "Fondos en máquina (tríceps)",
-  "feet-elevated-push-up": "Lagartijas con pies elevados (pecho)",
+  "feet-elevated-push-up": "Lagartijas con pies elevados",
+  "push-up": "Lagartija",
   "standing-cable-chest-press": "Press de pecho en polea de pie",
   "dumbbell-pullover": "Pullover con mancuerna",
 
@@ -64,6 +65,8 @@ export const exerciseNames: Record<string, string> = {
   "machine-mid-row-neutral": "Remo medio en máquina (agarre neutro)",
   "machine-mid-row-overhand": "Remo medio en máquina agarre prono",
   hyperextension: "Hiperextensiones",
+  "weighted-hyperextension": "Hiperextensiones con peso",
+  "single-leg-hyperextension": "Hiperextensiones a una pierna",
 
   // Shoulders and traps
   "seated-barbell-shoulder-press": "Press militar sentado con barra",
@@ -136,6 +139,7 @@ export const exerciseNames: Record<string, string> = {
   "dumbbell-wrist-curl": "Curl de muñeca con mancuerna sentado",
   "barbell-reverse-wrist-curl": "Curl de muñeca inverso con barra sentado",
   "dumbbell-reverse-wrist-curl": "Curl de muñeca inverso con mancuerna sentado",
+  "farmers-carry": "Caminata del granjero",
 
   // Legs
   "back-squat": "Sentadilla con barra",
@@ -179,6 +183,7 @@ export const exerciseNames: Record<string, string> = {
   "banded-hip-abduction": "Abducción de cadera con banda",
   "machine-hip-adduction": "Máquina de aductores sentado",
   "cable-hip-adduction": "Aducción de cadera en polea",
+  "copenhagen-plank": "Plancha copenhague",
 
   // Core
   "machine-ab-crunch": "Crunch en máquina",
@@ -187,6 +192,11 @@ export const exerciseNames: Record<string, string> = {
   plank: "Plancha",
   "ab-wheel-rollout": "Rodillo abdominal",
   "cable-kneeling-crunch": "Crunch de rodillas en polea",
+  "pallof-press": "Press Pallof",
+  "side-plank": "Plancha lateral",
+  "suitcase-carry": "Caminata de maleta",
+  "cable-woodchop": "Leñador en polea",
+  "russian-twist": "Giro ruso",
 
   // Cardio
   "liss-cardio": "Cardio continuo de baja intensidad",
@@ -197,9 +207,11 @@ export const movementNames: Record<string, string> = {
   "bench-press": "Press de banca",
   "incline-press": "Press inclinado",
   "chest-fly": "Aperturas de pecho",
+  "incline-chest-fly": "Aperturas de pecho inclinadas",
   "cable-chest-press": "Press de pecho en polea",
   dip: "Fondos",
   "push-up": "Lagartijas",
+  "incline-push-up": "Lagartijas inclinadas (pies elevados)",
   pullover: "Pullover",
   "lat-pulldown": "Jalón al pecho",
   "pull-up": "Dominadas",
@@ -228,6 +240,7 @@ export const movementNames: Record<string, string> = {
   "triceps-kickback": "Patada de tríceps",
   "wrist-curl": "Curl de muñeca",
   "reverse-wrist-curl": "Curl de muñeca inverso",
+  "farmers-carry": "Caminata del granjero",
   squat: "Sentadilla",
   "hack-squat": "Sentadilla hack",
   "leg-press": "Prensa de piernas",
@@ -236,16 +249,22 @@ export const movementNames: Record<string, string> = {
   "split-squat": "Sentadilla búlgara",
   "step-up": "Subida al cajón",
   "leg-curl": "Curl femoral",
+  "nordic-hamstring-curl": "Curl nórdico femoral",
   "romanian-deadlift": "Peso muerto rumano",
   "calf-raise": "Elevación de talones",
+  "bent-knee-calf-raise": "Elevación de talones sentado",
   "hip-thrust": "Empuje de cadera",
   "glute-bridge": "Puente de glúteo",
   "glute-kickback": "Patada de glúteo",
   "hip-abduction": "Abducción de cadera",
   "hip-adduction": "Aducción de cadera",
+  "copenhagen-plank": "Plancha copenhague",
   "ab-crunch": "Crunch abdominal",
   "plank-hold": "Plancha",
   "ab-wheel-rollout": "Rodillo abdominal",
+  "pallof-press": "Press Pallof",
+  "side-plank": "Plancha lateral",
+  "trunk-rotation": "Rotación de torso",
   "steady-state-cardio": "Cardio continuo",
 };
 

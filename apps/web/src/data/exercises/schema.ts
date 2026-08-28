@@ -51,11 +51,20 @@ export const movementPatternSchema = z.enum([
   // shares nothing but a neighbouring muscle.
   "wrist-flexion",
   "wrist-extension",
+  // Farmer's/suitcase-style carries: grip and forearm endurance under a
+  // static isometric load, not a dynamic wrist range — mechanically closer
+  // to a hold than to either wrist pattern above.
+  "loaded-carry",
   "squat",
   "hinge",
   "lunge",
   "knee-extension",
   "knee-flexion",
+  // Nordic curls are eccentric-only/eccentric-biased hamstring work,
+  // preferentially loading semitendinosus rather than biceps femoris —
+  // genuinely distinct from a concentric-driven machine `knee-flexion`
+  // curl, not just a bodyweight facet of it.
+  "nordic-curl",
   // Hip isolation, kept as three patterns rather than one. A pattern is what
   // makes two exercises plausible substitutes, and abduction and adduction are
   // opposites — a machine that spreads your knees is no substitute for one that
@@ -64,6 +73,12 @@ export const movementPatternSchema = z.enum([
   "hip-abduction",
   "hip-adduction",
   "calf-raise",
+  // A bent knee shifts the ankle's plantarflexors toward the soleus, a
+  // straight knee toward the biarticular gastrocnemius — a real, if
+  // modest, primary-emphasis shift (a hypertrophy trial found standing
+  // calf raise drove far more gastrocnemius growth than seated, with
+  // soleus growth roughly equal either way), not just a posture facet.
+  "seated-calf-raise",
   "spinal-extension",
   // Crunches, reverse crunches and hanging leg raises. One pattern, not two:
   // a leg raise is hip flexion mechanically, but separating it would leave a
@@ -75,6 +90,19 @@ export const movementPatternSchema = z.enum([
   // `spinal-flexion`, the same call that keeps `wrist-flexion` apart from
   // `elbow-flexion`, not a facet of the same pattern.
   "core-stability",
+  // Resisting a rotational torque (a Pallof press) is a genuinely different
+  // stability skill from resisting extension — McGill's own "Big 3" core
+  // framework, the source `core-stability` itself was built from, treats
+  // them as separate, and nothing here transfers-trains the other.
+  "anti-rotation",
+  // Resisting the spine bending sideways (a side plank, a suitcase carry) —
+  // McGill's third stability category, distinct from both of the above.
+  "anti-lateral-flexion",
+  // Actually rotating through a range (a Russian twist, a cable woodchop) —
+  // distinct from `anti-rotation` (which resists rotation) the same way
+  // `spinal-flexion` (moves through a range) is distinct from
+  // `core-stability` (resists moving at all).
+  "rotation",
   "cardio",
 ]);
 export type MovementPattern = z.infer<typeof movementPatternSchema>;

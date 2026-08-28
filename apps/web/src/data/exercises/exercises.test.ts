@@ -145,6 +145,18 @@ describe("routine coverage", () => {
     // pattern in the whole catalog. `plank` stays here too: it moved onto
     // the new `plank-hold` movement the same pattern justifies, but no
     // built-in program was rewritten to use it either.
+    //
+    // A second, web-research-grounded wave (EMG/hypertrophy literature, not
+    // just internal reasoning) landed together: `pallof-press`, `side-plank`,
+    // `suitcase-carry`, `cable-woodchop`, `russian-twist` (abs — anti-rotation/
+    // anti-lateral-flexion/rotation, patterns `core-stability` didn't cover),
+    // `copenhagen-plank` (adductors), `farmers-carry` (forearms),
+    // `weighted-hyperextension`/`single-leg-hyperextension` (spinal-erectors —
+    // more exercises, not a new pattern). `nordic-curl` and `push-up` are here
+    // for a fifth reason each: `nordic-curl` was recategorized off `leg-curl`
+    // onto its own pattern, not newly added; `push-up` is new precisely
+    // because `feet-elevated-push-up` moved off the `push-up` movement onto
+    // `incline-push-up`, which would have left it with no exercise at all.
     expect(unused).toEqual([
       "ab-wheel-rollout",
       "banded-hip-abduction",
@@ -161,11 +173,14 @@ describe("routine coverage", () => {
       "cable-rear-delt-fly",
       "cable-shrug",
       "cable-step-up",
+      "cable-woodchop",
+      "copenhagen-plank",
       "decline-reverse-crunch",
       "donkey-calf-raise",
       "dumbbell-reverse-wrist-curl",
       "dumbbell-step-up",
       "dumbbell-wrist-curl",
+      "farmers-carry",
       "hanging-leg-raise",
       "machine-ab-crunch",
       "machine-hip-abduction",
@@ -173,11 +188,18 @@ describe("routine coverage", () => {
       "machine-hip-thrust",
       "machine-lateral-raise",
       "nordic-curl",
+      "pallof-press",
       "plank",
+      "push-up",
+      "russian-twist",
+      "side-plank",
       "single-leg-calf-raise",
       "single-leg-hip-thrust",
+      "single-leg-hyperextension",
       "smith-step-up",
       "straight-bar-pushdown",
+      "suitcase-carry",
+      "weighted-hyperextension",
     ]);
   });
 });

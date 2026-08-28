@@ -204,6 +204,35 @@ trainable (no `muscleGaps` entry to point to) but had only one pattern in
 the whole catalog, a hole only the newer per-routine variety check could
 name. See "Coverage of a routine" below.
 
+**A second wave landed the same way, held to a stricter bar: a four-agent
+web research pass, cross-checked against real EMG studies, hypertrophy
+trials and coaching literature (not just internal reasoning) before
+touching any data.** It found the `core-stability` merge above hadn't gone
+far enough — McGill's own framework (the thing that justified
+`core-stability` in the first place) treats anti-extension and
+anti-rotation as different stability skills, which lumping plank and Pallof
+press into one pattern didn't honor — so abs picked up `anti-rotation`
+(`pallof-press`), `anti-lateral-flexion` (`side-plank`, `suitcase-carry`)
+and `rotation` (`trunk-rotation`: cable woodchop, Russian twist) as three
+more patterns. The same pass found two real miscategorizations, not gaps:
+`incline-dumbbell-fly` and `feet-elevated-push-up` were both filed as plain
+`chest`, when the same angle-driven muscle shift that already splits
+`incline-press` off `horizontal-press` applies to both — moved onto
+`incline-chest-fly`/`incline-push-up`, upper-chest-primary. (Moving
+`feet-elevated-push-up` off `push-up` left that movement with zero
+exercises, which is what a plain `push-up` exercise is doing in the library
+now too — a real gap the recategorization exposed, not part of the
+original research.) `nordic-curl` (hamstrings) and `seated-calf-raise`
+(calves) moved off `leg-curl`/`calf-raise` onto their own patterns for a
+real but modest mechanical difference (eccentric bias; gastrocnemius vs.
+soleus emphasis) — calves' split is muscle-neutral, since this app has no
+separate soleus/gastrocnemius entry, so it only affects the coverage card's
+pattern tracking, not volume totals. Copenhagen plank (`hip-adduction`,
+adductors) and two more `back-extension` exercises (spinal-erectors) needed
+no new pattern, just more exercises under what already existed. `farmers-carry`
+(`loaded-carry`, forearms) is the one lower-confidence finding in the pass,
+included anyway, flagged as such at its own definition.
+
 ### How routines link to it
 
 `ExerciseEntry.exerciseId` is required and is the source of truth. Program files

@@ -61,6 +61,29 @@ const raw: z.input<typeof movementSchema>[] = [
     primaryMuscles: ["lats"],
     secondaryMuscles: ["chest"],
   },
+  // Incline angle shifts a fly toward the clavicular head the same way it
+  // shifts a press — `incline-dumbbell-fly` used to sit under plain
+  // `chest-fly`/`chest`, which was simply wrong, not a design choice. Still
+  // a fly, not a press, so it keeps the `chest-fly` pattern rather than
+  // getting its own — the joint action didn't change, only the muscle did.
+  {
+    id: "incline-chest-fly",
+    name: "Incline chest fly",
+    pattern: "chest-fly",
+    primaryMuscles: ["upper-chest"],
+    secondaryMuscles: ["front-delts"],
+  },
+  // A feet-elevated ("decline") push-up tilts the press angle *toward* the
+  // head, not away from it — the opposite of what "decline" implies from
+  // bench-press terminology, and mechanically the same shift incline press
+  // makes. `feet-elevated-push-up` used to sit under plain `push-up`/`chest`.
+  {
+    id: "incline-push-up",
+    name: "Incline (feet-elevated) push-up",
+    pattern: "horizontal-press",
+    primaryMuscles: ["upper-chest"],
+    secondaryMuscles: ["triceps", "front-delts"],
+  },
 
   // ── Back ───────────────────────────────────────────────────────────────
   {
@@ -264,6 +287,18 @@ const raw: z.input<typeof movementSchema>[] = [
     primaryMuscles: ["forearms"],
     secondaryMuscles: [],
   },
+  // Lowest-confidence addition in the research pass this came from — the
+  // evidence for a real, distinct third forearm pattern is thinner than
+  // the rest (mostly trade sources, not peer-reviewed head-to-heads).
+  // Included anyway; flagged here so it isn't mistaken for the same
+  // confidence level as the rest of this section.
+  {
+    id: "farmers-carry",
+    name: "Farmer's carry",
+    pattern: "loaded-carry",
+    primaryMuscles: ["forearms"],
+    secondaryMuscles: [],
+  },
 
   // ── Legs ───────────────────────────────────────────────────────────────
   {
@@ -333,10 +368,30 @@ const raw: z.input<typeof movementSchema>[] = [
     primaryMuscles: ["hamstrings"],
     secondaryMuscles: ["glutes", "spinal-erectors"],
   },
+  // `nordic-curl` the exercise used to sit under `leg-curl` — a concentric,
+  // machine-driven pattern that a bodyweight eccentric-only movement doesn't
+  // actually belong to. See the `nordic-curl` pattern's own comment.
+  {
+    id: "nordic-hamstring-curl",
+    name: "Nordic hamstring curl",
+    pattern: "nordic-curl",
+    primaryMuscles: ["hamstrings"],
+    secondaryMuscles: ["calves"],
+  },
   {
     id: "calf-raise",
     name: "Calf raise",
     pattern: "calf-raise",
+    primaryMuscles: ["calves"],
+    secondaryMuscles: [],
+  },
+  // `seated-calf-raise` the exercise used to sit under plain `calf-raise` —
+  // see the `seated-calf-raise` pattern's own comment for why the bent-knee
+  // version is split out.
+  {
+    id: "bent-knee-calf-raise",
+    name: "Seated (bent-knee) calf raise",
+    pattern: "seated-calf-raise",
     primaryMuscles: ["calves"],
     secondaryMuscles: [],
   },
@@ -382,6 +437,22 @@ const raw: z.input<typeof movementSchema>[] = [
     primaryMuscles: ["adductors"],
     secondaryMuscles: [],
   },
+  // Research pass finding: wide-stance squats/lunges don't meaningfully
+  // train adductors despite the folk wisdom that they do — dedicated
+  // adduction work activates them far more. Copenhagen plank is the
+  // well-studied (soccer injury-prevention literature) exception: a
+  // genuinely different, closed-chain, eccentric, bodyweight loading
+  // strategy the two machine/cable exercises above don't cover. Same
+  // `hip-adduction` pattern — the joint action is identical, only the
+  // loading strategy differs, so this is a movement addition, not a
+  // pattern one.
+  {
+    id: "copenhagen-plank",
+    name: "Copenhagen plank",
+    pattern: "hip-adduction",
+    primaryMuscles: ["adductors"],
+    secondaryMuscles: ["abs"],
+  },
 
   // ── Core ───────────────────────────────────────────────────────────────
   // The last muscle the gaps card reported as `never-direct`. Nothing in the
@@ -409,6 +480,34 @@ const raw: z.input<typeof movementSchema>[] = [
     id: "ab-wheel-rollout",
     name: "Ab wheel rollout",
     pattern: "core-stability",
+    primaryMuscles: ["abs"],
+    secondaryMuscles: [],
+  },
+  // See the `anti-rotation` pattern's own comment.
+  {
+    id: "pallof-press",
+    name: "Pallof press",
+    pattern: "anti-rotation",
+    primaryMuscles: ["abs"],
+    secondaryMuscles: [],
+  },
+  // See the `anti-lateral-flexion` pattern's own comment. Covers both the
+  // plain bodyweight hold and the loaded suitcase-carry variant — the
+  // latter gets a `muscleOverride` on its own exercise entry for the added
+  // forearms grip demand, since a static hold and a loaded carry aren't
+  // equally forearm-taxing.
+  {
+    id: "side-plank",
+    name: "Side plank",
+    pattern: "anti-lateral-flexion",
+    primaryMuscles: ["abs"],
+    secondaryMuscles: [],
+  },
+  // See the `rotation` pattern's own comment.
+  {
+    id: "trunk-rotation",
+    name: "Trunk rotation",
+    pattern: "rotation",
     primaryMuscles: ["abs"],
     secondaryMuscles: [],
   },

@@ -96,7 +96,7 @@ const raw: z.input<typeof exerciseSchema>[] = [
   // ── Chest: fly ─────────────────────────────────────────────────────────
   {
     id: "incline-dumbbell-fly",
-    movementId: "chest-fly",
+    movementId: "incline-chest-fly",
     name: "Incline dumbbell fly",
     aliases: ["Incline bench db flyes"],
     facets: { implement: "dumbbell", posture: "incline" },
@@ -155,10 +155,25 @@ const raw: z.input<typeof exerciseSchema>[] = [
   },
   {
     id: "feet-elevated-push-up",
-    movementId: "push-up",
-    name: "Feet-elevated push-up (chest)",
+    movementId: "incline-push-up",
+    // Name dropped the "(chest)" qualifier now that it's upper-chest —
+    // the alias keeps the source doc's original "(Chest)" spelling
+    // verbatim so it still resolves, per the standing rule that a
+    // spelling is never rewritten, only matched.
+    name: "Feet-elevated push-up",
     aliases: ["Feet elevated push-ups (Chest)"],
     facets: { implement: "bodyweight", posture: "decline" },
+  },
+  // Plain push-up, added alongside the incline-push-up recategorization —
+  // the `push-up` movement had exactly one exercise before this, and it
+  // just moved to `incline-push-up`, which would have left a real, common
+  // bodyweight chest exercise with none.
+  {
+    id: "push-up",
+    movementId: "push-up",
+    name: "Push-up",
+    aliases: [],
+    facets: { implement: "bodyweight" },
   },
   {
     id: "standing-cable-chest-press",
@@ -352,6 +367,24 @@ const raw: z.input<typeof exerciseSchema>[] = [
     movementId: "back-extension",
     name: "Hyperextension",
     facets: { implement: "bodyweight" },
+  },
+  {
+    id: "weighted-hyperextension",
+    movementId: "back-extension",
+    name: "Weighted hyperextension",
+    aliases: ["Weighted back extension"],
+    facets: { implement: "plate" },
+  },
+  {
+    id: "single-leg-hyperextension",
+    movementId: "back-extension",
+    name: "Single-leg hyperextension",
+    aliases: ["Single leg back extension"],
+    facets: {
+      implement: "bodyweight",
+      stance: "single-leg",
+      laterality: "unilateral",
+    },
   },
 
   // ── Shoulders: overhead press ──────────────────────────────────────────
@@ -849,6 +882,13 @@ const raw: z.input<typeof exerciseSchema>[] = [
     ],
     facets: { implement: "dumbbell", posture: "seated", grip: "pronated" },
   },
+  {
+    id: "farmers-carry",
+    movementId: "farmers-carry",
+    name: "Farmer's carry",
+    aliases: ["Farmers carry", "Farmer carry"],
+    facets: { implement: "dumbbell", posture: "standing" },
+  },
 
   // ── Legs: squat patterns ───────────────────────────────────────────────
   {
@@ -1006,7 +1046,7 @@ const raw: z.input<typeof exerciseSchema>[] = [
   },
   {
     id: "nordic-curl",
-    movementId: "leg-curl",
+    movementId: "nordic-hamstring-curl",
     name: "Nordic curl",
     aliases: ["Nordic hamstring curl"],
     facets: { implement: "bodyweight" },
@@ -1035,7 +1075,7 @@ const raw: z.input<typeof exerciseSchema>[] = [
   },
   {
     id: "seated-calf-raise",
-    movementId: "calf-raise",
+    movementId: "bent-knee-calf-raise",
     name: "Seated calf raise",
     facets: { implement: "machine", posture: "seated" },
   },
@@ -1142,6 +1182,13 @@ const raw: z.input<typeof exerciseSchema>[] = [
     name: "Cable hip adduction",
     facets: { implement: "cable", posture: "standing", laterality: "unilateral" },
   },
+  {
+    id: "copenhagen-plank",
+    movementId: "copenhagen-plank",
+    name: "Copenhagen plank",
+    aliases: [],
+    facets: { implement: "bodyweight", laterality: "unilateral" },
+  },
 
   // ── Core ───────────────────────────────────────────────────────────────
   {
@@ -1190,6 +1237,48 @@ const raw: z.input<typeof exerciseSchema>[] = [
     movementId: "ab-wheel-rollout",
     aliases: ["Ab wheel", "Ab roller"],
     facets: { posture: "prone" },
+  },
+  {
+    id: "pallof-press",
+    name: "Pallof press",
+    movementId: "pallof-press",
+    aliases: [],
+    facets: { implement: "cable", posture: "standing" },
+  },
+  {
+    id: "side-plank",
+    name: "Side plank",
+    movementId: "side-plank",
+    aliases: [],
+    facets: { implement: "bodyweight" },
+  },
+  // A loaded, walked variant of the same anti-lateral-flexion demand —
+  // genuinely also a forearm grip exercise, which the plain bodyweight
+  // hold above isn't, hence the override.
+  {
+    id: "suitcase-carry",
+    name: "Suitcase carry",
+    movementId: "side-plank",
+    aliases: [],
+    facets: { implement: "dumbbell" },
+    muscleOverride: {
+      primaryMuscles: ["abs"],
+      secondaryMuscles: ["forearms"],
+    },
+  },
+  {
+    id: "cable-woodchop",
+    name: "Cable woodchop",
+    movementId: "trunk-rotation",
+    aliases: [],
+    facets: { implement: "cable", posture: "standing" },
+  },
+  {
+    id: "russian-twist",
+    name: "Russian twist",
+    movementId: "trunk-rotation",
+    aliases: [],
+    facets: { implement: "plate" },
   },
 
   // ── Conditioning ───────────────────────────────────────────────────────
