@@ -77,6 +77,16 @@ export interface MergedLibrary {
   anatomy: ExerciseAnatomy;
   /** Every muscle something in the merged library makes primary. */
   trainableDirectly: ReadonlySet<MuscleId>;
+  /**
+   * For each muscle, every movement pattern the library ever uses to train it
+   * *directly* (primary) — the catalog's own answer to "what variety is even
+   * possible here." A routine's own coverage check (`features/routines/lib/
+   * coverage.ts`) diffs its authored exercise list against this rather than
+   * deriving it itself, the same reason `trainableDirectly` lives here: it's
+   * a fact about the catalog, not about any one routine, and building it
+   * outside would mean that feature learning `LibraryEntry`'s shape.
+   */
+  patternsByMuscle: ReadonlyMap<MuscleId, ReadonlySet<MovementPattern>>;
 }
 
 /**
@@ -112,6 +122,15 @@ export function mergeLibrary(userRows: UserExercise[]): MergedLibrary {
     pattern: (id) => byId.get(id)?.pattern,
   };
 
+  const patternsByMuscle = new Map<MuscleId, Set<MovementPattern>>();
+  for (const entry of all) {
+    for (const muscle of entry.primaryMuscles) {
+      const patterns = patternsByMuscle.get(muscle) ?? new Set();
+      patterns.add(entry.pattern);
+      patternsByMuscle.set(muscle, patterns);
+    }
+  }
+
   return {
     all,
     selectable: all.filter((entry) => !entry.isArchived),
@@ -119,5 +138,6 @@ export function mergeLibrary(userRows: UserExercise[]): MergedLibrary {
     byName: (name) => byName.get(normalizeName(name)),
     anatomy,
     trainableDirectly: new Set(all.flatMap((entry) => entry.primaryMuscles)),
+    patternsByMuscle,
   };
 }

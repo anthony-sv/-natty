@@ -370,6 +370,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "pattern.hip-adduction": "Aducci\u00f3n de cadera",
   "pattern.calf-raise": "Elevaci\u00f3n de talones",
   "pattern.spinal-extension": "Extensi\u00f3n de espalda baja",
+  "pattern.spinal-flexion": "Flexi\u00f3n abdominal",
   "pattern.cardio": "Cardio",
 
   // ── Tus propios ejercicios ────────────────────────────────
@@ -799,6 +800,17 @@ export const esMX: Record<keyof typeof en, string> = {
   "about.routines.p3":
     "Las marcas debajo de cada ejercicio son una por serie, así que un finisher de siete series pesa visiblemente más que un accesorio de tres.",
   "about.routines.link": "Ver los programas",
+
+  "about.coverage.title": "Cobertura",
+  "about.coverage.body":
+    "Una tarjeta en cada página de programa que lee su propia lista de ejercicios — no tu registro — para decir qué nunca entrena.",
+  "about.coverage.p1":
+    "Es sobre el programa, no sobre ti: una rutina que escribiste hace cinco minutos y nunca has entrenado recibe una respuesta real, igual que una que llevas meses corriendo.",
+  "about.coverage.p2":
+    "La variedad de movimiento se agrupa por músculo, no por empuje/jalón/pierna — solo así puede decirte que presionas pero nunca haces aperturas, ya que ese split junta pecho, deltoides y tríceps.",
+  "about.coverage.p3":
+    "La mayoría de los músculos solo tienen un patrón de movimiento en todo el catálogo, así que una sección de variedad silenciosa es el caso normal, no evidencia de que la revisión no funciona.",
+  "about.coverage.link": "Revisar un programa",
 
   "about.player.title": "Hacer una sesión",
   "about.player.body":
@@ -1470,6 +1482,32 @@ export const esMX: Record<keyof typeof en, string> = {
   "routines.warmupSet": "Calentamiento",
   "routines.warmupSets.one": "Set de calentamiento",
   "routines.warmupSets.other": "Sets de calentamiento",
+
+  // ── Routine coverage ─────────────────────────────────────────────────────
+  "coverage.title": "Cobertura",
+  "coverage.body":
+    "Qué entrena y qué le falta a este programa, leído de su propia lista de ejercicios — no de tu registro.",
+  "coverage.muscles": "Músculos",
+  "coverage.reason.indirect-only": "Solo trabajados de forma indirecta",
+  "coverage.reasonBody.indirect-only":
+    "Reciben carga en otros ejercicios de este programa, pero nunca les toca un set propio.",
+  "coverage.reason.never-direct": "Ningún ejercicio de aquí los trabaja directo",
+  "coverage.reasonBody.never-direct":
+    "Nada en el catálogo los tiene como músculo principal — es un hueco del catálogo, no algo que este programa esté eligiendo saltarse.",
+  "coverage.reason.not-in-routine": "El catálogo puede trabajarlos; este programa no lo hace",
+  "coverage.reasonBody.not-in-routine":
+    "Hay un ejercicio directo para ellos en algún lugar del catálogo — este programa simplemente nunca lo usa.",
+  "coverage.indirectCount.one": "· {count} ejercicio",
+  "coverage.indirectCount.other": "· {count} ejercicios",
+  "coverage.variety": "Poca variedad de movimiento",
+  "coverage.varietyBody":
+    "Músculos que este programa entrena directo, pero con menos de los patrones de movimiento del catálogo de los que hay disponibles — vale la pena revisarlo, no necesariamente es un problema.",
+  "coverage.varietyCount": "{used} de {total} patrones",
+  "coverage.clear": "Cobertura completa",
+  "coverage.clearBody":
+    "Todo músculo que el catálogo puede trabajar directo tiene un set aquí, con todos sus patrones disponibles en juego.",
+  "coverage.note":
+    "La mayoría de los músculos solo tienen un patrón de movimiento en todo el catálogo — una sección de variedad silenciosa es lo esperado, no una señal de que falta algo.",
 
   // ── The player ───────────────────────────────────────────────────────────
   "player.stepOf": "Paso {current} de {total} · faltan {left}",

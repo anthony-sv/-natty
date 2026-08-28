@@ -32,6 +32,7 @@ import { exportRoutine } from "@/features/backup/use-backup";
 import { useShare } from "@/features/backup/use-share";
 import { ActivateProgramButton } from "@/features/routines/components/ActivateProgramButton";
 import { DeleteRoutineButton } from "@/features/routines/components/DeleteRoutineButton";
+import { RoutineCoverageCard } from "@/features/routines/components/RoutineCoverageCard";
 import { useRoutine } from "@/features/routines/use-routines";
 import {
   exerciseDisplayName,
@@ -233,6 +234,8 @@ function RoutineBody({
           </CardContent>
         </Card>
       ) : null}
+
+      <RoutineCoverageCard routine={routine} />
     </Page>
   );
 }

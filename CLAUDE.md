@@ -549,6 +549,86 @@ Program › Day. The program page had **no** way back to the list at all, and th
 day page's bare "← name" said where you'd come from but not where you were.
 `BreadcrumbLink` composes with `render={<Link/>}` the same way `Item` does.
 
+### Coverage of a routine
+
+Every program page carries a `RoutineCoverageCard` reading the routine's own
+`weeks[].days[].exercises[]` — not your log — to say what it never trains.
+**Not `muscleGaps` (`features/log/volume.ts`) applied to a routine.**
+`muscleGaps` reads `WeekVolume[]` derived from what you've actually *logged*
+over recent weeks: "what have I been neglecting lately." This reads what a
+program *prescribes*, so it answers instantly for a routine you wrote five
+minutes ago and have never trained — two different questions, and fusing them
+would mean the design-time one needs a log to answer a question about a
+document. `routineCoverage()` lives in `features/routines/lib/coverage.ts`,
+pure and injected like `volume.ts`/`next-day.ts`, so it tests against small
+fixtures instead of the real 143-exercise library.
+
+**Per routine, not per day.** A single day is supposed to specialize — leg
+day has no chest work on purpose — so a per-day version of this would just
+relearn the split back at you. It flattens every week and day via the
+existing `scheduleSequence` (`next-day.ts`) rather than re-deriving day
+iteration.
+
+Two sections, same three-way reason split `muscleGaps` already uses
+(`never-direct` / `indirect-only`, plus `not-in-routine` replacing its
+`not-trained` — a routine you've never run can't have "trained" anything),
+and a second, newer check:
+
+**Movement variety is scoped per muscle, not per push/pull/legs/core split.**
+`SPLIT_FOR_PATTERN` buckets `chest-fly` with `lateral-raise` under "push,"
+which can't answer "am I doing all the chest movements" — that needs
+grouping by muscle instead: for each muscle, which patterns does the *whole
+library* ever use to train it directly, and which does *this routine* use.
+Only 8 of the 18 muscles have more than one pattern in the library at all
+(lats, quads, glutes, forearms have 3; chest, front-delts, hamstrings,
+triceps have 2) — the other 10 can never produce a variety finding once
+trained, so a quiet variety section is expected, not a sign something's
+broken. And "only flat bench, no incline" isn't a chest finding: incline
+press trains `upper-chest`, a separate muscle from `chest` (flat press +
+fly) — it shows up as an `upper-chest` muscle gap instead.
+
+**Both sides of the variety comparison count only exercises that make the
+muscle primary.** Measuring the library's available patterns by primary but
+the routine's usage by primary-or-secondary would let a muscle read "fully
+covered" while never actually getting a direct set in that pattern. Accepted
+cost: a routine with only barbell rows (upper-back primary, lats secondary)
+reports `lats` missing `horizontal-pull`, since the row was never a
+lats-primary exercise — defensible, you genuinely never do a horizontal pull
+*for lats* there.
+
+`patternsByMuscle` — for each muscle, every pattern the library ever trains
+it directly with — lives on `MergedLibrary` (`features/library/merged.ts`)
+beside `trainableDirectly`, built in the same pass over `all`. Same reasoning
+as `trainableDirectly` itself: it's a fact about the catalog, not about any
+one routine, and deriving it inside `features/routines` instead would mean
+that feature learning `LibraryEntry`'s shape.
+
+**No `kind` filter, no `warmupRefs` handling, and neither is an oversight.**
+`mobility`/`stretch` `ExerciseEntry.kind` values are schema-allowed but
+nothing has ever authored one; cardio movements carry empty muscle arrays
+and `"cardio"` is explicitly excluded from the pattern universe, so a cardio
+entry naturally contributes nothing; `warmupRefs` (the day-level mobility
+opener) carries free move names with no `exerciseId` and structurally can't
+reach this. An entry whose *every* prescription is `isWarmup: true` is
+skipped, following `isLoggableStep`'s existing rule that a warmup set isn't
+real work — a mixed entry (a warmup phase then working sets) still counts.
+
+**The card always renders**, unlike `VolumePanel`'s gaps card (one of six,
+hidden when empty). This card *is* the whole feature; "nothing missing" is
+the answer, not the absence of one, so it needs an all-clear state rather
+than disappearing on a well-designed program.
+
+Checked against the six built-in programs while building this: none come
+back `never-direct` (the same finding `volume.test.ts` already pins for
+`muscleGaps`), and the real findings read as genuinely useful rather than
+noisy — forearms wrist-flexed but never wrist-extended, lats never pulled
+via `pullover`, quads never via `lunge`. Building this also caught a real
+gap one level down: `movementPatternSchema` has always had 24 patterns, but
+`pattern.spinal-flexion` was missing from both message dictionaries — nothing
+had ever rendered a crunch-pattern label until this card did. Exactly the
+"the test only catches what it walks" failure mode described under
+Internationalization, closed the same way: add the string, not a workaround.
+
 ### The index
 
 `/` is a launchpad, not a landing page: the resume card (or a start prompt),

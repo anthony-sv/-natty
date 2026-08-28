@@ -14,6 +14,7 @@ import {
   RulerIcon,
   PillIcon,
   ShoppingBasketIcon,
+  TargetIcon,
   TrendingUpIcon,
   TrophyIcon,
   UserCircleIcon,
@@ -98,6 +99,15 @@ const GUIDE: Section[] = [
     points: ["about.routines.p1", "about.routines.p2", "about.routines.p3"],
     to: "/routines",
     linkKey: "about.routines.link",
+  },
+  {
+    id: "coverage",
+    icon: TargetIcon,
+    titleKey: "about.coverage.title",
+    bodyKey: "about.coverage.body",
+    points: ["about.coverage.p1", "about.coverage.p2", "about.coverage.p3"],
+    to: "/routines",
+    linkKey: "about.coverage.link",
   },
   {
     id: "player",

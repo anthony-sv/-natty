@@ -375,6 +375,7 @@ export const en = {
   "pattern.hip-adduction": "Hip adduction",
   "pattern.calf-raise": "Calf raise",
   "pattern.spinal-extension": "Spinal extension",
+  "pattern.spinal-flexion": "Spinal flexion",
   "pattern.cardio": "Cardio",
 
   // ── Your own exercises ─────────────────────────────────────
@@ -812,6 +813,17 @@ export const en = {
   "about.routines.p3":
     "The marks under each exercise are one per set, so a seven-set finisher visibly outweighs a three-set accessory.",
   "about.routines.link": "Browse the programs",
+
+  "about.coverage.title": "Coverage",
+  "about.coverage.body":
+    "A card on every program page reading its own exercise list — not your log — to say what it never trains.",
+  "about.coverage.p1":
+    "It's about the program, not you: a routine you wrote five minutes ago and have never trained gets a real answer, same as one you've run for months.",
+  "about.coverage.p2":
+    "Movement variety is grouped by muscle, not by push/pull/legs — only that way can it tell you that you press but never fly, since the split lumps chest, delts and triceps together.",
+  "about.coverage.p3":
+    "Most muscles only have one movement pattern in the whole library, so a quiet variety section is the common case, not evidence the check isn't working.",
+  "about.coverage.link": "Check a program",
 
   "about.player.title": "Running a session",
   "about.player.body":
@@ -1493,6 +1505,32 @@ export const en = {
   // `routines.summary.finishers`.
   "routines.warmupSets.one": "Warmup set",
   "routines.warmupSets.other": "Warmup sets",
+
+  // ── Routine coverage ─────────────────────────────────────────────────────
+  "coverage.title": "Coverage",
+  "coverage.body":
+    "What this program trains and misses, read from its own exercise list — not your log.",
+  "coverage.muscles": "Muscles",
+  "coverage.reason.indirect-only": "Only ever worked indirectly",
+  "coverage.reasonBody.indirect-only":
+    "These take load on other lifts in this program, but never get a set of their own.",
+  "coverage.reason.never-direct": "No exercise here trains these directly",
+  "coverage.reasonBody.never-direct":
+    "Nothing in the library lists these as the primary muscle — a catalog gap, not something this program is choosing to skip.",
+  "coverage.reason.not-in-routine": "The library can train these; this program doesn't",
+  "coverage.reasonBody.not-in-routine":
+    "There's a direct exercise for these somewhere in the library — this program just never reaches for it.",
+  "coverage.indirectCount.one": "· {count} exercise",
+  "coverage.indirectCount.other": "· {count} exercises",
+  "coverage.variety": "Limited movement variety",
+  "coverage.varietyBody":
+    "Muscles this program trains directly, but with fewer of the library's own movement patterns than are available — worth a look, not necessarily a problem.",
+  "coverage.varietyCount": "{used} of {total} patterns",
+  "coverage.clear": "Full coverage",
+  "coverage.clearBody":
+    "Every muscle the library can train directly gets a set here, with every pattern available for it in play.",
+  "coverage.note":
+    "Most muscles have only one movement pattern in the library at all — a quiet variety section is expected, not a sign something's missing.",
 
   // ── The player ───────────────────────────────────────────────────────────
   "player.stepOf": "Step {current} of {total} · {left} to go",

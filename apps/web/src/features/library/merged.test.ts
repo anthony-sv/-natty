@@ -119,6 +119,19 @@ describe("feeding the volume derivation", () => {
     expect(library.trainableDirectly.has("traps")).toBe(true);
   });
 
+  it("adds a custom exercise's pattern to its primary muscle's set, not its secondary one", () => {
+    const library = mergeLibrary([custom()]);
+    expect(library.patternsByMuscle.get("glutes")?.has("hip-extension")).toBe(
+      true,
+    );
+    // Hamstrings is only secondary on this fixture — hip-extension shouldn't
+    // land there even though hamstrings has other real patterns from the
+    // built-in library (hinge, knee-flexion).
+    expect(
+      library.patternsByMuscle.get("hamstrings")?.has("hip-extension"),
+    ).toBeFalsy();
+  });
+
   it("returns nothing for an id from neither half", () => {
     const library = mergeLibrary([]);
     expect(library.byId("user:deleted")).toBeUndefined();
