@@ -1515,29 +1515,15 @@ export const en = {
 
   // ── Routine coverage ─────────────────────────────────────────────────────
   "coverage.title": "Coverage",
-  "coverage.body":
-    "What this program trains and misses, read from its own exercise list — not your log.",
-  "coverage.muscles": "Muscles",
-  "coverage.reason.indirect-only": "Only ever worked indirectly",
-  "coverage.reasonBody.indirect-only":
-    "These take load on other lifts in this program, but never get a set of their own.",
-  "coverage.reason.never-direct": "No exercise here trains these directly",
-  "coverage.reasonBody.never-direct":
-    "Nothing in the library lists these as the primary muscle — a catalog gap, not something this program is choosing to skip.",
-  "coverage.reason.not-in-routine": "The library can train these; this program doesn't",
-  "coverage.reasonBody.not-in-routine":
-    "There's a direct exercise for these somewhere in the library — this program just never reaches for it.",
-  "coverage.indirectCount.one": "· {count} exercise",
-  "coverage.indirectCount.other": "· {count} exercises",
-  "coverage.variety": "Limited movement variety",
-  "coverage.varietyBody":
-    "Muscles this program trains directly, but with fewer of the library's own movement patterns than are available — worth a look, not necessarily a problem.",
-  "coverage.varietyCount": "{used} of {total} patterns",
+  "coverage.missingCount.one": "{count} pattern missing",
+  "coverage.missingCount.other": "{count} patterns missing",
+  "coverage.indirectCount.one": "· {count} exercise indirect",
+  "coverage.indirectCount.other": "· {count} exercises indirect",
   "coverage.clear": "Full coverage",
   "coverage.clearBody":
     "Every muscle the library can train directly gets a set here, with every pattern available for it in play.",
-  "coverage.note":
-    "Most muscles have only one movement pattern in the library at all — a quiet variety section is expected, not a sign something's missing.",
+  "coverage.neverDirectNote":
+    "No exercise in the library trains these directly:",
 
   // ── The player ───────────────────────────────────────────────────────────
   "player.stepOf": "Step {current} of {total} · {left} to go",

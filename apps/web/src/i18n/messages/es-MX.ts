@@ -1492,29 +1492,15 @@ export const esMX: Record<keyof typeof en, string> = {
 
   // ── Routine coverage ─────────────────────────────────────────────────────
   "coverage.title": "Cobertura",
-  "coverage.body":
-    "Qué entrena y qué le falta a este programa, leído de su propia lista de ejercicios — no de tu registro.",
-  "coverage.muscles": "Músculos",
-  "coverage.reason.indirect-only": "Solo trabajados de forma indirecta",
-  "coverage.reasonBody.indirect-only":
-    "Reciben carga en otros ejercicios de este programa, pero nunca les toca un set propio.",
-  "coverage.reason.never-direct": "Ningún ejercicio de aquí los trabaja directo",
-  "coverage.reasonBody.never-direct":
-    "Nada en el catálogo los tiene como músculo principal — es un hueco del catálogo, no algo que este programa esté eligiendo saltarse.",
-  "coverage.reason.not-in-routine": "El catálogo puede trabajarlos; este programa no lo hace",
-  "coverage.reasonBody.not-in-routine":
-    "Hay un ejercicio directo para ellos en algún lugar del catálogo — este programa simplemente nunca lo usa.",
-  "coverage.indirectCount.one": "· {count} ejercicio",
-  "coverage.indirectCount.other": "· {count} ejercicios",
-  "coverage.variety": "Poca variedad de movimiento",
-  "coverage.varietyBody":
-    "Músculos que este programa entrena directo, pero con menos de los patrones de movimiento del catálogo de los que hay disponibles — vale la pena revisarlo, no necesariamente es un problema.",
-  "coverage.varietyCount": "{used} de {total} patrones",
+  "coverage.missingCount.one": "{count} patrón faltante",
+  "coverage.missingCount.other": "{count} patrones faltantes",
+  "coverage.indirectCount.one": "· {count} ejercicio indirecto",
+  "coverage.indirectCount.other": "· {count} ejercicios indirectos",
   "coverage.clear": "Cobertura completa",
   "coverage.clearBody":
     "Todo músculo que el catálogo puede trabajar directo tiene un set aquí, con todos sus patrones disponibles en juego.",
-  "coverage.note":
-    "La mayoría de los músculos solo tienen un patrón de movimiento en todo el catálogo — una sección de variedad silenciosa es lo esperado, no una señal de que falta algo.",
+  "coverage.neverDirectNote":
+    "Ningún ejercicio del catálogo trabaja estos directo:",
 
   // ── The player ───────────────────────────────────────────────────────────
   "player.stepOf": "Paso {current} de {total} · faltan {left}",

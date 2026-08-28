@@ -4,7 +4,12 @@ import { routines } from "@/data/routines";
 import type { ExerciseEntry, Prescription, Routine, TrainingDay } from "@/data/routines";
 import type { ExerciseAnatomy } from "@/features/log/volume";
 import { mergeLibrary } from "@/features/library/merged";
-import { routineCoverage, type LibraryMuscleIndex } from "./coverage";
+import {
+  routineCoverage,
+  unifiedCoverage,
+  type LibraryMuscleIndex,
+  type LibraryPatternIndex,
+} from "./coverage";
 
 /**
  * A handful of exercises that don't exist in the real library, standing in
@@ -58,6 +63,44 @@ function libraryOf(): LibraryMuscleIndex {
       ["lats", new Set(["vertical-pull", "horizontal-pull"])],
       ["biceps", new Set(["elbow-flexion"])],
     ]),
+  };
+}
+
+/**
+ * Same facts as `libraryOf`, plus the name/pattern/muscle projection
+ * `unifiedCoverage` needs to name candidates — and, unlike `libraryOf`,
+ * internally consistent: every `trainableDirectly` muscle also has a real
+ * `patternsByMuscle` entry, matching the real merged library's invariant
+ * (both are built from the same loop over the same rows) that `libraryOf`
+ * deliberately breaks just to exercise `routineCoverage`'s reason logic.
+ */
+function patternLibraryOf(): LibraryPatternIndex {
+  return {
+    trainableDirectly: new Set<MuscleId>([
+      "chest",
+      "upper-back",
+      "lats",
+      "biceps",
+      "forearms",
+      "glutes",
+    ]),
+    patternsByMuscle: new Map<MuscleId, ReadonlySet<MovementPattern>>([
+      ["chest", new Set(["horizontal-press", "chest-fly"])],
+      ["upper-back", new Set(["horizontal-pull"])],
+      ["lats", new Set(["vertical-pull", "horizontal-pull"])],
+      ["biceps", new Set(["elbow-flexion"])],
+      ["forearms", new Set(["wrist-flexion"])],
+      ["glutes", new Set(["hip-extension"])],
+    ]),
+    all: [
+      { id: "bench-press", pattern: "horizontal-press", primaryMuscles: ["chest"] },
+      { id: "fly", pattern: "chest-fly", primaryMuscles: ["chest"] },
+      { id: "row", pattern: "horizontal-pull", primaryMuscles: ["upper-back"] },
+      { id: "pulldown", pattern: "vertical-pull", primaryMuscles: ["lats"] },
+      { id: "curl", pattern: "elbow-flexion", primaryMuscles: ["biceps"] },
+      { id: "wrist-curl", pattern: "wrist-flexion", primaryMuscles: ["forearms"] },
+      { id: "hip-thrust", pattern: "hip-extension", primaryMuscles: ["glutes"] },
+    ],
   };
 }
 
@@ -247,6 +290,85 @@ describe("cardio", () => {
       indirectCount: 0,
     });
     expect(result.variety).toEqual([]);
+  });
+});
+
+describe("unifiedCoverage", () => {
+  it("expands a not-in-routine muscle into one row per available pattern, with named candidates", () => {
+    const r = routine([[day(1, [entry("bench")])]]);
+    const coverage = routineCoverage(r, anatomyOf(), patternLibraryOf(), [
+      "chest",
+      "glutes",
+    ]);
+    const result = unifiedCoverage(coverage, patternLibraryOf(), [
+      "chest",
+      "glutes",
+    ]);
+    expect(result.muscles).toContainEqual({
+      muscle: "glutes",
+      indirectCount: 0,
+      missing: [{ pattern: "hip-extension", candidates: ["hip-thrust"] }],
+    });
+    expect(result.neverDirect).toEqual([]);
+  });
+
+  it("keeps a never-direct muscle out of muscles, listing it in neverDirect instead", () => {
+    const r = routine([[day(1, [entry("bench")])]]);
+    const coverage = routineCoverage(r, anatomyOf(), patternLibraryOf(), [
+      "chest",
+      "hamstrings",
+    ]);
+    const result = unifiedCoverage(coverage, patternLibraryOf(), [
+      "chest",
+      "hamstrings",
+    ]);
+    expect(result.neverDirect).toEqual(["hamstrings"]);
+    expect(result.muscles.some((m) => m.muscle === "hamstrings")).toBe(false);
+  });
+
+  it("carries the indirect count through for an indirect-only muscle", () => {
+    const r = routine([[day(1, [entry("curl")])]]); // curl: secondary forearms
+    const coverage = routineCoverage(r, anatomyOf(), patternLibraryOf(), [
+      "biceps",
+      "forearms",
+    ]);
+    const result = unifiedCoverage(coverage, patternLibraryOf(), [
+      "biceps",
+      "forearms",
+    ]);
+    expect(result.muscles).toContainEqual({
+      muscle: "forearms",
+      indirectCount: 1,
+      missing: [{ pattern: "wrist-flexion", candidates: ["wrist-curl"] }],
+    });
+  });
+
+  it("only lists the pattern actually missing for a partially-covered muscle", () => {
+    const r = routine([[day(1, [entry("bench")])]]); // chest: horizontal-press only
+    const coverage = routineCoverage(r, anatomyOf(), patternLibraryOf(), ["chest"]);
+    const result = unifiedCoverage(coverage, patternLibraryOf(), ["chest"]);
+    expect(result.muscles).toEqual([
+      {
+        muscle: "chest",
+        indirectCount: 0,
+        missing: [{ pattern: "chest-fly", candidates: ["fly"] }],
+      },
+    ]);
+  });
+
+  it("orders muscles by the allMuscles list, not by discovery order", () => {
+    // row: upper-back primary, lats secondary-only — lats is indirect-only,
+    // glutes is not-in-routine; both are real gaps regardless of order.
+    const r = routine([[day(1, [entry("row")])]]);
+    const coverage = routineCoverage(r, anatomyOf(), patternLibraryOf(), [
+      "glutes",
+      "lats",
+    ]);
+    const reversed = unifiedCoverage(coverage, patternLibraryOf(), [
+      "lats",
+      "glutes",
+    ]);
+    expect(reversed.muscles.map((m) => m.muscle)).toEqual(["lats", "glutes"]);
   });
 });
 

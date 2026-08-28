@@ -166,3 +166,98 @@ export function routineCoverage(
 
   return { muscleGaps, variety };
 }
+
+/** One missing pattern for a muscle, with real library exercises that would fill it. */
+export interface MissingPattern {
+  pattern: MovementPattern;
+  /**
+   * Exercise ids, not names — a built-in exercise's `name` is the canonical
+   * *English* string, and rendering it raw would skip translation entirely
+   * (the same mistake `exerciseDisplayName()` exists to prevent elsewhere).
+   * The caller resolves these through `useNames().exercise(id)` at render
+   * time.
+   */
+  candidates: string[];
+}
+
+/** One muscle's worth of what's missing, pattern by pattern. */
+export interface MuscleCoverageEntry {
+  muscle: MuscleId;
+  /** Entries the routine already gives it as secondary, if any. */
+  indirectCount: number;
+  missing: MissingPattern[];
+}
+
+export interface UnifiedCoverage {
+  /** One row per muscle missing at least one pattern the library can offer. */
+  muscles: MuscleCoverageEntry[];
+  /** Muscles nothing in the whole library trains directly — no candidates possible. */
+  neverDirect: MuscleId[];
+}
+
+/**
+ * Library-wide facts needed to name candidate exercises, not just detect a
+ * gap — extends `LibraryMuscleIndex` with a name/pattern/muscle projection
+ * of the catalog. `MergedLibrary` (`features/library/merged.ts`) already has
+ * an `all: LibraryEntry[]` with every field this needs, so it satisfies this
+ * structurally too — same reason `LibraryMuscleIndex` itself is minimal
+ * rather than importing `LibraryEntry` directly.
+ */
+export interface LibraryPatternIndex extends LibraryMuscleIndex {
+  all: readonly {
+    id: string;
+    pattern: MovementPattern;
+    primaryMuscles: readonly MuscleId[];
+  }[];
+}
+
+/**
+ * `routineCoverage`'s two lists (muscle gaps, movement variety), folded into
+ * one — every muscle missing something becomes a single row naming exactly
+ * which patterns and which real exercises would close it. A muscle with *no*
+ * direct work at all doesn't read differently in this view: `never-direct`
+ * and `not-in-routine` both expand into "here's what's missing," one row per
+ * pattern the library actually offers for that muscle — the distinction
+ * between "you haven't" and "you can't" only survives for muscles the whole
+ * catalog has no primary exercise for at all, which have nothing to expand
+ * into and are reported separately in `neverDirect`.
+ */
+export function unifiedCoverage(
+  coverage: RoutineCoverage,
+  library: LibraryPatternIndex,
+  allMuscles: readonly MuscleId[],
+): UnifiedCoverage {
+  const candidatesFor = (muscle: MuscleId, pattern: MovementPattern): string[] =>
+    library.all
+      .filter((entry) => entry.pattern === pattern && entry.primaryMuscles.includes(muscle))
+      .map((entry) => entry.id);
+
+  const neverDirect: MuscleId[] = [];
+  const byMuscle = new Map<MuscleId, MuscleCoverageEntry>();
+
+  for (const gap of coverage.muscleGaps) {
+    const available = library.patternsByMuscle.get(gap.muscle);
+    if (gap.reason === "never-direct" || available === undefined || available.size === 0) {
+      neverDirect.push(gap.muscle);
+      continue;
+    }
+    const missing = [...available]
+      .sort(byPatternOrder)
+      .map((pattern) => ({ pattern, candidates: candidatesFor(gap.muscle, pattern) }));
+    byMuscle.set(gap.muscle, { muscle: gap.muscle, indirectCount: gap.indirectCount, missing });
+  }
+
+  for (const entry of coverage.variety) {
+    const missing = entry.missing.map((pattern) => ({
+      pattern,
+      candidates: candidatesFor(entry.muscle, pattern),
+    }));
+    byMuscle.set(entry.muscle, { muscle: entry.muscle, indirectCount: 0, missing });
+  }
+
+  const muscles = allMuscles
+    .filter((muscle) => byMuscle.has(muscle))
+    .map((muscle) => byMuscle.get(muscle)!);
+
+  return { muscles, neverDirect };
+}
