@@ -197,6 +197,13 @@ lift common enough (`step-up`) that its total absence is itself the gap.
 family) but is glute-primary, unlike either — the sibling comment in
 `movements.ts` says why.
 
+**The routine coverage card's movement-variety section is a second,
+newer source of the same justification** — `plank-hold`/`ab-wheel-rollout`
+and the `core-stability` pattern exist because abs was already directly
+trainable (no `muscleGaps` entry to point to) but had only one pattern in
+the whole catalog, a hole only the newer per-routine variety check could
+name. See "Coverage of a routine" below.
+
 ### How routines link to it
 
 `ExerciseEntry.exerciseId` is required and is the source of truth. Program files
@@ -621,13 +628,27 @@ than disappearing on a well-designed program.
 Checked against the six built-in programs while building this: none come
 back `never-direct` (the same finding `volume.test.ts` already pins for
 `muscleGaps`), and the real findings read as genuinely useful rather than
-noisy — forearms wrist-flexed but never wrist-extended, lats never pulled
-via `pullover`, quads never via `lunge`. Building this also caught a real
-gap one level down: `movementPatternSchema` has always had 24 patterns, but
+noisy. Building this also caught a real gap one level down:
+`movementPatternSchema` has always had 24 patterns, but
 `pattern.spinal-flexion` was missing from both message dictionaries — nothing
 had ever rendered a crunch-pattern label until this card did. Exactly the
 "the test only catches what it walks" failure mode described under
 Internationalization, closed the same way: add the string, not a workaround.
+
+**The first real findings split into two different kinds, confirmed against
+the real exercise ids and the real program files rather than trusted from
+the card's own summary — not just a UI change.** Forearms wrist-flexed but
+never wrist-extended in three programs, lats never pulled via `pullover` in
+two (`arms-program` also never got a lats-primary row at all — every row
+there is upper-back-primary, fixable with `single-arm-dumbbell-row`), quads
+never via `lunge` in two, and neither program with a dedicated shoulder day
+used a front raise. All five are routine-editing fixes — the exercises
+already exist, so closing them is adding a line to a program file, not
+library work — deliberately left undone here so the card keeps a live
+example to point at; `chest-arms-program` needed none of them, its coverage
+was already clean. Only abs turned up a genuine library gap that got fixed —
+see "Coverage passes" above for `core-stability`/`plank-hold`/
+`ab-wheel-rollout`.
 
 ### The index
 

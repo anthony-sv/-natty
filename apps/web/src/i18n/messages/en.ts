@@ -376,6 +376,7 @@ export const en = {
   "pattern.calf-raise": "Calf raise",
   "pattern.spinal-extension": "Spinal extension",
   "pattern.spinal-flexion": "Spinal flexion",
+  "pattern.core-stability": "Core stability",
   "pattern.cardio": "Cardio",
 
   // ── Your own exercises ─────────────────────────────────────

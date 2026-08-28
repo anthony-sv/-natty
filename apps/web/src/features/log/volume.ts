@@ -78,6 +78,7 @@ export const SPLIT_FOR_PATTERN: Record<MovementPattern, TrainingSplit> = {
   "wrist-flexion": "pull",
   "spinal-extension": "pull",
   "spinal-flexion": "core",
+  "core-stability": "core",
 
   squat: "legs",
   hinge: "legs",

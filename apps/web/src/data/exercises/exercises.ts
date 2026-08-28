@@ -1166,18 +1166,30 @@ const raw: z.input<typeof exerciseSchema>[] = [
     facets: { implement: "bodyweight", posture: "standing" },
   },
   {
-    id: "plank",
-    name: "Plank",
-    movementId: "ab-crunch",
-    aliases: ["Front plank"],
-    facets: { implement: "bodyweight", posture: "prone" },
-  },
-  {
     id: "cable-kneeling-crunch",
     name: "Kneeling cable crunch",
     movementId: "ab-crunch",
     aliases: ["Cable crunch", "Kneeling cable crunches"],
     facets: { implement: "cable" },
+  },
+
+  // ── Core stability ─────────────────────────────────────────────────────
+  // Resists the spine moving rather than moving it — mechanically distinct
+  // from the crunch/flexion work above. See `plank-hold`/`ab-wheel-rollout`
+  // in movements.ts.
+  {
+    id: "plank",
+    name: "Plank",
+    movementId: "plank-hold",
+    aliases: ["Front plank"],
+    facets: { implement: "bodyweight", posture: "prone" },
+  },
+  {
+    id: "ab-wheel-rollout",
+    name: "Ab wheel rollout",
+    movementId: "ab-wheel-rollout",
+    aliases: ["Ab wheel", "Ab roller"],
+    facets: { posture: "prone" },
   },
 
   // ── Conditioning ───────────────────────────────────────────────────────

@@ -185,6 +185,7 @@ export const exerciseNames: Record<string, string> = {
   "decline-reverse-crunch": "Crunch inverso en banco declinado",
   "hanging-leg-raise": "Elevación de piernas colgado",
   plank: "Plancha",
+  "ab-wheel-rollout": "Rodillo abdominal",
   "cable-kneeling-crunch": "Crunch de rodillas en polea",
 
   // Cardio
@@ -243,6 +244,8 @@ export const movementNames: Record<string, string> = {
   "hip-abduction": "Abducción de cadera",
   "hip-adduction": "Aducción de cadera",
   "ab-crunch": "Crunch abdominal",
+  "plank-hold": "Plancha",
+  "ab-wheel-rollout": "Rodillo abdominal",
   "steady-state-cardio": "Cardio continuo",
 };
 

@@ -371,6 +371,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "pattern.calf-raise": "Elevaci\u00f3n de talones",
   "pattern.spinal-extension": "Extensi\u00f3n de espalda baja",
   "pattern.spinal-flexion": "Flexi\u00f3n abdominal",
+  "pattern.core-stability": "Estabilidad del core",
   "pattern.cardio": "Cardio",
 
   // ── Tus propios ejercicios ────────────────────────────────

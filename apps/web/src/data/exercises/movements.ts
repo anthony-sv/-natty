@@ -394,6 +394,24 @@ const raw: z.input<typeof movementSchema>[] = [
     primaryMuscles: ["abs"],
     secondaryMuscles: [],
   },
+  // Added via the routine coverage card's variety section, not the muscle
+  // gaps card — abs was already directly trainable via `ab-crunch`, just
+  // with only one pattern in the whole catalog. See CLAUDE.md's "Coverage
+  // passes" section.
+  {
+    id: "plank-hold",
+    name: "Plank",
+    pattern: "core-stability",
+    primaryMuscles: ["abs"],
+    secondaryMuscles: [],
+  },
+  {
+    id: "ab-wheel-rollout",
+    name: "Ab wheel rollout",
+    pattern: "core-stability",
+    primaryMuscles: ["abs"],
+    secondaryMuscles: [],
+  },
 
   // ── Conditioning ───────────────────────────────────────────────────────
   {

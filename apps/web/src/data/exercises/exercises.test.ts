@@ -138,7 +138,15 @@ describe("routine coverage", () => {
     //   are a deliberate library-coverage pass (forearms and adductors had
     //   effectively no dedicated movement at all) — same reasoning, no
     //   built-in program was rewritten to use them.
+    //
+    // `ab-wheel-rollout` joins them for a fourth reason: it wasn't named by
+    // the muscle gaps card (abs was already directly trainable) but by the
+    // routine coverage card's movement-variety section — abs had only one
+    // pattern in the whole catalog. `plank` stays here too: it moved onto
+    // the new `plank-hold` movement the same pattern justifies, but no
+    // built-in program was rewritten to use it either.
     expect(unused).toEqual([
+      "ab-wheel-rollout",
       "banded-hip-abduction",
       "barbell-glute-bridge",
       "barbell-hip-thrust",

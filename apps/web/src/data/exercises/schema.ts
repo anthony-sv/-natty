@@ -70,6 +70,11 @@ export const movementPatternSchema = z.enum([
   // pattern with one exercise in it and no substitution value, which is the
   // opposite of what a pattern is for.
   "spinal-flexion",
+  // A plank or an ab wheel rollout doesn't move the spine through a range at
+  // all — it resists the spine from extending. Mechanically distinct from
+  // `spinal-flexion`, the same call that keeps `wrist-flexion` apart from
+  // `elbow-flexion`, not a facet of the same pattern.
+  "core-stability",
   "cardio",
 ]);
 export type MovementPattern = z.infer<typeof movementPatternSchema>;
