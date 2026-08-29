@@ -329,9 +329,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "fatigue.title": "Fatiga",
   "fatigue.description":
     "Qu\u00e9 m\u00fasculos siguen en recuperaci\u00f3n, seg\u00fan cu\u00e1ndo los trabajaste directo por \u00faltima vez.",
-  "fatigue.figureAlt": "Vista {view} de la recuperaci\u00f3n muscular",
-  "fatigue.view.front": "Frontal",
-  "fatigue.view.back": "Posterior",
+  "fatigue.figureSummary": "Figura 3D de recuperaci\u00f3n muscular \u2014 arrastra para girar",
+  "fatigue.spectrumToggle": "Colores completos de disposici\u00f3n (verde\u2013amarillo\u2013naranja)",
   "fatigue.state.recovering": "En recuperaci\u00f3n",
   "fatigue.state.nearly": "Casi listo",
   "fatigue.state.ready": "Listo",

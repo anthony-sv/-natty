@@ -152,35 +152,34 @@ body {
   --heat-4: #3d8ce8;
 }
 
+
 /*
- * The Fatigue map's ramp — how far a muscle still is from recovered.
- *
- * **Sequential, not the heatmap's blue**: this is a different magnitude
- * (recovery, not training volume) on the same page, and reusing `--heat-*`
- * would read as the same measurement. Warm rather than cool because that's how
- * a fatigue/readiness map is conventionally read. Terminates on palette slot 2
- * (`#eb6834`), the same hex `--split-pull` and `--chart-body-fat` land on.
- *
- * Checked for Oklab lightness monotonicity, the way `--heat-*` is: light steps
- * from 0.915 down to 0.671, dark climbs the opposite way from 0.349 up to
- * 0.671 — "more" is lighter on a dark surface, same as every ramp here.
- *
- * A recovered or never-trained muscle is `--muted`, never a fifth step —
- * exactly the heatmap's empty-cell rule, and what makes the map read at a
- * glance: colour means "still recovering", grey means "go".
+ * Status palette (good/warning/serious/critical) — dataviz skill's fixed,
+ * reserved scale, never themed. Mode-invariant: the same four hexes clear
+ * 3:1+ on both the light and dark chart surfaces, so there's one definition
+ * rather than a light/dark pair. Used by the fatigue figure (`FatigueCard`):
+ * `nearly`/`recovering` are flagged in `warning`/`serious`+`critical` in
+ * *both* of the figure's colour modes; `good` additionally stands in for
+ * `ready`/`untrained` in the spectrum mode specifically (see `--muscle-native`
+ * below for the default mode's un-flagged reading of those same two states).
  */
 :root {
-  --fatigue-1: #fbdcc9;
-  --fatigue-2: #f5b48c;
-  --fatigue-3: #f08652;
-  --fatigue-4: #eb6834;
-}
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
 
-.dark {
-  --fatigue-1: #5c2a12;
-  --fatigue-2: #8a3a19;
-  --fatigue-3: #c04a1f;
-  --fatigue-4: #eb6834;
+  /*
+   * A swatch-only reference to the 3D muscle figure's own Blender-authored
+   * base tone (Principled BSDF (0.62, 0.27, 0.24)) — the actual figure never
+   * reads this token, since its material colour is baked into the exported
+   * model. It exists purely so `FatigueCard`'s legend can show a "ready"
+   * swatch that matches what un-flagged muscles actually look like in the
+   * default colour mode, rather than lying with a flat placeholder colour.
+   * Mode-invariant for the same reason `--status-*` is: it's describing a
+   * rendered 3D material, not a themed UI surface.
+   */
+  --muscle-native: #9e453d;
 }
 
 /*

@@ -75,7 +75,12 @@ export function VolumePanel() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Tonnage leads: it's the number people come to look at, and the set
+      {/* The 3D figure leads: "what's ready to train right now" is the
+          question people open this tab to answer, ahead of the tallies
+          below. */}
+      <FatigueCard />
+
+      {/* Tonnage next: it's the number people come to look at, and the set
           counts below are the ones that actually inform training. */}
       <TonnageCard />
 
@@ -98,8 +103,6 @@ export function VolumePanel() {
           <MuscleVolumeBars muscles={latest.muscles} />
         </CardContent>
       </Card>
-
-      <FatigueCard />
 
       <Card>
         <CardHeader>

@@ -332,9 +332,8 @@ export const en = {
   "fatigue.title": "Fatigue",
   "fatigue.description":
     "Which muscles are still recovering, based on when you last trained them directly.",
-  "fatigue.figureAlt": "{view} view of muscle recovery",
-  "fatigue.view.front": "Front",
-  "fatigue.view.back": "Back",
+  "fatigue.figureSummary": "3D muscle recovery figure — drag to rotate",
+  "fatigue.spectrumToggle": "Full readiness colours (green–yellow–orange)",
   "fatigue.state.recovering": "Recovering",
   "fatigue.state.nearly": "Nearly ready",
   "fatigue.state.ready": "Ready",
