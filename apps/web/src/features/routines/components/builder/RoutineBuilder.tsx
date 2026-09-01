@@ -85,6 +85,7 @@ import {
   linkToPrevious,
   unlinkFromPrevious,
   moveDay,
+  moveExercise,
   timed,
   toRoutine,
   type DraftDay,
@@ -569,7 +570,12 @@ function DayEditor({
               ) : null}
               <ExerciseEditor
                 exercise={exercise}
+                index={i}
+                exerciseCount={day.exercises.length}
                 onChange={(patch) => updateExercise(i, patch)}
+                onMove={(to) =>
+                  onChange({ exercises: moveExercise(day.exercises, i, to) })
+                }
                 onRemove={() =>
                   onChange({
                     exercises: day.exercises.filter((_, j) => j !== i),
@@ -692,11 +698,17 @@ function LinkRow({
 
 function ExerciseEditor({
   exercise,
+  index,
+  exerciseCount,
   onChange,
+  onMove,
   onRemove,
 }: {
   exercise: DraftExercise;
+  index: number;
+  exerciseCount: number;
   onChange: (patch: Partial<DraftExercise>) => void;
+  onMove: (to: number) => void;
   onRemove: () => void;
 }) {
   const t = useT();
@@ -710,6 +722,9 @@ function ExerciseEditor({
     value,
     label: t(key as never),
   }));
+  const displayName = exercise.exerciseId
+    ? names.exercise(exercise.exerciseId)
+    : t("builder.pickExercise");
 
   // Typing a lift the library doesn't have is the moment you find out it's
   // missing, so that's where adding one belongs — not on another page you'd
@@ -858,20 +873,43 @@ function ExerciseEditor({
           />
         ) : null}
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="ml-auto text-muted-foreground"
-          aria-label={t("builder.removeExercise", {
-            name: exercise.exerciseId
-              ? names.exercise(exercise.exerciseId)
-              : t("builder.pickExercise"),
-          })}
-          onClick={onRemove}
-        >
-          <XIcon />
-        </Button>
+        {/* Buttons rather than drag-and-drop, same call `DayEditor`'s day
+            reorder makes above — this list was append-only otherwise, so a
+            missed exercise could only ever be added at the end. */}
+        <div className="ml-auto flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground"
+            disabled={index === 0}
+            aria-label={t("builder.moveExerciseUp", { name: displayName })}
+            onClick={() => onMove(index - 1)}
+          >
+            <ChevronUpIcon />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground"
+            disabled={index === exerciseCount - 1}
+            aria-label={t("builder.moveExerciseDown", { name: displayName })}
+            onClick={() => onMove(index + 1)}
+          >
+            <ChevronDownIcon />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground"
+            aria-label={t("builder.removeExercise", { name: displayName })}
+            onClick={onRemove}
+          >
+            <XIcon />
+          </Button>
+        </div>
       </div>
 
       {/* Substitutes, in your own order of preference. Ids rather than free

@@ -456,6 +456,8 @@ export const esMX: Record<keyof typeof en, string> = {
   "builder.unlink": "Separarlas",
   "builder.transition": "Entre (s)",
   "builder.addExercise": "Agregar un ejercicio",
+  "builder.moveExerciseUp": "Mover {name} antes",
+  "builder.moveExerciseDown": "Mover {name} después",
   "builder.removeExercise": "Quitar {name}",
   "builder.noExercises": "Todav\u00eda no hay nada en este d\u00eda.",
   "builder.pickExercise": "Elige un ejercicio",

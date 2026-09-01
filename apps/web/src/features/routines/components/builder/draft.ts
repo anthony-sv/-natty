@@ -416,6 +416,36 @@ export function moveDay(
   return next;
 }
 
+/**
+ * Move an exercise to another position in its day, carrying its phases,
+ * substitutes and everything else about it.
+ *
+ * Mirrors `moveDay` above for the same reason: the exercise list used to be
+ * append-only, so fixing a missed exercise or reordering to match how the
+ * day is actually run meant deleting and retyping everything after the spot
+ * it belonged in. A superset's members are linked by `groupId`, not by
+ * position, so a move that breaks a pair's adjacency correctly stops
+ * rendering them as linked — `isLinkedToPrevious` re-checks neighbours by
+ * array position — and a group left with one member is stripped by
+ * `toRoutine` on save, same as unlinking one by hand does today.
+ *
+ * Out of range is a no-op rather than an error, for the same reason
+ * `moveDay`'s guard is: the buttons are disabled at the ends.
+ */
+export function moveExercise(
+  exercises: DraftExercise[],
+  from: number,
+  to: number,
+): DraftExercise[] {
+  if (to < 0 || to >= exercises.length || from < 0 || from >= exercises.length) {
+    return exercises;
+  }
+  const next = [...exercises];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
 /** Whether this exercise is run in rotation with the one directly above it. */
 export function isLinkedToPrevious(
   exercises: DraftExercise[],

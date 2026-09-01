@@ -460,6 +460,8 @@ export const en = {
   "builder.unlink": "Break it up",
   "builder.transition": "Between (s)",
   "builder.addExercise": "Add an exercise",
+  "builder.moveExerciseUp": "Move {name} earlier",
+  "builder.moveExerciseDown": "Move {name} later",
   "builder.removeExercise": "Remove {name}",
   "builder.noExercises": "Nothing on this day yet.",
   "builder.pickExercise": "Pick an exercise",

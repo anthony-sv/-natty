@@ -1000,6 +1000,13 @@ const raw: z.input<typeof exerciseSchema>[] = [
     facets: { implement: "dumbbell", laterality: "alternating" },
   },
   {
+    id: "smith-lunge",
+    movementId: "lunge",
+    name: "Smith machine lunge",
+    aliases: ["Smith lunges", "Smith machine lunges"],
+    facets: { implement: "smith", laterality: "alternating" },
+  },
+  {
     id: "smith-bulgarian-split-squat",
     movementId: "split-squat",
     name: "Smith machine Bulgarian split squat",

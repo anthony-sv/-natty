@@ -157,6 +157,7 @@ export const exerciseNames: Record<string, string> = {
   "leg-extension-toes-pointed": "Extensión de cuádriceps (puntas estiradas)",
   "walking-lunge": "Zancadas caminando",
   "alternating-dumbbell-lunge": "Zancadas alternas con mancuernas",
+  "smith-lunge": "Zancadas en máquina Smith",
   "smith-bulgarian-split-squat": "Sentadilla búlgara en máquina Smith",
   "cable-step-up": "Subida al cajón en polea",
   "dumbbell-step-up": "Subida al cajón con mancuernas",

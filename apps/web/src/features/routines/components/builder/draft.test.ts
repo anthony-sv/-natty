@@ -15,6 +15,7 @@ import {
   unlinkFromPrevious,
   finisherPhase,
   moveDay,
+  moveExercise,
   timed,
   toDraft,
   toPrescriptions,
@@ -914,6 +915,41 @@ describe("moveDay", () => {
     const days = week(["A", "B"]);
     moveDay(days, 0, 1);
     expect(days.map((d) => d.label)).toEqual(["A", "B"]);
+  });
+});
+
+describe("moveExercise", () => {
+  const exercise = (exerciseId: string): DraftExercise => ({
+    exerciseId,
+    orAlternatives: [],
+    kind: "resistance",
+    isFinisher: false,
+    phases: [emptyPhase()],
+  });
+
+  it("reorders a day's exercises, not just appends", () => {
+    // The case this exists for: the exercise list used to be append-only, so
+    // a missed lift could only ever land at the end.
+    const exercises = ["squat", "leg-press", "leg-extension"].map(exercise);
+    const moved = moveExercise(exercises, 2, 0);
+    expect(moved.map((e) => e.exerciseId)).toEqual([
+      "leg-extension",
+      "squat",
+      "leg-press",
+    ]);
+  });
+
+  it("refuses to move off either end rather than losing an exercise", () => {
+    const exercises = ["squat", "leg-press"].map(exercise);
+    expect(moveExercise(exercises, 0, -1)).toBe(exercises);
+    expect(moveExercise(exercises, 1, 2)).toBe(exercises);
+    expect(moveExercise(exercises, 0, -1)).toHaveLength(2);
+  });
+
+  it("leaves the original array alone", () => {
+    const exercises = ["squat", "leg-press"].map(exercise);
+    moveExercise(exercises, 0, 1);
+    expect(exercises.map((e) => e.exerciseId)).toEqual(["squat", "leg-press"]);
   });
 });
 
