@@ -188,6 +188,20 @@ const raw: z.input<typeof exerciseSchema>[] = [
     aliases: ["Db pullover"],
     facets: { implement: "dumbbell", posture: "lying" },
   },
+  {
+    id: "machine-pullover",
+    movementId: "pullover",
+    name: "Machine pullover",
+    aliases: [],
+    facets: { implement: "machine", posture: "seated" },
+  },
+  {
+    id: "cable-pullover",
+    movementId: "pullover",
+    name: "Cable pullover",
+    aliases: [],
+    facets: { implement: "cable", posture: "standing" },
+  },
 
   // ── Back: vertical pull ────────────────────────────────────────────────
   {
@@ -1262,8 +1276,8 @@ const raw: z.input<typeof exerciseSchema>[] = [
     aliases: [],
     facets: { implement: "dumbbell" },
     muscleOverride: {
-      primaryMuscles: ["abs"],
-      secondaryMuscles: ["forearms"],
+      primaryMuscles: ["obliques"],
+      secondaryMuscles: ["abs", "forearms"],
     },
   },
   {

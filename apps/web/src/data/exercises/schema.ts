@@ -23,6 +23,7 @@ export const muscleSchema = z.enum([
   "calves",
   "spinal-erectors",
   "abs",
+  "obliques",
 ]);
 export type MuscleId = z.infer<typeof muscleSchema>;
 

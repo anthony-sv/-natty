@@ -80,6 +80,7 @@ export const RECOVERY_HOURS: Record<MuscleId, number> = {
   calves: 24,
   forearms: 24,
   abs: 24,
+  obliques: 24,
 
   // Small isolation muscles — plus glutes, on Contreras's SRA model.
   "front-delts": 36,

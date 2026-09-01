@@ -1235,6 +1235,7 @@ export const esMX: Record<keyof typeof en, string> = {
   "muscle.calves": "Pantorrillas",
   "muscle.spinal-erectors": "Erectores espinales",
   "muscle.abs": "Abdominales",
+  "muscle.obliques": "Oblicuos",
 
   // ── History ──────────────────────────────────────────────────────────────
   "history.tab": "Historial",

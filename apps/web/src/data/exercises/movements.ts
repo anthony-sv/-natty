@@ -61,26 +61,32 @@ const raw: z.input<typeof movementSchema>[] = [
     primaryMuscles: ["lats"],
     secondaryMuscles: ["chest"],
   },
-  // Incline angle shifts a fly toward the clavicular head the same way it
-  // shifts a press — `incline-dumbbell-fly` used to sit under plain
-  // `chest-fly`/`chest`, which was simply wrong, not a design choice. Still
-  // a fly, not a press, so it keeps the `chest-fly` pattern rather than
-  // getting its own — the joint action didn't change, only the muscle did.
+  // A fly's wide, cross-body arc keeps the whole pec under stretch and load
+  // through the rep, unlike a press's narrower bar path — so tilting the
+  // bench biases it toward the clavicular head without handing it over the
+  // way it does for a press. Chest stays primary; upper-chest rides along as
+  // secondary, and the exercise is written and prescribed interchangeably
+  // with the other chest flies (`chest-fly`) rather than as its own slot.
   {
     id: "incline-chest-fly",
     name: "Incline chest fly",
     pattern: "chest-fly",
-    primaryMuscles: ["upper-chest"],
-    secondaryMuscles: ["front-delts"],
+    primaryMuscles: ["chest"],
+    secondaryMuscles: ["upper-chest", "front-delts"],
   },
   // A feet-elevated ("decline") push-up tilts the press angle *toward* the
   // head, not away from it — the opposite of what "decline" implies from
   // bench-press terminology, and mechanically the same shift incline press
   // makes. `feet-elevated-push-up` used to sit under plain `push-up`/`chest`.
+  // Pattern follows that shift too, not just the muscle: it's the bodyweight
+  // sibling of `incline-press`, not a second, separate upper-chest pattern —
+  // left as `horizontal-press` once, it made the coverage card treat a plain
+  // push-up variant as the only fix for a gap regular incline pressing
+  // already closes.
   {
     id: "incline-push-up",
     name: "Incline (feet-elevated) push-up",
-    pattern: "horizontal-press",
+    pattern: "incline-press",
     primaryMuscles: ["upper-chest"],
     secondaryMuscles: ["triceps", "front-delts"],
   },
@@ -483,33 +489,42 @@ const raw: z.input<typeof movementSchema>[] = [
     primaryMuscles: ["abs"],
     secondaryMuscles: [],
   },
-  // See the `anti-rotation` pattern's own comment.
+  // See the `anti-rotation` pattern's own comment. Resisting rotation is an
+  // oblique job, not a rectus-abdominis one — obliques primary, abs
+  // secondary for the bracing. Not `abs`-primary like `ab-crunch`/
+  // `plank-hold`: crediting anti-rotation/anti-lateral-flexion/rotation work
+  // to plain `abs` was flagging a routine as "missing abs variety" over
+  // patterns that are really an oblique-training decision most lifters make
+  // on purpose (a bigger waist isn't the goal for most physiques), not a gap
+  // in their ab training.
   {
     id: "pallof-press",
     name: "Pallof press",
     pattern: "anti-rotation",
-    primaryMuscles: ["abs"],
-    secondaryMuscles: [],
+    primaryMuscles: ["obliques"],
+    secondaryMuscles: ["abs"],
   },
-  // See the `anti-lateral-flexion` pattern's own comment. Covers both the
-  // plain bodyweight hold and the loaded suitcase-carry variant — the
-  // latter gets a `muscleOverride` on its own exercise entry for the added
-  // forearms grip demand, since a static hold and a loaded carry aren't
-  // equally forearm-taxing.
+  // See the `anti-lateral-flexion` pattern's own comment, and `pallof-press`
+  // just above for why this is obliques-primary rather than abs-primary.
+  // Covers both the plain bodyweight hold and the loaded suitcase-carry
+  // variant — the latter gets a `muscleOverride` on its own exercise entry
+  // for the added forearms grip demand, since a static hold and a loaded
+  // carry aren't equally forearm-taxing.
   {
     id: "side-plank",
     name: "Side plank",
     pattern: "anti-lateral-flexion",
-    primaryMuscles: ["abs"],
-    secondaryMuscles: [],
+    primaryMuscles: ["obliques"],
+    secondaryMuscles: ["abs"],
   },
-  // See the `rotation` pattern's own comment.
+  // See the `rotation` pattern's own comment, and `pallof-press` above for
+  // why this is obliques-primary rather than abs-primary.
   {
     id: "trunk-rotation",
     name: "Trunk rotation",
     pattern: "rotation",
-    primaryMuscles: ["abs"],
-    secondaryMuscles: [],
+    primaryMuscles: ["obliques"],
+    secondaryMuscles: ["abs"],
   },
 
   // ── Conditioning ───────────────────────────────────────────────────────

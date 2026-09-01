@@ -43,6 +43,8 @@ export const exerciseNames: Record<string, string> = {
   "push-up": "Lagartija",
   "standing-cable-chest-press": "Press de pecho en polea de pie",
   "dumbbell-pullover": "Pullover con mancuerna",
+  "machine-pullover": "Pullover en máquina",
+  "cable-pullover": "Pullover en polea",
 
   // Back
   "lat-pulldown-wide": "Jalón al pecho agarre abierto",

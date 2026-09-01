@@ -1250,6 +1250,7 @@ export const en = {
   "muscle.calves": "Calves",
   "muscle.spinal-erectors": "Spinal erectors",
   "muscle.abs": "Abs",
+  "muscle.obliques": "Obliques",
 
   // ── History ──────────────────────────────────────────────────────────────
   "history.tab": "History",

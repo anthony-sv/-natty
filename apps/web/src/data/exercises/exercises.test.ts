@@ -157,6 +157,11 @@ describe("routine coverage", () => {
     // onto its own pattern, not newly added; `push-up` is new precisely
     // because `feet-elevated-push-up` moved off the `push-up` movement onto
     // `incline-push-up`, which would have left it with no exercise at all.
+    // `cable-pullover`/`machine-pullover` are a sixth reason, and the only one
+    // that isn't a coverage-driven addition: `pullover` (lats) had exactly one
+    // exercise, `dumbbell-pullover`, so a user picking a machine or cable
+    // pullover in the library had nothing to find — no pattern gap, just a
+    // thin roster for a movement plenty of gyms offer three ways.
     expect(unused).toEqual([
       "ab-wheel-rollout",
       "banded-hip-abduction",
@@ -170,6 +175,7 @@ describe("routine coverage", () => {
       "cable-hip-adduction",
       "cable-kneeling-crunch",
       "cable-lateral-raise",
+      "cable-pullover",
       "cable-rear-delt-fly",
       "cable-shrug",
       "cable-step-up",
@@ -187,6 +193,7 @@ describe("routine coverage", () => {
       "machine-hip-adduction",
       "machine-hip-thrust",
       "machine-lateral-raise",
+      "machine-pullover",
       "nordic-curl",
       "pallof-press",
       "plank",
