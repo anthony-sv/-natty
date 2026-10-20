@@ -255,7 +255,7 @@ comments — don't cite a study there that wasn't checked.
   variety findings (front raise, close-grip bench, nordics, carries) are
   accepted rather than missed: pressing covers front delts and adding every
   pattern would make sessions longer for little return.
-- `glute-biased-back-extension` was added for the glute program: same
+- `glute-biased-hyperextension` was added for the glute program: same
   `back-extension` movement, glute-primary via `muscleOverride`, because the
   setup (rounded upper back, hips doing the extending) is what moves the work.
 

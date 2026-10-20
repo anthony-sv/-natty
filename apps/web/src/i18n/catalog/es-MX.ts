@@ -69,7 +69,7 @@ export const exerciseNames: Record<string, string> = {
   hyperextension: "Hiperextensiones",
   "weighted-hyperextension": "Hiperextensiones con peso",
   "single-leg-hyperextension": "Hiperextensiones a una pierna",
-  "glute-biased-back-extension": "Extensión de espalda a 45° (enfoque glúteo)",
+  "glute-biased-hyperextension": "Hiperextensiones con enfoque en glúteo",
 
   // Shoulders and traps
   "seated-barbell-shoulder-press": "Press militar sentado con barra",
@@ -491,12 +491,12 @@ export const text: Record<string, string> = {
     "Cinco días de gimnasio a la semana: la rotación de seis sesiones sigue corriendo en lugar de reiniciarse cada lunes, así la pierna no se queda en una vez por semana.",
   "Lower body three days a week, priority glutes, then quads, then hamstrings — set by how many weekly sets each gets, and by which lift opens each day.":
     "Tren inferior tres días a la semana, con prioridad en glúteos, luego cuádriceps y luego femorales: lo marcan las series semanales de cada uno y el ejercicio que abre cada día.",
-  "Squats built glutes as well as hip thrusts did in a head-to-head trial, plus more quads and adductors, so deep squats, lunges and split squats do much of the glute work. Thrusts add heavy load at full hip extension.":
-    "En un estudio comparativo, la sentadilla desarrolló el glúteo igual que el hip thrust, y además más cuádriceps y aductores, así que sentadilla profunda, zancadas y sentadilla búlgara hacen buena parte del trabajo de glúteo. El hip thrust suma carga pesada con la cadera en extensión completa.",
+  "Squats built glutes as well as hip thrusts did in a head-to-head trial, plus more quads and adductors, so deep squats, split squats and step-ups do much of the glute work. Thrusts add heavy load at full hip extension.":
+    "En un estudio comparativo, la sentadilla desarrolló el glúteo igual que el hip thrust, y además más cuádriceps y aductores, así que sentadilla profunda, sentadilla búlgara y subidas al cajón hacen buena parte del trabajo de glúteo. El hip thrust suma carga pesada con la cadera en extensión completa.",
   "Hip thrusts and squats didn't grow the upper glutes (medius and minimus). Hip abduction is the lift for those, so it shows up twice a week.":
     "Ni el hip thrust ni la sentadilla desarrollaron el glúteo superior (medio y menor). Para eso está la abducción de cadera, por eso aparece dos veces por semana.",
-  "Go deep: full-depth squats outgrew half squats for the glutes and adductors. On split squats and lunges, lean slightly forward to shift more of the work to the glutes.":
-    "Baja profundo: la sentadilla completa superó a la media sentadilla para glúteos y aductores. En búlgaras y zancadas, inclínate un poco hacia adelante para llevar más trabajo al glúteo.",
+  "Go deep: full-depth squats outgrew half squats for the glutes and adductors. On split squats and step-ups, lean slightly forward to shift more of the work to the glutes.":
+    "Baja profundo: la sentadilla completa superó a la media sentadilla para glúteos y aductores. En búlgaras y subidas al cajón, inclínate un poco hacia adelante para llevar más trabajo al glúteo.",
   "Women build muscle at the same relative rate as men. Train every working set to 0-3 reps short of failure and add weight once you hit the top of the rep range.":
     "Las mujeres ganan músculo al mismo ritmo relativo que los hombres. Lleva cada serie efectiva a 0-3 repeticiones del fallo y sube el peso al llegar al tope del rango.",
   "Upper body is trained as two full upper sessions so every muscle still gets hit twice a week.":

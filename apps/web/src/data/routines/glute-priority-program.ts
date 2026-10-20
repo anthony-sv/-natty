@@ -11,11 +11,14 @@ import { day, ex, orElse, restDay } from "./authoring";
  * transcribed. The choices it leans on, briefly:
  *
  * - Squats grew the glutes as much as hip thrusts did, and grew the quads and
- *   adductors too — so deep squats and lunges carry a lot of the glute work,
+ *   adductors too — so deep squats and split squats carry a lot of the glute work,
  *   and thrusts are there for load at the top, not as the only glute lift.
  * - Full-depth squats outgrew half squats for glutes and adductors.
  * - Neither thrusts nor squats grew glute medius/minimus — abduction is the
  *   only lift here that trains the upper glutes directly, so it's on two days.
+ * - Step-ups top the EMG review for glute max activation — activation isn't
+ *   growth, but they're also the glute-primary lunge, so they take the
+ *   lunge slot on the third lower day.
  * - Seated leg curl beat lying for the hamstrings; leg extension stays because
  *   squats barely touch the rectus femoris.
  * - Women grow at the same relative rate men do; there's no separate
@@ -34,9 +37,9 @@ const raw: Routine = {
   style: "Lower/Upper",
   notes: [
     "Lower body three days a week, priority glutes, then quads, then hamstrings — set by how many weekly sets each gets, and by which lift opens each day.",
-    "Squats built glutes as well as hip thrusts did in a head-to-head trial, plus more quads and adductors, so deep squats, lunges and split squats do much of the glute work. Thrusts add heavy load at full hip extension.",
+    "Squats built glutes as well as hip thrusts did in a head-to-head trial, plus more quads and adductors, so deep squats, split squats and step-ups do much of the glute work. Thrusts add heavy load at full hip extension.",
     "Hip thrusts and squats didn't grow the upper glutes (medius and minimus). Hip abduction is the lift for those, so it shows up twice a week.",
-    "Go deep: full-depth squats outgrew half squats for the glutes and adductors. On split squats and lunges, lean slightly forward to shift more of the work to the glutes.",
+    "Go deep: full-depth squats outgrew half squats for the glutes and adductors. On split squats and step-ups, lean slightly forward to shift more of the work to the glutes.",
     "Women build muscle at the same relative rate as men. Train every working set to 0-3 reps short of failure and add weight once you hit the top of the rep range.",
     "Upper body is trained as two full upper sessions so every muscle still gets hit twice a week.",
   ],
@@ -52,7 +55,7 @@ const raw: Routine = {
             "Dumbbell straight-leg deadlift",
           ),
           ex("Seated leg curl", [10, 12], 3, 90),
-          ex("45° back extension (glute bias)", [12, 20], 3, 90),
+          ex("Glute-biased hyperextension", [12, 20], 3, 90),
           ex("Seated hip abduction machine", [15, 20], 3, 60),
         ]),
         day(2, "Upper A", [
@@ -93,7 +96,7 @@ const raw: Routine = {
         day(6, "Glutes/Legs", [
           ex("45° leg press", [10, 12], 3, 150),
           ex("Barbell hip thrust", [10, 15], 3, 120),
-          ex("Walking lunge", [10, 12], 2, 120, { perSide: true }),
+          ex("Dumbbell step-up", [8, 12], 3, 120, { perSide: true }),
           ex("Lying leg curl", [10, 12], 3, 90),
           ex("Cable hip abduction", [15, 20], 3, 60, { perSide: true }),
           ex("Standing calf raise", [10, 15], 3, 60),

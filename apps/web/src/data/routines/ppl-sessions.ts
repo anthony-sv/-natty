@@ -20,6 +20,13 @@ import type { ExerciseEntry } from "./schema";
  * - Leg extension stays in because squats barely grow the rectus femoris;
  *   seated leg curl because it outgrew the lying one for the biarticular
  *   hamstrings; standing calf raise because it outgrew the seated one.
+ * - Push A leads with chest (incline first, while fresh — upper chest is the
+ *   part most physiques lag); Push B leads with shoulders and is where the
+ *   front raise lives, since pressing alone is the front delts' only other
+ *   direct work.
+ * - Step-ups rank highest for glute max activation in the EMG review, which
+ *   is activation rather than growth — but they're also the one glute-primary
+ *   lunge pattern in the library.
  * - Heavy compounds at 6-10 with long rests, isolation at 10-20 with short
  *   ones. Rep range matters far less than proximity to failure.
  */
@@ -27,14 +34,11 @@ import type { ExerciseEntry } from "./schema";
 const ARMS_SUPERSET = { id: "pull-b-forearms" };
 
 export const PUSH_A: ExerciseEntry[] = [
-  ex("Flat barbell bench press", [6, 8], 3, 180),
-  ex("Incline dumbbell press", [8, 10], 3, 150),
-  orElse(
-    ex("Dumbbell shoulder press", [8, 10], 2, 120),
-    "Machine shoulder press (neutral grip)",
-  ),
+  ex("Incline barbell bench press", [6, 8], 3, 180),
+  ex("Flat dumbbell press", [8, 10], 3, 150),
+  ex("Chest dip", [8, 12], 2, 120),
   ex("Cable fly", [10, 15], 3, 90),
-  ex("Cable lateral raise", [12, 15], 4, 60),
+  ex("Cable lateral raise", [12, 15], 3, 60),
   ex("Rope overhead triceps extension", [10, 12], 3, 90),
   ex("Rope triceps pushdown", [10, 15], 2, 60),
 ];
@@ -60,13 +64,16 @@ export const LEGS_A: ExerciseEntry[] = [
 ];
 
 export const PUSH_B: ExerciseEntry[] = [
-  ex("Incline smith machine bench press", [6, 10], 3, 150),
-  ex("Machine shoulder press (neutral grip)", [8, 10], 3, 120),
-  ex("Chest dip", [8, 12], 3, 120),
-  ex("Pec deck (open hand)", [12, 15], 2, 90),
+  orElse(
+    ex("Dumbbell shoulder press", [6, 10], 3, 150),
+    "Machine shoulder press (neutral grip)",
+  ),
+  ex("Incline smith machine bench press", [8, 10], 3, 150),
   ex("Seated dumbbell lateral raise", [12, 20], 4, 60),
+  ex("Incline dumbbell front raise", [10, 15], 2, 60),
+  ex("Pec deck (open hand)", [12, 15], 2, 90),
   ex("EZ-bar skull crusher", [8, 12], 3, 90),
-  ex("Ab wheel rollout", [8, 12], 2, 60),
+  ex("Decline reverse crunch", [10, 15], 3, 60),
 ];
 
 export const PULL_B: ExerciseEntry[] = [
@@ -84,13 +91,16 @@ export const PULL_B: ExerciseEntry[] = [
 ];
 
 export const LEGS_B: ExerciseEntry[] = [
-  ex("Hack squat", [8, 10], 3, 150),
+  ex("Hack squat", [8, 10], 4, 150),
   ex("Barbell hip thrust", [8, 12], 3, 120),
-  ex("Smith machine Bulgarian split squat", [8, 12], 2, 120, { perSide: true }),
+  ex("Dumbbell step-up", [8, 12], 2, 120, { perSide: true }),
   ex("Lying leg curl", [10, 12], 3, 90),
   ex("Seated hip adduction machine", [12, 15], 2, 60),
   ex("Seated calf raise", [12, 15], 3, 60),
-  ex("Pallof press", [10, 12], 2, 60, { perSide: true }),
+  {
+    ...ex("Plank", 1, 3, 60),
+    prescriptions: [{ sets: 3, durationSeconds: [30, 60], restSeconds: 60 }],
+  },
 ];
 
 /** The rotation in order — what a rolling schedule walks through. */

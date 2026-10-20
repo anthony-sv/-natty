@@ -401,10 +401,10 @@ const raw: z.input<typeof exerciseSchema>[] = [
     },
   },
   {
-    id: "glute-biased-back-extension",
+    id: "glute-biased-hyperextension",
     movementId: "back-extension",
-    name: "45° back extension (glute bias)",
-    aliases: ["Glute back extension", "Glute-focused hyperextension"],
+    name: "Glute-biased hyperextension",
+    aliases: ["Glute hyperextension", "45° back extension (glute bias)"],
     facets: { implement: "bodyweight" },
     // Upper back rounded, feet turned out, pad below the hips: the spine stays
     // still and the hip does the extending, which moves the work off the

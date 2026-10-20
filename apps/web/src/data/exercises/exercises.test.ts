@@ -166,13 +166,14 @@ describe("routine coverage", () => {
     // library modelled.
     //
     // The three evidence-based programs (`ppl-x2`, `ppl-rolling`,
-    // `glute-priority`) took fifteen entries off this list — hip thrust,
-    // abduction, kickbacks, RDLs, wrist curls, back extensions and the core
-    // lifts — because they're the first built-ins written against the
+    // `glute-priority`) took sixteen entries off this list — hip thrust,
+    // abduction, kickbacks, step-ups, RDLs, wrist curls, back extensions,
+    // plank and the crunches — because they're the first built-ins written against the
     // research rather than transcribed, and the research is what those
     // entries were added for.
     // `machine-hip-thrust` stays: it's reached only as an alternative.
     expect(unused).toEqual([
+      "ab-wheel-rollout",
       "banded-hip-abduction",
       "barbell-glute-bridge",
       "barbell-reverse-wrist-curl",
@@ -183,16 +184,14 @@ describe("routine coverage", () => {
       "cable-step-up",
       "cable-woodchop",
       "copenhagen-plank",
-      "decline-reverse-crunch",
       "donkey-calf-raise",
-      "dumbbell-step-up",
       "farmers-carry",
       "machine-ab-crunch",
       "machine-hip-thrust",
       "machine-lateral-raise",
       "machine-pullover",
       "nordic-curl",
-      "plank",
+      "pallof-press",
       "push-up",
       "russian-twist",
       "side-plank",
