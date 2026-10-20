@@ -2,6 +2,8 @@ import { getDietBySlug } from "@/data/diets";
 import { getRoutineBySlug } from "@/data/routines";
 import { activeBodyEntries } from "@/features/body/collection";
 import { extras } from "@/features/extras/collection";
+import { habitLogs, habits } from "@/features/habits/collection";
+import { shoppingItems, stock } from "@/features/shopping/collection";
 import { userExercises } from "@/features/library/collection";
 import { intakeEntries } from "@/features/intake/collection";
 import { supplements } from "@/features/supplements/collection";
@@ -40,6 +42,10 @@ const allCollections = () => [
   intakeEntries(),
   supplements(),
   extras(),
+  habits(),
+  habitLogs(),
+  stock(),
+  shoppingItems(),
 ];
 
 /**
@@ -76,6 +82,10 @@ export async function currentData(): Promise<BackupData> {
     intake: [...intakeEntries().values()],
     supplements: [...supplements().values()],
     extras: [...extras().values()],
+    habits: [...habits().values()],
+    habitLogs: [...habitLogs().values()],
+    stock: [...stock().values()],
+    shopping: [...shoppingItems().values()],
     profile: profileStore.state,
   };
 }
@@ -93,6 +103,10 @@ const emptyData = (): BackupData => ({
   intake: [],
   supplements: [],
   extras: [],
+  habits: [],
+  habitLogs: [],
+  stock: [],
+  shopping: [],
 });
 
 /** The real id generator. Uuid-backed, so two imports never collide. */
@@ -318,6 +332,10 @@ export async function restoreEverything(data: BackupData): Promise<void> {
   if (data.intake.length > 0) intakeEntries().insert(data.intake);
   if (data.supplements.length > 0) supplements().insert(data.supplements);
   if (data.extras.length > 0) extras().insert(data.extras);
+  if (data.habits.length > 0) habits().insert(data.habits);
+  if (data.habitLogs.length > 0) habitLogs().insert(data.habitLogs);
+  if (data.stock.length > 0) stock().insert(data.stock);
+  if (data.shopping.length > 0) shoppingItems().insert(data.shopping);
   if (data.profile) profileStore.setState(() => data.profile!);
 }
 

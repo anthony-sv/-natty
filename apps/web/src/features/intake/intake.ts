@@ -82,7 +82,7 @@ export function entriesForDay(
  * to different items on a Saturday, and the entry deliberately doesn't record
  * which variant it was — the plan decides that, the same way the plan page does.
  */
-function itemsForMealEntry(
+export function itemsForMealEntry(
   plan: DietPlan,
   mealName: string,
   optionIndex: number,

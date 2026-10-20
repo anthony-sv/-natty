@@ -43,6 +43,10 @@ function emptyData(): BackupData {
     recipes: [],
     diets: [],
     intake: [],
+    habits: [],
+    habitLogs: [],
+    stock: [],
+    shopping: [],
   };
 }
 

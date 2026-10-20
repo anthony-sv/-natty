@@ -261,6 +261,14 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "supplements.dose",
       // Two placeholders and a middot — there is nothing in it to translate.
       "fatigue.status.untrained",
+      // A number and a metric symbol, which read the same in both.
+      "habits.addMinutes",
+      "shopping.amount.kg",
+      "shopping.amount.l",
+      "shopping.amount.g",
+      "shopping.amount.ml",
+      // A name, a colon and an amount.
+      "shopping.recounted",
     ]);
 
     const unexplained = Object.keys(en).filter(

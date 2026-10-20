@@ -3,8 +3,10 @@ import {
   BookOpenIcon,
   CalculatorIcon,
   CircleDotIcon,
+  ListChecksIcon,
   ListIcon,
   PlayIcon,
+  ShoppingCartIcon,
   TrendingUpIcon,
   UtensilsIcon,
 } from "lucide-react";
@@ -45,6 +47,8 @@ export const Route = createFileRoute("/")({
 const TOOLS: Array<{ to: string; icon: typeof ListIcon; titleKey: MessageKey }> = [
   { to: "/routines", icon: ListIcon, titleKey: "nav.routines" },
   { to: "/nutrition", icon: UtensilsIcon, titleKey: "nav.nutrition" },
+  { to: "/habits", icon: ListChecksIcon, titleKey: "nav.habits" },
+  { to: "/shopping", icon: ShoppingCartIcon, titleKey: "nav.shopping" },
   { to: "/progress", icon: TrendingUpIcon, titleKey: "nav.progress" },
   { to: "/plates", icon: CircleDotIcon, titleKey: "nav.plates" },
   { to: "/calculator", icon: CalculatorIcon, titleKey: "nav.calculators" },

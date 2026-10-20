@@ -1800,13 +1800,80 @@ tick**. Matching is by name rather than a reserved id, which would make one
 supplement special everywhere it's read to save a duplicate the button can just
 refuse to create.
 
+## Habits (`src/features/habits/`, `/habits`)
+
+Everyday wellbeing outside the gym — brush teeth 3×, read 15 minutes. Its own
+page rather than a Today-tab card, because a habit has nothing to do with
+which diet plan is selected.
+
+- **Two targets, three schedules.** A habit is `count` or `minutes` with a
+  `perDay`; it's due `daily`, on `weekdays` (Monday = 0, like `startOfWeek`),
+  or `weekly` — any N days a week, since pinning yoga to fixed days would
+  read a Thursday class as a Wednesday miss. A yes/no habit is a count of 1.
+- **One log row per habit per day**, not per tick, with a derived id
+  (`habitId@day`). Three ticks a day for a year would be a thousand
+  documents read whole on sign-in; a derived id also makes two devices
+  ticking the same day converge on one row. `adjustHabit` reads the
+  collection (the `setsFor` rule) and deletes a row that falls to zero.
+- **A streak treats today as pending, not missed** — at 9am the evening
+  brush hasn't happened, and a streak reading 0 every morning would be wrong
+  all day. Unscheduled weekdays are skipped; a missed *due* day breaks it,
+  with no tolerance (unlike the training streak) because a habit's job is
+  the day you'd rather skip. Weekly habits streak in weeks.
+- `habits.ts` is pure and injected like `pr.ts`; `habits.test.ts` pins the
+  streak, schedule, rate and archived-row rules.
+- The minutes timer (`timer-store.ts`) stores a start time, not elapsed
+  seconds, so a locked phone or reload loses nothing; it's per-device
+  scratch state like the workout session, not a synced collection. One
+  timer at a time.
+- Archive rather than delete once anything is logged, the custom-exercise
+  rule. Starter suggestions show only while you have no habits, and are
+  named in your language at the moment you add one — after that the name is
+  yours and not a translation target.
+
+## Shopping (`src/features/shopping/`, `/shopping`)
+
+Two levels on one page: a list derived from the active diet plan, and stock
+you keep at home that goes down on its own. Its own route, not a nutrition
+tab, because half of what runs out isn't food (toothpaste, creatine).
+
+- **Remaining stock is derived, never stored.** A `StockItem` holds `onHand`
+  at `countedAt`; everything its `uses` consumed since is subtracted at read
+  time (`stockStatus`). Untick a meal and the rice comes back. Buying or
+  saying "this much is left" is the same write — a fresh count — which is
+  also what corrects a drifted estimate.
+- `uses` are foods (eaten via ticked meals/logged items, resolved through
+  the plan the way `resolveIntake` does — `itemsForMealEntry` is exported for
+  this), supplement servings, and habit ticks/minutes. Recipes break down
+  into ingredients (`expandToIngredients`), so a recipe is never linked
+  itself.
+- **Raw vs cooked is a measured `factor`, default 1.** The app still never
+  converts between them; a raw bag eaten as cooked chicken needs you to
+  weigh the yield once.
+- Intake is windowed by `loggedAt` (a breakfast ticked before you restocked
+  came from the old bag); habit logs carry only a day, so they count from the
+  start of the restock day — erring towards running out early.
+- **Daily rate, in order of trust:** your own `dailyUse`; measured over the
+  last 14 days once there are 7 days of history; planned (plan's weekly
+  average, the stack's servings, the habit's target × due share); a short
+  measured window last.
+- `shoppingList` keeps each food in exactly one section: **Running low**
+  (empty or out within the horizon, with packages to cover it), **For your
+  plan** (plan needs over the horizon, first swap option, *only* for foods
+  no stock item tracks — a tracked food is answered by its stock row), and
+  **Other** (typed). A tick on a plan row is a `planFood` shopping item that
+  lapses after the horizon, so next week you need rice again.
+- Horizon (7/14/30 days) is a per-device preference in localStorage.
+- `shopping.ts` is pure and injected; `shopping.test.ts` pins consumption,
+  factors, rates, recipe expansion and the list's sections.
+
 ## Accounts and sync (`src/features/auth/`, `src/server/`)
 
 Optional Supabase accounts — the app is fully usable signed out, and that is a
-design commitment, not a transition state. **All twelve collections sync**,
+design commitment, not a transition state. **All sixteen collections sync**,
 plus the profile; theme, locale and `session-store` stay local by design.
-`extras` is the newest — the seventh `user_documents` kind, needing no
-migration at all; `workout_completions` before it needed one, following the
+`habits`, `habitLogs`, `stock` and `shopping` are the newest — `user_documents`
+kinds eight to eleven, needing no migration at all, like `extras` before them; `workout_completions` before it needed one, following the
 same `forkCollection` pattern `cardio_entries` did.
 
 - **Auth is cookie-based on purpose.** `features/auth/client.ts` creates the
@@ -1985,7 +2052,7 @@ same `forkCollection` pattern `cardio_entries` did.
 
 ## Export, import and sharing (`src/features/backup/`)
 
-Everything lives in thirteen localStorage keys, and the half that would hurt
+Everything lives in seventeen localStorage keys, and the half that would hurt
 most to lose — the exercises, routines, foods, recipes and plans you wrote —
 is data only you have.
 

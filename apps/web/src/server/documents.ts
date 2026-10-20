@@ -2,6 +2,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { extraWorkSchema, type ExtraWork } from "@/features/extras/schema";
+import {
+  habitLogSchema,
+  habitSchema,
+  type Habit,
+  type HabitLog,
+} from "@/features/habits/schema";
+import {
+  shoppingItemSchema,
+  stockItemSchema,
+  type ShoppingItem,
+  type StockItem,
+} from "@/features/shopping/schema";
 import { userExerciseSchema, type UserExercise } from "@/features/library/schema";
 import {
   userDietPlanSchema,
@@ -51,6 +63,13 @@ const KINDS = {
   supplement: { schema: supplementSchema, keyField: "id" },
   // The seventh, same story.
   extra: { schema: extraWorkSchema, keyField: "id" },
+  // Eighth and ninth. A habit log is one row per habit per day, which keeps
+  // the kind small enough to fetch whole like every other one here.
+  habit: { schema: habitSchema, keyField: "id" },
+  habitLog: { schema: habitLogSchema, keyField: "id" },
+  // Tenth and eleventh: what's in the cupboard, and the list.
+  stock: { schema: stockItemSchema, keyField: "id" },
+  shopping: { schema: shoppingItemSchema, keyField: "id" },
 } as const;
 
 /**
@@ -68,7 +87,11 @@ export type DocumentRow =
   | Recipe
   | UserDietPlan
   | Supplement
-  | ExtraWork;
+  | ExtraWork
+  | Habit
+  | HabitLog
+  | StockItem
+  | ShoppingItem;
 
 export type DocumentKind = keyof typeof KINDS;
 const documentKindSchema = z.enum(

@@ -127,6 +127,12 @@ export function CommandPalette() {
               {t("nav.nutrition")} → {t(key)}
             </CommandItem>
           ))}
+          <CommandItem onSelect={() => go("/habits")}>
+            {t("nav.habits")}
+          </CommandItem>
+          <CommandItem onSelect={() => go("/shopping")}>
+            {t("nav.shopping")}
+          </CommandItem>
           <CommandItem onSelect={() => go("/calculator")}>
             {t("nav.calculators")}
           </CommandItem>

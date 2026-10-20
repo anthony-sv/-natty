@@ -10,6 +10,8 @@ import { userDietPlanSchema } from "@/features/nutrition/collection";
 import { intakeEntrySchema } from "@/features/intake/schema";
 import { supplementSchema } from "@/features/supplements/schema";
 import { extraWorkSchema } from "@/features/extras/schema";
+import { habitLogSchema, habitSchema } from "@/features/habits/schema";
+import { shoppingItemSchema, stockItemSchema } from "@/features/shopping/schema";
 import { profileSchema } from "@/features/profile/profile-store";
 
 /**
@@ -53,6 +55,10 @@ export const backupDataSchema = z.object({
   intake: z.array(intakeEntrySchema).default([]),
   supplements: z.array(supplementSchema).default([]),
   extras: z.array(extraWorkSchema).default([]),
+  habits: z.array(habitSchema).default([]),
+  habitLogs: z.array(habitLogSchema).default([]),
+  stock: z.array(stockItemSchema).default([]),
+  shopping: z.array(shoppingItemSchema).default([]),
   profile: profileSchema.optional(),
 });
 export type BackupData = z.infer<typeof backupDataSchema>;
@@ -128,6 +134,10 @@ function cleanData(data: BackupData): BackupData {
     intake: data.intake.map(stripInternal),
     supplements: data.supplements.map(stripInternal),
     extras: data.extras.map(stripInternal),
+    habits: data.habits.map(stripInternal),
+    habitLogs: data.habitLogs.map(stripInternal),
+    stock: data.stock.map(stripInternal),
+    shopping: data.shopping.map(stripInternal),
     ...(data.profile === undefined ? {} : { profile: stripInternal(data.profile) }),
   };
 }
@@ -251,6 +261,10 @@ function countsOf(data: BackupData): { key: keyof BackupData; count: number }[] 
       ["intake", data.intake.length],
       ["supplements", data.supplements.length],
       ["extras", data.extras.length],
+      ["habits", data.habits.length],
+      ["habitLogs", data.habitLogs.length],
+      ["stock", data.stock.length],
+      ["shopping", data.shopping.length],
       ["profile", data.profile === undefined ? 0 : 1],
     ] as const
   ).map(([key, count]) => ({ key: key as keyof BackupData, count }));
