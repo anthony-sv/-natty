@@ -5,6 +5,9 @@ import { armsProgram } from "./arms-program";
 import { backProgram } from "./back-program";
 import { bigWheelsProgram } from "./big-wheels-program";
 import { chestArmsProgram } from "./chest-arms-program";
+import { pplX2Program } from "./ppl-x2-program";
+import { pplRollingProgram } from "./ppl-rolling-program";
+import { glutePriorityProgram } from "./glute-priority-program";
 
 export const routines: Routine[] = [
   bulkingProgram,
@@ -13,6 +16,9 @@ export const routines: Routine[] = [
   backProgram,
   bigWheelsProgram,
   chestArmsProgram,
+  pplX2Program,
+  pplRollingProgram,
+  glutePriorityProgram,
 ];
 
 export function getRoutineBySlug(slug: string): Routine | undefined {

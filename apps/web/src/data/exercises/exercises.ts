@@ -400,6 +400,21 @@ const raw: z.input<typeof exerciseSchema>[] = [
       laterality: "unilateral",
     },
   },
+  {
+    id: "glute-biased-back-extension",
+    movementId: "back-extension",
+    name: "45° back extension (glute bias)",
+    aliases: ["Glute back extension", "Glute-focused hyperextension"],
+    facets: { implement: "bodyweight" },
+    // Upper back rounded, feet turned out, pad below the hips: the spine stays
+    // still and the hip does the extending, which moves the work off the
+    // erectors and onto the glutes. The same back-extension movement — it's
+    // the setup that changes the muscle, the way a close grip changes a bench.
+    muscleOverride: {
+      primaryMuscles: ["glutes"],
+      secondaryMuscles: ["hamstrings", "spinal-erectors"],
+    },
+  },
 
   // ── Shoulders: overhead press ──────────────────────────────────────────
   {

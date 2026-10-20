@@ -233,6 +233,32 @@ no new pattern, just more exercises under what already existed. `farmers-carry`
 (`loaded-carry`, forearms) is the one lower-confidence finding in the pass,
 included anyway, flagged as such at its own definition.
 
+### Evidence-based programs
+
+Three built-ins aren't transcribed from `gym-docs/`: `ppl-x2-program`,
+`ppl-rolling-program` and `glute-priority-program`, written against the
+hypertrophy literature instead (volume dose-response, 2×/week frequency,
+lengthened-position exercise picks, hip thrust ≈ squat for glutes, abduction
+for glute medius/minimus, seated > lying leg curl, standing > seated calf
+raise). The findings each choice leans on live in the routine `notes` (which
+render translated, so `i18n.test.ts` now walks them) and the files' header
+comments — don't cite a study there that wasn't checked.
+
+- The two PPL programs share their six sessions (`ppl-sessions.ts`). The
+  rolling one runs them five a week across six written-out weeks, because a
+  fixed "PPLPP" week trains legs once forever; rolling hits everything
+  ~1.7×/week.
+- The glute program states its priority as **weekly direct sets** (glutes ~19
+  > quads ~14 > hamstrings ~9) and as which lift opens each lower day. Upper
+  is two full upper days, not a push and a pull, so upper muscles stay at 2×.
+- They're checked with `routineCoverage` against the real library. Remaining
+  variety findings (front raise, close-grip bench, nordics, carries) are
+  accepted rather than missed: pressing covers front delts and adding every
+  pattern would make sessions longer for little return.
+- `glute-biased-back-extension` was added for the glute program: same
+  `back-extension` movement, glute-primary via `muscleOverride`, because the
+  setup (rounded upper back, hips doing the extending) is what moves the work.
+
 ### How routines link to it
 
 `ExerciseEntry.exerciseId` is required and is the source of truth. Program files

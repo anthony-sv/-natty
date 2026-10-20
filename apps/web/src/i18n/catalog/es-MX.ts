@@ -69,6 +69,7 @@ export const exerciseNames: Record<string, string> = {
   hyperextension: "Hiperextensiones",
   "weighted-hyperextension": "Hiperextensiones con peso",
   "single-leg-hyperextension": "Hiperextensiones a una pierna",
+  "glute-biased-back-extension": "Extensión de espalda a 45° (enfoque glúteo)",
 
   // Shoulders and traps
   "seated-barbell-shoulder-press": "Press militar sentado con barra",
@@ -391,6 +392,9 @@ export const routineNames: Record<string, string> = {
   "back-program": "Programa de espalda",
   "big-wheels-program": "Programa de piernas",
   "chest-arms-program": "Programa de pecho y brazos",
+  "ppl-x2-program": "Empuje/Tirón/Pierna ×2",
+  "ppl-rolling-program": "Empuje/Tirón/Pierna rotativo de 5 días",
+  "glute-priority-program": "Tren inferior/superior con prioridad en glúteo",
 };
 
 /** Bar id → name. */
@@ -455,6 +459,49 @@ export const text: Record<string, string> = {
   "Shoulder/Traps": "Hombro/Trapecios",
   "Shoulders/Arms": "Hombros/Brazos",
   "Shoulders/Traps/Quads": "Hombros/Trapecios/Cuádriceps",
+  // Split-named days, from the evidence-based programs.
+  "Push A": "Empuje A",
+  "Push B": "Empuje B",
+  "Pull A": "Tirón A",
+  "Pull B": "Tirón B",
+  "Legs A": "Pierna A",
+  "Legs B": "Pierna B",
+  "Upper A": "Tren superior A",
+  "Upper B": "Tren superior B",
+  "Glutes/Hamstrings": "Glúteos/Femorales",
+  "Glutes/Quads": "Glúteos/Cuádriceps",
+  "Glutes/Legs": "Glúteos/Piernas",
+
+  // Program styles
+  "Push/Pull/Legs": "Empuje/Tirón/Pierna",
+  "Lower/Upper": "Inferior/Superior",
+
+  // Program notes
+  "Built from the hypertrophy research rather than one coach's method: every muscle twice a week, about 10-20 hard sets per muscle per week.":
+    "Basado en la investigación sobre hipertrofia y no en el método de un solo entrenador: cada músculo dos veces por semana, unas 10-20 series duras por músculo a la semana.",
+  "Take every working set to 0-3 reps short of failure. Rep range matters much less than effort — anything from 6 to 20 grows muscle when the set is hard.":
+    "Lleva cada serie efectiva a 0-3 repeticiones del fallo. El rango de repeticiones importa mucho menos que el esfuerzo: de 6 a 20 todo construye músculo si la serie es dura.",
+  "Exercises that load the muscle at long lengths were picked where there was a choice: incline press, cable fly, overhead triceps extension, incline curls, seated leg curl, deep squats and RDLs.":
+    "Donde había opción se eligieron ejercicios que cargan el músculo estirado: press inclinado, aperturas en polea, extensión de tríceps sobre la cabeza, curl inclinado, curl femoral sentado, sentadilla profunda y peso muerto rumano.",
+  "Leg extension stays because squats barely grow the rectus femoris. Seated leg curl beat lying curls for hamstring growth, and standing calf raises beat seated ones.":
+    "La extensión de pierna se queda porque la sentadilla apenas desarrolla el recto femoral. El curl femoral sentado superó al acostado para los femorales, y la elevación de talones de pie superó a la sentada.",
+  "Add reps until you hit the top of the range on every set, then add weight. Deload for a week every 6-8 weeks or when performance stalls.":
+    "Suma repeticiones hasta llegar al tope del rango en todas las series y luego sube el peso. Haz una semana de descarga cada 6-8 semanas o cuando el rendimiento se estanque.",
+  "Five gym days a week: the six-session rotation keeps rolling instead of restarting each Monday, so legs aren't stuck at once a week.":
+    "Cinco días de gimnasio a la semana: la rotación de seis sesiones sigue corriendo en lugar de reiniciarse cada lunes, así la pierna no se queda en una vez por semana.",
+  "Lower body three days a week, priority glutes, then quads, then hamstrings — set by how many weekly sets each gets, and by which lift opens each day.":
+    "Tren inferior tres días a la semana, con prioridad en glúteos, luego cuádriceps y luego femorales: lo marcan las series semanales de cada uno y el ejercicio que abre cada día.",
+  "Squats built glutes as well as hip thrusts did in a head-to-head trial, plus more quads and adductors, so deep squats, lunges and split squats do much of the glute work. Thrusts add heavy load at full hip extension.":
+    "En un estudio comparativo, la sentadilla desarrolló el glúteo igual que el hip thrust, y además más cuádriceps y aductores, así que sentadilla profunda, zancadas y sentadilla búlgara hacen buena parte del trabajo de glúteo. El hip thrust suma carga pesada con la cadera en extensión completa.",
+  "Hip thrusts and squats didn't grow the upper glutes (medius and minimus). Hip abduction is the lift for those, so it shows up twice a week.":
+    "Ni el hip thrust ni la sentadilla desarrollaron el glúteo superior (medio y menor). Para eso está la abducción de cadera, por eso aparece dos veces por semana.",
+  "Go deep: full-depth squats outgrew half squats for the glutes and adductors. On split squats and lunges, lean slightly forward to shift more of the work to the glutes.":
+    "Baja profundo: la sentadilla completa superó a la media sentadilla para glúteos y aductores. En búlgaras y zancadas, inclínate un poco hacia adelante para llevar más trabajo al glúteo.",
+  "Women build muscle at the same relative rate as men. Train every working set to 0-3 reps short of failure and add weight once you hit the top of the rep range.":
+    "Las mujeres ganan músculo al mismo ritmo relativo que los hombres. Lleva cada serie efectiva a 0-3 repeticiones del fallo y sube el peso al llegar al tope del rango.",
+  "Upper body is trained as two full upper sessions so every muscle still gets hit twice a week.":
+    "El tren superior se entrena en dos sesiones completas para que cada músculo se siga trabajando dos veces por semana.",
+
   // One program labels a rest day in its own data rather than leaving it to
   // the app's word for it, so the string needs an entry like any other.
   Rest: "Descanso",

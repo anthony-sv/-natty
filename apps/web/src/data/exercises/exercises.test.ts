@@ -164,20 +164,20 @@ describe("routine coverage", () => {
     // pattern's other movement) already having one — no pattern gap, just a
     // thin roster for movements plenty of gyms offer more ways than the
     // library modelled.
+    //
+    // The three evidence-based programs (`ppl-x2`, `ppl-rolling`,
+    // `glute-priority`) took fifteen entries off this list — hip thrust,
+    // abduction, kickbacks, RDLs, wrist curls, back extensions and the core
+    // lifts — because they're the first built-ins written against the
+    // research rather than transcribed, and the research is what those
+    // entries were added for.
+    // `machine-hip-thrust` stays: it's reached only as an alternative.
     expect(unused).toEqual([
-      "ab-wheel-rollout",
       "banded-hip-abduction",
       "barbell-glute-bridge",
-      "barbell-hip-thrust",
       "barbell-reverse-wrist-curl",
-      "barbell-stiff-leg-deadlift",
       "barbell-wrist-curl",
-      "cable-glute-kickback",
-      "cable-hip-abduction",
       "cable-hip-adduction",
-      "cable-kneeling-crunch",
-      "cable-lateral-raise",
-      "cable-pullover",
       "cable-rear-delt-fly",
       "cable-shrug",
       "cable-step-up",
@@ -185,19 +185,13 @@ describe("routine coverage", () => {
       "copenhagen-plank",
       "decline-reverse-crunch",
       "donkey-calf-raise",
-      "dumbbell-reverse-wrist-curl",
       "dumbbell-step-up",
-      "dumbbell-wrist-curl",
       "farmers-carry",
-      "hanging-leg-raise",
       "machine-ab-crunch",
-      "machine-hip-abduction",
-      "machine-hip-adduction",
       "machine-hip-thrust",
       "machine-lateral-raise",
       "machine-pullover",
       "nordic-curl",
-      "pallof-press",
       "plank",
       "push-up",
       "russian-twist",
@@ -209,7 +203,6 @@ describe("routine coverage", () => {
       "smith-step-up",
       "straight-bar-pushdown",
       "suitcase-carry",
-      "weighted-hyperextension",
     ]);
   });
 });
@@ -310,10 +303,16 @@ describe("modifiers and alternatives", () => {
           .map((e) => `${e.exerciseId} or ${e.orAlternatives.join("/")}`),
       ),
     ].sort();
+    // The source docs' three, plus the equipment swaps the evidence-based
+    // programs offer (no rack free, no pull-up strength yet).
     expect(pairs).toEqual([
+      "back-squat or hack-squat",
+      "barbell-hip-thrust or machine-hip-thrust",
+      "barbell-stiff-leg-deadlift or dumbbell-stiff-leg-deadlift",
       "cambered-bar-pushdown or straight-bar-pushdown",
       "dumbbell-shoulder-press or machine-shoulder-press-neutral",
       "smith-machine-squat or hack-squat",
+      "wide-grip-pull-up or lat-pulldown-wide",
     ]);
   });
 });

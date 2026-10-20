@@ -44,6 +44,8 @@ function sourceStrings(): Map<string, string> {
     // Bare words rather than ids, and both render as badges on the program.
     add(routine.goal, `${routine.slug} goal`);
     add(routine.style, `${routine.slug} style`);
+    // Rendered through `names.text` on the program page, like a plan's notes.
+    for (const note of routine.notes ?? []) add(note, `${routine.slug} notes`);
     for (const week of routine.weeks) {
       for (const day of week.days) {
         // Rest days carry no label worth translating beyond the app's own word.
