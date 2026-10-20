@@ -218,6 +218,8 @@ const GUIDE: Section[] = [
       "about.nutrition.p3",
       "about.nutrition.p4",
       "about.nutrition.p5",
+      "about.nutrition.p6",
+      "about.nutrition.p7",
     ],
     to: "/nutrition",
     linkKey: "about.nutrition.link",

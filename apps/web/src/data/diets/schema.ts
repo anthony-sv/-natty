@@ -12,7 +12,21 @@ import { z } from "zod";
 export const macrosSchema = z.object({
   protein: z.number().nonnegative(),
   fat: z.number().nonnegative(),
+  /**
+   * *Available* carbohydrate — what a Mexican or EU label prints as "hidratos
+   * de carbono disponibles", with fibre already taken out. Fibre is its own
+   * figure below, never a share of this one.
+   */
   carbs: z.number().nonnegative(),
+  /**
+   * Grams of fibre, alongside the carbs rather than inside them.
+   *
+   * Optional, and absent means *unknown* rather than zero: plenty of labels
+   * print a dash for it, and a food you wrote yourself may not say. It adds no
+   * calories here, for the same reason the source docs' kcal figures don't —
+   * `kcalOf` is 4/4/9 on protein, available carbs and fat, and nothing else.
+   */
+  fiber: z.number().nonnegative().optional(),
 });
 export type Macros = z.infer<typeof macrosSchema>;
 
@@ -57,6 +71,49 @@ export const foodCategorySchema = z.enum([
 ]);
 export type FoodCategory = z.infer<typeof foodCategorySchema>;
 
+/**
+ * Every micronutrient the app tracks, and the unit each is stored in.
+ *
+ * The units are the ones the dietary reference intakes are published in, so a
+ * stored figure and its target never need converting to be compared. Folate is
+ * µg DFE and vitamin A µg RAE for the same reason.
+ */
+export const NUTRIENT_UNITS = {
+  vitaminA: "µg",
+  vitaminC: "mg",
+  vitaminD: "µg",
+  vitaminE: "mg",
+  vitaminK: "µg",
+  thiamin: "mg",
+  riboflavin: "mg",
+  niacin: "mg",
+  vitaminB6: "mg",
+  folate: "µg",
+  vitaminB12: "µg",
+  choline: "mg",
+  calcium: "mg",
+  phosphorus: "mg",
+  magnesium: "mg",
+  iron: "mg",
+  zinc: "mg",
+  selenium: "µg",
+  potassium: "mg",
+  sodium: "mg",
+  /** EPA + DHA together — the long-chain omega-3s fish and fish oil carry. */
+  epaDha: "g",
+  /** Alpha-linolenic acid, the plant omega-3 in chia, flax and walnuts. */
+  ala: "g",
+} as const;
+export type Nutrient = keyof typeof NUTRIENT_UNITS;
+export const NUTRIENTS = Object.keys(NUTRIENT_UNITS) as Nutrient[];
+
+/** Partial: a food lists what it carries, and a missing key is zero. */
+export const microsSchema = z.partialRecord(
+  z.enum(NUTRIENTS as [Nutrient, ...Nutrient[]]),
+  z.number().nonnegative(),
+);
+export type Micros = z.infer<typeof microsSchema>;
+
 export const foodSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -72,6 +129,13 @@ export const foodSchema = z.object({
   category: foodCategorySchema.optional(),
   /** "~50g each", "1 scoop" — what the unit means in the real world. */
   unitNote: z.string().optional(),
+  /**
+   * Vitamins, minerals and fatty acids, on the same basis as `macros` — per
+   * 100 g/ml, or per one unit. See `data/diets/micros.ts` for where the
+   * built-in figures come from. Absent means "no data", which the nutrition
+   * scores report as a coverage gap rather than counting as zero.
+   */
+  micros: microsSchema.optional(),
 });
 export type Food = z.infer<typeof foodSchema>;
 

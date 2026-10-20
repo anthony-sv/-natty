@@ -58,6 +58,11 @@ export function MealCard({
           <span className="text-sm text-muted-foreground tabular-nums">
             P{meal.macros.protein.toFixed(0)} · C{meal.macros.carbs.toFixed(0)} ·
             F{meal.macros.fat.toFixed(0)} ·{" "}
+            {/* Fibre only when something in the meal states it — a meal made
+                of foods whose labels print a dash has no figure, not zero. */}
+            {meal.macros.fiber !== undefined
+              ? `${t("nutrition.fiberShort", { grams: meal.macros.fiber.toFixed(1) })} · `
+              : null}
             <span className="font-medium text-foreground">
               {Math.round(meal.kcal).toLocaleString()} kcal
             </span>

@@ -44,6 +44,7 @@ import {
   weekdayOf,
 } from "@/features/nutrition/macros";
 import { MacroSplit } from "@/features/nutrition/components/MacroSplit";
+import { NutritionScores } from "@/features/nutrition/components/NutritionScores";
 import {
   CreateFoodDialog,
   CreateFoodTrigger,
@@ -319,6 +320,23 @@ export function TodayPanel({ plan }: { plan: DietPlan }) {
           without reading. It shares this tab's day, its collection and its
           nothing-auto-logs rule; what it doesn't share is macros. */}
       <SupplementChecklist day={day} />
+
+      {/* Last, below everything you tick: it's read once the day is in, not
+          while you're logging it. What you actually ate, not what the plan
+          says — a skipped dinner is exactly the day this should read low.
+          Ticked meals and free items alike; supplement ticks carry no food
+          and contribute nothing. */}
+      <NutritionScores
+        items={[
+          ...intake.meals.flatMap((meal) => meal.items),
+          ...intake.extras.map((extra) => ({
+            foodId: extra.foodId,
+            amount: extra.amount,
+          })),
+        ]}
+        foods={pantry}
+        description={t("scores.todayDescription")}
+      />
     </div>
   );
 }

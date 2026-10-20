@@ -8,7 +8,7 @@ import { pie } from "d3-shape";
 import { cn } from "@/lib/utils";
 import type { Macros } from "@/data/diets";
 import { useT, type MessageKey, type Translate } from "@/i18n/use-t";
-import { KCAL_PER_GRAM, kcalOf, percentSplit } from "../macros";
+import { KCAL_PER_GRAM, kcalOf, percentSplit, type MacroKey } from "../macros";
 
 /**
  * The macro split: a donut, a hero calorie figure, and a row per macro.
@@ -22,7 +22,7 @@ import { KCAL_PER_GRAM, kcalOf, percentSplit } from "../macros";
  */
 
 interface MacroSlice {
-  key: keyof Macros;
+  key: MacroKey;
   label: string;
   grams: number;
   kcal: number;
@@ -30,7 +30,7 @@ interface MacroSlice {
   color: string;
 }
 
-const ORDER: Array<{ key: keyof Macros; labelKey: MessageKey; color: string }> = [
+const ORDER: Array<{ key: MacroKey; labelKey: MessageKey; color: string }> = [
   { key: "protein", labelKey: "nutrition.protein", color: "var(--macro-protein)" },
   { key: "carbs", labelKey: "nutrition.carbs", color: "var(--macro-carbs)" },
   { key: "fat", labelKey: "nutrition.fat", color: "var(--macro-fat)" },

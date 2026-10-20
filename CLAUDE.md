@@ -1526,6 +1526,59 @@ author's litres. Falling back to the old table would defeat the whole change.
 It reads the latest weigh-in via `useBodyEntries` + `toKilograms`, which
 `PlanPanel` already imported for `proteinPerKg`.
 
+### Fibre, micronutrients and the label sheet
+
+`food_labels.md` (repo root, the actual packages in the kitchen) is the
+authority wherever it names a food; `foods.ts`'s header lists what it moved.
+**`macros.carbs` is *available* carbohydrate and `macros.fiber` sits beside
+it**, the way Mexican labels print them ("hidratos de carbono disponibles").
+Every USDA figure had its fibre subtracted to match, and so did tortillas and
+avocado, which is how Plan v6 computed its own totals. v4 and v5 counted
+those two at total carbs, so `macros.test.ts` adds their fibre back for those
+two plans only rather than loosening the tolerance. `kcalOf` stays 4/4/9 and
+never counts fibre, matching the labels and the plans.
+
+**Fibre is optional and absent means unknown**, not zero: labels print a dash
+for it. `addMacros` keeps unknown + unknown as unknown. Its target is
+`fiberTarget(kcal)`, 14 g per 1,000 kcal, the basis the US adequate intake was
+set on. No sports body sets a separate figure. The card's footnote says
+plainly that on a deep cut it lands under the flat 38/25 g AI.
+
+**Micronutrients are data, not something you type.** `data/diets/micros.ts`
+holds 22 nutrients per built-in food (USDA typical values; the two supplement
+labels where they state content), merged onto `foods` at import.
+`micronutrients.test.ts` fails if a built-in food lands without an entry. A
+food with no `micros` is a *coverage gap*, never zeros:
+`dayNutrients().coverage` is the share of kcal it could see, and the card says
+so, since a plan of your own foods would otherwise read deficient in
+everything. User foods get a fibre field but no micros; recipes fold their
+ingredients' fibre and micros through `recipeAsFood`.
+
+`features/nutrition/micronutrients.ts` is pure and injected like `macros.ts`.
+Targets are the DRIs for adults 19–50, picked by `profile.sex`; unset uses the
+men's column and says so. EPA+DHA (0.5 g) and ALA are separate rows, because
+ALA barely converts. Category scores (`CATEGORIES`) are the mean of their
+nutrients' progress **capped at 100% each**, so a surplus can't hide a gap.
+Going over an upper limit marks the row "high" but doesn't lower a score.
+Sodium's 2,300 mg is that limit, and the copy says it's fine for someone who
+sweats. Training doesn't change the targets; the literature's consensus is
+that people who eat enough meet the DRIs, and supplementing above them doesn't
+help performance. Sweat losses are why the electrolytes footnote exists.
+
+`NutritionScores` renders under the Plan tab's meals and at the bottom of
+Today, which counts only what you ticked. The bars are plain HTML, one neutral
+ink (single-series magnitude). Status in the table is the reserved
+`--status-*` colours with a distinct icon *shape* and an accessible name. At
+phone width only the icon shows: four columns of Spanish don't fit 393px.
+
+### Importing a plan
+
+`ImportDietButton` sits beside Share on `/nutrition`. Import was only ever
+reachable from Progress → Data, which nobody looks for from the page that
+exported the file. It accepts a `diet`-scope file and nothing else. It always
+merges, and then navigates to the imported plan, because `importAdditive`
+re-keys the slug; it now returns what it inserted so the caller can find it.
+
 ### Validating a plan you wrote
 
 `compareToTargets` reports only the macros the plan names, and only those
@@ -2083,7 +2136,7 @@ reaching a release.
 
 `src/data/` stays canonical English and is **not** touched, so adding an
 exercise doesn't require speaking Spanish. The catalog keys off ids where the
-data has them (143 exercises, 51 movements, 8 poses, 18 foods, 6 routines, 2
+data has them (143 exercises, 51 movements, 8 poses, 18 foods, 6 routines, 3
 plans) and off the **English source string** where it doesn't — day labels
 (`"Shoulder/Traps"`), meal names, variant labels, supplement timings and doses,
 and the free notes on foods, plans and hydration. Keying on a string is only

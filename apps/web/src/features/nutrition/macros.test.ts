@@ -19,7 +19,7 @@ import {
   weekdayOf,
   weeklyRateKg,
 } from "./macros";
-import { diets, foods, getFood } from "@/data/diets";
+import { diets, foods, getDietBySlug, getFood } from "@/data/diets";
 import { BUILT_IN_FOODS as FOODS } from "./food-source";
 import type { DietPlan, Food, MealVariant } from "@/data/diets";
 
@@ -356,7 +356,9 @@ describe("weekdayOf", () => {
 });
 
 describe("resolveDay", () => {
-  const plan = diets[0]!;
+  // v5, not `diets[0]`: it's the newest plan with an office/home split, which
+  // is what most of these are about. v6 dropped the split.
+  const plan = getDietBySlug("cut-v5-2040")!;
 
   it("gives one entry per meal that applies", () => {
     expect(resolveDay(plan, "tue", FOODS)).toHaveLength(plan.meals.length);
@@ -413,6 +415,9 @@ describe("every plan adds up to what it says it does", () => {
   const GRAM_TOLERANCE = 3.5;
   const KCAL_TOLERANCE = 30;
 
+  const TOTAL_CARB_PLANS = new Set(["cut-v4-2252", "cut-v5-2040"]);
+  const TOTAL_CARB_FOODS = new Set(["corn-tortilla", "avocado"]);
+
   for (const plan of diets) {
     describe(plan.name, () => {
       const days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
@@ -428,7 +433,17 @@ describe("every plan adds up to what it says it does", () => {
         for (let option = 0; option < optionCount; option++) {
           const label = variant?.options[option]?.label;
           it(`${day}${label ? ` · ${label}` : ""}`, () => {
-            const totals = dayTotals(resolveDay(plan, day, FOODS, { Lunch: option }));
+            const meals = resolveDay(plan, day, FOODS, { Lunch: option });
+            const totals = dayTotals(meals);
+            if (TOTAL_CARB_PLANS.has(plan.slug)) {
+              const asWritten = totalFor(
+                meals
+                  .flatMap((meal) => meal.items)
+                  .filter((item) => TOTAL_CARB_FOODS.has(item.foodId)),
+                FOODS,
+              );
+              totals.carbs += asWritten.fiber ?? 0;
+            }
 
             // Targets are optional on the schema now, because a plan you write
             // yourself may state none. Every *transcribed* plan states all of

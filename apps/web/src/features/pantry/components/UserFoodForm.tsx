@@ -50,6 +50,14 @@ const buildSchema = (t: Translate) => {
     protein: macro,
     carbs: macro,
     fat: macro,
+    // Optional: plenty of labels print a dash for fibre, and blank is
+    // "unknown", which is different from 0.
+    fiber: z
+      .string()
+      .refine(
+        (v) => v.trim() === "" || (Number.isFinite(Number(v)) && Number(v) >= 0),
+        t("log.weightError"),
+      ),
   });
 };
 
@@ -77,6 +85,7 @@ export function UserFoodForm({
       protein: String(existing?.macros.protein ?? ""),
       carbs: String(existing?.macros.carbs ?? ""),
       fat: String(existing?.macros.fat ?? ""),
+      fiber: String(existing?.macros.fiber ?? ""),
     },
     validators: { onChange: buildSchema(t) },
     onSubmit: ({ value }) => {
@@ -87,6 +96,7 @@ export function UserFoodForm({
           protein: Number(value.protein),
           carbs: Number(value.carbs),
           fat: Number(value.fat),
+          ...(value.fiber.trim() === "" ? {} : { fiber: Number(value.fiber) }),
         },
         state: value.state === "none" ? undefined : value.state,
         category: value.category === "none" ? undefined : value.category,
@@ -190,12 +200,13 @@ export function UserFoodForm({
               <span className="text-sm font-medium">
                 {unit === "unit" ? t("pantry.perUnit") : t("pantry.per100")}
               </span>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {(
                   [
                     ["protein", t("pantry.protein")],
                     ["carbs", t("pantry.carbs")],
                     ["fat", t("pantry.fat")],
+                    ["fiber", t("nutrition.fibre")],
                   ] as const
                 ).map(([name, label]) => (
                   <form.Field key={name} name={name}>
@@ -220,6 +231,9 @@ export function UserFoodForm({
                   </form.Field>
                 ))}
               </div>
+              <span className="text-xs text-muted-foreground">
+                {t("pantry.fiberHint")}
+              </span>
               <span className="text-sm tabular-nums text-muted-foreground">
                 {t("pantry.kcal", {
                   kcal: Math.round(

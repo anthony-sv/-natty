@@ -300,7 +300,7 @@ export const foodNames: Record<string, string> = {
   avocado: "Aguacate",
   "whey-protein": "Proteína de suero",
   "high-protein-milk": "Leche alta en proteína",
-  "greek-yogurt": "Yogur griego",
+  "greek-yogurt": "Yogur proteico",
   "peanut-butter": "Crema de cacahuate",
   "white-bread": "Pan blanco",
   "oats-cooked": "Avena",
@@ -358,6 +358,29 @@ export const foodNames: Record<string, string> = {
   "dark-chocolate": "Chocolate amargo",
   edamame: "Edamame",
   chickpeas: "Garbanzos",
+  "turkey-ham": "Jamón de pavo",
+  "basmati-rice-cooked": "Arroz basmati",
+  "jasmine-rice-dry": "Arroz jazmín",
+  "frozen-veggies": "Verduras congeladas mixtas",
+  "salsa-macha": "Salsa macha",
+  "light-yogurt-plain": "Yogur light (natural)",
+  "light-yogurt-strawberry": "Yogur light (fresa)",
+  "oats-dry": "Avena",
+  "protein-cereal": "Cereal proteico",
+  "light-cereal": "Cereal light",
+  salmas: "Salmas",
+  "refried-beans": "Frijoles refritos",
+  "greens-reds": "Greens & Reds",
+  "fiber-supplement": "Suplemento de fibra",
+  "cooking-oil": "Aceite para cocinar",
+  butter: "Mantequilla",
+  "mixed-nuts": "Nueces mixtas",
+  pistachios: "Pistaches",
+  flaxseed: "Linaza",
+  ketchup: "Cátsup",
+  "biscoff-spread": "Crema Biscoff",
+  "salmon-oil-capsule": "Aceite de salmón",
+  "magnesium-d3": "Magnesio + D3",
 };
 
 /** Routine slug → name. */
@@ -385,6 +408,7 @@ export const barNames: Record<string, string> = {
 
 /** Diet plan slug → name. The kcal figure reads the same in both languages. */
 export const dietPlanNames: Record<string, string> = {
+  "cut-v6-2068": "Definición v6 — 2,068 kcal",
   "cut-v5-2040": "Definición v5 — 2,040 kcal",
   "cut-v4-2252": "Definición v4 — 2,252 kcal",
 };
@@ -478,7 +502,45 @@ export const text: Record<string, string> = {
   "1 strip, ~15g": "1 tira, ~15 g",
   "~30g each": "~30 g cada una",
   "1 scoop, 31g": "1 medida, 31 g",
-  "1 scoop, 62g": "1 medida, 62 g",
+  "1 scoop, 62.8g": "1 medida, 62.8 g",
+  "1 toast, 6g": "1 tostada, 6 g",
+  packaged: "empaquetados",
+  "1 serving": "1 porción",
+  "1 capsule, 1.3g": "1 cápsula, 1.3 g",
+  "2 capsules": "2 cápsulas",
+  // Plan v6
+  "Ramp the fibre up over two weeks: the vegetables first, then the oats, then the chia. Too fast means bloating and gas.":
+    "Sube la fibra en dos semanas: primero las verduras, luego la avena, luego la chía. Demasiado rápido causa inflamación y gases.",
+  "Drink your water — more fibre without more water makes digestion worse, not better.":
+    "Toma tu agua: más fibra sin más agua empeora la digestión en vez de mejorarla.",
+  "Chia always goes into the yogurt, never dry; mixing it in before the sandwich gives it a few minutes to soften.":
+    "La chía siempre va en el yogur, nunca seca; mezclarla antes del sándwich le da unos minutos para suavizarse.",
+  "Swaps: 30 g protein cereal for 30 g of the oats · 30 g light cereal for 50 g of the rice · 15 g pistachios or 15 g mixed nuts for the avocado.":
+    "Cambios: 30 g de cereal proteico por 30 g de la avena · 30 g de cereal light por 50 g del arroz · 15 g de pistaches o 15 g de nueces mixtas por el aguacate.",
+  "Carne asada (~215 g raw) also replaces the chicken if you skip the avocado — about 4 g more fat than the plan.":
+    "La carne asada (~215 g en crudo) también sustituye al pollo si quitas el aguacate: unos 4 g más de grasa que el plan.",
+  "Want fruit back? 100 g strawberries is 28 kcal and 2 g fibre; drop 30 g of cooked rice to keep the calories flat.":
+    "¿Quieres fruta de vuelta? 100 g de fresas son 28 kcal y 2 g de fibra; quita 30 g de arroz cocido para mantener las calorías.",
+  "Measure oil with a teaspoon, never pour. Weigh butter, ketchup, peanut butter and salsa macha for a week until you can eyeball them — salsa macha is almost pure oil.":
+    "Mide el aceite con cucharadita, nunca lo sirvas directo. Pesa la mantequilla, la cátsup, la crema de cacahuate y la salsa macha una semana hasta poder calcularlas a ojo: la salsa macha es casi puro aceite.",
+  "to cook the eggs": "para cocinar los huevos",
+  "diced into the eggs (a 250 g pack = 5 days)":
+    "en cubitos con los huevos (un paquete de 250 g = 5 días)",
+  "for the hotcakes pan": "para el sartén de los hotcakes",
+  "on the hotcakes": "sobre los hotcakes",
+  "about 1 tablespoon": "más o menos 1 cucharada",
+  "raw — about 150 g cooked": "en crudo — unos 150 g cocido",
+  "for the pan (1 teaspoon)": "para el sartén (1 cucharadita)",
+  "cooked without oil": "cocidas sin aceite",
+  "on the meat": "sobre la carne",
+  raw: "en crudo",
+  "Plain light yogurt": "Yogur light natural",
+  "Strawberry light yogurt": "Yogur light de fresa",
+  "mixed 1:1 with the light yogurt": "mezclado 1:1 con el yogur light",
+  "dry weight, in the yogurt": "peso en seco, en el yogur",
+  "mixed into the yogurt — never eat it dry": "mezclada en el yogur — nunca la comas seca",
+  "2 slices, cheese sandwich": "2 rebanadas, sándwich de queso",
+  "in the sandwich": "en el sándwich",
   "dry, before cooking": "seco, antes de cocinar",
   "air-popped": "reventadas al aire",
   "part-skim": "parcialmente descremado",

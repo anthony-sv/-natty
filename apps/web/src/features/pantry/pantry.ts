@@ -1,5 +1,5 @@
 import { foods as builtInFoods } from "@/data/diets";
-import type { Food } from "@/data/diets";
+import type { Food, Micros, Nutrient } from "@/data/diets";
 import { addMacros, macrosForAmount, ZERO } from "@/features/nutrition/macros";
 import type { FoodSource } from "@/features/nutrition/macros";
 import type { Recipe, UserFood } from "./schema";
@@ -58,37 +58,67 @@ export function recipeTotal(recipe: Recipe, source: FoodSource) {
  */
 export function recipeAsFood(recipe: Recipe, source: FoodSource): Food {
   const total = recipeTotal(recipe, source);
+  const micros = recipeMicros(recipe, source);
+
+  // Every figure a recipe carries is the batch divided the same way — per
+  // serving, or per 100 g of the finished dish.
+  const divisor =
+    recipe.portioning.kind === "servings"
+      ? recipe.portioning.servings
+      : recipe.portioning.cookedGrams / 100;
+  const scaled = {
+    macros: {
+      protein: total.protein / divisor,
+      fat: total.fat / divisor,
+      carbs: total.carbs / divisor,
+      ...(total.fiber === undefined ? {} : { fiber: total.fiber / divisor }),
+    },
+    ...(micros === undefined
+      ? {}
+      : {
+          micros: Object.fromEntries(
+            Object.entries(micros).map(([key, value]) => [key, value / divisor]),
+          ),
+        }),
+  };
 
   if (recipe.portioning.kind === "servings") {
-    const n = recipe.portioning.servings;
-    return {
-      id: recipe.id,
-      name: recipe.name,
-      unit: "unit",
-      macros: {
-        protein: total.protein / n,
-        fat: total.fat / n,
-        carbs: total.carbs / n,
-      },
-    };
+    return { id: recipe.id, name: recipe.name, unit: "unit", ...scaled };
   }
 
-  const grams = recipe.portioning.cookedGrams;
   return {
     id: recipe.id,
     name: recipe.name,
-    unit: "g",
     // Per 100 g, which is how `macrosForAmount` reads a `g` food and how every
     // label prints one.
-    macros: {
-      protein: (total.protein / grams) * 100,
-      fat: (total.fat / grams) * 100,
-      carbs: (total.carbs / grams) * 100,
-    },
+    unit: "g",
+    ...scaled,
     // A finished dish is cooked by definition, and the badge is worth having:
     // it says you weigh this after cooking, not before.
     state: "cooked",
   };
+}
+
+/**
+ * The batch's micronutrients, from whichever ingredients carry any.
+ *
+ * Undefined when none do — a recipe made only of your own foods has no data,
+ * and saying so is better than a row of zeroes. A mix counts the part that's
+ * known; the scores' coverage figure is per *food*, so such a recipe counts as
+ * covered, which is the one place this is generous.
+ */
+function recipeMicros(recipe: Recipe, source: FoodSource): Micros | undefined {
+  let total: Partial<Record<Nutrient, number>> | undefined;
+  for (const item of recipe.ingredients) {
+    const food = source.get(item.foodId);
+    if (food?.micros === undefined) continue;
+    total ??= {};
+    const factor = food.unit === "unit" ? item.amount : item.amount / 100;
+    for (const [key, value] of Object.entries(food.micros) as [Nutrient, number][]) {
+      total[key] = (total[key] ?? 0) + value * factor;
+    }
+  }
+  return total;
 }
 
 export interface PantryEntry {

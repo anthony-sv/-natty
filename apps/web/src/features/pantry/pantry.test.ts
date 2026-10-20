@@ -56,6 +56,8 @@ describe("recipeTotal", () => {
       carbs:
         macrosForAmount(getFood("chicken-breast-raw"), 600).carbs +
         macrosForAmount({ ...butter, id: butter.id }, 15).carbs,
+      // Raw chicken's fibre is a known zero; the butter fixture states none.
+      fiber: 0,
     };
     expect(recipeTotal(recipe, PANTRY)).toEqual(expected);
   });

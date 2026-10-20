@@ -55,6 +55,7 @@ import { TrackCreatineButton } from "@/features/supplements/components/TrackCrea
 import { MacroSplit } from "./MacroSplit";
 import { usePantry } from "@/features/pantry/use-pantry";
 import { MealCard } from "./MealCard";
+import { NutritionScores } from "./NutritionScores";
 
 /** The plan, for whichever day you're looking at. */
 export function PlanPanel({ plan }: { plan: DietPlan }) {
@@ -214,6 +215,15 @@ export function PlanPanel({ plan }: { plan: DietPlan }) {
           }
         />
       ))}
+
+      {/* After the meals rather than above them: it answers "is this day
+          healthy", which is a question about the meals you just read, and it
+          follows the day and swap choices above it. */}
+      <NutritionScores
+        items={meals.flatMap((meal) => meal.items)}
+        foods={foods}
+        description={t("scores.planDescription")}
+      />
 
       {plan.supplements.length > 0 ? (
         <Card>

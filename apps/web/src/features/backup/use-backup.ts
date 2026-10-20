@@ -268,11 +268,14 @@ export async function exportDiet(
  * **Additive and re-keyed**, which is the difference from a restore: nothing
  * you have is touched, and every imported id is fresh so a shared routine
  * can't adopt a slug your logged sets already point at.
+ *
+ * Returns what was actually inserted, fresh ids and all, so a caller can take
+ * you to the thing you just imported — its old slug no longer exists.
  */
 export async function importAdditive(
   data: BackupData,
   ids: IdSource = liveIds,
-): Promise<void> {
+): Promise<BackupData> {
   await loadAll();
   const fresh = rekey(data, ids);
   if (fresh.foods.length > 0) userFoods().insert(fresh.foods);
@@ -283,6 +286,7 @@ export async function importAdditive(
   if (fresh.intake.length > 0) intakeEntries().insert(fresh.intake);
   if (fresh.supplements.length > 0) supplements().insert(fresh.supplements);
   if (fresh.extras.length > 0) extras().insert(fresh.extras);
+  return fresh;
 }
 
 /**

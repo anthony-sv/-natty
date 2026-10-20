@@ -216,6 +216,8 @@ describe.each(TRANSLATIONS)("%s", (locale) => {
       "builder.segmentKind.reps",
       // A placeholder and the kcal symbol; there is nothing in it to translate.
       "pantry.kcal",
+      // "Zinc" is the Spanish word as well.
+      "scores.nutrientName.zinc",
       "intake.noTarget",
       "volume.sets",
       "volume.setsAxis",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dietPlanSchema, diets } from "@/data/diets";
+import { dietPlanSchema, getDietBySlug } from "@/data/diets";
 import { BUILT_IN_FOODS } from "../../food-source";
 import {
   dayTotals,
@@ -193,7 +193,7 @@ describe("round-tripping", () => {
 });
 
 describe("copying a built-in plan", () => {
-  const plan = diets[0]!;
+  const plan = getDietBySlug("cut-v5-2040")!;
 
   it("flags that the built-ins use weekday variants", () => {
     // Both do — office days versus home days — and the builder doesn't write

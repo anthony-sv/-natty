@@ -37,11 +37,39 @@ export interface FoodSource {
 export const KCAL_PER_GRAM = { protein: 4, carbs: 4, fat: 9 } as const;
 
 /**
- * Fibre is a carbohydrate the body only partly gets at, so it's counted at
- * roughly half. It isn't a fourth macro — it's a share of the carbs already
- * counted — which is why nothing here adds it on top.
+ * Fibre is a carbohydrate the body only partly gets at, so it's worth roughly
+ * half. `kcalOf` still counts it at nothing: the labels' carbs already leave it
+ * out and so do the plans' own kcal figures, so the ~2 kcal/g it really
+ * carries is something the macro calculator mentions rather than adds.
  */
 export const KCAL_PER_GRAM_FIBRE = 2;
+
+/**
+ * The fibre guideline: 14 g per 1,000 kcal eaten.
+ *
+ * It's the basis the US adequate intake was set on — the intake that went with
+ * the lowest coronary-heart-disease risk — which is why it scales with calories
+ * rather than being one number. No sports-nutrition body sets a separate
+ * figure for people who train, and the reasons to eat fibre (satiety, blood
+ * lipids, the gut) are no weaker for them, so this is the rule.
+ *
+ * The scaling cuts both ways, and the panel says so. On a deep cut it gives a
+ * target *below* the flat adult adequate intake (`FIBER_FLAT_AI`) — 29 g at
+ * 2,068 kcal against 38 — and on a 4,000 kcal bulk it asks for 56 g, which is
+ * a lot of chewing. Neither is wrong; they're the edges of a rule fit to
+ * ordinary intakes.
+ */
+export const FIBER_G_PER_1000_KCAL = 14;
+
+/** The flat adult adequate intake, ages 19–50, for the panel's footnote. */
+export const FIBER_FLAT_AI = { male: 38, female: 25 } as const;
+
+export function fiberTarget(kcal: number): number {
+  return (kcal * FIBER_G_PER_1000_KCAL) / 1000;
+}
+
+/** The three macros that carry energy — fibre rides along on `Macros` but isn't one. */
+export type MacroKey = "protein" | "carbs" | "fat";
 
 export const ZERO: Macros = { protein: 0, fat: 0, carbs: 0 };
 
@@ -53,11 +81,21 @@ export function kcalOf(macros: Macros): number {
   );
 }
 
+/**
+ * Fibre adds like the rest, except that unknown plus unknown stays unknown: a
+ * day made only of foods whose labels print a dash has no fibre figure, which
+ * is different from having none. Known plus unknown is the known part.
+ */
 export function addMacros(a: Macros, b: Macros): Macros {
+  const fiber =
+    a.fiber === undefined && b.fiber === undefined
+      ? undefined
+      : (a.fiber ?? 0) + (b.fiber ?? 0);
   return {
     protein: a.protein + b.protein,
     fat: a.fat + b.fat,
     carbs: a.carbs + b.carbs,
+    ...(fiber === undefined ? {} : { fiber }),
   };
 }
 
@@ -73,6 +111,9 @@ export function macrosForAmount(food: Food, amount: number): Macros {
     protein: food.macros.protein * factor,
     fat: food.macros.fat * factor,
     carbs: food.macros.carbs * factor,
+    ...(food.macros.fiber === undefined
+      ? {}
+      : { fiber: food.macros.fiber * factor }),
   };
 }
 
@@ -243,7 +284,7 @@ export function effectiveTargetKcal(
 export const TARGET_TOLERANCE_G = 5;
 
 export interface TargetGap {
-  macro: keyof Macros;
+  macro: MacroKey;
   target: number;
   actual: number;
   /** Negative when short of the target, positive when over it. */

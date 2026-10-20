@@ -17,6 +17,7 @@ import {
 import { Tabs, TabsContent, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollingTabsList } from "@/components/scrolling-tabs-list";
 import { ActivateDietButton } from "@/features/nutrition/components/ActivateDietButton";
+import { ImportDietButton } from "@/features/nutrition/components/ImportDietButton";
 import { MacroCalculatorPanel } from "@/features/nutrition/components/MacroCalculatorPanel";
 import { PlanPanel } from "@/features/nutrition/components/PlanPanel";
 import { useDiets } from "@/features/nutrition/use-diets";
@@ -165,6 +166,9 @@ function NutritionPage() {
             <Share2Icon data-icon="inline-start" />
             {t("data.share")}
           </Button>
+
+          {/* Share's other half, beside it — see `ImportDietButton`. */}
+          <ImportDietButton />
 
           <Button nativeButton={false} render={<Link to="/nutrition/new" />}>
             <PlusIcon data-icon="inline-start" />
