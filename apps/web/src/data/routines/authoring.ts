@@ -178,3 +178,43 @@ export function day(
 export function restDay(dayNumber: number): TrainingDay {
   return { dayNumber, label: "Rest", isRest: true, exercises: [], warmupRefs: [] };
 }
+
+/**
+ * Two ramp-up sets ahead of an entry's working sets — about half the working
+ * load for 8, then about three-quarters for a few. Never logged and never
+ * counted as volume (`isWarmup`); they exist so the first heavy set of the
+ * day isn't also the first time the joint has moved under load.
+ *
+ * The percentages live in the routine notes rather than on the phase: the
+ * model has no load figure, on purpose, and the reps falling 8 → 3-5 is what
+ * makes `buildSteps` cue "heavier" between them.
+ */
+export function withWarmup(entry: ExerciseEntry): ExerciseEntry {
+  const side = entry.prescriptions[0]?.perSide ? { perSide: true } : {};
+  return {
+    ...entry,
+    prescriptions: [
+      { sets: 1, reps: 8, restSeconds: 60, isWarmup: true, ...side },
+      { sets: 1, reps: [3, 5], restSeconds: 90, isWarmup: true, ...side },
+      ...entry.prescriptions,
+    ],
+  };
+}
+
+/**
+ * Turn an entry's last working set into a drop set by splitting it into its
+ * own phase — the "technique on the last set only" shape. Drop sets match
+ * straight sets for growth at equal volume; what they buy is time, which is
+ * why the evidence-based programs put them on isolation lifts only.
+ */
+export function dropLastSet(entry: ExerciseEntry): ExerciseEntry {
+  const last = entry.prescriptions.at(-1);
+  if (!last) return entry;
+  const rest = entry.prescriptions.slice(0, -1);
+  const dropped = { ...last, sets: 1, modifiers: { ...last.modifiers, dropSet: true } };
+  return {
+    ...entry,
+    prescriptions:
+      last.sets > 1 ? [...rest, { ...last, sets: last.sets - 1 }, dropped] : [...rest, dropped],
+  };
+}

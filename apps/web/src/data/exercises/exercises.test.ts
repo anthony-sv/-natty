@@ -285,7 +285,10 @@ describe("modifiers and alternatives", () => {
         for (const key of Object.keys(p.modifiers ?? {})) seen.add(key);
       }
     }
+    // `dropSet` arrived with the evidence-based programs' last-set drops;
+    // `restPause` is still only ever written by a user routine.
     expect([...seen].sort()).toEqual([
+      "dropSet",
       "forcedReps",
       "ladder",
       "negatives",

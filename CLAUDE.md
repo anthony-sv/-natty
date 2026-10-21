@@ -255,6 +255,12 @@ comments — don't cite a study there that wasn't checked.
   variety findings (front raise, close-grip bench, nordics, carries) are
   accepted rather than missed: pressing covers front delts and adding every
   pattern would make sessions longer for little return.
+- Each day's opening lift carries two warmup sets (`withWarmup` in
+  `authoring.ts`), and one to three isolation lifts a day end on a drop set
+  (`dropLastSet`, which splits the last set into its own phase). Drop sets
+  match straight sets for growth at equal volume, so they're for saving
+  time and stay off heavy compounds. No finishers — the pose-hold finisher is
+  the source method's convention, not something the literature tested.
 - `glute-biased-hyperextension` was added for the glute program: same
   `back-extension` movement, glute-primary via `muscleOverride`, because the
   setup (rounded upper back, hips doing the extending) is what moves the work.

@@ -487,6 +487,10 @@ export const text: Record<string, string> = {
     "La extensión de pierna se queda porque la sentadilla apenas desarrolla el recto femoral. El curl femoral sentado superó al acostado para los femorales, y la elevación de talones de pie superó a la sentada.",
   "Add reps until you hit the top of the range on every set, then add weight. Deload for a week every 6-8 weeks or when performance stalls.":
     "Suma repeticiones hasta llegar al tope del rango en todas las series y luego sube el peso. Haz una semana de descarga cada 6-8 semanas o cuando el rendimiento se estanque.",
+  "The first lift of each day opens with two warmup sets: about half your working weight for 8, then about three-quarters for 3-5. They aren't logged or counted as volume.":
+    "El primer ejercicio de cada día empieza con dos series de calentamiento: cerca de la mitad de tu peso de trabajo por 8, y luego cerca de tres cuartos por 3-5. No se registran ni cuentan como volumen.",
+  "Some isolation lifts end on a drop set: at failure, cut the weight by about a quarter and go to failure again. It grows as much as an extra set would, in less time.":
+    "Algunos ejercicios de aislamiento terminan con una serie descendente: al llegar al fallo, baja el peso cerca de una cuarta parte y sigue hasta el fallo otra vez. Desarrolla lo mismo que una serie extra, en menos tiempo.",
   "Five gym days a week: the six-session rotation keeps rolling instead of restarting each Monday, so legs aren't stuck at once a week.":
     "Cinco días de gimnasio a la semana: la rotación de seis sesiones sigue corriendo en lugar de reiniciarse cada lunes, así la pierna no se queda en una vez por semana.",
   "Lower body three days a week, priority glutes, then quads, then hamstrings — set by how many weekly sets each gets, and by which lift opens each day.":

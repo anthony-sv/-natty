@@ -1,5 +1,6 @@
 import { routineSchema, type Routine } from "./schema";
-import { day, ex, orElse, restDay } from "./authoring";
+import { day, dropLastSet, ex, orElse, restDay, withWarmup } from "./authoring";
+import { DROP_SET_NOTE, WARMUP_NOTE } from "./ppl-sessions";
 
 /**
  * Lower body three times a week, upper twice, with the priority written into
@@ -25,6 +26,9 @@ import { day, ex, orElse, restDay } from "./authoring";
  *   "female" physiology to program around beyond what the person wants to
  *   prioritise.
  *
+ * Warmup sets and last-set drop sets follow the PPL programs' rules — see
+ * `ppl-sessions.ts`.
+ *
  * Upper body is two full upper days rather than one push and one pull, so the
  * upper muscles still get trained twice a week on two sessions.
  */
@@ -42,6 +46,8 @@ const raw: Routine = {
     "Go deep: full-depth squats outgrew half squats for the glutes and adductors. On split squats and step-ups, lean slightly forward to shift more of the work to the glutes.",
     "Women build muscle at the same relative rate as men. Train every working set to 0-3 reps short of failure and add weight once you hit the top of the rep range.",
     "Upper body is trained as two full upper sessions so every muscle still gets hit twice a week.",
+    WARMUP_NOTE,
+    DROP_SET_NOTE,
   ],
   defaultPrescription: { reps: [8, 12], sets: 3, restSeconds: 120 },
   weeks: [
@@ -49,21 +55,21 @@ const raw: Routine = {
       weekNumber: 1,
       days: [
         day(1, "Glutes/Hamstrings", [
-          orElse(ex("Barbell hip thrust", [6, 10], 4, 150), "Machine hip thrust"),
+          withWarmup(orElse(ex("Barbell hip thrust", [6, 10], 4, 150), "Machine hip thrust")),
           orElse(
             ex("Barbell stiff-leg deadlift", [8, 10], 3, 150),
             "Dumbbell straight-leg deadlift",
           ),
           ex("Seated leg curl", [10, 12], 3, 90),
           ex("Glute-biased hyperextension", [12, 20], 3, 90),
-          ex("Seated hip abduction machine", [15, 20], 3, 60),
+          dropLastSet(ex("Seated hip abduction machine", [15, 20], 3, 60)),
         ]),
         day(2, "Upper A", [
-          ex("Incline dumbbell press", [8, 12], 3, 120),
+          withWarmup(ex("Incline dumbbell press", [8, 12], 3, 120)),
           ex("Wide-grip lat pulldown", [8, 12], 3, 120),
           ex("Dumbbell shoulder press", [8, 12], 2, 120),
           ex("Low cable row (V-bar)", [10, 12], 3, 120),
-          ex("Cable lateral raise", [12, 20], 3, 60),
+          dropLastSet(ex("Cable lateral raise", [12, 20], 3, 60)),
           {
             ...ex("Rope overhead triceps extension", [10, 15], 2, 60),
             group: UPPER_A_ARMS,
@@ -74,31 +80,31 @@ const raw: Routine = {
           },
         ]),
         day(3, "Glutes/Quads", [
-          orElse(ex("Barbell back squat", [6, 10], 3, 180), "Hack squat"),
+          withWarmup(orElse(ex("Barbell back squat", [6, 10], 3, 180), "Hack squat")),
           ex("Smith machine Bulgarian split squat", [8, 12], 3, 120, {
             perSide: true,
           }),
-          ex("Leg extension", [10, 15], 3, 90),
+          dropLastSet(ex("Leg extension", [10, 15], 3, 90)),
           ex("Cable glute kickback", [12, 15], 3, 60, { perSide: true }),
           ex("Seated hip adduction machine", [12, 15], 2, 60),
           ex("Kneeling cable crunch", [10, 15], 3, 60),
         ]),
         restDay(4),
         day(5, "Upper B", [
-          ex("Flat machine chest press", [8, 12], 3, 120),
+          withWarmup(ex("Flat machine chest press", [8, 12], 3, 120)),
           ex("Incline-bench dumbbell row", [8, 12], 3, 120),
           ex("Reverse-grip lat pulldown", [10, 12], 2, 120),
-          ex("Seated dumbbell lateral raise", [12, 20], 3, 60),
+          dropLastSet(ex("Seated dumbbell lateral raise", [12, 20], 3, 60)),
           ex("Cable face pull", [12, 15], 3, 60),
           { ...ex("Rope triceps pushdown", [10, 15], 2, 60), group: UPPER_B_ARMS },
           { ...ex("Alternating hammer curl", [10, 15], 2, 60), group: UPPER_B_ARMS },
         ]),
         day(6, "Glutes/Legs", [
-          ex("45° leg press", [10, 12], 3, 150),
+          withWarmup(ex("45° leg press", [10, 12], 3, 150)),
           ex("Barbell hip thrust", [10, 15], 3, 120),
           ex("Dumbbell step-up", [8, 12], 3, 120, { perSide: true }),
           ex("Lying leg curl", [10, 12], 3, 90),
-          ex("Cable hip abduction", [15, 20], 3, 60, { perSide: true }),
+          dropLastSet(ex("Cable hip abduction", [15, 20], 3, 60, { perSide: true })),
           ex("Standing calf raise", [10, 15], 3, 60),
         ]),
         restDay(7),
