@@ -1,5 +1,22 @@
 import { useMemo, useState } from "react";
-import { ArchiveIcon, PencilLineIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  ArchiveIcon,
+  ArchiveRestoreIcon,
+  ChevronDownIcon,
+  PencilLineIcon,
+  PlusIcon,
+  Trash2Icon,
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,9 +48,16 @@ import { cn } from "@/lib/utils";
 import {
   archiveSupplement,
   deleteSupplement,
+  deleteSupplementAndTicks,
   restoreSupplement,
+  restoreSupplementAndTicks,
 } from "../collection";
-import { hasHistory, supplementDay, type SupplementRow } from "../supplements";
+import {
+  hasHistory,
+  supplementDay,
+  ticksOf,
+  type SupplementRow,
+} from "../supplements";
 import { useSupplements } from "../use-supplements";
 import type { Supplement } from "../schema";
 import { SupplementForm } from "./SupplementForm";
@@ -51,6 +75,18 @@ export function SupplementChecklist({ day }: { day: number }) {
   const { supplements, isLoading } = useSupplements();
   const { entries } = useIntake();
   const [editing, setEditing] = useState<Supplement | "new" | undefined>();
+  const [showArchived, setShowArchived] = useState(false);
+  const [deleting, setDeleting] = useState<Supplement | undefined>();
+
+  // Every archived one, not just those ticked today: this is the only place
+  // to bring one back, or to be rid of it for good.
+  const archived = useMemo(
+    () =>
+      supplements
+        .filter((supplement) => supplement.archivedAt !== undefined)
+        .sort((a, b) => a.name.localeCompare(b.name, t.locale)),
+    [supplements, t.locale],
+  );
 
   const summary = useMemo(
     () => supplementDay(supplements, entries, day, t.locale),
@@ -78,6 +114,32 @@ export function SupplementChecklist({ day }: { day: number }) {
       type: "info",
     });
   };
+
+  const restore = (supplement: Supplement) => {
+    restoreSupplement(supplement.id);
+    toast.add({
+      title: t("supplements.restored", { name: supplement.name }),
+      type: "success",
+    });
+  };
+
+  // Behind a confirm rather than only an Undo: it reaches back through every
+  // day you ticked it, which is a different size of thing from unticking one.
+  const deleteForGood = (supplement: Supplement) => {
+    const { supplement: removed, ticks } = deleteSupplementAndTicks(supplement.id);
+    if (removed === undefined) return;
+    toast.add({
+      title: t("supplements.deleted", { name: removed.name }),
+      type: "info",
+      actionProps: {
+        children: t("history.undo"),
+        onClick: () => restoreSupplementAndTicks(removed, ticks),
+      },
+    });
+  };
+
+  const deletingTicks =
+    deleting !== undefined ? ticksOf(entries, deleting.id).length : 0;
 
   return (
     <Card>
@@ -115,6 +177,7 @@ export function SupplementChecklist({ day }: { day: number }) {
               hasHistory={hasHistory(entries, row.supplement.id)}
               onEdit={() => setEditing(row.supplement)}
               onRemove={() => remove(row.supplement)}
+              onRestore={() => restore(row.supplement)}
             />
           ))
         )}
@@ -129,7 +192,89 @@ export function SupplementChecklist({ day }: { day: number }) {
             })}
           </p>
         ) : null}
+
+        {/* Archived ones used to have no way back once the toast was gone. */}
+        {archived.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="self-start text-muted-foreground"
+              aria-expanded={showArchived}
+              onClick={() => setShowArchived((open) => !open)}
+            >
+              <ChevronDownIcon
+                data-icon="inline-start"
+                className={cn("transition-transform", !showArchived && "-rotate-90")}
+              />
+              {t("supplements.archivedList", { count: archived.length })}
+            </Button>
+            {showArchived
+              ? archived.map((supplement) => (
+                  <div
+                    key={supplement.id}
+                    className="flex flex-wrap items-center gap-2 rounded-md border border-dashed px-3 py-2"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm">
+                      {supplement.name}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => restore(supplement)}
+                    >
+                      <ArchiveRestoreIcon data-icon="inline-start" />
+                      {t("supplements.restore")}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="text-muted-foreground"
+                      aria-label={t("supplements.deleteName", {
+                        name: supplement.name,
+                      })}
+                      onClick={() => setDeleting(supplement)}
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  </div>
+                ))
+              : null}
+          </div>
+        ) : null}
       </CardContent>
+
+      <AlertDialog
+        open={deleting !== undefined}
+        onOpenChange={(open) => {
+          if (!open) setDeleting(undefined);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("supplements.deleteTitle", { name: deleting?.name ?? "" })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t.plural("supplements.deleteBody", deletingTicks, {
+                count: deletingTicks,
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => {
+                if (deleting !== undefined) deleteForGood(deleting);
+                setDeleting(undefined);
+              }}
+            >
+              {t("supplements.deleteConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog
         open={editing !== undefined}
@@ -149,6 +294,7 @@ export function SupplementChecklist({ day }: { day: number }) {
           {editing !== undefined ? (
             <SupplementForm
               existing={editing === "new" ? undefined : editing}
+              day={day}
               onDone={() => setEditing(undefined)}
             />
           ) : null}
@@ -175,12 +321,14 @@ function SupplementRowView({
   hasHistory,
   onEdit,
   onRemove,
+  onRestore,
 }: {
   row: SupplementRow;
   day: number;
   hasHistory: boolean;
   onEdit: () => void;
   onRemove: () => void;
+  onRestore: () => void;
 }) {
   const t = useT();
   const { supplement, entryIds, slots } = row;
@@ -226,15 +374,29 @@ function SupplementRowView({
           >
             <PencilLineIcon />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="text-muted-foreground"
-            aria-label={t("supplements.remove", { name: supplement.name })}
-            onClick={onRemove}
-          >
-            {hasHistory ? <ArchiveIcon /> : <Trash2Icon />}
-          </Button>
+          {/* Archived and still showing (it was ticked this day): the button
+              brings it back rather than archiving it a second time. */}
+          {supplement.archivedAt !== undefined ? (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground"
+              aria-label={t("supplements.restoreName", { name: supplement.name })}
+              onClick={onRestore}
+            >
+              <ArchiveRestoreIcon />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground"
+              aria-label={t("supplements.remove", { name: supplement.name })}
+              onClick={onRemove}
+            >
+              {hasHistory ? <ArchiveIcon /> : <Trash2Icon />}
+            </Button>
+          )}
         </div>
       </div>
 

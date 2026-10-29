@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   KCAL_PER_GRAM,
   addMacros,
-  dayTotals,
   deficitPerDay,
   dominantMacro,
   kcalOf,
@@ -416,10 +415,31 @@ describe("every plan adds up to what it says it does", () => {
   const KCAL_TOLERANCE = 30;
   const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
-  // These sources counted tortillas and avocado at total carbs, fibre and all.
-  // v6 moved to available carbs; v7 was written off the old standard values.
-  const TOTAL_CARB_PLANS = new Set(["cut-v4-2252", "cut-v5-2040", "cut-v7-2180"]);
-  const TOTAL_CARB_FOODS = new Set(["corn-tortilla", "avocado"]);
+  /**
+   * Foods a source counted differently from the table, on the table's own
+   * basis (per 100 g/ml, or per unit).
+   *
+   * The table follows the labels. A document written before a label landed,
+   * or one that guessed, still says what it says — so the check compares the
+   * transcription with the document, and the difference is the food, named
+   * here, rather than a tolerance loose enough to hide it.
+   */
+  const TOTAL_CARBS: Record<string, Macros> = {
+    // Total carbohydrate, fibre and all. v6 moved to available carbs.
+    "corn-tortilla": { protein: 1.5, fat: 0.7, carbs: 12 },
+    avocado: { protein: 2, fat: 15, carbs: 9 },
+  };
+  // What v4 and v5's turkey swap was solved for, before its label was in.
+  const SOLVED_TURKEY: Macros = { protein: 24.1, fat: 1.05, carbs: 0 };
+  const AS_WRITTEN: Record<string, Record<string, Macros>> = {
+    "cut-v4-2252": { ...TOTAL_CARBS, "turkey-breast-raw": SOLVED_TURKEY },
+    "cut-v5-2040": { ...TOTAL_CARBS, "turkey-breast-raw": SOLVED_TURKEY },
+    // K.E.M.'s amino acids counted as protein, which its label doesn't do.
+    "cut-v7-2180": {
+      ...TOTAL_CARBS,
+      "amino-kem": { protein: 8.5, fat: 0, carbs: 0 },
+    },
+  };
 
   /**
    * Plans whose days differ by design, with the calories the source gives each
@@ -442,20 +462,21 @@ describe("every plan adds up to what it says it does", () => {
     },
   };
 
-  /** The day as the app computes it, put back on the source's carb basis. */
+  /** The day as the source would have added it up. */
   const totalsFor = (plan: DietPlan, day: Weekday, option: number) => {
     const meals = resolveDay(plan, day, FOODS, { Lunch: option });
-    const totals = dayTotals(meals);
-    if (TOTAL_CARB_PLANS.has(plan.slug)) {
-      const asWritten = totalFor(
-        meals
-          .flatMap((meal) => meal.items)
-          .filter((item) => TOTAL_CARB_FOODS.has(item.foodId)),
-        FOODS,
-      );
-      totals.carbs += asWritten.fiber ?? 0;
-    }
-    return totals;
+    const written = AS_WRITTEN[plan.slug] ?? {};
+    return meals
+      .flatMap((meal) => meal.items)
+      .map((item) => {
+        const food = getFood(item.foodId);
+        const macros = written[item.foodId];
+        return macrosForAmount(
+          macros === undefined ? food : { ...food, macros },
+          item.amount,
+        );
+      })
+      .reduce(addMacros, { protein: 0, fat: 0, carbs: 0 });
   };
 
   const expectOnTargets = (totals: Macros, plan: DietPlan) => {

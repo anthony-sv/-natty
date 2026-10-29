@@ -18,9 +18,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
+import {
+  allIntake,
+  removeIntakeEntries,
+  restoreIntakeEntries,
+} from "@/features/intake/collection";
 import { useT, type MessageKey, type Translate } from "@/i18n/use-t";
 import { createSupplement, updateSupplement } from "../collection";
 import { supplementUnitSchema, type Supplement } from "../schema";
+import { ticksBeyond } from "../supplements";
 
 /** Built per locale, like every form here — Zod bakes its messages in. */
 const buildSchema = (t: Translate) =>
@@ -40,9 +46,12 @@ const buildSchema = (t: Translate) =>
 
 export function SupplementForm({
   existing,
+  day,
   onDone,
 }: {
   existing?: Supplement;
+  /** The day the checklist is showing, whose extra ticks a lowered count takes back. */
+  day?: number;
   onDone: () => void;
 }) {
   const t = useT();
@@ -90,6 +99,33 @@ export function SupplementForm({
         },
         error: { title: t("supplements.saveError"), type: "error" },
       });
+
+      // Lowering the count takes the day's extra ticks back with it, so the
+      // boxes match what you just typed — said so, with an Undo, since those
+      // ticks were real. Other days keep what they recorded.
+      if (
+        existing !== undefined &&
+        day !== undefined &&
+        input.servingsPerDay < existing.servingsPerDay
+      ) {
+        const removed = removeIntakeEntries(
+          ticksBeyond(allIntake(), day, existing.id, input.servingsPerDay),
+        );
+        if (removed.length > 0) {
+          toast.add({
+            title: t.plural("supplements.trimmed", removed.length, {
+              count: removed.length,
+              name: input.name,
+              servings: input.servingsPerDay,
+            }),
+            type: "info",
+            actionProps: {
+              children: t("history.undo"),
+              onClick: () => restoreIntakeEntries(removed),
+            },
+          });
+        }
+      }
       onDone();
     },
   });

@@ -107,6 +107,41 @@ export function supplementDay(
   };
 }
 
+/**
+ * The ticks a lowered `servingsPerDay` leaves over on a day: the newest ones
+ * past the new count.
+ *
+ * `slots` keeps extra ticks visible on purpose, so a day never hides a real
+ * one. That's right for ticks nobody expected, but when *you* just lowered the
+ * count, three boxes under "1 a day" reads as the edit not taking — so the
+ * form takes these back, with an Undo.
+ */
+export function ticksBeyond(
+  entries: IntakeEntry[],
+  day: number,
+  supplementId: string,
+  servingsPerDay: number,
+): string[] {
+  return entries
+    .filter(
+      (entry) =>
+        entry.day === day &&
+        entry.source.kind === "supplement" &&
+        entry.source.supplementId === supplementId,
+    )
+    .sort((a, b) => a.loggedAt - b.loggedAt)
+    .slice(servingsPerDay)
+    .map((entry) => entry.id);
+}
+
+/** Every tick ever logged against this one. */
+export function ticksOf(entries: IntakeEntry[], id: string): IntakeEntry[] {
+  return entries.filter(
+    (entry) =>
+      entry.source.kind === "supplement" && entry.source.supplementId === id,
+  );
+}
+
 /** Whether anything was ever ticked against this one — archive if so. */
 export function hasHistory(entries: IntakeEntry[], id: string): boolean {
   return entries.some(

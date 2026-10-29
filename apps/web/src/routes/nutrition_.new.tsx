@@ -19,7 +19,6 @@ import {
 import { DietPlanBuilder } from "@/features/nutrition/components/builder/DietPlanBuilder";
 import {
   emptyPlan,
-  hasWeekdayVariants,
   toDraftPlan,
   type DraftPlan,
 } from "@/features/nutrition/components/builder/draft";
@@ -72,7 +71,6 @@ function NewDietPlan() {
     };
   });
   const [seed, setSeed] = useState(0);
-  const [copiedVariants, setCopiedVariants] = useState(false);
 
   // Every plan, not just the compiled-in two: the whole point of copying is
   // to start from something close to what you want, and what's closest is
@@ -126,10 +124,6 @@ function NewDietPlan() {
                   name: names.dietPlan(source.slug, source.name),
                 }),
               });
-              // Both built-ins split office days from home days, and the
-              // builder writes one version per meal. Say so now rather than
-              // let it be discovered after saving.
-              setCopiedVariants(hasWeekdayVariants(source));
               setSeed((n) => n + 1);
             }}
           >
@@ -146,12 +140,6 @@ function NewDietPlan() {
           </Select>
         </div>
       </div>
-
-      {copiedVariants ? (
-        <p className="rounded-md border border-dashed px-3 py-2 text-sm text-muted-foreground">
-          {t("dietBuilder.variantWarning")}
-        </p>
-      ) : null}
 
       <DietPlanBuilder key={seed} initial={draft} />
     </Page>
