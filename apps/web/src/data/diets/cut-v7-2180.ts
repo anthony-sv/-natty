@@ -1,4 +1,4 @@
-import { everyDay, item, onDays } from "./authoring";
+import { everyDay, item, onDays, swap } from "./authoring";
 import { dietPlanSchema, type DietPlan, type Weekday } from "./schema";
 
 /**
@@ -18,13 +18,10 @@ import { dietPlanSchema, type DietPlan, type Weekday } from "./schema";
  * average. `macros.test.ts` checks the mean of the seven days against them,
  * and each day's calories against the total the source gives for that dinner.
  *
- * Like v4 and v5, the source counts tortillas and avocado at total carbs.
- *
- * Its Costco turkey reads about 4 g of protein lower per dinner than the
- * `turkey-breast-raw` both v4 and v5 reconcile against, so turkey days land a
- * few grams above the source's 215. That's why the turkey-for-chicken lunch
- * swap is a note rather than an option: eaten every day it would put the week
- * over its protein target.
+ * Like v4 and v5, the source counts tortillas and avocado at total carbs. It
+ * also counts K.E.M.'s amino acids as 8.5 g of protein, which the label
+ * doesn't, so the training days really come to about 8 g less protein than
+ * the source says.
  *
  * The plain water drunk with each meal isn't transcribed — the hydration card
  * derives that from your own weight. The water that belongs to a product is
@@ -67,13 +64,26 @@ export const cutV7: DietPlan = dietPlanSchema.parse({
       name: "Lunch",
       note: "13:00, with a 600 ml Coke Zero.",
       variants: [
-        everyDay(
-          item("chicken-breast-raw", 200, "raw — one package"),
-          item("basmati-rice-cooked", 120),
-          item("frozen-veggies", 250),
-          item("cooking-oil", 2, "for the pan"),
-          item("avocado", 20, "flesh only"),
-        ),
+        {
+          options: [
+            swap(
+              "Chicken breast",
+              item("chicken-breast-raw", 200, "raw — one package"),
+              item("basmati-rice-cooked", 120),
+              item("frozen-veggies", 250),
+              item("cooking-oil", 2, "for the pan"),
+              item("avocado", 20, "flesh only"),
+            ),
+            swap(
+              "Turkey breast",
+              item("turkey-breast-raw", 200, "Costco"),
+              item("basmati-rice-cooked", 120),
+              item("frozen-veggies", 250),
+              item("cooking-oil", 2, "for the pan"),
+              item("avocado", 20, "flesh only"),
+            ),
+          ],
+        },
       ],
     },
     {
@@ -193,7 +203,7 @@ export const cutV7: DietPlan = dietPlanSchema.parse({
     "Weeks 1–2: the fast 2–4 kg drop is water and glycogen, so don't adjust yet. From week 3, aim to lose 0.7–1.0% of your body weight a week, judged on the weekly average weigh-in.",
     "Losing more than 1% a week, or main lifts down more than ~10%: add 150–200 kcal on cardio days first — a second 45 g pancake, or 175 g of cooked basmati at dinner. Under 0.5% a week for two weeks: drop the avocado and the peanut butter (~150 kcal) or add steps.",
     "Every 6–8 weeks, eat at maintenance (~3,000–3,200 kcal) for 1–2 weeks. Around 18–20% body fat, slow down to ~0.5% a week.",
-    "Swaps: 200 g Costco turkey for the lunch chicken · 30 g turkey ham ≈ 20 g raw chicken or turkey · 1 scoop whey ≈ 230 g egg whites · 120 g cooked basmati ≈ 35 g dry jasmine ≈ 2 corn tortillas ≈ 2 slices white bread · 15 g peanut butter ≈ 15 g pistachios ≈ 50 g avocado ≈ 8 ml oil ≈ 10 g butter.",
+    "Swaps: 30 g turkey ham ≈ 20 g raw chicken or turkey · 1 scoop whey ≈ 230 g egg whites · 120 g cooked basmati ≈ 35 g dry jasmine ≈ 2 corn tortillas ≈ 2 slices white bread · 15 g peanut butter ≈ 15 g pistachios ≈ 50 g avocado ≈ 8 ml oil ≈ 10 g butter.",
     "Frozen vegetables are nearly free (~38 kcal per 100 g): add more at lunch and dinner when you're hungry. So are hot sauce, lime, chile powder, pepper, garlic or onion powder, and cinnamon or sweetener on the yogurt. Salsa macha, extra butter and Biscoff are not.",
     "Vitamin E is the gap this plan leaves. 20 g of almonds a day closes it — or Costco nuts with almonds in them, in place of the peanut butter.",
     "Estimates only. With high blood pressure, heart issues, kidney problems or any medication, check with a doctor before taking this stimulant stack or running a deficit this size.",

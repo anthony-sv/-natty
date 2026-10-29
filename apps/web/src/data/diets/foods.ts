@@ -17,7 +17,8 @@ import { foodSchema, type Food } from "./schema";
  * the day's target, subtract everything else in the meal, and divide by the
  * stated weight. Each one reconciles across *two* independent plan versions to
  * within a couple of kcal, which is a stronger check than a lookup table would
- * have been. `diets.test.ts` pins the result.
+ * have been. `diets.test.ts` pins the result. Turkey has since been
+ * replaced by its label, which is 2 g of protein lighter than what was solved.
  *
  * The block below that — everything from oats on — isn't in any source doc at
  * all. It's a general library expansion, added in two passes: foods people
@@ -143,12 +144,16 @@ const RAW: Omit<Food, "micros">[] = [
     macros: { protein: 21, fat: 3.5, carbs: 0, fiber: 0 },
   },
   {
+    // The label (Costco): 22 P, 1 F, 1 C per 100 g raw. It replaced the
+    // 24.1 P / 1.05 F that was solved for from v4 and v5's totals, which is
+    // what those two documents were written with — `macros.test.ts` keeps
+    // that figure for them.
     id: "turkey-breast-raw",
     name: "Turkey breast",
     category: "meat-fish",
     unit: "g",
     state: "raw",
-    macros: { protein: 24.1, fat: 1.05, carbs: 0, fiber: 0 },
+    macros: { protein: 22, fat: 1, carbs: 1, fiber: 0 },
   },
   {
     id: "white-rice-cooked",
@@ -420,14 +425,15 @@ const RAW: Omit<Food, "micros">[] = [
     macros: { protein: 0, fat: 0, carbs: 66.67, fiber: 0 },
   },
   {
-    // ~8.5 g essential amino acids a scoop, counted as protein the way the
-    // plan counts them (34 kcal).
+    // The label lists no protein: its ~8.5 g of free amino acids aren't
+    // counted as protein, so neither are they here. Plan v7's source counted
+    // them anyway (34 kcal), and `macros.test.ts` keeps that for v7.
     id: "amino-kem",
     name: "Amino K.E.M.",
     category: "supplements",
     unit: "unit",
     unitNote: "1 scoop",
-    macros: { protein: 8.5, fat: 0, carbs: 0, fiber: 0 },
+    macros: { protein: 0, fat: 0, carbs: 0, fiber: 0 },
   },
   {
     // Costco's 88/12, not on the label sheet yet. 88/12 is 12 g of fat per

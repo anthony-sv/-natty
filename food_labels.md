@@ -13,6 +13,7 @@
 | Protein yogurt | 100 g | 10.1 | 1.7 | 8.3 | — | ~89 |
 | Light yogurt (plain) | 100 g | 9 | 0 | 8.5 | 0 | ~70 |
 | Light yogurt (strawberry) | 100 g | 8 | 0 | 9.1 | 0 | ~68 |
+| Turkey breast (Costco) | 100 g **raw** | 22 | 1 | 1 | 0 | ~101 |
 
 ## Carbs & grains
 
@@ -77,4 +78,3 @@
 | Chicken breast | 100 g **cooked** | 31 | 3.6 | 0 | 0 |
 | Carne asada | 100 g **raw** | 22 | 5 | 0 | 0 |
 | Pork loin | 100 g **raw** | 21 | 3.5 | 0 | 0 |
-| Turkey breast (Costco) | 100 g **raw** | 24 | 1 | 0 | 0 |
