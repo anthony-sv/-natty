@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useStore } from "@tanstack/react-store";
-import { PlusIcon, XIcon } from "lucide-react";
+import { CalendarDaysIcon, PlusIcon, XIcon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +17,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Combobox,
@@ -44,8 +43,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toast } from "@/components/ui/toast";
-import type { DietPlan, MealItem } from "@/data/diets";
+import type { DietPlan, Macros, MealItem, Weekday } from "@/data/diets";
 import { ComboboxOptionGroup } from "@/components/combobox-option-group";
 import { useBodyEntries } from "@/features/body/collection";
 import { ageFromBirthDate } from "@/features/log/heart-rate";
@@ -67,6 +67,7 @@ import {
 } from "@/features/pantry/use-pantry";
 import { useFormatting } from "@/i18n/use-formatting";
 import { useT } from "@/i18n/use-t";
+import { useWeekdayLabels } from "@/i18n/use-weekdays";
 import { toKilograms } from "@/lib/units";
 import {
   createUserDiet,
@@ -78,12 +79,15 @@ import {
 import {
   TARGET_TOLERANCE_G,
   compareToTargets,
+  dayTotals,
   effectiveTargetKcal,
   kcalOf,
   macrosForItem,
+  resolveDay,
   targetsSelfCheck,
   TARGET_TOLERANCE_KCAL,
   totalFor,
+  weekdays,
   type FoodSource,
 } from "../../macros";
 import {
@@ -93,10 +97,14 @@ import {
   suggestedTargetKcal,
 } from "../../tdee";
 import {
+  daysCovered,
   emptyMeal,
   toDietPlan,
+  variesByDay,
   type DraftMeal,
+  type DraftOption,
   type DraftPlan,
+  type DraftVariant,
 } from "./draft";
 
 const GOALS = ["cutting", "bulking", "maintenance"] as const;
@@ -113,6 +121,9 @@ export function DietPlanBuilder({
   const formatting = useFormatting();
   const [draft, setDraft] = useState(initial);
   const [confirmGaps, setConfirmGaps] = useState(false);
+  const weekdayLabels = useWeekdayLabels();
+  // Which day the running totals add up, once meals differ by day.
+  const [totalsDay, setTotalsDay] = useState<Weekday>("mon");
   const pantry = usePantry();
   // Read once on mount rather than during render, per `react-hooks/purity`.
   const [now] = useState(() => Date.now());
@@ -262,26 +273,22 @@ export function DietPlanBuilder({
   }));
 
   // What the meals actually add to, against what you said you were aiming for.
-  // Derived, never stored — the same rule the built-in plans follow.
+  // Derived, never stored — the same rule the built-in plans follow. The first
+  // swap of every meal, on one day: the one picked below when the days differ.
+  const byDay = draft.meals.some(variesByDay);
   const running = plan
-    ? plan.meals.reduce(
-        (total, meal) => {
-          const macros = totalFor(meal.variants[0]!.options[0]!.items, pantry);
-          return {
-            protein: total.protein + macros.protein,
-            carbs: total.carbs + macros.carbs,
-            fat: total.fat + macros.fat,
-          };
-        },
-        { protein: 0, carbs: 0, fat: 0 },
-      )
+    ? dayTotals(resolveDay(plan, byDay ? totalsDay : "mon", pantry))
     : undefined;
 
-  // What the day's first option of every meal comes to, against what the plan
-  // says it's aiming for. Empty when it lands, and also when no targets were
-  // stated — both mean "nothing to warn about".
+  // When the days differ, no one day is the plan, and the targets are read as
+  // the week's average — the way a rotating plan states them.
+  const weekAverage =
+    plan && byDay ? averageOf(weekdays().map((day) => dayTotals(resolveDay(plan, day, pantry)))) : running;
+
+  // Against what the plan says it's aiming for. Empty when it lands, and also
+  // when no targets were stated — both mean "nothing to warn about".
   const gaps =
-    plan && running ? compareToTargets(running, plan.targets) : [];
+    plan && weekAverage ? compareToTargets(weekAverage, plan.targets) : [];
 
   // Whether the plan's two statements of its own calorie target agree — the
   // daily figure you typed, and what your macro targets multiply out to.
@@ -495,6 +502,36 @@ export function DietPlanBuilder({
           ) : null}
         </div>
 
+        {byDay ? (
+          <div className="flex flex-col gap-2">
+            <ToggleGroup
+              variant="outline"
+              size="sm"
+              spacing={1}
+              aria-label={t("nutrition.day")}
+              className="flex-wrap"
+              value={[totalsDay]}
+              onValueChange={(value) => {
+                const next = value[0] as Weekday | undefined;
+                if (next) setTotalsDay(next);
+              }}
+            >
+              {weekdays().map((day) => (
+                <ToggleGroupItem key={day} value={day}>
+                  {weekdayLabels[day]}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+            {weekAverage ? (
+              <span className="text-sm tabular-nums text-muted-foreground">
+                {t("dietBuilder.weekAverage", {
+                  macros: `P${weekAverage.protein.toFixed(0)} · C${weekAverage.carbs.toFixed(0)} · F${weekAverage.fat.toFixed(0)} · ${Math.round(kcalOf(weekAverage)).toLocaleString()} kcal`,
+                })}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+
         {draft.meals.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             {t("dietBuilder.noMeals")}
@@ -592,6 +629,7 @@ export function DietPlanBuilder({
             <AlertDialogTitle>{t("dietBuilder.gapsTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {t("dietBuilder.gapsBody")}
+              {byDay ? ` ${t("dietBuilder.gapsWeekly")}` : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -638,7 +676,56 @@ function MealEditor({
   onRemove: () => void;
 }) {
   const t = useT();
-  const hasSwaps = meal.options.length > 1;
+  const weekdayLabels = useWeekdayLabels();
+  const byDay = variesByDay(meal);
+  const covered = daysCovered(meal.variants);
+  const listDays = (days: Weekday[]) =>
+    new Intl.ListFormat(t.locale, { style: "short", type: "conjunction" }).format(
+      days.map((day) => weekdayLabels[day]),
+    );
+  // A meal that only some days have — the pre-workout drink on a rest day.
+  // Said once for the meal, since no single version is missing them.
+  const uncovered = byDay
+    ? weekdays().filter((day) => !covered.some((days) => days.includes(day)))
+    : [];
+
+  const setVariant = (index: number, patch: Partial<DraftVariant>) =>
+    onChange({
+      variants: meal.variants.map((v, i) => (i === index ? { ...v, ...patch } : v)),
+    });
+
+  // Days are shared out between the versions rather than overlapping: picking
+  // a day here takes it off whichever version had it, so every day has one
+  // answer and the chips always show it.
+  const setDays = (index: number, days: Weekday[]) => {
+    const added = days.filter((day) => !meal.variants[index]!.days.includes(day));
+    onChange({
+      variants: meal.variants.map((v, i) =>
+        i === index
+          ? { ...v, days: weekdays().filter((day) => days.includes(day)) }
+          : { ...v, days: v.days.filter((day) => !added.includes(day)) },
+      ),
+    });
+  };
+
+  // A new version starts as a copy of the last one, since the usual change is
+  // one ingredient — the turkey becomes pork, everything else stays.
+  const addVersion = () => {
+    const last = meal.variants[meal.variants.length - 1]!;
+    onChange({
+      variants: [
+        ...meal.variants,
+        {
+          label: "",
+          days: [],
+          options: last.options.map((option) => ({
+            label: option.label,
+            items: option.items.map((item) => ({ ...item })),
+          })),
+        },
+      ],
+    });
+  };
 
   return (
     <Card>
@@ -668,76 +755,179 @@ function MealEditor({
             <XIcon />
           </Button>
         </div>
-        {hasSwaps ? (
-          <CardTitle className="text-xs font-normal text-muted-foreground">
-            {t("dietBuilder.optionsHint")}
-          </CardTitle>
-        ) : null}
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4">
-        {meal.options.map((option, index) => (
-          <div key={index} className="flex flex-col gap-2">
-            {hasSwaps ? (
-              <div className="flex items-center gap-2">
+        {meal.variants.map((variant, index) =>
+          byDay ? (
+            <div
+              key={index}
+              className="flex flex-col gap-3 rounded-md border border-dashed p-3"
+            >
+              <div className="flex flex-wrap items-center gap-2">
                 <Input
-                  className="max-w-48"
-                  placeholder={t("dietBuilder.optionLabelPlaceholder")}
-                  aria-label={t("dietBuilder.optionLabel")}
-                  value={option.label}
-                  onChange={(e) =>
-                    onChange({
-                      options: meal.options.map((o, i) =>
-                        i === index ? { ...o, label: e.target.value } : o,
-                      ),
-                    })
-                  }
+                  className="max-w-64"
+                  placeholder={t("dietBuilder.versionLabelPlaceholder")}
+                  aria-label={t("dietBuilder.versionLabel")}
+                  value={variant.label}
+                  onChange={(e) => setVariant(index, { label: e.target.value })}
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon-sm"
                   className="ml-auto text-muted-foreground"
-                  aria-label={t("dietBuilder.removeOption", { number: index + 1 })}
+                  aria-label={t("dietBuilder.removeVersion", { number: index + 1 })}
                   onClick={() =>
                     onChange({
-                      options: meal.options.filter((_, i) => i !== index),
+                      variants: meal.variants.filter((_, i) => i !== index),
                     })
                   }
+                  // The last one goes with the meal, not on its own.
+                  disabled={meal.variants.length === 1}
                 >
                   <XIcon />
                 </Button>
               </div>
-            ) : null}
 
-            <ItemList
-              items={option.items}
+              <ToggleGroup
+                multiple
+                variant="outline"
+                size="sm"
+                spacing={1}
+                aria-label={t("dietBuilder.versionDays")}
+                className="flex-wrap"
+                value={variant.days}
+                onValueChange={(value) => setDays(index, value as Weekday[])}
+              >
+                {weekdays().map((day) => (
+                  <ToggleGroupItem key={day} value={day}>
+                    {weekdayLabels[day]}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+
+              {variant.days.length > 0 ? null : covered[index]!.length > 0 ? (
+                meal.variants.length > 1 ? (
+                  <p className="text-xs text-muted-foreground">
+                    {t("dietBuilder.versionOtherDays", {
+                      days: listDays(covered[index]!),
+                    })}
+                  </p>
+                ) : null
+              ) : (
+                <p className="text-xs text-destructive">
+                  {t("dietBuilder.versionUnused")}
+                </p>
+              )}
+
+              <OptionsEditor
+                options={variant.options}
+                mealName={meal.name}
+                onChange={(options) => setVariant(index, { options })}
+              />
+            </div>
+          ) : (
+            <OptionsEditor
+              key={index}
+              options={variant.options}
               mealName={meal.name}
-              onChange={(items) =>
-                onChange({
-                  options: meal.options.map((o, i) =>
-                    i === index ? { ...o, items } : o,
-                  ),
-                })
-              }
+              onChange={(options) => setVariant(index, { options })}
             />
-          </div>
-        ))}
+          ),
+        )}
+
+        {uncovered.length > 0 ? (
+          <p className="text-xs text-muted-foreground">
+            {t("dietBuilder.mealMissingDays", { days: listDays(uncovered) })}
+          </p>
+        ) : null}
 
         <Button
           type="button"
           variant="ghost"
           size="sm"
           className="self-start"
-          onClick={() =>
-            onChange({ options: [...meal.options, { label: "", items: [] }] })
-          }
+          onClick={addVersion}
         >
-          <PlusIcon data-icon="inline-start" />
-          {t("dietBuilder.addOption")}
+          <CalendarDaysIcon data-icon="inline-start" />
+          {byDay ? t("dietBuilder.addVersion") : t("dietBuilder.byDay")}
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+/** The swaps of one version of a meal, each with its own list of food. */
+function OptionsEditor({
+  options,
+  mealName,
+  onChange,
+}: {
+  options: DraftOption[];
+  mealName: string;
+  onChange: (next: DraftOption[]) => void;
+}) {
+  const t = useT();
+  const hasSwaps = options.length > 1;
+
+  return (
+    <div className="flex flex-col gap-4">
+      {hasSwaps ? (
+        <p className="text-xs text-muted-foreground">{t("dietBuilder.optionsHint")}</p>
+      ) : null}
+
+      {options.map((option, index) => (
+        <div key={index} className="flex flex-col gap-2">
+          {hasSwaps ? (
+            <div className="flex items-center gap-2">
+              <Input
+                className="max-w-48"
+                placeholder={t("dietBuilder.optionLabelPlaceholder")}
+                aria-label={t("dietBuilder.optionLabel")}
+                value={option.label}
+                onChange={(e) =>
+                  onChange(
+                    options.map((o, i) =>
+                      i === index ? { ...o, label: e.target.value } : o,
+                    ),
+                  )
+                }
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="ml-auto text-muted-foreground"
+                aria-label={t("dietBuilder.removeOption", { number: index + 1 })}
+                onClick={() => onChange(options.filter((_, i) => i !== index))}
+              >
+                <XIcon />
+              </Button>
+            </div>
+          ) : null}
+
+          <ItemList
+            items={option.items}
+            mealName={mealName}
+            onChange={(items) =>
+              onChange(options.map((o, i) => (i === index ? { ...o, items } : o)))
+            }
+          />
+        </div>
+      ))}
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="self-start"
+        onClick={() => onChange([...options, { label: "", items: [] }])}
+      >
+        <PlusIcon data-icon="inline-start" />
+        {t("dietBuilder.addOption")}
+      </Button>
+    </div>
   );
 }
 
@@ -852,15 +1042,27 @@ function MealItemRow({
 
   // Either a picked `FoodOption` or a just-created `UserFood` — both carry
   // an id and a unit, which is all a selection needs.
-  const selectFood = (option: { id: string; unit: "g" | "ml" | "unit" }) =>
+  const selectFood = (option: { id: string; unit: "g" | "ml" | "unit" }) => {
+    // Enter on a focused field re-picks what's already there, and that used
+    // to reset the amount: 180 g of turkey quietly became 100.
+    if (option.id === item.foodId) return;
+    // A typed amount still means the same thing for another weighed food —
+    // 180 g of chicken swapped for turkey is 180 g of turkey. Only a fresh
+    // row, or a switch between weighing and counting, gets a placeholder: one
+    // egg or one scoop, or the 100 that makes sense for grams.
+    const weighedBefore = selected !== null && selected.unit !== "unit";
+    const weighedNow = option.unit !== "unit";
     onChange({
       ...item,
       foodId: option.id,
-      // A fresh row's amount is a placeholder, not a choice — picking a unit
-      // food (an egg, a scoop) should start at one of it, not the 100 that
-      // makes sense for a gram or millilitre.
-      amount: option.unit === "unit" ? 1 : 100,
+      amount:
+        selected !== null && weighedBefore === weighedNow
+          ? item.amount
+          : weighedNow
+            ? 100
+            : 1,
     });
+  };
 
   return (
     <div className="flex flex-wrap items-end gap-2 rounded-md border p-2">
@@ -969,4 +1171,11 @@ function MealItemRow({
       </Button>
     </div>
   );
+}
+
+/** The mean of a week of day totals, macro by macro. */
+function averageOf(days: Macros[]): Macros {
+  const mean = (macro: "protein" | "carbs" | "fat") =>
+    days.reduce((sum, day) => sum + day[macro], 0) / days.length;
+  return { protein: mean("protein"), carbs: mean("carbs"), fat: mean("fat") };
 }

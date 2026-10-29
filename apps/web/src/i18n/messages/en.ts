@@ -765,11 +765,20 @@ export const en = {
   "dietBuilder.duplicate": "Start from a copy",
   "dietBuilder.duplicateHint": "Copy a built-in plan and change it.",
   "dietBuilder.duplicateOf": "{name} (copy)",
-  "dietBuilder.variantWarning":
-    "This plan writes different meals on different days. A copy keeps the first version of each and applies it every day.",
   "dietBuilder.notFound": "That plan doesn't exist",
   "dietBuilder.noMeals": "No meals yet. Add one to start.",
   "dietBuilder.nothingIn": "Nothing in this one yet.",
+  "dietBuilder.byDay": "Change it by day",
+  "dietBuilder.addVersion": "Add a version for other days",
+  "dietBuilder.versionLabel": "Version name",
+  "dietBuilder.versionLabelPlaceholder": "Training days, turkey tacos\u2026",
+  "dietBuilder.removeVersion": "Remove version {number}",
+  "dietBuilder.versionDays": "Days for this version",
+  "dietBuilder.versionOtherDays": "No days picked, so it covers the rest: {days}.",
+  "dietBuilder.versionUnused": "Pick the days this version is for \u2014 as it is, no day uses it.",
+  "dietBuilder.mealMissingDays": "Not in the plan on {days}.",
+  "dietBuilder.weekAverage": "Week average: {macros}",
+  "dietBuilder.gapsWeekly": "Your days differ, so this is the week\u2019s average.",
 
   // ── Export and import ────────────────────────────────────────────────────
   // ── What you ate ─────────────────────────────────────────────────────────

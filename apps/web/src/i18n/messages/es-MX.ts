@@ -752,11 +752,20 @@ export const esMX: Record<keyof typeof en, string> = {
   "dietBuilder.duplicate": "Empezar desde una copia",
   "dietBuilder.duplicateHint": "Copia un plan incluido y c\u00e1mbialo.",
   "dietBuilder.duplicateOf": "{name} (copia)",
-  "dietBuilder.variantWarning":
-    "Este plan escribe comidas distintas seg\u00fan el d\u00eda. Una copia se queda con la primera versi\u00f3n de cada una y la aplica todos los d\u00edas.",
   "dietBuilder.notFound": "Ese plan no existe",
   "dietBuilder.noMeals": "Todav\u00eda no hay comidas. Agrega una para empezar.",
   "dietBuilder.nothingIn": "Todav\u00eda no hay nada en esta.",
+  "dietBuilder.byDay": "Cambiarla según el día",
+  "dietBuilder.addVersion": "Agregar una versión para otros días",
+  "dietBuilder.versionLabel": "Nombre de la versión",
+  "dietBuilder.versionLabelPlaceholder": "Días de entrenamiento, tacos de pavo\u2026",
+  "dietBuilder.removeVersion": "Quitar la versión {number}",
+  "dietBuilder.versionDays": "Días de esta versión",
+  "dietBuilder.versionOtherDays": "Sin días elegidos, así que cubre los demás: {days}.",
+  "dietBuilder.versionUnused": "Elige los días de esta versión: así como está, ningún día la usa.",
+  "dietBuilder.mealMissingDays": "No está en el plan: {days}.",
+  "dietBuilder.weekAverage": "Promedio semanal: {macros}",
+  "dietBuilder.gapsWeekly": "Tus días cambian, así que esto es el promedio de la semana.",
 
   // ── Exportar e importar ──────────────────────────────────────────────────
   // ── Lo que comiste ───────────────────────────────────────────────────────

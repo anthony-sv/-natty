@@ -9,10 +9,11 @@ import {
   weeklyRateKg,
 } from "../../macros";
 import {
+  daysCovered,
   emptyPlan,
-  hasWeekdayVariants,
   toDietPlan,
   toDraftPlan,
+  type DraftMeal,
   type DraftPlan,
 } from "./draft";
 
@@ -34,16 +35,28 @@ function sampleDraft(): DraftPlan {
       {
         name: "Meal 1",
         note: "",
-        options: [
-          { label: "", items: [{ foodId: "whole-egg", amount: 3 }] },
+        variants: [
+          {
+            label: "",
+            days: [],
+            options: [
+              { label: "", items: [{ foodId: "whole-egg", amount: 3 }] },
+            ],
+          },
         ],
       },
       {
         name: "Meal 2",
         note: "with rice",
-        options: [
-          { label: "Chicken", items: [{ foodId: "chicken-breast-raw", amount: 200 }] },
-          { label: "Salmon", items: [{ foodId: "salmon-raw", amount: 180 }] },
+        variants: [
+          {
+            label: "",
+            days: [],
+            options: [
+              { label: "Chicken", items: [{ foodId: "chicken-breast-raw", amount: 200 }] },
+              { label: "Salmon", items: [{ foodId: "salmon-raw", amount: 180 }] },
+            ],
+          },
         ],
       },
     ],
@@ -110,9 +123,9 @@ describe("producing a plan", () => {
     expect(weeklyRateKg(plan)).toBeUndefined();
   });
 
-  it("writes one variant per meal, applying every day", () => {
-    // The builder's simplification: swaps yes, weekday variants no. A single
-    // variant with no `days` is what "every day" means to `variantForDay`.
+  it("writes a meal that doesn't vary as one variant, applying every day", () => {
+    // A single variant with no `days` is what "every day" means to
+    // `variantForDay`.
     const plan = toDietPlan(sampleDraft(), "s")!;
     for (const meal of plan.meals) {
       expect(meal.variants).toHaveLength(1);
@@ -129,13 +142,17 @@ describe("producing a plan", () => {
 
   it("drops an option with nothing in it", () => {
     const draft = sampleDraft();
-    draft.meals[0]!.options.push({ label: "Empty", items: [] });
+    draft.meals[0]!.variants[0]!.options.push({ label: "Empty", items: [] });
     expect(toDietPlan(draft, "s")!.meals[0]!.variants[0]!.options).toHaveLength(1);
   });
 
   it("drops a meal left completely empty", () => {
     const draft = sampleDraft();
-    draft.meals.push({ name: "Meal 3", note: "", options: [{ label: "", items: [] }] });
+    draft.meals.push({
+      name: "Meal 3",
+      note: "",
+      variants: [{ label: "", days: [], options: [{ label: "", items: [] }] }],
+    });
     expect(toDietPlan(draft, "s")!.meals).toHaveLength(2);
   });
 
@@ -192,26 +209,89 @@ describe("round-tripping", () => {
   });
 });
 
+describe("versions of a meal for different days", () => {
+  /** Turkey on some days, pork on others — v7's dinner, written by hand. */
+  function dinner(turkeyDays: DraftMeal["variants"][number]["days"], porkDays: DraftMeal["variants"][number]["days"]): DraftPlan {
+    const draft = sampleDraft();
+    draft.meals.push({
+      name: "Dinner",
+      note: "",
+      variants: [
+        {
+          label: "Turkey",
+          days: turkeyDays,
+          options: [{ label: "", items: [{ foodId: "turkey-breast-raw", amount: 180 }] }],
+        },
+        {
+          label: "Pork",
+          days: porkDays,
+          options: [{ label: "", items: [{ foodId: "pork-loin-raw", amount: 180 }] }],
+        },
+      ],
+    });
+    return draft;
+  }
+
+  const dinnerOn = (plan: ReturnType<typeof toDietPlan>, day: "mon" | "tue" | "sun") =>
+    resolveDay(plan!, day, BUILT_IN_FOODS).find((meal) => meal.name === "Dinner");
+
+  it("writes each version with its days, and resolves by them", () => {
+    const plan = toDietPlan(dinner(["mon", "wed", "fri"], ["tue", "thu", "sat"]), "s")!;
+    expect(dietPlanSchema.safeParse(plan).success).toBe(true);
+    expect(dinnerOn(plan, "mon")?.variant.label).toBe("Turkey");
+    expect(dinnerOn(plan, "tue")?.variant.label).toBe("Pork");
+    // A day no version names has no dinner at all, like v7's rest-day drinks.
+    expect(dinnerOn(plan, "sun")).toBeUndefined();
+  });
+
+  it("reads a version with no days as every day the others don't name", () => {
+    const draft = dinner(["tue"], []);
+    expect(daysCovered(draft.meals[2]!.variants)).toEqual([
+      ["tue"],
+      ["mon", "wed", "thu", "fri", "sat", "sun"],
+    ]);
+    const plan = toDietPlan(draft, "s")!;
+    expect(plan.meals[2]!.variants[1]!.days).toBeUndefined();
+    expect(dinnerOn(plan, "sun")?.variant.label).toBe("Pork");
+  });
+
+  it("won't save a version no day can reach", () => {
+    // Two versions with no days: the second is never picked, and saving it
+    // would look like a dinner you're following.
+    expect(toDietPlan(dinner([], []), "s")).toBeUndefined();
+    // Nor one with no days left over once the others took all seven.
+    const allWeek = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+    expect(toDietPlan(dinner([...allWeek], []), "s")).toBeUndefined();
+  });
+
+  it("writes the days in week order, whatever order they were picked in", () => {
+    const plan = toDietPlan(dinner(["fri", "mon"], ["tue"]), "s")!;
+    expect(plan.meals[2]!.variants[0]!.days).toEqual(["mon", "fri"]);
+  });
+
+  it("drops an empty version before judging what's reachable", () => {
+    // An empty version with no days is just an unfinished row, not a
+    // competitor for "every other day".
+    const draft = dinner(["mon"], []);
+    draft.meals[2]!.variants.push({ label: "", days: [], options: [{ label: "", items: [] }] });
+    expect(toDietPlan(draft, "s")!.meals[2]!.variants).toHaveLength(2);
+  });
+});
+
 describe("copying a built-in plan", () => {
-  const plan = getDietBySlug("cut-v5-2040")!;
-
-  it("flags that the built-ins use weekday variants", () => {
-    // Both do — office days versus home days — and the builder doesn't write
-    // them, so the copy flow has to say what it's dropping rather than let you
-    // discover it after saving.
-    expect(hasWeekdayVariants(plan)).toBe(true);
-  });
-
-  it("collapses each meal to its first variant, and still parses", () => {
-    const copy = toDietPlan(toDraftPlan(plan), "copy-abc123")!;
-    expect(dietPlanSchema.safeParse(copy).success).toBe(true);
-    for (const meal of copy.meals) {
-      expect(meal.variants).toHaveLength(1);
-    }
-    expect(copy.meals.map((m) => m.name)).toEqual(plan.meals.map((m) => m.name));
-  });
+  it.each(["cut-v7-2180", "cut-v5-2040", "cut-v4-2252", "cut-v6-2068"])(
+    "keeps every version of every meal: %s",
+    (slug) => {
+      // Copying used to keep only each meal's first version, so v7's dinner
+      // came out as turkey every day and its training drinks every day too.
+      const plan = getDietBySlug(slug)!;
+      const copy = toDietPlan(toDraftPlan(plan), plan.slug)!;
+      expect(copy).toEqual(dietPlanSchema.parse(plan));
+    },
+  );
 
   it("carries the targets across, so the copy is usable immediately", () => {
+    const plan = getDietBySlug("cut-v5-2040")!;
     const copy = toDietPlan(toDraftPlan(plan), "copy")!;
     expect(copy.targets).toEqual(plan.targets);
     expect(copy.targetKcal).toBe(plan.targetKcal);
