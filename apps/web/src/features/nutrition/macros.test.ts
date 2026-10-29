@@ -21,7 +21,7 @@ import {
 } from "./macros";
 import { diets, foods, getDietBySlug, getFood } from "@/data/diets";
 import { BUILT_IN_FOODS as FOODS } from "./food-source";
-import type { DietPlan, Food, MealVariant } from "@/data/diets";
+import type { DietPlan, Food, Macros, MealVariant, Weekday } from "@/data/diets";
 
 const perHundred: Food = {
   id: "test-rice",
@@ -414,62 +414,150 @@ describe("resolveDay", () => {
 describe("every plan adds up to what it says it does", () => {
   const GRAM_TOLERANCE = 3.5;
   const KCAL_TOLERANCE = 30;
+  const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
-  const TOTAL_CARB_PLANS = new Set(["cut-v4-2252", "cut-v5-2040"]);
+  // These sources counted tortillas and avocado at total carbs, fibre and all.
+  // v6 moved to available carbs; v7 was written off the old standard values.
+  const TOTAL_CARB_PLANS = new Set(["cut-v4-2252", "cut-v5-2040", "cut-v7-2180"]);
   const TOTAL_CARB_FOODS = new Set(["corn-tortilla", "avocado"]);
+
+  /**
+   * Plans whose days differ by design, with the calories the source gives each
+   * day. v7 rotates dinner and has a rest day, so its macro targets are a
+   * weekly average and no single day should land on them. Both are checked:
+   * the average catches a mistyped protein on a dinner that recurs, the day's
+   * calories one on the dinner that doesn't — a beef mistake moves the weekly
+   * mean by a seventh of itself.
+   */
+  const DAY_KCAL: Record<string, Record<Weekday, number>> = {
+    "cut-v7-2180": {
+      // Turkey, pork, turkey, pork, turkey, pork, then the beef rest day.
+      mon: 2170,
+      tue: 2200,
+      wed: 2170,
+      thu: 2200,
+      fri: 2170,
+      sat: 2200,
+      sun: 2140,
+    },
+  };
+
+  /** The day as the app computes it, put back on the source's carb basis. */
+  const totalsFor = (plan: DietPlan, day: Weekday, option: number) => {
+    const meals = resolveDay(plan, day, FOODS, { Lunch: option });
+    const totals = dayTotals(meals);
+    if (TOTAL_CARB_PLANS.has(plan.slug)) {
+      const asWritten = totalFor(
+        meals
+          .flatMap((meal) => meal.items)
+          .filter((item) => TOTAL_CARB_FOODS.has(item.foodId)),
+        FOODS,
+      );
+      totals.carbs += asWritten.fiber ?? 0;
+    }
+    return totals;
+  };
+
+  const expectOnTargets = (totals: Macros, plan: DietPlan) => {
+    // Targets are optional on the schema now, because a plan you write
+    // yourself may state none. Every *transcribed* plan states all of them,
+    // and asserting that here is the point: if one ever stopped, the checks
+    // below would silently pass against undefined.
+    const { protein, carbs, fat } = plan.targets;
+    expect(protein).toBeDefined();
+    expect(carbs).toBeDefined();
+    expect(fat).toBeDefined();
+    expect(plan.targetKcal).toBeDefined();
+
+    expect(Math.abs(totals.protein - protein!)).toBeLessThanOrEqual(
+      GRAM_TOLERANCE,
+    );
+    expect(Math.abs(totals.carbs - carbs!)).toBeLessThanOrEqual(GRAM_TOLERANCE);
+    expect(Math.abs(totals.fat - fat!)).toBeLessThanOrEqual(GRAM_TOLERANCE);
+    expect(Math.abs(kcalOf(totals) - plan.targetKcal!)).toBeLessThanOrEqual(
+      KCAL_TOLERANCE,
+    );
+  };
+
+  /** Every lunch swap on the day, so a bad protein can't hide behind a default. */
+  const lunchOptions = (plan: DietPlan, day: Weekday) => {
+    const lunch = plan.meals.find((meal) => meal.name === "Lunch");
+    const variant = lunch ? variantForDay(lunch.variants, day) : undefined;
+    return variant?.options ?? [{ label: undefined }];
+  };
 
   for (const plan of diets) {
     describe(plan.name, () => {
-      const days = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+      const dayKcal = DAY_KCAL[plan.slug];
 
-      for (const day of days) {
-        // Every swap on the day, so a bad protein can't hide behind a default.
-        const lunch = plan.meals.find((meal) => meal.name === "Lunch");
-        const variant = lunch
-          ? variantForDay(lunch.variants, day)
-          : undefined;
-        const optionCount = variant?.options.length ?? 1;
-
-        for (let option = 0; option < optionCount; option++) {
-          const label = variant?.options[option]?.label;
-          it(`${day}${label ? ` · ${label}` : ""}`, () => {
-            const meals = resolveDay(plan, day, FOODS, { Lunch: option });
-            const totals = dayTotals(meals);
-            if (TOTAL_CARB_PLANS.has(plan.slug)) {
-              const asWritten = totalFor(
-                meals
-                  .flatMap((meal) => meal.items)
-                  .filter((item) => TOTAL_CARB_FOODS.has(item.foodId)),
-                FOODS,
-              );
-              totals.carbs += asWritten.fiber ?? 0;
-            }
-
-            // Targets are optional on the schema now, because a plan you write
-            // yourself may state none. Every *transcribed* plan states all of
-            // them, and asserting that here is the point: if one ever stopped,
-            // the checks below would silently pass against undefined.
-            const { protein, carbs, fat } = plan.targets;
-            expect(protein).toBeDefined();
-            expect(carbs).toBeDefined();
-            expect(fat).toBeDefined();
-            expect(plan.targetKcal).toBeDefined();
-
-            expect(Math.abs(totals.protein - protein!)).toBeLessThanOrEqual(
-              GRAM_TOLERANCE,
-            );
-            expect(Math.abs(totals.carbs - carbs!)).toBeLessThanOrEqual(
-              GRAM_TOLERANCE,
-            );
-            expect(Math.abs(totals.fat - fat!)).toBeLessThanOrEqual(
-              GRAM_TOLERANCE,
-            );
-            expect(
-              Math.abs(kcalOf(totals) - plan.targetKcal!),
-            ).toBeLessThanOrEqual(KCAL_TOLERANCE);
+      if (dayKcal === undefined) {
+        for (const day of DAYS) {
+          lunchOptions(plan, day).forEach(({ label }, option) => {
+            it(`${day}${label ? ` · ${label}` : ""}`, () => {
+              expectOnTargets(totalsFor(plan, day, option), plan);
+            });
           });
         }
+        return;
       }
+
+      // A rotating plan's lunch is the same every day, so the week is eaten
+      // with one swap at a time.
+      lunchOptions(plan, "mon").forEach(({ label }, option) => {
+        const suffix = label ? ` · ${label}` : "";
+
+        it(`the week averages its targets${suffix}`, () => {
+          const week = DAYS.map((day) => totalsFor(plan, day, option));
+          const mean = (macro: "protein" | "carbs" | "fat") =>
+            week.reduce((sum, day) => sum + day[macro], 0) / week.length;
+          expectOnTargets(
+            { protein: mean("protein"), carbs: mean("carbs"), fat: mean("fat") },
+            plan,
+          );
+        });
+
+        for (const day of DAYS) {
+          it(`${day} lands on its own day total${suffix}`, () => {
+            const totals = totalsFor(plan, day, option);
+            expect(Math.abs(kcalOf(totals) - dayKcal[day])).toBeLessThanOrEqual(
+              KCAL_TOLERANCE,
+            );
+          });
+        }
+      });
     });
   }
+});
+
+describe("Plan v7's week", () => {
+  const plan = getDietBySlug("cut-v7-2180")!;
+  const mealNames = (day: Weekday) =>
+    resolveDay(plan, day, FOODS).map((meal) => meal.name);
+  const dinner = (day: Weekday) =>
+    resolveDay(plan, day, FOODS).find((meal) => meal.name === "Dinner");
+
+  it("drops the training drinks on the rest day", () => {
+    // A meal with no variant for the day isn't on it at all, rather than
+    // showing up empty.
+    expect(mealNames("mon")).toContain("Pre-workout drink");
+    expect(mealNames("mon")).toContain("During training");
+    expect(mealNames("sun")).not.toContain("Pre-workout drink");
+    expect(mealNames("sun")).not.toContain("During training");
+    expect(mealNames("sun")).toHaveLength(plan.meals.length - 2);
+  });
+
+  it("rotates dinner three turkey, three pork, one beef", () => {
+    const labels = (["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const).map(
+      (day) => dinner(day)?.variant.label,
+    );
+    expect(labels).toEqual([
+      "Turkey tacos",
+      "Pork tacos",
+      "Turkey tacos",
+      "Pork tacos",
+      "Turkey tacos",
+      "Pork tacos",
+      "Beef tacos",
+    ]);
+  });
 });

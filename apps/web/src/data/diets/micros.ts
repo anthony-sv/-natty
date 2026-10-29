@@ -15,8 +15,8 @@ import type { Micros } from "./schema";
  * generic product, rounded, and fortification is assumed only where it's
  * near-universal (enriched bread, a "light" breakfast cereal).
  *
- * The two supplements are the exception: the label sheet states their
- * content, so those numbers are the label's.
+ * The supplements are the exception: their labels state their content, so
+ * those numbers are the label's.
  *
  * A food left out of this table has *no data*, which the nutrition scores
  * report as a coverage gap — counting it as zero would make a plan built on
@@ -141,6 +141,12 @@ export const MICROS: Record<string, Micros> = {
     riboflavin: 0.2, niacin: 6, vitaminB6: 0.4, vitaminB12: 2.6, choline: 85,
     calcium: 12, phosphorus: 220, magnesium: 22, iron: 2.8, zinc: 6.5,
     selenium: 21, potassium: 350, sodium: 75,
+  },
+  "ground-beef-88-12-raw": {
+    vitaminE: 0.4, vitaminK: 1.4, thiamin: 0.04, riboflavin: 0.15, niacin: 4.9,
+    vitaminB6: 0.33, folate: 7, vitaminB12: 2.4, choline: 60, calcium: 15,
+    phosphorus: 180, magnesium: 18, iron: 2.2, zinc: 4.6, selenium: 15,
+    potassium: 290, sodium: 67,
   },
   "tuna-canned-water": {
     vitaminD: 1.7, niacin: 13.3, vitaminB6: 0.35, vitaminB12: 2.6, choline: 30,
@@ -505,4 +511,9 @@ export const MICROS: Record<string, Micros> = {
   "salmon-oil-capsule": { epaDha: 0.5 },
   // The label: 105 mg magnesium, 10 µg (400 IU) D3 per two capsules.
   "magnesium-d3": { vitaminD: 10, magnesium: 105 },
+  // The label: 250 mg vitamin C per 30 ml.
+  "evp-aq": { vitaminC: 833 },
+  // The label: 100 mg vitamin C, 40 mg magnesium, 90 mg potassium and 100 mg
+  // sodium a scoop.
+  "amino-kem": { vitaminC: 100, magnesium: 40, potassium: 90, sodium: 100 },
 };

@@ -408,6 +408,39 @@ const RAW: Omit<Food, "micros">[] = [
     macros: { protein: 0.17, fat: 0.03, carbs: 0.06, fiber: 0 },
   },
 
+  // — Plan v7: the training-day drinks and the rest-day beef ——————————
+  {
+    // The label: 20 g glycerol, 2.5 g betaine and 250 mg vitamin C per 30 ml.
+    // It lists the glycerol as carbohydrate (90 kcal), so it's counted as
+    // carbs here too — at 4 kcal/g like every other one, which makes it 80.
+    id: "evp-aq",
+    name: "EVP AQ",
+    category: "supplements",
+    unit: "ml",
+    macros: { protein: 0, fat: 0, carbs: 66.67, fiber: 0 },
+  },
+  {
+    // ~8.5 g essential amino acids a scoop, counted as protein the way the
+    // plan counts them (34 kcal).
+    id: "amino-kem",
+    name: "Amino K.E.M.",
+    category: "supplements",
+    unit: "unit",
+    unitNote: "1 scoop",
+    macros: { protein: 8.5, fat: 0, carbs: 0, fiber: 0 },
+  },
+  {
+    // Costco's 88/12, not on the label sheet yet. 88/12 is 12 g of fat per
+    // 100 g raw by definition; the protein sits between USDA's raw 85% and
+    // 90% lean figures.
+    id: "ground-beef-88-12-raw",
+    name: "Ground beef (88/12)",
+    category: "meat-fish",
+    unit: "g",
+    state: "raw",
+    macros: { protein: 19, fat: 12, carbs: 0, fiber: 0 },
+  },
+
   // — A wider spread: carb quality, fat sources, protein sources ————
   // Per-100g figures from USDA FoodData Central, cooked where that's how
   // it's actually eaten, with the fibre taken out of the carbs (see the
