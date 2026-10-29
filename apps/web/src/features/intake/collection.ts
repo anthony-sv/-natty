@@ -94,6 +94,21 @@ export function restoreIntake(entry: IntakeEntry) {
   return intakeEntries().insert(entry);
 }
 
+/** Several at once, as one write. Returns the rows so they can be put back. */
+export function removeIntakeEntries(ids: string[]): IntakeEntry[] {
+  const removed: IntakeEntry[] = [];
+  for (const id of ids) {
+    const entry = intakeEntries().get(id);
+    if (entry !== undefined) removed.push(entry);
+  }
+  if (removed.length > 0) intakeEntries().delete(removed.map((entry) => entry.id));
+  return removed;
+}
+
+export function restoreIntakeEntries(entries: IntakeEntry[]) {
+  if (entries.length > 0) intakeEntries().insert(entries);
+}
+
 /**
  * Change which swap of an already-ticked meal you ate.
  *

@@ -1131,6 +1131,17 @@ export const en = {
   "supplements.archived": "Archived {name}",
   "supplements.archivedTag": "Archived",
   "supplements.deleted": "Deleted {name}",
+  "supplements.restore": "Restore",
+  "supplements.restoreName": "Restore {name}",
+  "supplements.restored": "{name} is back on the list",
+  "supplements.archivedList": "Archived ({count})",
+  "supplements.deleteName": "Delete {name} for good",
+  "supplements.deleteTitle": "Delete {name} for good?",
+  "supplements.deleteBody.one": "It comes off every day you ticked it \u2014 {count} tick in all. Archiving keeps those days as they are.",
+  "supplements.deleteBody.other": "It comes off every day you ticked it \u2014 {count} ticks in all. Archiving keeps those days as they are.",
+  "supplements.deleteConfirm": "Delete it",
+  "supplements.trimmed.one": "{count} tick came off this day \u2014 {name} is {servings} a day now.",
+  "supplements.trimmed.other": "{count} ticks came off this day \u2014 {name} is {servings} a day now.",
   "supplements.orphaned.one":
     "{count} tick is against a supplement no longer on the list.",
   "supplements.orphaned.other":

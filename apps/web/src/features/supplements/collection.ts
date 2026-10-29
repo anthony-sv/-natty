@@ -2,6 +2,12 @@ import {
   createCollection,
   localStorageCollectionOptions,
 } from "@tanstack/react-db";
+import {
+  allIntake,
+  removeIntakeEntries,
+  restoreIntakeEntries,
+} from "@/features/intake/collection";
+import type { IntakeEntry } from "@/features/intake/schema";
 import { forkCollection } from "@/lib/synced-collection";
 import {
   deleteDocuments,
@@ -13,6 +19,7 @@ import {
   type Supplement,
   type SupplementInput,
 } from "./schema";
+import { ticksOf } from "./supplements";
 
 /**
  * Your supplement stack, persisted to localStorage.
@@ -92,10 +99,39 @@ export function restoreSupplement(id: string) {
 /**
  * Remove it outright.
  *
- * Only offered when nothing was ever ticked against it — `SupplementList`
- * archives instead when there is history, the same call `LibraryPanel` makes.
+ * Offered straight away when nothing was ever ticked against it — the
+ * checklist archives instead when there is history, the same call
+ * `LibraryPanel` makes.
  */
 export function deleteSupplement(id: string) {
   const supplement = supplements().get(id);
   return { supplement, transaction: supplements().delete(id) };
+}
+
+/**
+ * Remove it **and every tick against it**, for good.
+ *
+ * Archiving stays the default once something's been ticked, because it keeps
+ * the days you took it. This is the other choice, offered from the archived
+ * list behind a confirm: a supplement you'd rather your history didn't
+ * mention at all. Deleting only the supplement would leave its ticks behind
+ * as nameless orphans, which is the thing archiving exists to avoid.
+ */
+export function deleteSupplementAndTicks(id: string): {
+  supplement: Supplement | undefined;
+  ticks: IntakeEntry[];
+} {
+  const supplement = supplements().get(id);
+  const ticks = removeIntakeEntries(ticksOf(allIntake(), id).map((t) => t.id));
+  if (supplement !== undefined) supplements().delete(id);
+  return { supplement, ticks };
+}
+
+/** Undo for `deleteSupplementAndTicks`. */
+export function restoreSupplementAndTicks(
+  supplement: Supplement,
+  ticks: IntakeEntry[],
+) {
+  supplements().insert(supplement);
+  restoreIntakeEntries(ticks);
 }

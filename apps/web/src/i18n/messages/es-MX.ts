@@ -1117,6 +1117,17 @@ export const esMX: Record<keyof typeof en, string> = {
   "supplements.archived": "Se archivó {name}",
   "supplements.archivedTag": "Archivado",
   "supplements.deleted": "Se eliminó {name}",
+  "supplements.restore": "Restaurar",
+  "supplements.restoreName": "Restaurar {name}",
+  "supplements.restored": "{name} volvió a la lista",
+  "supplements.archivedList": "Archivados ({count})",
+  "supplements.deleteName": "Eliminar {name} para siempre",
+  "supplements.deleteTitle": "¿Eliminar {name} para siempre?",
+  "supplements.deleteBody.one": "Se quita de todos los días en que lo marcaste: {count} marca en total. Archivarlo deja esos días como están.",
+  "supplements.deleteBody.other": "Se quita de todos los días en que lo marcaste: {count} marcas en total. Archivarlo deja esos días como están.",
+  "supplements.deleteConfirm": "Eliminarlo",
+  "supplements.trimmed.one": "Se quitó {count} marca de este día: {name} ahora es {servings} al día.",
+  "supplements.trimmed.other": "Se quitaron {count} marcas de este día: {name} ahora es {servings} al día.",
   "supplements.orphaned.one":
     "{count} marca es de un suplemento que ya no está en la lista.",
   "supplements.orphaned.other":

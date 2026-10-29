@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { startOfDay } from "@/lib/week";
 import type { IntakeEntry } from "@/features/intake/schema";
-import { hasHistory, supplementDay, takenOn } from "./supplements";
+import {
+  hasHistory,
+  supplementDay,
+  takenOn,
+  ticksBeyond,
+  ticksOf,
+} from "./supplements";
 import type { Supplement } from "./schema";
 
 const DAY = startOfDay(Date.UTC(2026, 7, 14, 12));
@@ -173,5 +179,52 @@ describe("hasHistory", () => {
     const entries = [tick("supplement:omega", YESTERDAY)];
     expect(hasHistory(entries, "supplement:omega")).toBe(true);
     expect(hasHistory(entries, "supplement:mag")).toBe(false);
+  });
+});
+
+describe("ticksBeyond", () => {
+  // Three servings of omega 3 ticked, then the stack is edited down to one.
+  const entries = [
+    { ...tick("supplement:omega", DAY, "first"), loggedAt: DAY + 1 },
+    { ...tick("supplement:omega", DAY, "third"), loggedAt: DAY + 3 },
+    { ...tick("supplement:omega", DAY, "second"), loggedAt: DAY + 2 },
+    tick("supplement:omega", YESTERDAY, "yesterday"),
+    tick("supplement:mag", DAY, "magnesium"),
+  ];
+
+  it("takes back the newest ticks past the new count, on that day only", () => {
+    // Yesterday recorded what you took then; only the day being edited from
+    // has to match the new count.
+    expect(ticksBeyond(entries, DAY, "supplement:omega", 1)).toEqual([
+      "second",
+      "third",
+    ]);
+  });
+
+  it("leaves a day already within the count alone", () => {
+    expect(ticksBeyond(entries, DAY, "supplement:omega", 3)).toEqual([]);
+    expect(ticksBeyond(entries, DAY, "supplement:mag", 1)).toEqual([]);
+  });
+
+  it("brings the day's boxes down to the new count", () => {
+    // The point of it: `slots` never shows fewer boxes than ticks, so without
+    // the trim, lowering 3 → 1 still drew three.
+    const kept = entries.filter(
+      (entry) => !ticksBeyond(entries, DAY, "supplement:omega", 1).includes(entry.id),
+    );
+    const omega = supplement("omega", { servingsPerDay: 1 });
+    const [row] = supplementDay([omega], kept, DAY, "en").rows;
+    expect(row?.slots).toBe(1);
+  });
+});
+
+describe("ticksOf", () => {
+  it("finds every day's ticks for one supplement, and nothing else", () => {
+    const entries = [
+      tick("supplement:omega", YESTERDAY, "a"),
+      tick("supplement:omega", DAY, "b"),
+      tick("supplement:mag", DAY, "c"),
+    ];
+    expect(ticksOf(entries, "supplement:omega").map((e) => e.id)).toEqual(["a", "b"]);
   });
 });
