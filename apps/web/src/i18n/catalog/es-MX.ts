@@ -382,6 +382,9 @@ export const foodNames: Record<string, string> = {
   "biscoff-spread": "Crema Biscoff",
   "salmon-oil-capsule": "Aceite de salmón",
   "magnesium-d3": "Magnesio + D3",
+  "evp-aq": "EVP AQ",
+  "amino-kem": "Amino K.E.M.",
+  "ground-beef-88-12-raw": "Carne molida (88/12)",
 };
 
 /** Routine slug → name. */
@@ -412,6 +415,7 @@ export const barNames: Record<string, string> = {
 
 /** Diet plan slug → name. The kcal figure reads the same in both languages. */
 export const dietPlanNames: Record<string, string> = {
+  "cut-v7-2180": "Definición v7 — 2,180 kcal",
   "cut-v6-2068": "Definición v6 — 2,068 kcal",
   "cut-v5-2040": "Definición v5 — 2,040 kcal",
   "cut-v4-2252": "Definición v4 — 2,252 kcal",
@@ -614,6 +618,80 @@ export const text: Record<string, string> = {
   "No rice.": "Sin arroz.",
   "Not fasted.": "Sin ayuno.",
   "Cook it the night before.": "Cocínalo la noche anterior.",
+
+  // Plan v7
+  "Afternoon shake": "Batido de la tarde",
+  "Pre-workout meal": "Colación preentreno",
+  "Pre-workout drink": "Bebida preentreno",
+  "During training": "Durante el entrenamiento",
+  "Training days": "Días de entrenamiento",
+  "Turkey tacos": "Tacos de pavo",
+  "Pork tacos": "Tacos de lomo",
+  "Beef tacos": "Tacos de res",
+  "08:30 — a yogurt bowl and a scramble.":
+    "08:30 — un bowl de yogur y unos huevos revueltos.",
+  "13:00, with a 600 ml Coke Zero.": "13:00, con una Coca-Cola Sin Azúcar de 600 ml.",
+  "16:30. Or straight after training, with dinner pushed to ~23:45 — the totals don't change.":
+    "16:30. O justo después de entrenar, con la cena a las ~23:45: los totales no cambian.",
+  "18:30. Low in fat and fibre so it's digested by 20:00 — which is why it's the pancake and not the yogurt bowl.":
+    "18:30. Baja en grasa y en fibra para que esté digerida a las 20:00: por eso es el hotcake y no el bowl de yogur.",
+  "19:20–19:40, with 2 scoops of EVP 3D in a 600 ml shaker. Refill it with 400 ml of water and finish it during the warm-up.":
+    "19:20–19:40, con 2 medidas de EVP 3D en un shaker de 600 ml. Rellénalo con 400 ml de agua y termínalo durante el calentamiento.",
+  "20:00–22:30, in 1 L of water with 1.5 g of salt (≈590 mg sodium) — the sodium is what lets the glycerol hold water.":
+    "20:00–22:30, en 1 L de agua con 1.5 g de sal (≈590 mg de sodio): el sodio es lo que permite que el glicerol retenga agua.",
+  "23:30, tacos — after the treadmill on cardio days.":
+    "23:30, tacos — después de la caminadora en los días de cardio.",
+  "frozen, about 7 — weigh 7 once to learn your bag":
+    "congeladas, unas 7 — pesa 7 una vez para conocer tu bolsa",
+  "2 slices, in the scramble — keep it near 30 g a day":
+    "2 rebanadas, en los huevos revueltos — mantenlo cerca de 30 g al día",
+  "raw — one package": "en crudo — un paquete",
+  "for the pan": "para el sartén",
+  "on top or in the pan": "encima o en el sartén",
+  "cooking spray": "aceite en aerosol",
+  "Costco, fat cap trimmed — cook to 63 °C and rest 3 minutes":
+    "Costco, sin la capa de grasa — cocínalo a 63 °C y déjalo reposar 3 minutos",
+  "Costco — dry pan, no spray: it cooks in its own fat":
+    "Costco — sartén seco, sin aerosol: se cocina en su propia grasa",
+  "1 serving (~250 mg caffeine)": "1 porción (~250 mg de cafeína)",
+  "08:00, on an empty stomach": "08:00, en ayunas",
+  "With 300 ml of water. Cut only — stop it for maintenance and the bulk, and drop it first if your blood pressure goes above ~130/80 or you get palpitations or bad sleep.":
+    "Con 300 ml de agua. Solo en la definición: suspéndelo en el mantenimiento y el volumen, y quítalo primero si tu presión pasa de ~130/80 o tienes palpitaciones o duermes mal.",
+  "EVP 3D": "EVP 3D",
+  "2 scoops": "2 medidas",
+  "Pre-workout, in the EVP AQ shaker": "Preentreno, en el shaker del EVP AQ",
+  "Stimulant-free, with 2.5 g of creatine on top of your daily dose. Use it instead of Xtreme N.O., whose 200 mg of caffeine is too close to bed for an evening session.":
+    "Sin estimulantes, con 2.5 g de creatina además de tu dosis diaria. Úsalo en lugar del Xtreme N.O., cuyos 200 mg de cafeína quedan muy cerca de la hora de dormir para una sesión nocturna.",
+  "Vitamin D3": "Vitamina D3",
+  "1,000 IU": "1,000 UI",
+  "With the 400 IU in the magnesium capsules, it brings vitamin D up to target.":
+    "Junto con las 400 UI de las cápsulas de magnesio, lleva la vitamina D a la meta.",
+  "Optional — the weakest product in the stack. It only builds up in muscle taken with carbs over many weeks.":
+    "Opcional: el producto más débil del stack. Solo se acumula en el músculo si se toma con carbohidratos durante muchas semanas.",
+  "The targets are the week's average: turkey days come to ~2,170 kcal, pork days ~2,200 and the beef rest day ~2,140, so a single day reads a few grams off them.":
+    "Las metas son el promedio de la semana: los días de pavo suman ~2,170 kcal, los de lomo ~2,200 y el día de descanso con res ~2,140, así que un solo día queda unos gramos fuera de ellas.",
+  "Sunday is the rest day here — no pre-workout drink or K.E.M., and beef at dinner. If yours falls on another day, move the beef with it.":
+    "Aquí el domingo es el día de descanso: sin bebida preentreno ni K.E.M., y res en la cena. Si el tuyo cae en otro día, mueve la res con él.",
+  "Meats are weighed raw, basmati cooked, oats and pancake mix dry.":
+    "Las carnes se pesan en crudo, el basmati cocido, y la avena y la harina de hotcakes en seco.",
+  "Caffeine comes to ~300 mg a day (Evoburn ~250, Coke Zero ~57), all before 16:00. Protect your sleep: 7–9 hours, because short sleep on a diet takes the loss out of muscle instead of fat.":
+    "La cafeína suma ~300 mg al día (Evoburn ~250, Coca-Cola Sin Azúcar ~57), toda antes de las 16:00. Cuida tu sueño: 7–9 horas, porque dormir poco a dieta hace que lo que pierdes salga del músculo en vez de la grasa.",
+  "If EVP AQ is new to you, start with 15 ml — glycerol can cause bloating or a headache. Don't drink more than ~1 L of water an hour.":
+    "Si el EVP AQ es nuevo para ti, empieza con 15 ml: el glicerol puede causar inflamación o dolor de cabeza. No tomes más de ~1 L de agua por hora.",
+  "Weeks 1–2: the fast 2–4 kg drop is water and glycogen, so don't adjust yet. From week 3, aim to lose 0.7–1.0% of your body weight a week, judged on the weekly average weigh-in.":
+    "Semanas 1–2: la bajada rápida de 2–4 kg es agua y glucógeno, así que todavía no ajustes. Desde la semana 3, busca bajar 0.7–1.0% de tu peso por semana, según el promedio semanal de tus pesajes.",
+  "Losing more than 1% a week, or main lifts down more than ~10%: add 150–200 kcal on cardio days first — a second 45 g pancake, or 175 g of cooked basmati at dinner. Under 0.5% a week for two weeks: drop the avocado and the peanut butter (~150 kcal) or add steps.":
+    "Si bajas más de 1% por semana, o tus levantamientos principales caen más de ~10%: suma 150–200 kcal primero en los días de cardio — un segundo hotcake de 45 g, o 175 g de basmati cocido en la cena. Si bajas menos de 0.5% por semana durante dos semanas: quita el aguacate y la crema de cacahuate (~150 kcal) o camina más.",
+  "Every 6–8 weeks, eat at maintenance (~3,000–3,200 kcal) for 1–2 weeks. Around 18–20% body fat, slow down to ~0.5% a week.":
+    "Cada 6–8 semanas, come en mantenimiento (~3,000–3,200 kcal) durante 1–2 semanas. Alrededor de 18–20% de grasa corporal, baja el ritmo a ~0.5% por semana.",
+  "Swaps: 200 g Costco turkey for the lunch chicken · 30 g turkey ham ≈ 20 g raw chicken or turkey · 1 scoop whey ≈ 230 g egg whites · 120 g cooked basmati ≈ 35 g dry jasmine ≈ 2 corn tortillas ≈ 2 slices white bread · 15 g peanut butter ≈ 15 g pistachios ≈ 50 g avocado ≈ 8 ml oil ≈ 10 g butter.":
+    "Cambios: 200 g de pavo de Costco por el pollo de la comida · 30 g de jamón de pavo ≈ 20 g de pollo o pavo en crudo · 1 medida de proteína de suero ≈ 230 g de claras · 120 g de basmati cocido ≈ 35 g de arroz jazmín en seco ≈ 2 tortillas de maíz ≈ 2 rebanadas de pan blanco · 15 g de crema de cacahuate ≈ 15 g de pistaches ≈ 50 g de aguacate ≈ 8 ml de aceite ≈ 10 g de mantequilla.",
+  "Frozen vegetables are nearly free (~38 kcal per 100 g): add more at lunch and dinner when you're hungry. So are hot sauce, lime, chile powder, pepper, garlic or onion powder, and cinnamon or sweetener on the yogurt. Salsa macha, extra butter and Biscoff are not.":
+    "Las verduras congeladas casi no cuentan (~38 kcal por 100 g): agrega más en la comida y la cena cuando tengas hambre. Tampoco cuentan la salsa picante, el limón, el chile en polvo, la pimienta, el ajo o la cebolla en polvo, ni la canela o el endulzante en el yogur. La salsa macha, la mantequilla extra y la Biscoff sí cuentan.",
+  "Vitamin E is the gap this plan leaves. 20 g of almonds a day closes it — or Costco nuts with almonds in them, in place of the peanut butter.":
+    "La vitamina E es lo que le falta a este plan. 20 g de almendras al día lo cubren — o nueces de Costco que traigan almendras, en lugar de la crema de cacahuate.",
+  "Estimates only. With high blood pressure, heart issues, kidney problems or any medication, check with a doctor before taking this stimulant stack or running a deficit this size.":
+    "Solo son estimaciones. Si tienes presión alta, problemas del corazón o de los riñones, o tomas algún medicamento, consulta a un médico antes de tomar este stack de estimulantes o de hacer un déficit de este tamaño.",
 
   // Plan notes
   "Protein is 2.1g per kg of lean mass — still inside the muscle-protective range at this deficit.":
